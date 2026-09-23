@@ -1,0 +1,149 @@
+name: Build and Deploy Backend to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'backend/**'
+      - 'infrastructure/**'
+      - '.github/workflows/backend-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test-and-lint:
+    name: Lint & Build Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Build Backend (TypeScript Check)
+        run: npm run build
+
+  build-and-push:
+    name: Build & Push Docker Image
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set Image Name to Lowercase
+        id: image_name
+        run: |
+          IMAGE_NAME="$REGISTRY/${{ github.repository }}/backend"
+          echo "IMAGE_NAME=$(echo $IMAGE_NAME | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image_name.outputs.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-to-ec2:
+    name: Deploy to AWS EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute Remote SSH Commands on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: ${{ secrets.EC2_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+            
+            APP_DIR="/home/${{ secrets.EC2_USERNAME }}/app"
+            IMAGE_REPO="${{ env.REGISTRY }}/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')/backend"
+            IMAGE_TAG="$IMAGE_REPO:latest"
+            
+            echo "=================================================="
+            echo " Starting Deployment on AWS EC2: $IMAGE_TAG"
+            echo "=================================================="
+            
+            # Ensure app directory exists
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+            
+            # Authenticate Docker with GHCR
+            echo "==> Authenticating Docker with GitHub Container Registry..."
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
+            
+            # Pull latest image
+            echo "==> Pulling latest Docker image: $IMAGE_TAG..."
+            docker pull "$IMAGE_TAG"
+            
+            # Run database migrations before swapping containers
+            if [ -f .env ]; then
+              echo "==> Running Prisma database migrations..."
+              docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate deploy
+            else
+              echo "WARNING: .env file not found in $APP_DIR. Skipping migration check."
+            fi
+            
+            # Restart backend container using docker compose
+            echo "==> Deploying updated container..."
+            BACKEND_IMAGE="$IMAGE_TAG" docker compose -f docker-compose.prod.yml up -d --remove-orphans backend
+            
+            # Prune obsolete images to free EBS disk space
+            echo "==> Pruning dangling docker images..."
+            docker image prune -f
+            
+            echo "=================================================="
+            echo " Backend Successfully Deployed and Healthy!"
+            echo "=================================================="

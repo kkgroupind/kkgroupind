@@ -1,0 +1,9 @@
+# Replace api.yourdomain.com with your actual backend domain or EC2 public DNS / IP
+api.yourdomain.com {
+    reverse_proxy backend:5000 {
+        header_up Host {upstream_hostport}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
