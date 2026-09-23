@@ -130,6 +130,10 @@ jobs:
             
             # Run database migrations before swapping containers
             if [ -f .env ]; then
+              echo "==> Sanitizing .env file (removing CRLF and whitespace around '=')..."
+              sed -i 's/\r$//' .env
+              sed -i -E 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*)$/\1=\2/' .env
+              
               echo "==> Running Prisma database migrations..."
               docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate deploy
             else
