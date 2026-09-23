@@ -135,7 +135,11 @@ jobs:
               sed -i -E 's/^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)[[:space:]]*=[[:space:]]*(.*)$/\1=\2/' .env
               
               echo "==> Running Prisma database migrations..."
-              docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate deploy
+              if ! docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate deploy; then
+                echo "==> Non-empty schema detected. Resolving baseline for initial migration..."
+                docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate resolve --applied 20260923000000_init || true
+                docker run --rm --env-file .env "$IMAGE_TAG" npx prisma migrate deploy
+              fi
             else
               echo "WARNING: .env file not found in $APP_DIR. Skipping migration check."
             fi
