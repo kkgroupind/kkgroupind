@@ -35,8 +35,8 @@ COPY src ./src/
 # Compile TypeScript to production bundle
 RUN npm run build
 
-# Prune devDependencies to keep image size small
-RUN npm prune --omit=dev
+# Prune devDependencies and strip heavy local dev assets
+RUN npm prune --omit=dev && rm -rf node_modules/@prisma/dev
 
 # ------------------------------------------------------------------------------
 # Stage 2: Production runtime stage

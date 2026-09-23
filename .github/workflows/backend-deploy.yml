@@ -124,6 +124,11 @@ jobs:
             echo "==> Authenticating Docker with GitHub Container Registry..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
             
+            # Free disk space proactively before pulling to avoid disk exhaustion
+            echo "==> Freeing disk space before pulling new image..."
+            docker container prune -f || true
+            docker image prune -f || true
+
             # Pull latest image
             echo "==> Pulling latest Docker image: $IMAGE_TAG..."
             docker pull "$IMAGE_TAG"
