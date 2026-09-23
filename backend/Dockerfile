@@ -47,7 +47,6 @@ WORKDIR /usr/src/app
 
 ENV NODE_ENV=production
 ENV PORT=5000
-ENV NODE_OPTIONS="--no-experimental-require-module"
 
 # Install runtime dependencies (OpenSSL for Prisma, curl for health checks)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -79,4 +78,4 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:5000/api || exit 1
 
-CMD ["node", "--no-experimental-require-module", "dist/main"]
+CMD ["node", "dist/main"]
