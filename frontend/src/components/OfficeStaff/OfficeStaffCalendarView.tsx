@@ -28,7 +28,9 @@ export function OfficeStaffCalendarView({
   onShowToast,
 }: OfficeStaffCalendarViewProps) {
   // Sort invoices by preferred date / due days
-  const scheduledOrders = [...invoices].sort((a, b) => a.dueInDays - b.dueInDays);
+  const scheduledOrders = [...invoices].sort(
+    (a, b) => (a.dueInDays ?? 0) - (b.dueInDays ?? 0),
+  );
 
   const pendingAssignment = scheduledOrders.filter((inv) => !inv.worker);
   const assignedOrders = scheduledOrders.filter((inv) => !!inv.worker);

@@ -40,6 +40,9 @@ interface OfficeStaffNavbarProps {
   userRole?: string;
   userAvatar?: string;
   onLogout?: () => void;
+  isAvailable?: boolean;
+  onToggleAvailability?: () => void;
+  isTogglingAvailability?: boolean;
 }
 
 export function OfficeStaffNavbar({
@@ -55,6 +58,9 @@ export function OfficeStaffNavbar({
   userRole = 'OFFICE_STAFF',
   userAvatar,
   onLogout,
+  isAvailable = false,
+  onToggleAvailability,
+  isTogglingAvailability = false,
 }: OfficeStaffNavbarProps) {
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -273,6 +279,30 @@ export function OfficeStaffNavbar({
               </>
             )}
 
+            {/* Availability / Duty Status Toggle Pill */}
+            {onToggleAvailability && (
+              <button
+                type="button"
+                onClick={onToggleAvailability}
+                disabled={isTogglingAvailability}
+                className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
+                  isAvailable
+                    ? 'bg-[#EBF6F1] text-[#2A835F] border-[#C3E6D5] hover:bg-emerald-100/80'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/80'
+                }`}
+                title={isAvailable ? 'Click to change desk availability' : 'Click to mark as Available'}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isAvailable ? 'bg-[#2A835F] animate-pulse' : 'bg-amber-500'
+                  }`}
+                />
+                <span className="whitespace-nowrap">
+                  {isAvailable ? 'Available on Desk' : 'Off Duty / Unavailable'}
+                </span>
+              </button>
+            )}
+
             {/* Divider (Tablet & Desktop) */}
             <div className="w-px h-5 sm:h-6 bg-slate-200 hidden sm:block" />
 
@@ -396,16 +426,37 @@ export function OfficeStaffNavbar({
                       </div>
                     </button>
 
-                    {/* Duty Status Indicator */}
-                    <div className="px-3 py-2 rounded-xl bg-[#EBF6F1]/60 border border-[#C3E6D5]/70 flex items-center justify-between my-1">
+                    {/* Duty Status Interactive Button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileOpen(false);
+                        onToggleAvailability?.();
+                      }}
+                      className={`w-full px-3 py-2 rounded-xl border flex items-center justify-between my-1 cursor-pointer transition-colors text-left ${
+                        isAvailable
+                          ? 'bg-[#EBF6F1]/70 border-[#C3E6D5]/80 hover:bg-[#EBF6F1]'
+                          : 'bg-amber-50/70 border-amber-200/80 hover:bg-amber-50'
+                      }`}
+                    >
                       <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 text-[#2A835F]" />
+                        <ShieldCheck
+                          className={`w-4 h-4 ${
+                            isAvailable ? 'text-[#2A835F]' : 'text-amber-600'
+                          }`}
+                        />
                         <span className="text-xs font-bold text-slate-800">Dispatch Desk</span>
                       </div>
-                      <span className="text-[10px] font-extrabold bg-[#2A835F] text-white px-2 py-0.5 rounded-full">
-                        ON DUTY
+                      <span
+                        className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                          isAvailable
+                            ? 'bg-[#2A835F] text-white'
+                            : 'bg-amber-600 text-white'
+                        }`}
+                      >
+                        {isAvailable ? 'AVAILABLE' : 'OFF DUTY'}
                       </span>
-                    </div>
+                    </button>
                   </div>
 
                   {/* Sign Out / Logout Option */}

@@ -69,7 +69,11 @@ export class AuthService {
     id: string;
     email?: string | null;
     username?: string | null;
+    name?: string | null;
+    phone?: string | null;
     role: Role;
+    workerStatus?: any;
+    staffStatus?: any;
     isEmailVerified: boolean;
     isActive: boolean;
     createdAt: Date;
@@ -79,7 +83,11 @@ export class AuthService {
       id: user.id,
       email: user.email,
       username: user.username,
+      name: user.name,
+      phone: user.phone,
       role: user.role,
+      workerStatus: user.workerStatus,
+      staffStatus: user.staffStatus,
       isEmailVerified: user.isEmailVerified,
       isActive: user.isActive,
       createdAt: user.createdAt,

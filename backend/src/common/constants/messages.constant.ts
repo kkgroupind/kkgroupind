@@ -111,5 +111,19 @@ export const ENQUIRY_MESSAGES = {
   WORKERS_FETCHED_SUCCESS: 'Available workers retrieved successfully',
 } as const;
 
+export const ATTENDANCE_MESSAGES = {
+  ATTENDANCE_MARKED_SUCCESS: 'Attendance marked successfully',
+  ATTENDANCE_UPDATED_SUCCESS: 'Attendance and duty status updated successfully',
+  ATTENDANCE_FETCHED_SUCCESS: 'Today attendance record fetched successfully',
+  STAFF_OVERVIEW_FETCHED_SUCCESS: 'Staff and worker attendance overview fetched successfully',
+  OFFICE_DUTY_AVAILABLE: 'Office desk status set to Available',
+  OFFICE_DUTY_OFF: 'Office desk status set to Off Duty',
+  WORKER_DUTY_AVAILABLE: 'Worker status set to Available for work',
+  WORKER_DUTY_OFF: 'Worker status set to Off Duty / Leave',
+  INVALID_STATUS: 'Invalid attendance or availability status provided',
+  UNAUTHORIZED_ATTENDANCE: 'You are not authorized to update this attendance record',
+} as const;
+
+
 
 

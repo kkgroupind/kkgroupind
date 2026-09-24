@@ -13,9 +13,11 @@ import {
   WorkerCrewList,
   WorkerLiveMap,
   WorkerJobDetailsModal,
+  WorkerAvailabilityModal,
   CrewMember,
 } from '@/components/Worker';
 import {
+  AttendanceService,
   EnquiryService,
   ServiceEnquiry,
   WorkerStatus,
@@ -30,6 +32,7 @@ export default function WorkerDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isOnDuty, setIsOnDuty] = useState(true);
   const [togglingDuty, setTogglingDuty] = useState(false);
+  const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
   const [jobs, setJobs] = useState<ServiceEnquiry[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [selectedJob, setSelectedJob] = useState<ServiceEnquiry | null>(null);
@@ -46,6 +49,17 @@ export default function WorkerDashboardPage() {
       }
     }
   }, [isLoading, token, user, router]);
+
+  // Load worker availability and attendance
+  const loadAttendance = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await AttendanceService.getTodayAttendance(token);
+      setIsOnDuty(res.isAvailable);
+    } catch (err) {
+      console.error('Failed to fetch worker attendance:', err);
+    }
+  }, [token]);
 
   // Fetch worker assigned jobs from backend
   const loadJobs = useCallback(async () => {
@@ -64,27 +78,33 @@ export default function WorkerDashboardPage() {
   useEffect(() => {
     if (token) {
       loadJobs();
+      loadAttendance();
     }
-  }, [loadJobs, token]);
+  }, [loadJobs, loadAttendance, token]);
 
-  // Toggle on-field duty status
-  const handleToggleDuty = async () => {
+  // Open confirmation modal on toggle request
+  const handleRequestToggleDuty = () => {
+    setIsAvailabilityModalOpen(true);
+  };
+
+  // Confirmed toggle duty status via modal
+  const handleConfirmDutyChange = async (targetStatus: 'AVAILABLE' | 'OFF_DUTY') => {
     if (!token || togglingDuty) return;
-    const newStatus: WorkerStatus = isOnDuty ? 'OFF_DUTY' : 'AVAILABLE';
     setTogglingDuty(true);
     try {
-      await EnquiryService.updateWorkerDuty(newStatus, token);
-      const nextDuty = !isOnDuty;
-      setIsOnDuty(nextDuty);
-      if (nextDuty) {
+      await AttendanceService.updateStatus(targetStatus, token);
+      const isAvailable = targetStatus === 'AVAILABLE';
+      setIsOnDuty(isAvailable);
+      setIsAvailabilityModalOpen(false);
+      if (isAvailable) {
         toast.success(
-          'Duty Status: Available',
-          'You are now marked ON DUTY and available for new field dispatches.'
+          'ഡ്യൂട്ടി ലഭ്യമാണ് / Available for Work',
+          'You are now marked Available for new field dispatches.'
         );
       } else {
         toast.info(
-          'Duty Status: Off Duty',
-          'You are now OFF DUTY. New dispatches will not be auto-routed to you.'
+          'അവധിയാണ് / On Leave / Off Duty',
+          'You are now marked Off Duty. No new dispatches will be assigned to you.'
         );
       }
     } catch (err: any) {
@@ -198,7 +218,7 @@ export default function WorkerDashboardPage() {
         hasNotifications={jobs.some((j) => j.status === 'ASSIGNED')}
         assignedJobsCount={jobs.filter((j) => j.status === 'ASSIGNED').length}
         isOnDuty={isOnDuty}
-        onToggleDuty={handleToggleDuty}
+        onToggleDuty={handleRequestToggleDuty}
         isTogglingDuty={togglingDuty}
         userName={user.name || user.username || 'Operative'}
       />
@@ -292,11 +312,11 @@ export default function WorkerDashboardPage() {
                 />
               </div>
 
-              {/* Right Stacked Cards: Daily Jogging + My Jogging */}
+              {/* Right Stacked Cards: Daily Field Duty + Active Dispatch */}
               <div className="lg:col-span-5 xl:col-span-4 flex">
                 <WorkerDutyCards
                   isOnDuty={isOnDuty}
-                  onToggleDuty={handleToggleDuty}
+                  onToggleDuty={handleRequestToggleDuty}
                   isTogglingDuty={togglingDuty}
                   activeJobTitle={activeJobTitle}
                   totalTimeWorked="748 hr"
@@ -355,6 +375,18 @@ export default function WorkerDashboardPage() {
         onClose={() => setIsJobModalOpen(false)}
         onUpdateStatus={handleUpdateStatus}
         isActing={actionLoadingId === selectedJob?.id}
+      />
+
+      {/* ========================================================
+          WORKER AVAILABILITY CONFIRMATION MODAL
+      ======================================================== */}
+      <WorkerAvailabilityModal
+        isOpen={isAvailabilityModalOpen}
+        onClose={() => setIsAvailabilityModalOpen(false)}
+        onConfirm={handleConfirmDutyChange}
+        isLoading={togglingDuty}
+        userName={user?.name || user?.username || 'Field Worker'}
+        currentStatus={isOnDuty ? 'AVAILABLE' : 'OFF_DUTY'}
       />
     </div>
   );

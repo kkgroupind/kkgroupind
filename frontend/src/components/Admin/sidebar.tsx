@@ -39,16 +39,26 @@ const menuData = [
       { name: 'Office Staff', icon: Briefcase, href: '/admin/people/office-staff' },
       { name: 'Customers', icon: UserCircle, href: '/admin/people/customers' },
     ] },
+    { name: 'Operations', icon: ClipboardList, subItems: [
+        { name: 'Enquiries', icon: FolderKanban, href: '/admin/operations/enquiries' },
+        { name: 'Work Orders', icon: FolderKanban, href: '/admin/operations/work-orders' },
+        { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
+        { name: 'Services', icon: Box, href: '/admin/operations/services' },
+      ] },
+    { name: 'Attendance & Availability', icon: ClipboardList, subItems: [
+        { name: 'Attendances', icon: FolderKanban, href: '/admin/attendance' },
+        { name: 'Availabilities', icon: FolderKanban, href: '/admin/availability' },
+        { name: 'Leaves', icon: ClipboardCheck, href: '/admin/leaves' },
+      ] },
+  { name: 'Communications', icon: Building2, subItems: [
+      { name: 'Notifications', icon: Building, href: '/admin/businesses/units' },
+      { name: 'Announcements', icon: Factory, href: '/admin/businesses/departments' },
+      { name: 'Complaints & Feedback', icon: Factory, href: '/admin/businesses/departments' },
+    ] },
   { name: 'Businesses', icon: Building2, subItems: [
       { name: 'Business Units', icon: Building, href: '/admin/businesses/units' },
       { name: 'Departments', icon: Factory, href: '/admin/businesses/departments' },
     ] },
-  { name: 'Operations', icon: ClipboardList, subItems: [
-      { name: 'Projects', icon: FolderKanban, href: '/admin/operations/projects' },
-      { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
-      { name: 'Assets', icon: Box, href: '/admin/operations/assets' },
-    ] },
-  { name: 'Attendance', icon: Clock, href: '/admin/attendance' },
   { name: 'Finance', icon: IndianRupee, href: '/admin/finance' },
   { name: 'Inventory', icon: Package, href: '/admin/inventory' },
   { name: 'Website', icon: Globe, href: '/admin/website' },

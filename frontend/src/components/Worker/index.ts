@@ -7,3 +7,5 @@ export * from './WorkerTaskCards';
 export * from './WorkerCrewList';
 export * from './WorkerLiveMap';
 export * from './WorkerJobDetailsModal';
+export * from './WorkerAvailabilityModal';
+

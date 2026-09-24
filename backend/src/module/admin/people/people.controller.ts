@@ -30,7 +30,7 @@ export class PeopleController {
     return this.peopleService.createPerson(dto);
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Get()
   async listPeople(@Query() query: ListPeopleDto) {
     return this.peopleService.listPeople(query);
@@ -48,7 +48,7 @@ export class PeopleController {
     return this.peopleService.checkEmailAvailability(query.email);
   }
 
-  @Roles(Role.SUPER_ADMIN)
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Get(':username')
   async getPersonByUsername(@Param('username') username: string) {
     return this.peopleService.getPersonByUsername(username);

@@ -29,43 +29,56 @@ export function WorkerDutyCards({
 }: WorkerDutyCardsProps) {
   return (
     <div className="flex flex-col gap-4 w-full select-none">
-      {/* 1. TOP CARD: Daily Field Duty (Purple card matching reference) */}
+      {/* 1. TOP CARD: Daily Field Duty / Attendance Card */}
       <div
         onClick={onToggleDuty}
-        className="w-full bg-[#5E42B4] hover:bg-[#5439a8] rounded-[28px] sm:rounded-[32px] p-4 sm:p-5 text-white shadow-[0_15px_35px_rgba(94,66,180,0.25)] flex items-center gap-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 group relative overflow-hidden"
+        className="w-full bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 hover:to-slate-800 border border-slate-800/80 rounded-[28px] sm:rounded-[32px] p-4 sm:p-5 text-white shadow-[0_15px_35px_rgba(0,0,0,0.3)] flex items-center justify-between gap-4 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 group relative overflow-hidden"
       >
-        {/* Ambient Subtle Glow */}
-        <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
+        {/* Ambient Subtle Emerald Glow */}
+        <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-[#2A835F]/20 blur-xl pointer-events-none" />
 
-        {/* Squircle Shoe/Duty Icon */}
-        <div className="w-12 h-12 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white shrink-0 shadow-inner group-hover:bg-white/25 transition-colors">
-          {isTogglingDuty ? (
-            <Loader2 className="w-6 h-6 animate-spin text-white" />
-          ) : (
-            <Footprints className="w-6 h-6 text-white" />
-          )}
+        <div className="flex items-center gap-4 min-w-0">
+          {/* Squircle HardHat/Duty Icon */}
+          <div
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-inner transition-colors ${
+              isOnDuty
+                ? 'bg-[#2A835F] text-white border border-[#3db383]'
+                : 'bg-slate-800 text-slate-400 border border-slate-700'
+            }`}
+          >
+            {isTogglingDuty ? (
+              <Loader2 className="w-6 h-6 animate-spin text-white" />
+            ) : (
+              <HardHat className="w-6 h-6 text-white" />
+            )}
+          </div>
+
+          {/* Title & Status */}
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm sm:text-base font-black tracking-tight text-white leading-tight">
+              ഫീൽഡ് അറ്റൻഡൻസ്
+            </span>
+            <span className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1.5">
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isOnDuty ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`}
+              />
+              <span>{isOnDuty ? 'Available for Work / ലഭ്യമാണ്' : 'On Leave / Off Duty (അവധി)'}</span>
+            </span>
+          </div>
         </div>
 
-        {/* Title & Status */}
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-sm sm:text-base font-black tracking-tight text-white leading-tight">
-            Daily Jogging
-          </span>
-          <span className="text-[11px] font-semibold text-purple-200 mt-0.5 flex items-center gap-1.5">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isOnDuty ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'
-              }`}
-            />
-            <span>{isOnDuty ? 'On-Field Ready' : 'Off Duty'}</span>
-          </span>
+        {/* Change Status Badge */}
+        <div className="shrink-0 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-white transition-colors">
+          Toggle
         </div>
       </div>
 
-      {/* 2. BOTTOM CARD: My Jogging / Active Work (Vibrant Pink Gradient Card) */}
+      {/* 2. BOTTOM CARD: Active Work & Dispatches */}
       <div
         onClick={onViewActiveJob}
-        className="w-full bg-gradient-to-br from-[#FF5E88] via-[#FF5481] to-[#FA4777] rounded-[28px] sm:rounded-[32px] p-5 sm:p-6 text-white shadow-[0_20px_45px_rgba(255,94,136,0.35)] flex flex-col justify-between min-h-[170px] sm:min-h-[190px] relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
+        className="w-full bg-gradient-to-br from-[#2A835F] via-[#236D4F] to-[#1a533c] rounded-[28px] sm:rounded-[32px] p-5 sm:p-6 text-white shadow-[0_20px_45px_rgba(42,131,95,0.35)] flex flex-col justify-between min-h-[170px] sm:min-h-[190px] relative overflow-hidden group cursor-pointer transition-all hover:scale-[1.02] active:scale-95"
       >
         {/* Subtle Background Waves */}
         <svg
@@ -86,9 +99,9 @@ export function WorkerDutyCards({
           </div>
           <div className="flex flex-col">
             <span className="text-sm sm:text-base font-black text-white tracking-tight">
-              My Jogging
+              Active Dispatch
             </span>
-            <span className="text-[10px] font-semibold text-pink-100 line-clamp-1 max-w-[140px]">
+            <span className="text-[10px] font-semibold text-emerald-100 line-clamp-1 max-w-[160px]">
               {activeJobTitle}
             </span>
           </div>

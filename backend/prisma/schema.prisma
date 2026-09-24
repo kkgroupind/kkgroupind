@@ -39,26 +39,57 @@ enum WorkerStatus {
   OFF_DUTY
 }
 
+enum StaffStatus {
+  AVAILABLE
+  OFF_DUTY
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LEAVE
+  OFF_DUTY
+}
+
 model User {
-  id              String        @id @default(uuid())
+  id              String            @id @default(uuid())
   name            String?
-  email           String?       @unique
-  username        String?       @unique
+  email           String?           @unique
+  username        String?           @unique
   phone           String?
   password        String
-  role            Role          @default(CUSTOMER)
-  workerStatus    WorkerStatus? @default(AVAILABLE)
-  isEmailVerified Boolean       @default(false)
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  role            Role              @default(CUSTOMER)
+  workerStatus    WorkerStatus?     @default(AVAILABLE)
+  staffStatus     StaffStatus?      @default(OFF_DUTY)
+  isEmailVerified Boolean           @default(false)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   otps                Otp[]
+  attendances         Attendance[]
   customerEnquiries   ServiceEnquiry[] @relation("CustomerEnquiries")
   officeEnquiries     ServiceEnquiry[] @relation("OfficeEnquiries")
   workerAssignments   ServiceEnquiry[] @relation("WorkerAssignments")
 
   @@map("users")
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       String           // YYYY-MM-DD
+  status     AttendanceStatus @default(PRESENT)
+  checkInAt  DateTime         @default(now())
+  checkOutAt DateTime?
+  notes      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([userId, date])
+  @@index([date])
+  @@index([userId])
+  @@map("attendances")
 }
 
 model Otp {

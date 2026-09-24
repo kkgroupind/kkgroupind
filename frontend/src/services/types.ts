@@ -1,4 +1,69 @@
 export type UserRole = 'CUSTOMER' | 'SUPER_ADMIN' | 'WORKER' | 'OFFICE_STAFF';
+export type StaffStatus = 'AVAILABLE' | 'OFF_DUTY';
+export type WorkerStatus = 'AVAILABLE' | 'BUSY' | 'OFF_DUTY';
+export type AttendanceStatus = 'PRESENT' | 'LEAVE' | 'OFF_DUTY';
+
+export interface AttendanceRecord {
+  id: string;
+  userId: string;
+  date: string;
+  status: AttendanceStatus;
+  checkInAt: string;
+  checkOutAt?: string | null;
+  notes?: string | null;
+}
+
+export interface TodayAttendanceResponse {
+  message: string;
+  date: string;
+  role: UserRole;
+  isAvailable: boolean;
+  isMarkedToday: boolean;
+  staffStatus?: StaffStatus;
+  workerStatus?: WorkerStatus;
+  attendance?: AttendanceRecord | null;
+  user?: Partial<User>;
+}
+
+export interface AttendanceOverviewResponse {
+  message: string;
+  date: string;
+  counts: {
+    officeStaff: {
+      total: number;
+      available: number;
+      offDuty: number;
+    };
+    workers: {
+      total: number;
+      available: number;
+      busy: number;
+      offDuty: number;
+    };
+  };
+  officeStaff: Array<{
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    role: UserRole;
+    staffStatus: StaffStatus;
+    isAvailable: boolean;
+    todayAttendance?: AttendanceRecord | null;
+  }>;
+  workers: Array<{
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    role: UserRole;
+    workerStatus: WorkerStatus;
+    isAvailable: boolean;
+    todayAttendance?: AttendanceRecord | null;
+  }>;
+}
 
 export interface User {
   id: string;
@@ -7,6 +72,8 @@ export interface User {
   username?: string | null;
   phone?: string | null;
   role: UserRole;
+  workerStatus?: WorkerStatus | null;
+  staffStatus?: StaffStatus | null;
   isEmailVerified: boolean;
   isActive: boolean;
   createdAt: string;
@@ -35,7 +102,6 @@ export type ServiceStatus =
   | 'COMPLETED'
   | 'CANCELLED';
 
-export type WorkerStatus = 'AVAILABLE' | 'BUSY' | 'OFF_DUTY';
 
 export interface ServiceEnquiry {
   id: string;

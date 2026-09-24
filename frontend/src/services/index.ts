@@ -1,12 +1,14 @@
 import { authService } from './auth.service';
 import { adminDashboardService, peopleService } from './Admin';
 import { EnquiryService } from './enquiry.service';
+import { AttendanceService } from './attendance.service';
 
 export * from './types';
 export * from './api-client';
 export * from './auth.service';
 export * from './Admin';
 export * from './enquiry.service';
+export * from './attendance.service';
 
 // Combined API object for backward compatibility and centralized access
 export const api = {
@@ -14,4 +16,6 @@ export const api = {
   ...peopleService,
   ...adminDashboardService,
   ...EnquiryService,
+  ...AttendanceService,
 };
+

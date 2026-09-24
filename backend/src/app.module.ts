@@ -11,6 +11,7 @@ import { MailModule } from './module/mail/mail.module';
 import { AuthModule } from './module/auth/auth.module';
 import { AdminModule } from './module/admin/admin.module';
 import { EnquiryModule } from './module/enquiry/enquiry.module';
+import { AttendanceModule } from './module/attendance/attendance.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   HttpExceptionFilter,
@@ -40,6 +41,7 @@ import {
     AuthModule,
     AdminModule,
     EnquiryModule,
+    AttendanceModule,
   ],
   providers: [
     {
