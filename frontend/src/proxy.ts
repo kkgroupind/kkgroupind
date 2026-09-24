@@ -86,7 +86,7 @@ export function proxy(request: NextRequest) {
   // 3. After Auth (Role-Guarded Dashboards)
 
   // Super Admin
-  if (pathname.startsWith('/admin/dashboard')) {
+  if (pathname.startsWith('/admin') && !pathname.startsWith('/admin/login')) {
     if (!isAuthenticated) {
       return redirectToLogin('/admin/login');
     }
@@ -151,7 +151,7 @@ export const config = {
   matcher: [
     '/customer/dashboard/:path*',
     '/dashboard/:path*',
-    '/admin/dashboard/:path*',
+    '/admin/:path*',
     '/worker/dashboard/:path*',
     '/office-staff/dashboard/:path*',
     '/login',

@@ -35,9 +35,11 @@ import {
   MoreVertical,
   CheckSquare,
   Square,
+  Pencil,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { api, User } from '@/services';
+import { EditPersonModal } from './edit-person-modal';
 
 interface PersonDetailViewProps {
   username: string;
@@ -61,6 +63,7 @@ export function PersonDetailView({
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Time Tracker State
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -330,6 +333,14 @@ export function PersonDetailView({
 
         {/* Actions */}
         <div className="flex items-center gap-2.5 w-full md:w-auto">
+          <button
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white rounded-xl text-xs font-medium transition-all"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Modify Account</span>
+          </button>
+
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -997,6 +1008,20 @@ export function PersonDetailView({
           </div>
         </div>
       </div>
+
+      <EditPersonModal
+        isOpen={isEditModalOpen}
+        person={person}
+        onClose={() => setIsEditModalOpen(false)}
+        token={token!}
+        onSuccess={(updated) => {
+          if (updated) {
+            setPerson(updated);
+          } else {
+            handleRefresh();
+          }
+        }}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
 import { PeopleRepository } from './people.repository';
-import { CreatePersonDto, ListPeopleDto } from './dto';
+import { CreatePersonDto, ListPeopleDto, UpdatePersonDto } from './dto';
 import {
   AUTH_MESSAGES,
   PEOPLE_MESSAGES,
@@ -194,6 +194,113 @@ export class PeopleService {
 
     const { password: _, ...userWithoutPassword } = user;
     return userWithoutPassword;
+  }
+
+  async updatePerson(id: string, dto: UpdatePersonDto) {
+    const user = await this.peopleRepo.findById(id);
+    if (!user) {
+      throw new NotFoundException(PEOPLE_MESSAGES.PERSON_NOT_FOUND);
+    }
+
+    if (
+      user.role !== Role.WORKER &&
+      user.role !== Role.OFFICE_STAFF &&
+      user.role !== Role.CUSTOMER
+    ) {
+      throw new BadRequestException(PEOPLE_MESSAGES.CANNOT_MANAGE_ROLE);
+    }
+
+    const updateData: any = {};
+
+    if (dto.name !== undefined) {
+      const finalName = dto.name.trim();
+      if (!finalName) {
+        throw new BadRequestException(PEOPLE_MESSAGES.NAME_REQUIRED);
+      }
+      updateData.name = finalName;
+    }
+
+    if (dto.mobileNumber !== undefined) {
+      const finalMobile = dto.mobileNumber.trim();
+      if (!finalMobile) {
+        throw new BadRequestException(PEOPLE_MESSAGES.PHONE_REQUIRED);
+      }
+      updateData.phone = finalMobile;
+    }
+
+    if (dto.username !== undefined) {
+      const finalUsername = dto.username.trim().toLowerCase();
+      if (!finalUsername) {
+        throw new BadRequestException(VALIDATION_MESSAGES.USERNAME_REQUIRED);
+      }
+      if (finalUsername !== user.username) {
+        if (!REGEX_PATTERNS.USERNAME.test(finalUsername)) {
+          throw new BadRequestException(VALIDATION_MESSAGES.USERNAME_FORMAT);
+        }
+        const existingUsername = await this.peopleRepo.findByUsername(finalUsername);
+        if (existingUsername && existingUsername.id !== id) {
+          throw new BadRequestException(
+            AUTH_MESSAGES.USERNAME_ALREADY_EXISTS(finalUsername),
+          );
+        }
+        updateData.username = finalUsername;
+      }
+    }
+
+    if (dto.email !== undefined) {
+      const finalEmail = dto.email.trim().toLowerCase();
+      if (finalEmail !== (user.email || '')) {
+        if (finalEmail) {
+          const existingEmail = await this.peopleRepo.findByEmail(finalEmail);
+          if (existingEmail && existingEmail.id !== id) {
+            throw new BadRequestException(AUTH_MESSAGES.EMAIL_ALREADY_EXISTS);
+          }
+          updateData.email = finalEmail;
+        } else {
+          if ((dto.role || user.role) === Role.CUSTOMER) {
+            throw new BadRequestException(PEOPLE_MESSAGES.CUSTOMER_EMAIL_REQUIRED);
+          }
+          updateData.email = null;
+        }
+      }
+    }
+
+    if (dto.password !== undefined && dto.password.trim()) {
+      updateData.password = await bcrypt.hash(
+        dto.password,
+        SECURITY_CONSTANTS.BCRYPT_SALT_ROUNDS,
+      );
+    }
+
+    if (dto.role !== undefined) {
+      if (
+        dto.role !== Role.WORKER &&
+        dto.role !== Role.OFFICE_STAFF &&
+        dto.role !== Role.CUSTOMER
+      ) {
+        throw new BadRequestException(PEOPLE_MESSAGES.CANNOT_MANAGE_ROLE);
+      }
+      updateData.role = dto.role;
+    }
+
+    if (dto.isActive !== undefined) {
+      updateData.isActive = dto.isActive;
+    }
+
+    if (dto.workerStatus !== undefined) {
+      updateData.workerStatus = dto.workerStatus;
+    }
+
+    if (dto.staffStatus !== undefined) {
+      updateData.staffStatus = dto.staffStatus;
+    }
+
+    const updatedUser = await this.peopleRepo.update(id, updateData);
+    const { password: _, ...userWithoutPassword } = updatedUser;
+    return {
+      message: PEOPLE_MESSAGES.PERSON_UPDATED_SUCCESS,
+      person: userWithoutPassword,
+    };
   }
 
   async deletePerson(id: string) {

@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import NextLink from 'next/link';
 import { Search, Bell, Settings, MessageSquare, Sun, Moon, Menu } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 
@@ -62,9 +62,13 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             <button className="p-2 text-gray-400 hover:text-gray-200 transition-colors">
               <MessageSquare className="w-4 h-4" />
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-200 transition-colors">
+            <NextLink
+              href="/admin/settings"
+              className="p-2 text-gray-400 hover:text-gray-200 transition-colors"
+              title="Admin Settings & Profile"
+            >
               <Settings className="w-4 h-4" />
-            </button>
+            </NextLink>
           </div>
         </div>
       </div>

@@ -88,6 +88,7 @@ export const DASHBOARD_MESSAGES = {
 export const PEOPLE_MESSAGES = {
   PERSON_NOT_FOUND: 'Person not found',
   PERSON_CREATED_SUCCESS: (roleName: string) => `${roleName} created successfully.`,
+  PERSON_UPDATED_SUCCESS: 'User updated successfully',
   PERSON_DELETED_SUCCESS: 'Person removed successfully',
   CANNOT_MANAGE_ROLE: 'Can only manage WORKER, OFFICE_STAFF, or CUSTOMER roles',
   USERNAME_AVAILABLE: 'Username is available',
@@ -98,6 +99,15 @@ export const PEOPLE_MESSAGES = {
   PHONE_REQUIRED: 'Mobile number is required',
   CUSTOMER_EMAIL_REQUIRED: 'Email address is required for customer accounts',
 };
+
+export const PROFILE_MESSAGES = {
+  PROFILE_FETCHED_SUCCESS: 'Profile retrieved successfully',
+  PROFILE_UPDATED_SUCCESS: 'Profile updated successfully',
+  CURRENT_PASSWORD_INCORRECT: 'Current password is incorrect',
+  PASSWORD_UPDATED_SUCCESS: 'Password updated successfully',
+  EMAIL_ALREADY_IN_USE: 'Email address is already in use by another account',
+  USERNAME_ALREADY_IN_USE: 'Username is already in use by another account',
+} as const;
 
 export const ENQUIRY_MESSAGES = {
   ENQUIRY_CREATED_SUCCESS: 'Your service enquiry has been submitted successfully',

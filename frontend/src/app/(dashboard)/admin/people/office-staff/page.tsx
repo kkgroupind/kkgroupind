@@ -7,6 +7,7 @@ import { PeopleTable } from '@/components/Admin/people-table';
 import { PeopleCards } from '@/components/Admin/people-cards';
 import { PeopleSkeleton } from '@/components/Admin/people-skeleton';
 import { CreatePersonModal } from '@/components/Admin/create-person-modal';
+import { EditPersonModal } from '@/components/Admin/edit-person-modal';
 import { Building2, Plus, Search, RefreshCw, LayoutGrid, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -21,6 +22,7 @@ export default function OfficeStaffPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -204,6 +206,7 @@ export default function OfficeStaffPage() {
           people={people}
           meta={meta}
           onPageChange={setPage}
+          onEdit={(person) => setEditingPerson(person)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
           basePath="/admin/people/office-staff"
@@ -213,6 +216,7 @@ export default function OfficeStaffPage() {
           people={people}
           meta={meta}
           onPageChange={setPage}
+          onEdit={(person) => setEditingPerson(person)}
           onDelete={handleDelete}
           isDeleting={isDeleting}
           basePath="/admin/people/office-staff"
@@ -223,6 +227,14 @@ export default function OfficeStaffPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         role="OFFICE_STAFF"
+        token={token!}
+        onSuccess={() => loadPeople(searchTerm, page)}
+      />
+
+      <EditPersonModal
+        isOpen={!!editingPerson}
+        person={editingPerson}
+        onClose={() => setEditingPerson(null)}
         token={token!}
         onSuccess={() => loadPeople(searchTerm, page)}
       />

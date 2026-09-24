@@ -1,19 +1,20 @@
 'use client';
 import React from 'react';
 import NextLink from 'next/link';
-import { Trash2, Loader2, MoreHorizontal, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Loader2, MoreHorizontal, ExternalLink, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { User } from '@/services';
 
 interface PeopleTableProps {
   people: User[];
   meta?: { total: number; page: number; limit: number; totalPages: number };
   onPageChange?: (page: number) => void;
+  onEdit?: (person: User) => void;
   onDelete: (id: string) => void;
   isDeleting: string | null;
   basePath?: string;
 }
 
-export function PeopleTable({ people, meta, onPageChange, onDelete, isDeleting, basePath }: PeopleTableProps) {
+export function PeopleTable({ people, meta, onPageChange, onEdit, onDelete, isDeleting, basePath }: PeopleTableProps) {
   if (people.length === 0) {
     return (
       <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-8 text-center flex flex-col items-center justify-center">
@@ -99,6 +100,15 @@ export function PeopleTable({ people, meta, onPageChange, onDelete, isDeleting, 
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(person)}
+                          className="p-2 text-gray-400 hover:text-[#7B4DFF] hover:bg-[#7B4DFF]/10 rounded-lg transition-colors inline-flex items-center justify-center"
+                          title="Edit User Details"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
                       <NextLink
                         href={profileHref}
                         className="p-2 text-gray-400 hover:text-white hover:bg-[#2A2D35] rounded-lg transition-colors inline-flex items-center justify-center"

@@ -81,6 +81,13 @@ export class PeopleRepository {
     return users.map((u) => u.username?.toLowerCase()).filter(Boolean) as string[];
   }
 
+  async update(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    return this.prisma.user.update({
+      where: { id },
+      data,
+    });
+  }
+
   async delete(id: string): Promise<User> {
     return this.prisma.user.delete({ where: { id } });
   }

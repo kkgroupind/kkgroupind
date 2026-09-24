@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Phone,
+  Pencil,
 } from 'lucide-react';
 import { User } from '@/services';
 
@@ -21,6 +22,7 @@ interface PeopleCardsProps {
   people: User[];
   meta?: { total: number; page: number; limit: number; totalPages: number };
   onPageChange?: (page: number) => void;
+  onEdit?: (person: User) => void;
   onDelete: (id: string) => void;
   isDeleting: string | null;
   basePath?: string;
@@ -30,6 +32,7 @@ export function PeopleCards({
   people,
   meta,
   onPageChange,
+  onEdit,
   onDelete,
   isDeleting,
   basePath,
@@ -200,6 +203,17 @@ export function PeopleCards({
 
               {/* Action Footer */}
               <div className="flex items-center justify-between pt-2 gap-2">
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(person)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-[#7B4DFF] hover:bg-[#7B4DFF]/10 border border-transparent hover:border-[#7B4DFF]/20 transition-all"
+                    title="Edit user details"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+
                 <NextLink
                   href={profileHref}
                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700"

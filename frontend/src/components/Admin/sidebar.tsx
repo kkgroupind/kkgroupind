@@ -22,6 +22,14 @@ import {
   Package,
   Globe,
   BarChart3,
+  Inbox,
+  CalendarCheck,
+  Activity,
+  Coffee,
+  Bell,
+  Megaphone,
+  MessageSquare,
+  Layers,
   Lock,
   Settings,
   LogOut,
@@ -39,21 +47,21 @@ const menuData = [
       { name: 'Office Staff', icon: Briefcase, href: '/admin/people/office-staff' },
       { name: 'Customers', icon: UserCircle, href: '/admin/people/customers' },
     ] },
-    { name: 'Operations', icon: ClipboardList, subItems: [
-        { name: 'Enquiries', icon: FolderKanban, href: '/admin/operations/enquiries' },
-        { name: 'Work Orders', icon: FolderKanban, href: '/admin/operations/work-orders' },
-        { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
-        { name: 'Services', icon: Box, href: '/admin/operations/services' },
-      ] },
-    { name: 'Attendance & Availability', icon: ClipboardList, subItems: [
-        { name: 'Attendances', icon: FolderKanban, href: '/admin/attendance' },
-        { name: 'Availabilities', icon: FolderKanban, href: '/admin/availability' },
-        { name: 'Leaves', icon: ClipboardCheck, href: '/admin/leaves' },
-      ] },
-  { name: 'Communications', icon: Building2, subItems: [
-      { name: 'Notifications', icon: Building, href: '/admin/businesses/units' },
-      { name: 'Announcements', icon: Factory, href: '/admin/businesses/departments' },
-      { name: 'Complaints & Feedback', icon: Factory, href: '/admin/businesses/departments' },
+  { name: 'Operations', icon: ClipboardList, subItems: [
+      { name: 'Enquiries', icon: Inbox, href: '/admin/operations/enquiries' },
+      { name: 'Work Orders', icon: FolderKanban, href: '/admin/operations/work-orders' },
+      { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
+      { name: 'Services', icon: Layers, href: '/admin/operations/services' },
+    ] },
+  { name: 'Attendance & Availability', icon: CalendarCheck, subItems: [
+      { name: 'Attendances', icon: CalendarCheck, href: '/admin/attendance' },
+      { name: 'Availabilities', icon: Activity, href: '/admin/availability' },
+      { name: 'Leaves', icon: Coffee, href: '/admin/leaves' },
+    ] },
+  { name: 'Communications', icon: MessageSquare, subItems: [
+      { name: 'Notifications', icon: Bell, href: '/admin/communications/notifications' },
+      { name: 'Announcements', icon: Megaphone, href: '/admin/communications/announcements' },
+      { name: 'Complaints & Feedback', icon: MessageSquare, href: '/admin/communications/feedback' },
     ] },
   { name: 'Businesses', icon: Building2, subItems: [
       { name: 'Business Units', icon: Building, href: '/admin/businesses/units' },
@@ -213,17 +221,23 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
            <LogOut className="w-5 h-5 shrink-0" />
            {!isCollapsed && <span>Log out</span>}
         </button>
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-           <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center text-gray-300 font-bold shrink-0">
-             {user?.username ? user.username.charAt(0).toUpperCase() : 'O'}
-           </div>
-           {!isCollapsed && (
-             <div className="overflow-hidden">
-               <p className="text-sm font-semibold text-gray-200 truncate">{user?.username || 'Austin Martin'}</p>
-               <p className="text-xs text-gray-500 truncate">austinm@gmail.com</p>
-             </div>
-           )}
-        </div>
+        <Link
+          href="/admin/settings"
+          title="Open Admin Profile & Settings"
+          className={`flex items-center hover:bg-[#1A1C23] p-2 rounded-xl transition-colors ${isCollapsed ? 'justify-center' : 'gap-3'}`}
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B4DFF] to-indigo-600 p-[2px] shrink-0">
+            <div className="w-full h-full bg-[#1A1C23] rounded-full flex items-center justify-center text-white font-bold text-sm">
+              {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
+            </div>
+          </div>
+          {!isCollapsed && (
+            <div className="overflow-hidden text-left">
+              <p className="text-sm font-semibold text-gray-200 truncate">{user?.name || user?.username || 'Super Admin'}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email || `@${user?.username || 'admin'}`}</p>
+            </div>
+          )}
+        </Link>
       </div>
     </aside>
   );

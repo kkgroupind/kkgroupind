@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
   CheckUsernameDto,
   CreatePersonDto,
   ListPeopleDto,
+  UpdatePersonDto,
 } from './dto';
 
 @Controller(['admin/people', 'people'])
@@ -52,6 +54,15 @@ export class PeopleController {
   @Get(':username')
   async getPersonByUsername(@Param('username') username: string) {
     return this.peopleService.getPersonByUsername(username);
+  }
+
+  @Roles(Role.SUPER_ADMIN)
+  @Patch(':id')
+  async updatePerson(
+    @Param('id') id: string,
+    @Body() dto: UpdatePersonDto,
+  ) {
+    return this.peopleService.updatePerson(id, dto);
   }
 
   @Roles(Role.SUPER_ADMIN)

@@ -10,6 +10,18 @@ export interface CreatePersonData {
   email?: string;
 }
 
+export interface UpdatePersonData {
+  name?: string;
+  mobileNumber?: string;
+  username?: string;
+  password?: string;
+  role?: 'WORKER' | 'OFFICE_STAFF' | 'CUSTOMER';
+  email?: string;
+  isActive?: boolean;
+  workerStatus?: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY';
+  staffStatus?: 'AVAILABLE' | 'OFF_DUTY';
+}
+
 export interface ListPeopleParams {
   role?: string;
   search?: string;
@@ -78,6 +90,12 @@ export const peopleService = {
       { method: 'GET' },
       token,
     ),
+
+  updatePerson: (id: string, data: UpdatePersonData, token: string) =>
+    request<{ message: string; person: User }>(`/admin/people/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }, token),
 
   deletePerson: (id: string, token: string) =>
     request<{ message: string }>(`/admin/people/${id}`, {
