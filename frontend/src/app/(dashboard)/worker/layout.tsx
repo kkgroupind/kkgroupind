@@ -1,5 +1,6 @@
 import React from 'react';
 import { RoleGuard } from '@/components/role-guard';
+import { WorkerProvider } from '@/context/worker-context';
 
 export default function WorkerDashboardLayout({
   children,
@@ -13,7 +14,8 @@ export default function WorkerDashboardLayout({
       roleLabel="Worker"
       accentColor="amber"
     >
-      {children}
+      <WorkerProvider>{children}</WorkerProvider>
     </RoleGuard>
   );
 }
+

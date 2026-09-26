@@ -20,7 +20,7 @@ import {
   ChevronDown,
   Briefcase,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 export interface NavItem {
   id: string;
@@ -45,7 +45,7 @@ interface WorkerNavbarProps {
 }
 
 export function WorkerNavbar({
-  activeTab = 'home',
+  activeTab,
   onTabChange,
   onLogout,
   hasNotifications = true,
@@ -59,8 +59,20 @@ export function WorkerNavbar({
   userRole = 'WORKER',
 }: WorkerNavbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Compute active tab dynamically from pathname if not explicitly passed
+  const currentTab =
+    activeTab ||
+    (pathname.startsWith('/worker/jobs')
+      ? 'tasks'
+      : pathname.startsWith('/worker/notifications')
+      ? 'notifications'
+      : pathname.startsWith('/worker/profile')
+      ? 'profile'
+      : 'home');
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -79,11 +91,12 @@ export function WorkerNavbar({
   const handleNavClick = (tabId: string) => {
     if (tabId === 'profile') {
       router.push('/worker/profile');
-      return;
-    }
-    if (activeTab === 'profile') {
+    } else if (tabId === 'tasks' || tabId === 'jobs') {
+      router.push('/worker/jobs');
+    } else if (tabId === 'notifications') {
+      router.push('/worker/notifications');
+    } else {
       router.push('/worker/dashboard');
-      return;
     }
     onTabChange?.(tabId);
   };
@@ -157,7 +170,7 @@ export function WorkerNavbar({
           <div className="hidden md:flex items-center gap-1.5 lg:gap-2 overflow-x-auto scrollbar-none py-0.5">
             {desktopNavItems.map((item) => {
               const Icon = item.icon;
-              const isActive = activeTab === item.id;
+              const isActive = currentTab === item.id;
 
               return (
                 <button
@@ -348,7 +361,7 @@ export function WorkerNavbar({
       >
         {mobileNavItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeTab === item.id;
+          const isActive = currentTab === item.id;
 
           return (
             <button

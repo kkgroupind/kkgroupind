@@ -12,10 +12,13 @@ import {
   UpdateWorkerProfileData,
   ServiceEnquiry,
 } from '@/services';
+import { useWorker } from '@/context/worker-context';
 import {
   WorkerNavbar,
   WorkerAvatarCropModal,
   WorkerAvailabilityModal,
+  WorkerCrewList,
+  WorkerLiveMap,
 } from '@/components/Worker';
 import {
   User as UserIcon,
@@ -45,6 +48,7 @@ import {
 export default function WorkerProfilePage() {
   const router = useRouter();
   const { user: authUser, token, isLoading: authLoading, logout, refreshUser } = useAuth();
+  const { crewMembers, activeJob } = useWorker();
   const toast = useToast();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'shift'>('profile');
@@ -394,8 +398,9 @@ export default function WorkerProfilePage() {
         userRole={authUser?.role || 'WORKER'}
       />
 
-      {/* 2. MAIN PROFILE CONTAINER */}
-      <div className="w-full max-w-[1380px] space-y-6">
+      {/* 2. MAIN PROFILE CONTAINER WITH RIGHT SIDEBAR */}
+      <div className="w-full max-w-[1480px] flex items-start gap-5 lg:gap-6 relative">
+        <div className="flex-1 min-w-0 space-y-6">
         {/* Breadcrumb & Navigation Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs">
           <div className="flex items-center gap-3">
@@ -1050,6 +1055,19 @@ export default function WorkerProfilePage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Right Sidebar Panel: Field Squad & Live Map */}
+      <aside
+          aria-label="Field Squad & Live Map"
+          className="hidden lg:flex w-72 xl:w-80 shrink-0 sticky top-28 bg-white rounded-[32px] sm:rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(94,66,180,0.08)] border border-white/90 flex-col justify-between gap-4 transition-all z-30 max-h-[calc(100vh-8.5rem)] overflow-hidden"
+        >
+          <WorkerCrewList members={crewMembers} />
+          <WorkerLiveMap
+            locationTitle={activeJob?.location || 'Kerala Operations Sector'}
+            operatives={crewMembers}
+          />
+        </aside>
       </div>
 
       {/* ========================================================
