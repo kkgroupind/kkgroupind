@@ -20,6 +20,7 @@ import {
   History,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 import { WorkerShell, WorkerDutyCards } from '@/components/Worker';
 import { ServiceEnquiry } from '@/services';
 
@@ -39,17 +40,13 @@ export default function WorkerDashboardPage() {
     completedJobsCount,
   } = useWorker();
 
+  const { language, t, translateService } = useWorkerLanguage();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [historyFilter, setHistoryFilter] = useState<'ALL' | 'THIS_MONTH'>('ALL');
 
-  // Format today's date in Malayalam & English
+  // Format today's date in Malayalam, Hindi & English
   const today = new Date();
-  const dateFormattedEnglish = today.toLocaleDateString('en-IN', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
 
   const monthMalayalamMap: Record<number, string> = {
     0: 'ജനുവരി',
@@ -76,9 +73,43 @@ export default function WorkerDashboardPage() {
     6: 'ശനി',
   };
 
-  const dateFormattedMalayalam = `${dayMalayalamMap[today.getDay()]}, ${today.getDate()} ${
-    monthMalayalamMap[today.getMonth()]
-  } ${today.getFullYear()}`;
+  const primaryDateFormatted =
+    language === 'hi'
+      ? today.toLocaleDateString('hi-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : language === 'ml'
+      ? `${dayMalayalamMap[today.getDay()]}, ${today.getDate()} ${
+          monthMalayalamMap[today.getMonth()]
+        } ${today.getFullYear()}`
+      : today.toLocaleDateString('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+
+  const secondaryDateFormatted =
+    language === 'en'
+      ? `${dayMalayalamMap[today.getDay()]}, ${today.getDate()} ${
+          monthMalayalamMap[today.getMonth()]
+        } ${today.getFullYear()} • Kerala Ops Hub`
+      : language === 'ml'
+      ? today.toLocaleDateString('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      : today.toLocaleDateString('en-IN', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
 
   // Filter previous completed works
   const previousWorks = useMemo(() => {
@@ -140,14 +171,14 @@ export default function WorkerDashboardPage() {
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-xs font-bold uppercase tracking-wider text-purple-200">
-                    ഇന്നത്തെ തീയതി • Today's Shift
+                    {t('todayDate')} • {t('todayShift')}
                   </span>
                 </div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white">
-                  {dateFormattedEnglish}
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white capitalize">
+                  {primaryDateFormatted}
                 </h1>
                 <p className="text-xs sm:text-sm font-semibold text-purple-200/90 mt-1">
-                  {dateFormattedMalayalam}
+                  {secondaryDateFormatted}
                 </p>
               </div>
 
@@ -167,22 +198,22 @@ export default function WorkerDashboardPage() {
                     isOnDuty ? 'bg-white animate-ping' : 'bg-slate-300'
                   }`}
                 />
-                <span>{isOnDuty ? 'ഫീൽഡ് ഡ്യൂട്ടി സജീവം (Available)' : 'അവധിയാണ് (Off Duty)'}</span>
+                <span>{isOnDuty ? t('dutyAvailable') : t('dutyOff')}</span>
               </button>
             </div>
 
             {/* Quick Metrics Bar */}
             <div className="relative z-10 grid grid-cols-3 gap-2.5 pt-4 border-t border-white/15">
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <span className="text-[11px] font-semibold text-purple-200 block">Active Work</span>
+                <span className="text-[11px] font-semibold text-purple-200 block">{t('activeWorkMetric')}</span>
                 <span className="text-lg sm:text-xl font-black text-white">{activeJobsCount}</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <span className="text-[11px] font-semibold text-purple-200 block">Assigned New</span>
+                <span className="text-[11px] font-semibold text-purple-200 block">{t('assignedNewMetric')}</span>
                 <span className="text-lg sm:text-xl font-black text-white">{assignedJobsCount}</span>
               </div>
               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
-                <span className="text-[11px] font-semibold text-purple-200 block">Completed</span>
+                <span className="text-[11px] font-semibold text-purple-200 block">{t('completedMetric')}</span>
                 <span className="text-lg sm:text-xl font-black text-white">{completedJobsCount}</span>
               </div>
             </div>
@@ -197,10 +228,10 @@ export default function WorkerDashboardPage() {
                 </div>
                 <div>
                   <h2 className="text-base font-extrabold text-slate-900 tracking-tight">
-                    ഇന്നത്തെ ജോലി / Today's Active Work
+                    {t('todayWork')}
                   </h2>
                   <p className="text-xs text-slate-500 font-medium">
-                    Current work order requiring your operative field execution
+                    {t('currentWorkSubtitle')}
                   </p>
                 </div>
               </div>
@@ -224,14 +255,14 @@ export default function WorkerDashboardPage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-base sm:text-lg font-black text-slate-900">
-                        {currentWork.serviceName}
+                        {translateService(currentWork.serviceName)}
                       </h3>
                       <span className="font-mono text-xs font-bold bg-purple-100 text-[#5E42B4] px-2.5 py-0.5 rounded-full">
                         {currentWork.trackingNumber}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Customer: <strong className="text-slate-800">{currentWork.customerName}</strong>
+                      {t('customer')}: <strong className="text-slate-800">{currentWork.customerName}</strong>
                     </p>
                   </div>
 
@@ -242,7 +273,7 @@ export default function WorkerDashboardPage() {
                       onClick={() => updateJobStatus(currentWork.id, 'IN_PROGRESS')}
                       className="px-4 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E359B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                     >
-                      {actionLoadingId === currentWork.id ? 'Starting...' : 'Start Job (ആരംഭിക്കുക)'}
+                      {actionLoadingId === currentWork.id ? t('starting') : t('startJob')}
                     </button>
                   ) : (
                     <button
@@ -251,7 +282,7 @@ export default function WorkerDashboardPage() {
                       onClick={() => updateJobStatus(currentWork.id, 'COMPLETED')}
                       className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                     >
-                      {actionLoadingId === currentWork.id ? 'Completing...' : 'Mark Completed (പൂർത്തിയായി)'}
+                      {actionLoadingId === currentWork.id ? t('completing') : t('markCompleted')}
                     </button>
                   )}
                 </div>
@@ -313,16 +344,16 @@ export default function WorkerDashboardPage() {
                   <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-800">
-                  നിലവിൽ ആക്റ്റീവ് വർക്കുകൾ ഇല്ല / Standby Mode
+                  {t('noActiveWorkTitle')}
                 </h3>
                 <p className="text-xs text-slate-500 max-w-md">
-                  You currently have no active jobs in progress. When the office dispatch desk allocates a new customer order to you, it will appear here instantly.
+                  {t('noActiveWorkDesc')}
                 </p>
                 <Link
                   href="/worker/jobs"
                   className="mt-2 text-xs font-bold px-4 py-2 rounded-xl bg-white border border-slate-200 text-[#5E42B4] hover:bg-slate-50 transition-colors shadow-xs"
                 >
-                  View All Assigned Jobs ({jobs.length})
+                  {t('jobsCenter')} ({jobs.length})
                 </Link>
               </div>
             )}
@@ -336,7 +367,7 @@ export default function WorkerDashboardPage() {
             onToggleDuty={requestToggleDuty}
             isTogglingDuty={togglingDuty}
             activeJobTitle={currentWork ? currentWork.serviceName : 'Standby / Ready'}
-            totalTimeWorked={`${completedJobsCount} Completed`}
+            totalTimeWorked={`${completedJobsCount} ${t('completedMetric')}`}
             currentMonth={today.toLocaleString('en-US', { month: 'long' })}
             onViewActiveJob={() => {
               if (currentWork) {
@@ -359,10 +390,10 @@ export default function WorkerDashboardPage() {
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                മുൻകാല ജോലികൾ / Work History & Previous Works
+                {t('previousWorks')}
               </h2>
               <p className="text-xs text-slate-500 font-medium">
-                Complete record of your past completed work orders, dispatches, and dates
+                {t('previousWorksSubtitle')}
               </p>
             </div>
           </div>
@@ -378,7 +409,7 @@ export default function WorkerDashboardPage() {
                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Time ({jobs.filter((j) => j.status === 'COMPLETED').length})
+              {t('allFilter')} ({jobs.filter((j) => j.status === 'COMPLETED').length})
             </button>
             <button
               type="button"
@@ -389,13 +420,13 @@ export default function WorkerDashboardPage() {
                   : 'bg-slate-100 text-slate-600 hover:text-slate-900'
               }`}
             >
-              This Month
+              {t('thisMonthFilter')}
             </button>
             <Link
               href="/worker/jobs"
               className="text-xs font-bold text-[#5E42B4] hover:underline flex items-center gap-1 ml-2"
             >
-              <span>Jobs Center</span>
+              <span>{t('jobsCenter')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -430,23 +461,23 @@ export default function WorkerDashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-extrabold text-sm sm:text-base text-slate-900 group-hover:text-[#5E42B4] transition-colors truncate">
-                          {job.serviceName}
+                          {translateService(job.serviceName)}
                         </span>
                         <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                           {job.trackingNumber}
                         </span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          Completed (പൂർത്തിയായി)
+                          {t('completedBadge')}
                         </span>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 mt-1">
                         <span>
-                          Customer: <strong className="text-slate-700">{job.customerName}</strong>
+                          {t('customer')}: <strong className="text-slate-700">{job.customerName}</strong>
                         </span>
                         <span>•</span>
                         <span>
-                          Location: <strong className="text-slate-700">{job.location || job.district || 'Kerala'}</strong>
+                          {t('site')}: <strong className="text-slate-700">{job.location || job.district || 'Kerala'}</strong>
                         </span>
                         {job.workDurationMinutes && (
                           <>
@@ -471,9 +502,9 @@ export default function WorkerDashboardPage() {
                         e.stopPropagation();
                         openJobModal(job);
                       }}
-                      className="text-xs font-bold text-[#5E42B4] hover:text-[#452D8A] bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition-colors"
+                      className="text-xs font-bold text-[#5E42B4] hover:text-[#452D8A] bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
                     >
-                      Details
+                      {t('viewDetails')}
                     </button>
                   </div>
                 </div>
@@ -483,9 +514,9 @@ export default function WorkerDashboardPage() {
         ) : (
           <div className="py-12 text-center rounded-2xl bg-slate-50/60 border border-slate-100 flex flex-col items-center justify-center gap-2 text-slate-400">
             <CheckCircle2 className="w-10 h-10 text-slate-300 mb-1" />
-            <p className="text-sm font-bold text-slate-700">മുൻകാല ജോലികൾ ഒന്നും രേഖപ്പെടുത്തിയിട്ടില്ല</p>
+            <p className="text-sm font-bold text-slate-700">{t('noPreviousWorkTitle')}</p>
             <p className="text-xs max-w-sm">
-              No completed previous works found. Once you complete assigned field work orders, your entire verified job ledger and history will be listed here.
+              {t('noPreviousWorkDesc')}
             </p>
           </div>
         )}

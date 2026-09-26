@@ -73,6 +73,11 @@ model User {
   workerAssignments   ServiceEnquiry[] @relation("WorkerAssignments")
   createdEnquiries    ServiceEnquiry[] @relation("CreatedEnquiries")
 
+  recordedFinances    FinancialTransaction[] @relation("RecordedFinances")
+  verifiedFinances    FinancialTransaction[] @relation("VerifiedFinances")
+  workerFinances      FinancialTransaction[] @relation("WorkerFinances")
+  auditLogs           AuditLog[]             @relation("UserAuditLogs")
+
   @@map("users")
 }
 
@@ -157,6 +162,8 @@ model ServiceEnquiry {
   workerId            String?
   worker              User?         @relation("WorkerAssignments", fields: [workerId], references: [id], onDelete: SetNull)
 
+  financialTransactions FinancialTransaction[]
+
   assignedAt          DateTime?
   completedAt         DateTime?
   createdAt           DateTime      @default(now())
@@ -193,4 +200,104 @@ model Service {
   @@index([category])
   @@map("services")
 }
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionCategory {
+  // Income categories
+  SERVICE_PAYMENT
+  ADVANCE_PAYMENT
+  MILESTONE_PAYMENT
+  FINAL_SETTLEMENT
+
+  // Expense categories
+  FUEL_DIESEL
+  WORKER_WAGE
+  WORKER_BATA
+  MATERIAL_PURCHASE
+  EQUIPMENT_REPAIR
+  OFFICE_EXPENSE
+  TRANSPORT_TRAVEL
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+}
+
+enum FinancialStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model FinancialTransaction {
+  id                String              @id @default(uuid())
+  transactionNumber String              @unique
+  type              TransactionType
+  category          TransactionCategory
+  amount            Float
+  date              DateTime
+  dateString        String              // YYYY-MM-DD
+  paymentMethod     PaymentMethod       @default(CASH)
+  status            FinancialStatus     @default(PENDING)
+  referenceNumber   String?
+  serviceType       String?
+  customerName      String?
+  vendorName        String?
+  notes             String?
+  receiptUrl        String?
+
+  enquiryId         String?
+  enquiry           ServiceEnquiry?     @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+
+  workerId          String?
+  worker            User?               @relation("WorkerFinances", fields: [workerId], references: [id], onDelete: SetNull)
+
+  recordedById      String
+  recordedBy        User                @relation("RecordedFinances", fields: [recordedById], references: [id], onDelete: Cascade)
+
+  verifiedById      String?
+  verifiedBy        User?               @relation("VerifiedFinances", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@index([dateString])
+  @@index([type])
+  @@index([status])
+  @@index([category])
+  @@index([recordedById])
+  @@index([enquiryId])
+  @@map("financial_transactions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  user       User?    @relation("UserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+  userName   String?
+  userEmail  String?
+  userRole   Role?
+  action     String
+  entityType String
+  entityId   String?
+  details    String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
 

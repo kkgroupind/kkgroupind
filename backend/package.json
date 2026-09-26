@@ -9,6 +9,7 @@
   "scripts": {
     "build": "nest build && echo Build Successfull",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed-finance": "tsx prisma/seed-finance.ts",
     "db:backfill-usernames": "tsx prisma/backfill-usernames.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

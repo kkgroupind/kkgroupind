@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { ServiceEnquiry, EnquiryService } from '@/services';
 import { useAuth } from '@/context/auth-context';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 
 interface WorkerJobDetailsModalProps {
   job: ServiceEnquiry | null;
@@ -42,6 +43,7 @@ export function WorkerJobDetailsModal({
   onJobUpdated,
 }: WorkerJobDetailsModalProps) {
   const { token } = useAuth();
+  const { language, t, translateService } = useWorkerLanguage();
 
   const [localJob, setLocalJob] = useState<ServiceEnquiry | null>(job);
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
@@ -213,14 +215,14 @@ export function WorkerJobDetailsModal({
               )}
             </div>
             <h3 className="text-lg sm:text-xl font-bold text-white leading-tight">
-              {localJob.serviceName}
+              {translateService(localJob.serviceName)}
             </h3>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('close')}
             className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -239,7 +241,7 @@ export function WorkerJobDetailsModal({
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
-                Work Site Location (Kerala)
+                {t('workSiteLocation')} (Kerala)
               </span>
               <div className="flex items-start gap-1.5 text-white font-semibold text-xs sm:text-sm">
                 <MapPin className="w-4 h-4 text-[#2A835F] shrink-0 mt-0.5" />
@@ -256,7 +258,7 @@ export function WorkerJobDetailsModal({
               className="bg-[#2A835F] hover:bg-[#236D4F] text-white px-3.5 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer shrink-0"
             >
               <Navigation className="w-3.5 h-3.5" />
-              <span>Start Navigation</span>
+              <span>{t('startNavigation')}</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
@@ -265,7 +267,7 @@ export function WorkerJobDetailsModal({
           {localJob.locationRemarks && (
             <div className="pt-2 border-t border-slate-700/60 text-xs text-slate-300 bg-black/20 p-2.5 rounded-xl">
               <strong className="text-[#34d399] font-semibold block mb-0.5">
-                Access Remarks &amp; Landmarks:
+                {t('landmarks')}:
               </strong>
               {localJob.locationRemarks}
             </div>
@@ -275,7 +277,7 @@ export function WorkerJobDetailsModal({
             <div className="flex items-center gap-1.5 text-xs text-amber-300 font-medium">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
               <span>
-                Target Completion: <strong>{new Date(localJob.deadline).toLocaleDateString()}</strong>
+                {t('targetCompletion')}: <strong>{new Date(localJob.deadline).toLocaleDateString(language === 'hi' ? 'hi-IN' : language === 'ml' ? 'ml-IN' : 'en-IN')}</strong>
               </span>
             </div>
           )}
@@ -312,7 +314,7 @@ export function WorkerJobDetailsModal({
         {/* Operational Tasks & Instructions */}
         <div className="space-y-2 text-xs">
           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-            Work Specifications &amp; Requirements
+            {t('workSpecs')}
           </label>
           <p className="bg-[#1E293B]/60 border border-slate-750 p-3.5 rounded-2xl text-slate-200 font-medium leading-relaxed">
             {localJob.message}
@@ -320,7 +322,7 @@ export function WorkerJobDetailsModal({
 
           {localJob.notes && (
             <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-              <strong className="font-bold text-amber-200">Office Dispatch Instructions: </strong>
+              <strong className="font-bold text-amber-200">{t('officeInstructions')}: </strong>
               {localJob.notes}
             </div>
           )}
@@ -329,7 +331,7 @@ export function WorkerJobDetailsModal({
             <div className="p-2.5 rounded-xl bg-[#2A835F]/15 border border-[#2A835F]/30 text-[#34d399] text-xs flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#34d399] shrink-0" />
               <span>
-                <strong>Worker Commitment: </strong> {localJob.workerAcceptance}
+                <strong>{t('workerCommitment')}: </strong> {localJob.workerAcceptance}
               </span>
             </div>
           )}
@@ -349,7 +351,7 @@ export function WorkerJobDetailsModal({
               }`}
             />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              {localJob.status.replace('_', ' ')}
+              {isCompleted ? t('completedBadge') : isInProgress ? t('inProgress') : t('assigned')}
             </span>
           </div>
 
@@ -368,7 +370,7 @@ export function WorkerJobDetailsModal({
                 ) : (
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 )}
-                <span>Accept: Finish Today</span>
+                <span>{t('acceptFinishToday')}</span>
               </button>
             )}
 
@@ -385,7 +387,7 @@ export function WorkerJobDetailsModal({
                 ) : (
                   <PlayCircle className="w-3.5 h-3.5" />
                 )}
-                <span>{isHourly ? 'Arrived on Site & Start Timer' : 'Start Work'}</span>
+                <span>{isHourly ? 'Arrived on Site & Start Timer' : t('startWork')}</span>
               </button>
             )}
 
@@ -402,7 +404,7 @@ export function WorkerJobDetailsModal({
                 ) : (
                   <CheckCircle className="w-3.5 h-3.5" />
                 )}
-                <span>{isHourly ? 'Complete Work & Stop Timer' : 'Mark Completed'}</span>
+                <span>{isHourly ? 'Complete Work & Stop Timer' : t('markCompleted')}</span>
               </button>
             )}
 
@@ -411,7 +413,7 @@ export function WorkerJobDetailsModal({
               onClick={onClose}
               className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
-              Close
+              {t('close')}
             </button>
           </div>
         </div>

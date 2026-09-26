@@ -24,6 +24,7 @@ import {
   LogOut,
   X,
   Radio,
+  IndianRupee,
 } from 'lucide-react';
 
 export type OfficeStaffSection =
@@ -35,6 +36,7 @@ export type OfficeStaffSection =
   | 'operations-works'
   | 'operations-assignments'
   | 'operations-services'
+  | 'operations-finance'
   | 'workforce-attendance'
   | 'workforce-availability'
   | 'workforce-leave'
@@ -305,6 +307,19 @@ export function OfficeStaffSidebar({
                 >
                   <Box className="w-4 h-4 shrink-0" />
                   <span>Services</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleItemClick('operations-finance')}
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
+                    isCurrent('operations-finance')
+                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
+                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                  }`}
+                >
+                  <IndianRupee className="w-4 h-4 shrink-0 text-[#2A835F]" />
+                  <span>Finance & Collections</span>
                 </button>
               </div>
             )}

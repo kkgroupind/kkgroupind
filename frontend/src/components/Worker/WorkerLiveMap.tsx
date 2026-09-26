@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { MapPin, Navigation, Compass } from 'lucide-react';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 
 export interface LiveMapOperative {
   id: string;
@@ -20,6 +21,8 @@ export function WorkerLiveMap({
   locationTitle = 'Kerala Operations Hub',
   operatives = [],
 }: WorkerLiveMapProps) {
+  const { t } = useWorkerLanguage();
+
   const handleOpenGoogleMaps = () => {
     // Open Kerala site coordinates or destination in GPS
     const query = locationTitle
@@ -42,7 +45,7 @@ export function WorkerLiveMap({
           </div>
           <div className="min-w-0">
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight leading-tight">
-              Live Map
+              {t('liveMap')}
             </h3>
             <span className="text-[10px] font-semibold text-slate-400 truncate block max-w-[150px]">
               {locationTitle} &bull; Active Hub
@@ -56,7 +59,7 @@ export function WorkerLiveMap({
           className="text-xs font-bold text-[#5E42B4] hover:underline cursor-pointer flex items-center gap-1 shrink-0"
         >
           <Navigation className="w-3 h-3" />
-          <span>GPS</span>
+          <span>{t('gpsNavigation')}</span>
         </button>
       </div>
 

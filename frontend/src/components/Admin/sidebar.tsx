@@ -32,6 +32,7 @@ import {
   MessageSquare,
   Layers,
   Lock,
+  ShieldCheck,
   Settings,
   LogOut,
   X,
@@ -75,6 +76,7 @@ const menuData = [
   { name: 'Reports', icon: BarChart3, href: '/admin/reports' },
   { type: 'divider' },
   { name: 'Access Control', icon: Lock, href: '/admin/access-control' },
+  { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
   { name: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
 

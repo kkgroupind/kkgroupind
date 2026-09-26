@@ -15,6 +15,7 @@ import {
   CheckCheck,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 import { WorkerShell } from '@/components/Worker';
 
 export default function WorkerNotificationsPage() {
@@ -25,6 +26,8 @@ export default function WorkerNotificationsPage() {
     openJobModal,
     assignedJobsCount,
   } = useWorker();
+
+  const { language, t, translateService } = useWorkerLanguage();
 
   const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'DUTY'>('ALL');
 
@@ -44,14 +47,14 @@ export default function WorkerNotificationsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                  അറിയിപ്പുകൾ / Notifications
+                  {t('notificationsTitle')}
                 </h1>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
-                  {assignedJobsCount} New Dispatches
+                  {assignedJobsCount} {t('newDispatches')}
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Real-time operational alerts, newly dispatched customer orders, and field shift logs
+                {t('notificationsSubtitle')}
               </p>
             </div>
           </div>
@@ -67,7 +70,7 @@ export default function WorkerNotificationsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All Notifications
+              {t('allNotifications')}
             </button>
             <button
               type="button"
@@ -78,7 +81,7 @@ export default function WorkerNotificationsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              New Dispatches ({assignedJobsCount})
+              {t('newDispatches')} ({assignedJobsCount})
             </button>
             <button
               type="button"
@@ -89,7 +92,7 @@ export default function WorkerNotificationsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Shift Status
+              {t('shiftStatus')}
             </button>
           </div>
         </div>
@@ -113,17 +116,25 @@ export default function WorkerNotificationsPage() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-slate-900">
                       {isOnDuty
-                        ? 'ഫീൽഡ് ഡ്യൂട്ടി സജീവമാണ് / Attendance Active'
-                        : 'ഡ്യൂട്ടി അവധിയാണ് / Off Duty Status'}
+                        ? t('dutyAvailable')
+                        : t('dutyOff')}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/70 text-slate-700">
-                      Daily Status
+                      {t('shiftStatus')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 mt-1 max-w-xl">
                     {isOnDuty
-                      ? 'You are marked Available today. Office dispatch coordinators can allocate new customer orders to your queue.'
-                      : 'You are marked Off Duty. No new work orders will be assigned until you toggle back on duty.'}
+                      ? (language === 'hi'
+                          ? 'आप आज काम के लिए उपलब्ध हैं। कार्यालय समन्वयकर्ता आपके खाते में नए कार्य आदेश आवंटित कर सकते हैं।'
+                          : language === 'ml'
+                          ? 'നിങ്ങൾ ഇന്ന് ലഭ്യമാണ്. പുതിയ ഓർഡറുകൾ അസൈൻ ചെയ്യാവുന്നതാണ്.'
+                          : 'You are marked Available today. Office dispatch coordinators can allocate new customer orders to your queue.')
+                      : (language === 'hi'
+                          ? 'आपकी ड्यूटी बंद है। दोबारा ड्यूटी सक्रिय करने तक कोई नया कार्य नहीं सौंपा जाएगा।'
+                          : language === 'ml'
+                          ? 'ഡ്യൂട്ടി അവധിയാണ്. സ്റ്റാറ്റസ് മാറ്റുന്നതുവരെ പുതിയ ഓർഡറുകൾ ലഭിക്കില്ല.'
+                          : 'You are marked Off Duty. No new work orders will be assigned until you toggle back on duty.')}
                   </p>
                 </div>
               </div>
@@ -133,7 +144,7 @@ export default function WorkerNotificationsPage() {
                 onClick={requestToggleDuty}
                 className="text-xs font-bold px-4 py-2 rounded-xl bg-white border border-slate-200 text-[#5E42B4] hover:bg-slate-50 transition-colors shadow-xs shrink-0 cursor-pointer"
               >
-                Change Shift Status
+                {t('changeShiftStatus')}
               </button>
             </div>
           )}
@@ -153,17 +164,17 @@ export default function WorkerNotificationsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-extrabold text-slate-900 group-hover:text-[#5E42B4] transition-colors">
-                        പുതിയ വർക്ക് ഓർഡർ / New Work Order Dispatched: {job.serviceName}
+                        {t('newOrderDispatched')}: {translateService(job.serviceName)}
                       </span>
                       <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#5E42B4] text-white">
                         {job.trackingNumber}
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        Action Required
+                        {t('actionRequired')}
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 mt-1">
-                      Customer: <strong className="text-slate-800">{job.customerName}</strong> • Site:{' '}
+                      {t('customer')}: <strong className="text-slate-800">{job.customerName}</strong> • {t('site')}:{' '}
                       <strong className="text-slate-800">{job.location || job.district || 'Kerala'}</strong>
                     </p>
                   </div>
@@ -171,7 +182,7 @@ export default function WorkerNotificationsPage() {
 
                 <div className="flex items-center gap-2 sm:self-center shrink-0">
                   <span className="text-xs font-bold text-[#5E42B4] group-hover:underline flex items-center gap-1">
-                    <span>Inspect Dispatch</span>
+                    <span>{t('inspectDispatch')}</span>
                     <ChevronRight className="w-4 h-4" />
                   </span>
                 </div>
@@ -193,21 +204,21 @@ export default function WorkerNotificationsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-extrabold text-slate-900 group-hover:text-amber-800 transition-colors">
-                        Ongoing Work In Progress: {job.serviceName}
+                        {t('inProgress')}: {translateService(job.serviceName)}
                       </span>
                       <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
                         {job.trackingNumber}
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 mt-1">
-                      Customer: {job.customerName} • Site: {job.location || job.district}
+                      {t('customer')}: {job.customerName} • {t('site')}: {job.location || job.district}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 sm:self-center shrink-0">
                   <span className="text-xs font-bold text-amber-800 flex items-center gap-1">
-                    <span>Active Now</span>
+                    <span>{t('inProgress')}</span>
                     <ChevronRight className="w-4 h-4" />
                   </span>
                 </div>
@@ -229,21 +240,21 @@ export default function WorkerNotificationsPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm font-bold text-slate-800 group-hover:text-slate-950 transition-colors">
-                        Work Order Completed: {job.serviceName}
+                        {t('completedBadge')}: {translateService(job.serviceName)}
                       </span>
                       <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
                         {job.trackingNumber}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Client: {job.customerName} • Verified and logged into service ledger
+                      {t('customer')}: {job.customerName}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 sm:self-center shrink-0">
                   <span className="text-xs font-semibold text-slate-400">
-                    {new Date(job.completedAt || job.updatedAt).toLocaleDateString('en-IN')}
+                    {new Date(job.completedAt || job.updatedAt).toLocaleDateString(language === 'hi' ? 'hi-IN' : language === 'ml' ? 'ml-IN' : 'en-IN')}
                   </span>
                 </div>
               </div>
@@ -252,9 +263,9 @@ export default function WorkerNotificationsPage() {
           {jobs.length === 0 && (
             <div className="py-16 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-2">
               <Bell className="w-10 h-10 text-slate-300" />
-              <span className="font-bold text-slate-600 text-sm">No Notifications Yet</span>
+              <span className="font-bold text-slate-600 text-sm">{t('noNotificationsTitle')}</span>
               <p className="max-w-xs">
-                You are all caught up! New dispatch alerts and work order assignments will appear here.
+                {t('noNotificationsDesc')}
               </p>
             </div>
           )}

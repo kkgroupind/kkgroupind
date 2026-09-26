@@ -32,6 +32,7 @@ import {
   Filter,
   ArrowUpRight,
   Search,
+  IndianRupee,
 } from 'lucide-react';
 import {
   AttendanceService,
@@ -48,6 +49,7 @@ import {
   StaffAttendanceModal,
   AssignWorkerModal,
   CreateWorkModal,
+  OfficeStaffFinanceView,
 } from '@/components/OfficeStaff';
 
 // Services Master Catalog
@@ -846,6 +848,18 @@ export default function OfficeStaffDashboardPage() {
                 >
                   Services ({SERVICES_CATALOG.length})
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSection('operations-finance')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                    activeSection === 'operations-finance'
+                      ? 'bg-emerald-600 text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Finance & Collections</span>
+                </button>
               </div>
 
               {/* 1. Enquiries View */}
@@ -1186,6 +1200,14 @@ export default function OfficeStaffDashboardPage() {
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* 5. Finance & Daily Collections View */}
+              {activeSection === 'operations-finance' && (
+                <OfficeStaffFinanceView
+                  enquiries={enquiries}
+                  workers={workers}
+                />
               )}
             </div>
           )}

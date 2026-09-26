@@ -153,6 +153,30 @@ export const SERVICE_MESSAGES = {
   SERVICE_ID_ALREADY_EXISTS: 'A service with this service ID already exists',
 } as const;
 
+export const FINANCE_MESSAGES = {
+  TRANSACTION_CREATED_SUCCESS: 'Financial entry recorded successfully',
+  TRANSACTION_UPDATED_SUCCESS: 'Financial entry updated successfully',
+  TRANSACTION_DELETED_SUCCESS: 'Financial entry deleted successfully',
+  TRANSACTION_VERIFIED_SUCCESS: 'Financial entry verified successfully',
+  TRANSACTION_REJECTED_SUCCESS: 'Financial entry rejected successfully',
+  TRANSACTION_NOT_FOUND: 'Financial entry not found',
+  CANNOT_EDIT_VERIFIED: 'Verified financial entries cannot be modified by office staff',
+  SUMMARY_FETCHED_SUCCESS: 'Financial summary retrieved successfully',
+  CALENDAR_FETCHED_SUCCESS: 'Financial calendar data retrieved successfully',
+  TRANSACTIONS_FETCHED_SUCCESS: 'Financial transactions retrieved successfully',
+  AMOUNT_POSITIVE: 'Amount must be greater than zero',
+  DATE_REQUIRED: 'Transaction date is required',
+  TYPE_REQUIRED: 'Transaction type must be INCOME or EXPENSE',
+  CATEGORY_REQUIRED: 'Transaction category is required',
+} as const;
+
+export const AUDIT_MESSAGES = {
+  LOGS_FETCHED_SUCCESS: 'Audit logs retrieved successfully',
+  STATS_FETCHED_SUCCESS: 'Audit log statistics retrieved successfully',
+  LOG_NOT_FOUND: 'Audit log entry not found',
+} as const;
+
+
 
 
 

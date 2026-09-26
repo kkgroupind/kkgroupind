@@ -9,6 +9,7 @@ import {
   HardHat,
   Sparkles,
 } from 'lucide-react';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 
 interface WorkerDutyCardsProps {
   isOnDuty?: boolean;
@@ -29,8 +30,11 @@ export function WorkerDutyCards({
   currentMonth,
   onViewActiveJob,
 }: WorkerDutyCardsProps) {
+  const { t, translateService } = useWorkerLanguage();
+
   const dynamicMonthFull =
     currentMonth || new Date().toLocaleString('en-US', { month: 'long' });
+
   return (
     <div className="flex flex-col gap-4 w-full select-none">
       {/* 1. TOP CARD: Daily Field Duty / Attendance Card */}
@@ -60,7 +64,7 @@ export function WorkerDutyCards({
           {/* Title & Status */}
           <div className="flex flex-col min-w-0">
             <span className="text-sm sm:text-base font-black tracking-tight text-white leading-tight">
-              ഫീൽഡ് അറ്റൻഡൻസ്
+              {t('fieldAttendance')}
             </span>
             <span className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1.5">
               <span
@@ -68,14 +72,14 @@ export function WorkerDutyCards({
                   isOnDuty ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
                 }`}
               />
-              <span>{isOnDuty ? 'Available for Work / ലഭ്യമാണ്' : 'On Leave / Off Duty (അവധി)'}</span>
+              <span>{isOnDuty ? t('availableForWork') : t('onLeaveOffDuty')}</span>
             </span>
           </div>
         </div>
 
         {/* Change Status Badge */}
         <div className="shrink-0 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-bold text-white transition-colors">
-          Toggle
+          {t('toggle')}
         </div>
       </div>
 
@@ -103,10 +107,10 @@ export function WorkerDutyCards({
           </div>
           <div className="flex flex-col">
             <span className="text-sm sm:text-base font-black text-white tracking-tight">
-              Active Dispatch
+              {t('activeDispatch')}
             </span>
             <span className="text-[10px] font-semibold text-emerald-100 line-clamp-1 max-w-[160px]">
-              {activeJobTitle}
+              {translateService(activeJobTitle)}
             </span>
           </div>
         </div>
@@ -115,7 +119,7 @@ export function WorkerDutyCards({
         <div className="flex items-end justify-between relative z-10 pt-4">
           <div className="flex flex-col">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-pink-100">
-              Work Orders
+              {t('workOrdersCount')}
             </span>
             <span className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mt-1">
               {totalTimeWorked}

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Users, Mail, Phone, MessageSquare } from 'lucide-react';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 
 export interface CrewMember {
   id: string;
@@ -19,6 +20,7 @@ interface WorkerCrewListProps {
 }
 
 export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListProps) {
+  const { t } = useWorkerLanguage();
   const [activeTab, setActiveTab] = useState<'activities' | 'online'>('activities');
 
   const displayedMembers =
@@ -33,11 +35,11 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
             <Users className="w-4 h-4" />
           </div>
           <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
-            Field Squad
+            {t('fieldSquad')}
           </h3>
         </div>
         <span className="text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-          {members.filter((m) => m.isOnline).length} Active
+          {members.filter((m) => m.isOnline).length} {t('activeCrew')}
         </span>
       </div>
 
@@ -52,7 +54,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          All Squad
+          {t('allSquad')}
         </button>
         <button
           type="button"
@@ -63,7 +65,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          Online Only
+          {t('online')}
         </button>
       </div>
 

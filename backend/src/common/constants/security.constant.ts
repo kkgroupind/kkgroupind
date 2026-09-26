@@ -35,4 +35,12 @@ export const RATE_LIMITS = {
     ttl: 60000,
     limit: 5,
   },
+  FINANCE: {
+    ttl: 60000,
+    limit: 60,
+  },
+  AUDIT: {
+    ttl: 60000,
+    limit: 60,
+  },
 } as const;

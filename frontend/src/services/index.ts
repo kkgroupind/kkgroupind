@@ -4,6 +4,8 @@ import { officeStaffProfileService, officeStaffPeopleService } from './Office-St
 import { workerProfileService } from './Worker';
 import { EnquiryService } from './enquiry.service';
 import { AttendanceService } from './attendance.service';
+import { FinanceService } from './finance.service';
+import { AuditService } from './audit.service';
 
 export * from './types';
 export * from './api-client';
@@ -13,6 +15,8 @@ export * from './Office-Staff';
 export * from './Worker';
 export * from './enquiry.service';
 export * from './attendance.service';
+export * from './finance.service';
+export * from './audit.service';
 
 // Combined API object for backward compatibility and centralized access
 export const api = {
@@ -23,8 +27,11 @@ export const api = {
   ...adminServicesService,
   ...EnquiryService,
   ...AttendanceService,
+  finance: FinanceService,
+  audit: AuditService,
   officeStaffProfile: officeStaffProfileService,
   officeStaffPeople: officeStaffPeopleService,
   workerProfile: workerProfileService,
   adminServices: adminServicesService,
 };
+

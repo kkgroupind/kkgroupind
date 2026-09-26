@@ -18,6 +18,7 @@ import {
   Timer,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
+import { useWorkerLanguage } from '@/context/worker-language-context';
 import { WorkerShell } from '@/components/Worker';
 import { ServiceEnquiry } from '@/services';
 
@@ -29,6 +30,8 @@ export default function WorkerJobsPage() {
     updateJobStatus,
     actionLoadingId,
   } = useWorker();
+
+  const { language, t, translateService } = useWorkerLanguage();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'IN_PROGRESS' | 'ASSIGNED' | 'COMPLETED'>('ALL');
@@ -82,14 +85,14 @@ export default function WorkerJobsPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                  വർക്ക് ഓർഡറുകൾ / Jobs & Work Orders
+                  {t('workOrdersTitle')}
                 </h1>
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
                   {jobs.length} Total
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Browse all field dispatches, ongoing work orders, and past completion logs
+                {t('workOrdersSubtitle')}
               </p>
             </div>
           </div>
@@ -105,7 +108,7 @@ export default function WorkerJobsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              All ({counts.all})
+              {t('allFilterCount')} ({counts.all})
             </button>
             <button
               type="button"
@@ -116,7 +119,7 @@ export default function WorkerJobsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Active ({counts.inProgress})
+              {t('activeFilterCount')} ({counts.inProgress})
             </button>
             <button
               type="button"
@@ -127,7 +130,7 @@ export default function WorkerJobsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              New Assigned ({counts.assigned})
+              {t('assignedFilterCount')} ({counts.assigned})
             </button>
             <button
               type="button"
@@ -138,7 +141,7 @@ export default function WorkerJobsPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Completed ({counts.completed})
+              {t('completedFilterCount')} ({counts.completed})
             </button>
           </div>
         </div>
@@ -178,21 +181,21 @@ export default function WorkerJobsPage() {
                             }`}
                           >
                             {isAssigned
-                              ? 'Assigned'
+                              ? t('assigned')
                               : isInProgress
-                              ? 'In Progress'
-                              : 'Completed'}
+                              ? t('inProgress')
+                              : t('completedBadge')}
                           </span>
                         </div>
                         <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5E42B4] transition-colors mt-2">
-                          {job.serviceName}
+                          {translateService(job.serviceName)}
                         </h3>
                       </div>
                     </div>
 
                     <div className="space-y-2 mt-3 text-xs text-slate-600">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400">Customer:</span>
+                        <span className="text-slate-400">{t('customer')}:</span>
                         <strong className="text-slate-800">{job.customerName}</strong>
                         {job.customerPhone && (
                           <a
@@ -226,7 +229,7 @@ export default function WorkerJobsPage() {
                       {job.deadline && (
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                          <span>Deadline: {new Date(job.deadline).toLocaleDateString('en-IN')}</span>
+                          <span>{t('deadline')}: {new Date(job.deadline).toLocaleDateString(language === 'hi' ? 'hi-IN' : language === 'ml' ? 'ml-IN' : 'en-IN')}</span>
                         </div>
                       )}
 
@@ -245,7 +248,7 @@ export default function WorkerJobsPage() {
                       onClick={() => openJobModal(job)}
                       className="text-xs font-bold text-[#5E42B4] hover:text-[#462F8B] flex items-center gap-1 cursor-pointer"
                     >
-                      <span>Full Details</span>
+                      <span>{t('viewDetails')}</span>
                       <ChevronRight className="w-4 h-4" />
                     </button>
 
@@ -256,7 +259,7 @@ export default function WorkerJobsPage() {
                         onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
                         className="px-4 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E359B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                       >
-                        {actionLoadingId === job.id ? 'Starting...' : 'Start Job'}
+                        {actionLoadingId === job.id ? t('starting') : t('startJob')}
                       </button>
                     )}
 
@@ -267,14 +270,14 @@ export default function WorkerJobsPage() {
                         onClick={() => updateJobStatus(job.id, 'COMPLETED')}
                         className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                       >
-                        {actionLoadingId === job.id ? 'Completing...' : 'Mark Completed'}
+                        {actionLoadingId === job.id ? t('completing') : t('markCompleted')}
                       </button>
                     )}
 
                     {isCompleted && (
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600">
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>Done</span>
+                        <span>{t('done')}</span>
                       </span>
                     )}
                   </div>
@@ -285,11 +288,11 @@ export default function WorkerJobsPage() {
         ) : (
           <div className="py-20 text-center rounded-[28px] bg-white border border-slate-100 flex flex-col items-center justify-center gap-3 text-slate-400">
             <Briefcase className="w-12 h-12 text-slate-300" />
-            <h3 className="text-base font-bold text-slate-700">No Jobs Found</h3>
+            <h3 className="text-base font-bold text-slate-700">{t('noJobsFound')}</h3>
             <p className="text-xs max-w-sm">
               {searchQuery
-                ? `No work orders matched your search query "${searchQuery}".`
-                : 'There are currently no work orders under this status filter.'}
+                ? `"${searchQuery}"`
+                : t('noJobsFoundDesc')}
             </p>
           </div>
         )}

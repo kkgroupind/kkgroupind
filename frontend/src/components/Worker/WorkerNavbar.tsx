@@ -19,8 +19,11 @@ import {
   Settings,
   ChevronDown,
   Briefcase,
+  Globe,
+  Check,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useWorkerLanguage, WORKER_LANGUAGES } from '@/context/worker-language-context';
 
 export interface NavItem {
   id: string;
@@ -60,8 +63,11 @@ export function WorkerNavbar({
 }: WorkerNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage, t } = useWorkerLanguage();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Compute active tab dynamically from pathname if not explicitly passed
   const currentTab =
@@ -83,6 +89,12 @@ export function WorkerNavbar({
       ) {
         setIsProfileMenuOpen(false);
       }
+      if (
+        langMenuRef.current &&
+        !langMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsLangMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -102,36 +114,36 @@ export function WorkerNavbar({
   };
 
   const desktopNavItems: NavItem[] = [
-    { id: 'home', icon: Home, label: 'Home' },
+    { id: 'home', icon: Home, label: t('home') },
     {
       id: 'tasks',
       icon: Briefcase,
-      label: 'Jobs',
+      label: t('jobs'),
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
     {
       id: 'notifications',
       icon: Bell,
-      label: 'Notification',
+      label: t('notifications'),
       badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
   ];
 
   const mobileNavItems: NavItem[] = [
-    { id: 'home', icon: Home, label: 'Home' },
+    { id: 'home', icon: Home, label: t('home') },
     {
       id: 'tasks',
       icon: Briefcase,
-      label: 'Jobs',
+      label: t('jobs'),
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
     {
       id: 'notifications',
       icon: Bell,
-      label: 'Notification',
+      label: t('notifications'),
       badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
-    { id: 'profile', icon: UserCircle, label: 'Profile' },
+    { id: 'profile', icon: UserCircle, label: t('profile') },
   ];
 
   return (
@@ -157,11 +169,11 @@ export function WorkerNavbar({
                   KK GROUP
                 </span>
                 <span className="hidden sm:inline text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
-                  OPERATIVE
+                  {t('operative')}
                 </span>
               </div>
               <span className="text-[10px] font-semibold text-purple-200 uppercase tracking-wider mt-0.5">
-                {userName} &bull; കേരളം
+                {userName} • {language === 'en' ? 'Kerala' : language === 'ml' ? 'കേരളം' : 'केरल'}
               </span>
             </div>
           </div>
@@ -196,8 +208,66 @@ export function WorkerNavbar({
             })}
           </div>
 
-          {/* Right: Quick Duty Toggle, Alerts & Sign Out */}
+          {/* Right: Language Switcher, Quick Duty Toggle, Alerts & Profile */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* 1. Language Switcher Dropdown (EN / ML / HI) */}
+            <div className="relative" ref={langMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsLangMenuOpen((prev) => !prev)}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none"
+                title="Switch Language / ഭാഷ മാറ്റുക / भाषा बदलें"
+                aria-expanded={isLangMenuOpen}
+              >
+                <Globe className="w-3.5 h-3.5 text-purple-200" />
+                <span className="uppercase text-[11px] font-black">
+                  {language}
+                </span>
+                <ChevronDown
+                  className={`w-3 h-3 text-purple-200 transition-transform duration-200 ${
+                    isLangMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Language Selection Menu */}
+              {isLangMenuOpen && (
+                <div className="absolute right-0 mt-2.5 w-44 bg-[#14161D] rounded-2xl border border-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.6)] py-1.5 text-gray-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800/80">
+                    Select Language
+                  </div>
+                  <div className="p-1 space-y-0.5">
+                    {WORKER_LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        type="button"
+                        onClick={() => {
+                          setLanguage(lang.code);
+                          setIsLangMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
+                          language === lang.code
+                            ? 'bg-[#5E42B4] text-white font-bold'
+                            : 'text-gray-300 hover:text-white hover:bg-white/10'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{lang.flag}</span>
+                          <div className="flex flex-col leading-tight">
+                            <span className="font-semibold">{lang.nativeName}</span>
+                            <span className="text-[10px] opacity-70">{lang.name}</span>
+                          </div>
+                        </div>
+                        {language === lang.code && (
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Quick Duty Status Pill Toggle */}
             <button
               type="button"
@@ -219,10 +289,10 @@ export function WorkerNavbar({
                 />
               )}
               <span className="hidden sm:inline">
-                {isOnDuty ? 'On Duty' : 'Off Duty'}
+                {isOnDuty ? t('onDuty') : t('offDuty')}
               </span>
               <span className="inline sm:hidden text-[11px]">
-                {isOnDuty ? 'Duty ON' : 'Duty OFF'}
+                {isOnDuty ? 'ON' : 'OFF'}
               </span>
             </button>
 
@@ -299,9 +369,9 @@ export function WorkerNavbar({
                     >
                       <User className="w-4 h-4 text-purple-400" />
                       <div className="flex flex-col">
-                        <span className="font-semibold text-gray-200">Profile</span>
+                        <span className="font-semibold text-gray-200">{t('profile')}</span>
                         <span className="text-[10px] text-gray-500">
-                          തൊഴിലാളി വിവരങ്ങൾ
+                          {language === 'hi' ? 'कार्यकर्ता विवरण' : language === 'ml' ? 'തൊഴിലാളി വിവരങ്ങൾ' : 'Operative Credentials'}
                         </span>
                       </div>
                     </button>
@@ -316,9 +386,9 @@ export function WorkerNavbar({
                     >
                       <Settings className="w-4 h-4 text-slate-400" />
                       <div className="flex flex-col">
-                        <span className="font-semibold text-gray-200">Settings</span>
+                        <span className="font-semibold text-gray-200">{t('settings')}</span>
                         <span className="text-[10px] text-gray-500">
-                          പാസ്‌വേഡ് & സുരക്ഷ
+                          {language === 'hi' ? 'पासवर्ड एवं सुरक्षा' : language === 'ml' ? 'പാസ്‌വേഡ് & സുരക്ഷ' : 'Password & Security'}
                         </span>
                       </div>
                     </button>
@@ -336,9 +406,9 @@ export function WorkerNavbar({
                     >
                       <LogOut className="w-4 h-4" />
                       <div className="flex flex-col">
-                        <span className="font-semibold">Sign Out</span>
+                        <span className="font-semibold">{t('signOut')}</span>
                         <span className="text-[10px] text-rose-500/70">
-                          പുറത്തുകടക്കുക
+                          {language === 'hi' ? 'साइन आउट करें' : language === 'ml' ? 'പുറത്തുകടക്കുക' : 'Exit Portal'}
                         </span>
                       </div>
                     </button>
