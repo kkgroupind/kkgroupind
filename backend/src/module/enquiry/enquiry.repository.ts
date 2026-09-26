@@ -60,13 +60,13 @@ export class EnquiryRepository {
         orderBy: { createdAt: 'desc' },
         include: {
           customer: {
-            select: { id: true, name: true, email: true, phone: true },
+            select: { id: true, name: true, email: true, phone: true, avatar: true },
           },
           officeStaff: {
-            select: { id: true, name: true, username: true },
+            select: { id: true, name: true, username: true, avatar: true },
           },
           worker: {
-            select: { id: true, name: true, username: true, phone: true, workerStatus: true },
+            select: { id: true, name: true, username: true, phone: true, avatar: true, workerStatus: true },
           },
         },
       }),
@@ -80,9 +80,9 @@ export class EnquiryRepository {
     return this.prisma.serviceEnquiry.findUnique({
       where: { id },
       include: {
-        customer: { select: { id: true, name: true, email: true, phone: true } },
-        officeStaff: { select: { id: true, name: true, username: true } },
-        worker: { select: { id: true, name: true, username: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, email: true, phone: true, avatar: true } },
+        officeStaff: { select: { id: true, name: true, username: true, avatar: true } },
+        worker: { select: { id: true, name: true, username: true, phone: true, avatar: true, workerStatus: true } },
       },
     });
   }
@@ -117,6 +117,7 @@ export class EnquiryRepository {
         name: true,
         username: true,
         phone: true,
+        avatar: true,
         workerStatus: true,
         _count: {
           select: {

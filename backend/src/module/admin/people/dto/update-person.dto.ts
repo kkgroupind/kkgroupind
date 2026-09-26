@@ -60,4 +60,8 @@ export class UpdatePersonDto {
   @IsOptional()
   @IsEnum(StaffStatus)
   staffStatus?: StaffStatus;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }

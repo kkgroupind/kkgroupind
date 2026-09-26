@@ -464,8 +464,18 @@ export function PersonDetailView({
               {/* Avatar */}
               <div className="relative inline-block mb-3">
                 <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-[#7B4DFF] to-sky-500 p-[3px] shadow-[0_8px_20px_rgba(123,77,255,0.3)]">
-                  <div className="w-full h-full bg-[#1A1C23] rounded-[21px] flex items-center justify-center text-3xl font-extrabold text-white">
-                    {initial}
+                  <div className="w-full h-full bg-[#1A1C23] rounded-[21px] flex items-center justify-center text-3xl font-extrabold text-white overflow-hidden">
+                    {person.avatar ? (
+                      <img
+                        src={person.avatar}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
+                    {(!person.avatar) && <span>{initial}</span>}
                   </div>
                 </div>
               </div>

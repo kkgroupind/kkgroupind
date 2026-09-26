@@ -251,6 +251,42 @@ export function EditPersonModal({
             </div>
           )}
 
+          {/* User Profile Card Preview */}
+          <div className="flex items-center gap-3.5 p-3.5 bg-[#1A1C23] border border-gray-800/80 rounded-2xl">
+            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-tr from-[#7B4DFF] to-sky-500 p-[2px] shrink-0 shadow-sm">
+              <div className="w-full h-full bg-[#14151A] rounded-[10px] flex items-center justify-center font-bold text-sm text-gray-100 overflow-hidden">
+                {person.avatar ? (
+                  <img
+                    src={person.avatar}
+                    alt={person.name || person.username || 'Avatar'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                ) : null}
+                {!person.avatar && (
+                  <span>
+                    {(person.name || person.username || 'U').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-gray-100 text-sm truncate">
+                  {person.name || `@${person.username}`}
+                </span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#7B4DFF]/15 text-[#A78BFA] border border-[#7B4DFF]/30 uppercase">
+                  {person.role.replace('_', ' ')}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 font-mono mt-0.5">
+                @{person.username} &bull; {person.phone || 'No phone'}
+              </p>
+            </div>
+          </div>
+
           {/* Primary Identity Section */}
           <div className="space-y-4">
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">

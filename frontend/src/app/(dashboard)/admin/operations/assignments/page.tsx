@@ -229,8 +229,22 @@ export default function AdminAssignmentsPage() {
                   className="p-3.5 rounded-xl bg-[#0D0E12] border border-gray-800 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-gray-800 text-gray-200 font-medium flex items-center justify-center text-xs">
-                      {worker.name ? worker.name.charAt(0).toUpperCase() : 'W'}
+                    <div className="w-9 h-9 rounded-lg bg-gray-800 text-gray-200 font-medium flex items-center justify-center text-xs overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
+                      {worker.avatar ? (
+                        <img
+                          src={worker.avatar}
+                          alt={worker.name || worker.username || 'Worker avatar'}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : null}
+                      {!worker.avatar && (
+                        <span>
+                          {worker.name ? worker.name.charAt(0).toUpperCase() : 'W'}
+                        </span>
+                      )}
                     </div>
                     <div>
                       <h4 className="text-xs font-medium text-gray-100">
@@ -284,13 +298,49 @@ export default function AdminAssignmentsPage() {
                   </td>
                   <td className="py-3 px-4 text-gray-200">{item.serviceName}</td>
                   <td className="py-3 px-4">
-                    <div className="font-medium text-gray-100">{item.customerName}</div>
-                    <div className="text-[11px] text-gray-500">{item.customerPhone}</div>
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-xs text-sky-400 overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
+                        {item.customer?.avatar ? (
+                          <img
+                            src={item.customer.avatar}
+                            alt="Customer"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        {!item.customer?.avatar && (
+                          <span>{(item.customerName || 'C').charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-100">{item.customerName}</div>
+                        <div className="text-[11px] text-gray-500">{item.customerPhone}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-medium text-emerald-400">
-                      {item.worker?.name || item.worker?.username || 'Worker'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-xs text-emerald-400 overflow-hidden shrink-0 border border-emerald-700/40 shadow-sm">
+                        {item.worker?.avatar ? (
+                          <img
+                            src={item.worker.avatar}
+                            alt="Worker"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        {!item.worker?.avatar && (
+                          <span>{((item.worker?.name || item.worker?.username) || 'W').charAt(0).toUpperCase()}</span>
+                        )}
+                      </div>
+                      <span className="font-medium text-emerald-400">
+                        {item.worker?.name || item.worker?.username || 'Worker'}
+                      </span>
+                    </div>
                   </td>
                   <td className="py-3 px-4">
                     <span

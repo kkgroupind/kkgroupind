@@ -226,11 +226,32 @@ export default function AdminAttendancePage() {
                   return (
                     <tr key={person.id} className="hover:bg-[#1A1C23]/60 transition-colors">
                       <td className="py-3 px-4">
-                        <div className="font-medium text-gray-100">
-                          {person.name || person.username}
-                        </div>
-                        <div className="text-[11px] text-gray-500 font-mono">
-                          @{person.username}
+                        <div className="flex items-center gap-3">
+                          <div className="relative w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-xs text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
+                            {person.avatar ? (
+                              <img
+                                src={person.avatar}
+                                alt={person.name || person.username || 'Avatar'}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            ) : null}
+                            {!person.avatar && (
+                              <span>
+                                {(person.name || person.username || 'U').charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-100">
+                              {person.name || person.username}
+                            </div>
+                            <div className="text-[11px] text-gray-500 font-mono">
+                              @{person.username}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4">

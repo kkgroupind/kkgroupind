@@ -8,6 +8,7 @@ export interface CreatePersonData {
   password: string;
   role: 'WORKER' | 'OFFICE_STAFF' | 'CUSTOMER';
   email?: string;
+  avatar?: string | null;
 }
 
 export interface UpdatePersonData {
@@ -17,6 +18,7 @@ export interface UpdatePersonData {
   password?: string;
   role?: 'WORKER' | 'OFFICE_STAFF' | 'CUSTOMER';
   email?: string;
+  avatar?: string | null;
   isActive?: boolean;
   workerStatus?: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY';
   staffStatus?: 'AVAILABLE' | 'OFF_DUTY';

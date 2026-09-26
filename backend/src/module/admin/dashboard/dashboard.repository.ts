@@ -3,8 +3,11 @@ import { Prisma, PrismaService, Role, User } from '../../../database';
 
 export interface RecentUserEntity {
   id: string;
+  name: string | null;
   email: string | null;
   username: string | null;
+  phone: string | null;
+  avatar: string | null;
   role: Role;
   isEmailVerified: boolean;
   isActive: boolean;
@@ -95,8 +98,11 @@ export class DashboardRepository {
       },
       select: {
         id: true,
+        name: true,
         email: true,
         username: true,
+        phone: true,
+        avatar: true,
         role: true,
         isEmailVerified: true,
         isActive: true,

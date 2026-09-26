@@ -123,8 +123,18 @@ export function PeopleCards({
                       <div
                         className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${theme.ring} p-[2px] shadow-sm`}
                       >
-                        <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100">
-                          {initial}
+                        <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
+                          {person.avatar ? (
+                            <img
+                              src={person.avatar}
+                              alt={person.name || person.username || 'Avatar'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : null}
+                          {(!person.avatar) && <span>{initial}</span>}
                         </div>
                       </div>
                       <span

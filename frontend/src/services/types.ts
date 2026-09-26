@@ -47,6 +47,7 @@ export interface AttendanceOverviewResponse {
     username?: string | null;
     email?: string | null;
     phone?: string | null;
+    avatar?: string | null;
     role: UserRole;
     staffStatus: StaffStatus;
     isAvailable: boolean;
@@ -58,6 +59,7 @@ export interface AttendanceOverviewResponse {
     username?: string | null;
     email?: string | null;
     phone?: string | null;
+    avatar?: string | null;
     role: UserRole;
     workerStatus: WorkerStatus;
     isAvailable: boolean;
@@ -123,13 +125,14 @@ export interface ServiceEnquiry {
   completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  customer?: { id: string; name?: string | null; email?: string | null; phone?: string | null };
-  officeStaff?: { id: string; name?: string | null; username?: string | null };
+  customer?: { id: string; name?: string | null; email?: string | null; phone?: string | null; avatar?: string | null };
+  officeStaff?: { id: string; name?: string | null; username?: string | null; avatar?: string | null };
   worker?: {
     id: string;
     name?: string | null;
     username?: string | null;
     phone?: string | null;
+    avatar?: string | null;
     workerStatus: WorkerStatus;
   };
 }
@@ -139,6 +142,7 @@ export interface WorkerWithAvailability {
   name?: string | null;
   username?: string | null;
   phone?: string | null;
+  avatar?: string | null;
   workerStatus: WorkerStatus;
   _count?: {
     workerAssignments: number;

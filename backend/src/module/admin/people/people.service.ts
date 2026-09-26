@@ -149,6 +149,7 @@ export class PeopleService {
       email: finalEmail,
       password: hashedPassword,
       role: dto.role,
+      avatar: dto.avatar || null,
       isEmailVerified: true,
       isActive: true,
     });
@@ -293,6 +294,10 @@ export class PeopleService {
 
     if (dto.staffStatus !== undefined) {
       updateData.staffStatus = dto.staffStatus;
+    }
+
+    if (dto.avatar !== undefined) {
+      updateData.avatar = dto.avatar?.trim() || null;
     }
 
     const updatedUser = await this.peopleRepo.update(id, updateData);

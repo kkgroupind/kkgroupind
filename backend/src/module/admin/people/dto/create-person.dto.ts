@@ -48,4 +48,8 @@ export class CreatePersonDto {
   @IsOptional()
   @IsEmail({}, { message: VALIDATION_MESSAGES.EMAIL_INVALID })
   email?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }

@@ -53,8 +53,24 @@ export function PeopleTable({ people, meta, onPageChange, onEdit, onDelete, isDe
                 <tr key={person.id} className="hover:bg-[#1A1C23] transition-colors border-b border-gray-800/30 last:border-0">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gray-800 flex items-center justify-center text-xs font-bold text-[#7B4DFF]">
-                        {person.username?.charAt(0).toUpperCase() || 'U'}
+                      <div className="relative w-9 h-9 rounded-xl bg-gray-800 flex items-center justify-center text-xs font-bold text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
+                        {person.avatar ? (
+                          <img
+                            src={person.avatar}
+                            alt={person.name || person.username || 'User avatar'}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                        {(!person.avatar) && (
+                          <span>
+                            {person.name?.charAt(0).toUpperCase() ||
+                              person.username?.charAt(0).toUpperCase() ||
+                              'U'}
+                          </span>
+                        )}
                       </div>
                       <div className="flex flex-col">
                         <NextLink

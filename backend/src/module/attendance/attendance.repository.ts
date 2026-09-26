@@ -20,6 +20,7 @@ export class AttendanceRepository {
         email: true,
         username: true,
         phone: true,
+        avatar: true,
         role: true,
         workerStatus: true,
         staffStatus: true,
@@ -107,6 +108,7 @@ export class AttendanceRepository {
           username: true,
           email: true,
           phone: true,
+          avatar: true,
           role: true,
           staffStatus: true,
           attendances: {
@@ -127,6 +129,7 @@ export class AttendanceRepository {
           username: true,
           email: true,
           phone: true,
+          avatar: true,
           role: true,
           workerStatus: true,
           attendances: {
