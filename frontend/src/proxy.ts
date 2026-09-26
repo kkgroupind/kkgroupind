@@ -98,11 +98,11 @@ export function proxy(request: NextRequest) {
   }
 
   // Worker
-  if (pathname.startsWith('/worker/dashboard')) {
+  if (pathname.startsWith('/worker') && !pathname.startsWith('/worker/login')) {
     if (!isAuthenticated) {
       return redirectToLogin('/worker/login');
     }
-    if (role !== 'WORKER') {
+    if (role !== 'WORKER' && role !== 'SUPER_ADMIN') {
       const destination = (role && ROLE_DASHBOARDS[role]) || '/login';
       return NextResponse.redirect(new URL(destination, request.url));
     }

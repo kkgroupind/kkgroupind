@@ -14,6 +14,7 @@ import { AdminModule } from './module/admin/admin.module';
 import { EnquiryModule } from './module/enquiry/enquiry.module';
 import { AttendanceModule } from './module/attendance/attendance.module';
 import { OfficeStaffModule } from './module/office-staff/office-staff.module';
+import { WorkerModule } from './module/worker/worker.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   CloudinaryModule,
@@ -47,6 +48,7 @@ import {
     EnquiryModule,
     AttendanceModule,
     OfficeStaffModule,
+    WorkerModule,
   ],
   providers: [
     {

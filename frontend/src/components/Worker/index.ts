@@ -8,4 +8,5 @@ export * from './WorkerCrewList';
 export * from './WorkerLiveMap';
 export * from './WorkerJobDetailsModal';
 export * from './WorkerAvailabilityModal';
+export * from './WorkerAvatarCropModal';
 

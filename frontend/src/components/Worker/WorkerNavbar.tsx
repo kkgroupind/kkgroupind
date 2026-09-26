@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Bell,
   Home,
@@ -14,7 +14,12 @@ import {
   MapPin,
   Loader2,
   CheckCircle2,
+  UserCircle,
+  User,
+  Settings,
+  ChevronDown,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export interface NavItem {
   id: string;
@@ -33,6 +38,9 @@ interface WorkerNavbarProps {
   onToggleDuty?: () => void;
   isTogglingDuty?: boolean;
   userName?: string;
+  userAvatar?: string | null;
+  userHandle?: string;
+  userRole?: string;
 }
 
 export function WorkerNavbar({
@@ -45,7 +53,40 @@ export function WorkerNavbar({
   onToggleDuty,
   isTogglingDuty = false,
   userName = 'Operative',
+  userAvatar,
+  userHandle,
+  userRole = 'WORKER',
 }: WorkerNavbarProps) {
+  const router = useRouter();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleNavClick = (tabId: string) => {
+    if (tabId === 'profile') {
+      router.push('/worker/profile');
+      return;
+    }
+    if (activeTab === 'profile') {
+      router.push('/worker/dashboard');
+      return;
+    }
+    onTabChange?.(tabId);
+  };
+
   const desktopNavItems: NavItem[] = [
     { id: 'home', icon: Home, label: 'Dashboard' },
     {
@@ -55,8 +96,8 @@ export function WorkerNavbar({
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
     { id: 'crew', icon: Users, label: 'Squad & Map' },
+    { id: 'profile', icon: UserCircle, label: 'Profile' },
     { id: 'analytics', icon: BarChart2, label: 'Performance' },
-    { id: 'activity', icon: Activity, label: 'Live Operations' },
   ];
 
   const mobileNavItems: NavItem[] = [
@@ -67,8 +108,8 @@ export function WorkerNavbar({
       label: 'Orders',
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
-    { id: 'crew', icon: Users, label: 'Squad & Map' },
-    { id: 'analytics', icon: BarChart2, label: 'Stats' },
+    { id: 'crew', icon: Users, label: 'Squad' },
+    { id: 'profile', icon: UserCircle, label: 'Profile' },
   ];
 
   return (
@@ -113,7 +154,7 @@ export function WorkerNavbar({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onTabChange?.(item.id)}
+                  onClick={() => handleNavClick(item.id)}
                   className={`flex items-center gap-2 px-3.5 lg:px-4 py-2 rounded-xl lg:rounded-2xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
                       ? 'bg-white/20 text-white shadow-sm scale-[1.02] ring-1 ring-white/35 font-extrabold'
@@ -176,15 +217,126 @@ export function WorkerNavbar({
               )}
             </button>
 
-            {/* Desktop Sign Out Button with Icon and Name */}
-            <button
-              type="button"
-              onClick={onLogout}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-rose-500/80 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
-            >
-              <LogOut className="w-4 h-4 shrink-0" />
-              <span>Sign Out</span>
-            </button>
+            {/* Profile Avatar Trigger & Dropdown Menu */}
+            <div className="relative" ref={profileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                className="flex items-center gap-2 p-1 pl-1 pr-2 sm:pr-2.5 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 focus:outline-none shadow-xs"
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="true"
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden bg-white/20 border border-white/30 flex items-center justify-center text-white shrink-0 shadow-xs">
+                  {userAvatar ? (
+                    <img
+                      src={userAvatar}
+                      alt={userName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs font-black uppercase">
+                      {userName.charAt(0) || 'W'}
+                    </span>
+                  )}
+                </div>
+                <span className="hidden md:inline font-bold text-xs truncate max-w-[110px]">
+                  {userName}
+                </span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-purple-200 transition-transform duration-200 ${
+                    isProfileMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Profile Dropdown Popup Menu */}
+              {isProfileMenuOpen && (
+                <div className="absolute right-0 mt-2.5 w-64 bg-[#14161D] rounded-2xl border border-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.6)] py-2 text-gray-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {/* Dropdown Header */}
+                  <div className="px-4 py-3 border-b border-gray-800/80 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-[#5E42B4] border border-purple-400/30 flex items-center justify-center text-white font-bold shrink-0">
+                      {userAvatar ? (
+                        <img
+                          src={userAvatar}
+                          alt={userName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        userName.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-bold text-white truncate">
+                        {userName}
+                      </span>
+                      <span className="text-[11px] text-purple-400 font-mono truncate">
+                        {userHandle ? `@${userHandle}` : 'Operative Member'}
+                      </span>
+                      <span className="text-[10px] text-gray-400 mt-0.5">
+                        Worker • Kerala Field Squad
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="p-1.5 space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        router.push('/worker/profile');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-[#1A1C23] transition-colors text-left cursor-pointer"
+                    >
+                      <User className="w-4 h-4 text-purple-400" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-200">Profile</span>
+                        <span className="text-[10px] text-gray-500">
+                          തൊഴിലാളി വിവരങ്ങൾ
+                        </span>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        router.push('/worker/profile?tab=security');
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-[#1A1C23] transition-colors text-left cursor-pointer"
+                    >
+                      <Settings className="w-4 h-4 text-slate-400" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-200">Settings</span>
+                        <span className="text-[10px] text-gray-500">
+                          പാസ്‌വേഡ് & സുരക്ഷ
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Sign Out Item */}
+                  <div className="pt-1.5 border-t border-gray-800/80 p-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onLogout?.();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <div className="flex flex-col">
+                        <span className="font-semibold">Sign Out</span>
+                        <span className="text-[10px] text-rose-500/70">
+                          പുറത്തുകടക്കുക
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </nav>
         </div>
@@ -206,7 +358,7 @@ export function WorkerNavbar({
             <button
               key={item.id}
               type="button"
-              onClick={() => onTabChange?.(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[58px] ${
                 isActive ? 'text-[#5E42B4]' : 'text-slate-400 hover:text-slate-600'
               }`}

@@ -221,6 +221,9 @@ export default function WorkerDashboardPage() {
         onToggleDuty={handleRequestToggleDuty}
         isTogglingDuty={togglingDuty}
         userName={user.name || user.username || 'Operative'}
+        userAvatar={user.avatar}
+        userHandle={user.username || undefined}
+        userRole={user.role}
       />
 
       {/* ========================================================
@@ -235,14 +238,10 @@ export default function WorkerDashboardPage() {
           {/* Header with Primary Dashboard Title, Search, User Avatar */}
           <WorkerHeader
             userName={user.name || user.username || 'Operative'}
+            userAvatar={user.avatar || undefined}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            onProfileClick={() => {
-              toast.info(
-                `Operative Profile`,
-                `Signed in as @${user.username} (${user.role})`
-              );
-            }}
+            onProfileClick={() => router.push('/worker/profile')}
           />
 
           {/* UTMOST MOBILE-FRIENDLY QUICK VIEW SWITCHER (Phones < lg) */}
