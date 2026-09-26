@@ -11,10 +11,18 @@ export class EnquiryRepository {
     customerName: string;
     customerPhone: string;
     customerEmail?: string;
+    state?: string;
+    district?: string;
+    city?: string;
     location?: string;
+    mapUrl?: string;
+    locationRemarks?: string;
     preferredDate?: Date;
+    deadline?: Date;
     message: string;
     customerId?: string;
+    createdByRole?: Role;
+    createdById?: string;
   }) {
     return this.prisma.serviceEnquiry.create({
       data: {
@@ -23,10 +31,26 @@ export class EnquiryRepository {
         customerName: data.customerName,
         customerPhone: data.customerPhone,
         customerEmail: data.customerEmail,
+        state: data.state || 'Kerala',
+        district: data.district || 'Kasaragod',
+        city: data.city,
         location: data.location,
+        mapUrl: data.mapUrl,
+        locationRemarks: data.locationRemarks,
         preferredDate: data.preferredDate,
+        deadline: data.deadline,
         message: data.message,
         customerId: data.customerId,
+        createdByRole: data.createdByRole || Role.CUSTOMER,
+        createdById: data.createdById,
+      },
+      include: {
+        creator: {
+          select: { id: true, name: true, username: true, phone: true, role: true },
+        },
+        customer: {
+          select: { id: true, name: true, email: true, phone: true, avatar: true },
+        },
       },
     });
   }
@@ -49,6 +73,9 @@ export class EnquiryRepository {
         { serviceName: { contains: params.search, mode: 'insensitive' } },
         { customerName: { contains: params.search, mode: 'insensitive' } },
         { customerPhone: { contains: params.search, mode: 'insensitive' } },
+        { district: { contains: params.search, mode: 'insensitive' } },
+        { city: { contains: params.search, mode: 'insensitive' } },
+        { location: { contains: params.search, mode: 'insensitive' } },
       ];
     }
 
@@ -63,10 +90,13 @@ export class EnquiryRepository {
             select: { id: true, name: true, email: true, phone: true, avatar: true },
           },
           officeStaff: {
-            select: { id: true, name: true, username: true, avatar: true },
+            select: { id: true, name: true, username: true, phone: true, avatar: true },
           },
           worker: {
             select: { id: true, name: true, username: true, phone: true, avatar: true, workerStatus: true },
+          },
+          creator: {
+            select: { id: true, name: true, username: true, phone: true, role: true },
           },
         },
       }),
@@ -81,8 +111,9 @@ export class EnquiryRepository {
       where: { id },
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true, avatar: true } },
-        officeStaff: { select: { id: true, name: true, username: true, avatar: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true, avatar: true } },
         worker: { select: { id: true, name: true, username: true, phone: true, avatar: true, workerStatus: true } },
+        creator: { select: { id: true, name: true, username: true, phone: true, role: true } },
       },
     });
   }
@@ -92,6 +123,7 @@ export class EnquiryRepository {
       where: { trackingNumber },
       include: {
         worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        creator: { select: { id: true, name: true, username: true, phone: true, role: true } },
       },
     });
   }
@@ -139,7 +171,14 @@ export class EnquiryRepository {
     enquiryId: string,
     workerId: string,
     officeStaffId: string,
-    notes?: string,
+    data?: {
+      notes?: string;
+      mapUrl?: string;
+      locationRemarks?: string;
+      isHourlyCalculated?: boolean;
+      hourlyRate?: number;
+      deadline?: Date;
+    },
   ) {
     return this.prisma.$transaction(async (tx) => {
       // 1. Update enquiry
@@ -150,11 +189,25 @@ export class EnquiryRepository {
           officeStaffId,
           status: ServiceStatus.ASSIGNED,
           assignedAt: new Date(),
-          notes: notes ? notes : undefined,
+          notes: data?.notes !== undefined ? data.notes : undefined,
+          mapUrl: data?.mapUrl !== undefined ? data.mapUrl : undefined,
+          locationRemarks: data?.locationRemarks !== undefined ? data.locationRemarks : undefined,
+          isHourlyCalculated: data?.isHourlyCalculated !== undefined ? data.isHourlyCalculated : undefined,
+          hourlyRate: data?.hourlyRate !== undefined ? data.hourlyRate : undefined,
+          deadline: data?.deadline !== undefined ? data.deadline : undefined,
         },
         include: {
           worker: {
             select: { id: true, name: true, phone: true, workerStatus: true },
+          },
+          creator: {
+            select: { id: true, name: true, username: true, phone: true, role: true },
+          },
+          customer: {
+            select: { id: true, name: true, email: true, phone: true, avatar: true },
+          },
+          officeStaff: {
+            select: { id: true, name: true, username: true, phone: true, avatar: true },
           },
         },
       });
@@ -180,8 +233,106 @@ export class EnquiryRepository {
       orderBy: { createdAt: 'desc' },
       include: {
         customer: { select: { id: true, name: true, phone: true, email: true, avatar: true } },
-        officeStaff: { select: { id: true, name: true, username: true, avatar: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true, avatar: true } },
+        creator: { select: { id: true, name: true, username: true, phone: true, role: true } },
       },
+    });
+  }
+
+  async acceptJobTransaction(
+    enquiryId: string,
+    workerId: string,
+    data: { workerAcceptance?: string; notes?: string },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        workerAcceptance: data.workerAcceptance || 'ACCEPTED_SAME_DAY',
+        notes: data.notes ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
+
+  async startWorkTimerTransaction(
+    enquiryId: string,
+    workerId: string,
+    data?: { notes?: string },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        status: ServiceStatus.IN_PROGRESS,
+        workStartedAt: new Date(),
+        notes: data?.notes ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
+
+  async stopWorkTimerTransaction(
+    enquiryId: string,
+    workerId: string,
+    data?: { durationMinutes?: number; completionNotes?: string },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const enquiry = await tx.serviceEnquiry.findUnique({
+        where: { id: enquiryId },
+      });
+
+      if (!enquiry) {
+        return null;
+      }
+
+      const now = new Date();
+      let calculatedMinutes = data?.durationMinutes;
+
+      if (calculatedMinutes === undefined && enquiry.workStartedAt) {
+        const diffMs = now.getTime() - new Date(enquiry.workStartedAt).getTime();
+        calculatedMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
+      }
+
+      const updated = await tx.serviceEnquiry.update({
+        where: { id: enquiryId },
+        data: {
+          status: ServiceStatus.COMPLETED,
+          workEndedAt: now,
+          completedAt: now,
+          workDurationMinutes: calculatedMinutes,
+          notes: data?.completionNotes ? data.completionNotes : enquiry.notes,
+        },
+        include: {
+          worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true } },
+          officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+        },
+      });
+
+      // Free worker back to AVAILABLE if no other active jobs
+      const remainingActiveJobs = await tx.serviceEnquiry.count({
+        where: {
+          workerId,
+          id: { not: enquiryId },
+          status: { in: [ServiceStatus.ASSIGNED, ServiceStatus.IN_PROGRESS] },
+        },
+      });
+
+      if (remainingActiveJobs === 0) {
+        await tx.user.update({
+          where: { id: workerId },
+          data: { workerStatus: WorkerStatus.AVAILABLE },
+        });
+      }
+
+      return updated;
     });
   }
 
@@ -255,6 +406,9 @@ export class EnquiryRepository {
       include: {
         worker: {
           select: { id: true, name: true, phone: true },
+        },
+        creator: {
+          select: { id: true, name: true, username: true, phone: true, role: true },
         },
       },
     });

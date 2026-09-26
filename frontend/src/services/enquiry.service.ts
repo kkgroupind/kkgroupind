@@ -11,9 +11,24 @@ export interface CreateEnquiryInput {
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
+  state?: string;
+  district?: string;
+  city?: string;
   location?: string;
+  mapUrl?: string;
   preferredDate?: string;
+  deadline?: string;
   message: string;
+}
+
+export interface AssignWorkerInput {
+  workerId: string;
+  notes?: string;
+  mapUrl?: string;
+  locationRemarks?: string;
+  isHourlyCalculated?: boolean;
+  hourlyRate?: number;
+  deadline?: string;
 }
 
 export interface EnquiryListResponse {
@@ -77,17 +92,33 @@ export const EnquiryService = {
   // Office Staff: Assign enquiry to worker (strict availability enforced by backend)
   async assignWorker(
     enquiryId: string,
-    workerId: string,
-    notes: string | undefined,
-    token: string,
+    input: string | AssignWorkerInput,
+    notes?: string,
+    token?: string,
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    let bodyPayload: AssignWorkerInput;
+    let actualToken = token;
+
+    if (typeof input === 'string') {
+      bodyPayload = {
+        workerId: input,
+        notes,
+      };
+    } else {
+      bodyPayload = input;
+      // If called with (enquiryId, inputObj, undefined, token)
+      if (!actualToken && typeof notes === 'string') {
+        actualToken = notes;
+      }
+    }
+
     return request<{ message: string; enquiry: ServiceEnquiry }>(
       `/enquiries/${enquiryId}/assign`,
       {
         method: 'POST',
-        body: JSON.stringify({ workerId, notes }),
+        body: JSON.stringify(bodyPayload),
       },
-      token,
+      actualToken,
     );
   },
 
@@ -100,6 +131,54 @@ export const EnquiryService = {
     return request<{ jobs: ServiceEnquiry[] }>(
       `/enquiries/worker/my-jobs${qs}`,
       { method: 'GET' },
+      token,
+    );
+  },
+
+  // Worker: Accept job
+  async acceptWorkerJob(
+    enquiryId: string,
+    data: { workerAcceptance?: string; notes?: string },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/accept`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
+  // Worker: Start work timer on site
+  async startWorkTimer(
+    enquiryId: string,
+    data: { notes?: string },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/start-timer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
+  // Worker: Stop work timer on site & complete work
+  async stopWorkTimer(
+    enquiryId: string,
+    data: { durationMinutes?: number; completionNotes?: string },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/stop-timer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
       token,
     );
   },

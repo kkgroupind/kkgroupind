@@ -11,22 +11,50 @@ import {
   AssignWorkerDto,
   UpdateEnquiryStatusDto,
   UpdateWorkerDutyDto,
+  AcceptJobDto,
+  StartWorkTimerDto,
+  StopWorkTimerDto,
 } from './dto';
 import { ENQUIRY_MESSAGES } from '../../common';
-import { ServiceStatus, WorkerStatus } from '../../database';
+import { Role, ServiceStatus, WorkerStatus } from '../../database';
 
 @Injectable()
 export class EnquiryService {
   constructor(private readonly enquiryRepo: EnquiryRepository) {}
 
-  async createEnquiry(dto: CreateEnquiryDto, customerId?: string) {
+  async createEnquiry(
+    dto: CreateEnquiryDto,
+    currentUser?: { id?: string; role?: Role },
+  ) {
     const trackingNumber = `ENQ-${new Date().getFullYear()}-${crypto.randomInt(100000, 999999)}`;
-    let parsedDate: Date | undefined = undefined;
+    
+    let parsedPreferredDate: Date | undefined = undefined;
     if (dto.preferredDate) {
       const candidate = new Date(dto.preferredDate);
       if (!isNaN(candidate.getTime())) {
-        parsedDate = candidate;
+        parsedPreferredDate = candidate;
       }
+    }
+
+    let parsedDeadline: Date | undefined = undefined;
+    if (dto.deadline) {
+      const candidate = new Date(dto.deadline);
+      if (!isNaN(candidate.getTime())) {
+        parsedDeadline = candidate;
+      }
+    }
+
+    // Determine creator role and creator ID
+    const createdByRole = currentUser?.role || Role.CUSTOMER;
+    const createdById = currentUser?.id || undefined;
+    const customerId = currentUser?.role === Role.CUSTOMER ? currentUser.id : undefined;
+
+    // Compose formatted location summary if district and city are provided
+    let locationSummary = dto.location;
+    if (!locationSummary && (dto.district || dto.city)) {
+      locationSummary = [dto.city, dto.district, dto.state || 'Kerala']
+        .filter(Boolean)
+        .join(', ');
     }
 
     const enquiry = await this.enquiryRepo.create({
@@ -35,10 +63,18 @@ export class EnquiryService {
       customerName: dto.customerName,
       customerPhone: dto.customerPhone,
       customerEmail: dto.customerEmail,
-      location: dto.location,
-      preferredDate: parsedDate,
+      state: dto.state || 'Kerala',
+      district: dto.district || 'Kasaragod',
+      city: dto.city,
+      location: locationSummary,
+      mapUrl: dto.mapUrl,
+      locationRemarks: undefined,
+      preferredDate: parsedPreferredDate,
+      deadline: parsedDeadline,
       message: dto.message,
       customerId,
+      createdByRole,
+      createdById,
     });
 
     return {
@@ -107,16 +143,31 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.WORKER_NOT_FOUND);
     }
 
-    // STRICT CHECK: Worker must be AVAILABLE to receive assignments
+    // STRICT RULE: Worker must be AVAILABLE to be assigned
     if (worker.workerStatus !== WorkerStatus.AVAILABLE) {
-      throw new BadRequestException(ENQUIRY_MESSAGES.WORKER_NOT_AVAILABLE);
+      throw new BadRequestException(ENQUIRY_MESSAGES.CANNOT_ASSIGN_UNAVAILABLE);
+    }
+
+    let parsedDeadline: Date | undefined = undefined;
+    if (dto.deadline) {
+      const candidate = new Date(dto.deadline);
+      if (!isNaN(candidate.getTime())) {
+        parsedDeadline = candidate;
+      }
     }
 
     const updated = await this.enquiryRepo.assignWorkerTransaction(
       enquiryId,
       dto.workerId,
       officeStaffId,
-      dto.notes,
+      {
+        notes: dto.notes,
+        mapUrl: dto.mapUrl,
+        locationRemarks: dto.locationRemarks,
+        isHourlyCalculated: dto.isHourlyCalculated,
+        hourlyRate: dto.hourlyRate,
+        deadline: parsedDeadline,
+      },
     );
 
     return {
@@ -129,6 +180,84 @@ export class EnquiryService {
     const jobs = await this.enquiryRepo.findJobsByWorker(workerId, status);
     return {
       jobs,
+    };
+  }
+
+  async acceptWorkerJob(
+    enquiryId: string,
+    workerId: string,
+    dto: AcceptJobDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (enquiry.workerId !== workerId) {
+      throw new ForbiddenException('You are not assigned to this job');
+    }
+
+    const updated = await this.enquiryRepo.acceptJobTransaction(
+      enquiryId,
+      workerId,
+      dto,
+    );
+
+    return {
+      message: ENQUIRY_MESSAGES.JOB_ACCEPTED_SUCCESS,
+      enquiry: updated,
+    };
+  }
+
+  async startWorkTimer(
+    enquiryId: string,
+    workerId: string,
+    dto: StartWorkTimerDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (enquiry.workerId !== workerId) {
+      throw new ForbiddenException('You are not authorized for this job');
+    }
+
+    const updated = await this.enquiryRepo.startWorkTimerTransaction(
+      enquiryId,
+      workerId,
+      dto,
+    );
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_TIMER_STARTED,
+      enquiry: updated,
+    };
+  }
+
+  async stopWorkTimer(
+    enquiryId: string,
+    workerId: string,
+    dto: StopWorkTimerDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (enquiry.workerId !== workerId) {
+      throw new ForbiddenException('You are not authorized for this job');
+    }
+
+    const updated = await this.enquiryRepo.stopWorkTimerTransaction(
+      enquiryId,
+      workerId,
+      dto,
+    );
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_TIMER_STOPPED,
+      enquiry: updated,
     };
   }
 

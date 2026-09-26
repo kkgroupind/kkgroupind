@@ -71,6 +71,7 @@ model User {
   customerEnquiries   ServiceEnquiry[] @relation("CustomerEnquiries")
   officeEnquiries     ServiceEnquiry[] @relation("OfficeEnquiries")
   workerAssignments   ServiceEnquiry[] @relation("WorkerAssignments")
+  createdEnquiries    ServiceEnquiry[] @relation("CreatedEnquiries")
 
   @@map("users")
 }
@@ -111,36 +112,62 @@ model Otp {
 }
 
 model ServiceEnquiry {
-  id             String        @id @default(uuid())
-  trackingNumber String        @unique
-  serviceName    String
-  customerName   String
-  customerEmail  String?
-  customerPhone  String
-  location       String?
-  preferredDate  DateTime?
-  message        String
-  status         ServiceStatus @default(PENDING)
-  notes          String?
+  id                  String        @id @default(uuid())
+  trackingNumber      String        @unique
+  serviceName         String
+  customerName        String
+  customerEmail       String?
+  customerPhone       String
 
-  customerId     String?
-  customer       User?         @relation("CustomerEnquiries", fields: [customerId], references: [id], onDelete: SetNull)
+  // Kerala Structured Location Details
+  state               String        @default("Kerala")
+  district            String        @default("Kasaragod")
+  city                String?
+  location            String?
+  mapUrl              String?
+  locationRemarks     String?
 
-  officeStaffId  String?
-  officeStaff    User?         @relation("OfficeEnquiries", fields: [officeStaffId], references: [id], onDelete: SetNull)
+  // Schedule & Optional Deadline
+  preferredDate       DateTime?
+  deadline            DateTime?
 
-  workerId       String?
-  worker         User?         @relation("WorkerAssignments", fields: [workerId], references: [id], onDelete: SetNull)
+  // Creator Attribution Flag
+  createdByRole       Role          @default(CUSTOMER)
+  createdById         String?
+  creator             User?         @relation("CreatedEnquiries", fields: [createdById], references: [id], onDelete: SetNull)
 
-  assignedAt     DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  // Work Execution & Hourly Calculation (e.g. JCB / Equipment Meter)
+  isHourlyCalculated  Boolean       @default(false)
+  hourlyRate          Float?
+  workStartedAt       DateTime?
+  workEndedAt         DateTime?
+  workDurationMinutes Int?
+  workerAcceptance    String?
+
+  message             String
+  status              ServiceStatus @default(PENDING)
+  notes               String?
+
+  customerId          String?
+  customer            User?         @relation("CustomerEnquiries", fields: [customerId], references: [id], onDelete: SetNull)
+
+  officeStaffId       String?
+  officeStaff         User?         @relation("OfficeEnquiries", fields: [officeStaffId], references: [id], onDelete: SetNull)
+
+  workerId            String?
+  worker              User?         @relation("WorkerAssignments", fields: [workerId], references: [id], onDelete: SetNull)
+
+  assignedAt          DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@index([status])
   @@index([trackingNumber])
   @@index([workerId])
   @@index([customerId])
+  @@index([district])
+  @@index([createdByRole])
   @@map("service_enquiries")
 }
 

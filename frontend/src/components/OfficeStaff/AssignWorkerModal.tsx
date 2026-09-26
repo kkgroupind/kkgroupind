@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   X,
   UserCheck,
@@ -11,6 +11,13 @@ import {
   Clock,
   Send,
   User,
+  MapPin,
+  ExternalLink,
+  Navigation,
+  Timer,
+  Calendar,
+  Layers,
+  ShieldAlert,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 
@@ -33,7 +40,15 @@ export function AssignWorkerModal({
   const [workers, setWorkers] = useState<WorkerWithAvailability[]>([]);
   const [loadingWorkers, setLoadingWorkers] = useState(true);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
+
+  // Dispatch fields
+  const [mapUrl, setMapUrl] = useState('');
+  const [locationRemarks, setLocationRemarks] = useState('');
   const [notes, setNotes] = useState('');
+  const [isHourlyCalculated, setIsHourlyCalculated] = useState(false);
+  const [hourlyRate, setHourlyRate] = useState<number | ''>('');
+  const [deadline, setDeadline] = useState('');
+
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,10 +56,28 @@ export function AssignWorkerModal({
     if (isOpen && token) {
       fetchWorkers();
       setSelectedWorkerId(null);
-      setNotes('');
       setError(null);
+
+      // Pre-fill from enquiry if existing
+      if (enquiry) {
+        setMapUrl(enquiry.mapUrl || '');
+        setLocationRemarks(enquiry.locationRemarks || '');
+        setNotes(enquiry.notes || '');
+        setIsHourlyCalculated(
+          enquiry.isHourlyCalculated ||
+          enquiry.serviceName?.toLowerCase().includes('jcb') ||
+          enquiry.serviceName?.toLowerCase().includes('excavat') ||
+          false,
+        );
+        setHourlyRate(enquiry.hourlyRate || '');
+        if (enquiry.deadline) {
+          setDeadline(new Date(enquiry.deadline).toISOString().split('T')[0]);
+        } else {
+          setDeadline('');
+        }
+      }
     }
-  }, [isOpen, token]);
+  }, [isOpen, token, enquiry]);
 
   const fetchWorkers = async () => {
     setLoadingWorkers(true);
@@ -59,6 +92,14 @@ export function AssignWorkerModal({
     }
   };
 
+  const workerMetrics = useMemo(() => {
+    const total = workers.length;
+    const available = workers.filter((w) => w.workerStatus === 'AVAILABLE').length;
+    const busy = workers.filter((w) => w.workerStatus === 'BUSY').length;
+    const offDuty = workers.filter((w) => w.workerStatus === 'OFF_DUTY').length;
+    return { total, available, busy, offDuty };
+  }, [workers]);
+
   if (!isOpen || !enquiry) return null;
 
   const handleAssign = async (e: React.FormEvent) => {
@@ -70,7 +111,7 @@ export function AssignWorkerModal({
 
     const worker = workers.find((w) => w.id === selectedWorkerId);
     if (!worker || worker.workerStatus !== 'AVAILABLE') {
-      setError('Selected worker is not available. Please pick an available worker.');
+      setError('Selected worker is not available. You can only assign work to AVAILABLE workers.');
       return;
     }
 
@@ -80,8 +121,16 @@ export function AssignWorkerModal({
     try {
       await EnquiryService.assignWorker(
         enquiry.id,
-        selectedWorkerId,
-        notes.trim() || undefined,
+        {
+          workerId: selectedWorkerId,
+          notes: notes.trim() || undefined,
+          mapUrl: mapUrl.trim() || undefined,
+          locationRemarks: locationRemarks.trim() || undefined,
+          isHourlyCalculated,
+          hourlyRate: hourlyRate === '' ? undefined : Number(hourlyRate),
+          deadline: deadline || undefined,
+        },
+        undefined,
         token || '',
       );
       onAssignedSuccess();
@@ -93,25 +142,37 @@ export function AssignWorkerModal({
     }
   };
 
+  // Generate Google Maps search URL from site location if no mapUrl is provided
+  const generatedMapSearchUrl =
+    mapUrl.trim() ||
+    (enquiry.location
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+          `${enquiry.location}, Kerala, India`,
+        )}`
+      : '');
+
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto animate-in fade-in"
     >
-      <div className="relative w-full max-w-lg bg-[#14161D] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden text-gray-200">
+      <div className="relative w-full max-w-2xl bg-[#0c1310] border border-emerald-500/30 rounded-3xl shadow-2xl overflow-hidden text-slate-200 my-8">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
-              <UserCheck className="w-4 h-4" />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-emerald-500/20 bg-[#101b15]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <UserCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-gray-100">
-                Assign Worker
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Dispatch Work Order</span>
+                <span className="font-mono text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  {enquiry.trackingNumber}
+                </span>
               </h2>
-              <p className="text-xs text-gray-400">
-                Dispatch field personnel to this work order
+              <p className="text-xs text-slate-400">
+                Configure field assignment, site GPS, and machinery parameters
               </p>
             </div>
           </div>
@@ -120,71 +181,112 @@ export function AssignWorkerModal({
             type="button"
             onClick={onClose}
             disabled={assigning}
-            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-4 text-xs">
-          {/* Work Summary Box */}
-          <div className="bg-[#0D0E12] border border-gray-800 rounded-xl p-3.5 space-y-1.5">
+        <div className="p-6 space-y-4 max-h-[78vh] overflow-y-auto custom-scrollbar text-xs">
+          {/* Creator Attribution & Work Brief */}
+          <div className="bg-[#121f18] border border-emerald-500/20 rounded-2xl p-4 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-xs font-semibold text-emerald-400">
-                {enquiry.trackingNumber}
-              </span>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700">
+              <span className="font-bold text-sm text-white">
                 {enquiry.serviceName}
               </span>
+              {/* Creator Flag */}
+              <div className="flex items-center gap-1.5">
+                {enquiry.createdByRole === 'OFFICE_STAFF' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    🏢 Created by Office Staff: {enquiry.creator?.name || 'Staff Member'}
+                  </span>
+                ) : enquiry.createdByRole === 'SUPER_ADMIN' ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    👑 Created by Super Admin
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    🌐 Customer Web Enquiry
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="text-gray-300">
-              <span className="font-medium text-gray-200">Customer: </span>
-              {enquiry.customerName} ({enquiry.customerPhone})
+
+            <div className="text-slate-300 flex items-center gap-4">
+              <span>
+                <strong className="text-slate-400">Client: </strong>
+                {enquiry.customerName} ({enquiry.customerPhone})
+              </span>
+              {enquiry.district && (
+                <span>
+                  <strong className="text-slate-400">District: </strong>
+                  {enquiry.district} {enquiry.city ? `(${enquiry.city})` : ''}
+                </span>
+              )}
             </div>
+
             {enquiry.location && (
-              <div className="text-gray-400">
-                <span className="font-medium text-gray-300">Location: </span>
-                {enquiry.location}
+              <div className="text-slate-300 flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>{enquiry.location}</span>
               </div>
             )}
-            <p className="text-gray-400 italic bg-[#14161D] p-2 rounded-lg border border-gray-800">
-              &ldquo;{enquiry.message}&rdquo;
-            </p>
+          </div>
+
+          {/* Worker Availability Statistics Bar */}
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-[#121f18] border border-emerald-500/30 rounded-xl p-2.5 text-center">
+              <span className="text-[10px] uppercase font-bold text-emerald-400 block">Available</span>
+              <span className="text-base font-black text-emerald-300">{workerMetrics.available}</span>
+            </div>
+            <div className="bg-[#121f18] border border-amber-500/20 rounded-xl p-2.5 text-center">
+              <span className="text-[10px] uppercase font-bold text-amber-400 block">Busy / On-Duty</span>
+              <span className="text-base font-black text-amber-300">{workerMetrics.busy}</span>
+            </div>
+            <div className="bg-[#121f18] border border-slate-700/60 rounded-xl p-2.5 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Off Duty</span>
+              <span className="text-base font-black text-slate-300">{workerMetrics.offDuty}</span>
+            </div>
+            <div className="bg-[#121f18] border border-white/10 rounded-xl p-2.5 text-center">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Roster</span>
+              <span className="text-base font-black text-white">{workerMetrics.total}</span>
+            </div>
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
               <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleAssign} className="space-y-4">
+            {/* 1. Worker Selection (Strictly AVAILABLE only) */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="font-medium text-gray-300">
-                  Select Worker *
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="font-bold text-slate-200">
+                  Select Available Worker *
                 </label>
                 <button
                   type="button"
                   onClick={fetchWorkers}
-                  className="text-xs text-blue-400 hover:underline"
+                  className="text-xs text-emerald-400 hover:underline cursor-pointer"
                 >
-                  Refresh
+                  Refresh Roster
                 </button>
               </div>
 
               {loadingWorkers ? (
-                <div className="p-6 flex items-center justify-center gap-2 text-gray-400 text-xs">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                  <span>Loading worker status...</span>
+                <div className="p-6 flex items-center justify-center gap-2 text-slate-400 text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                  <span>Checking worker availability...</span>
                 </div>
               ) : workers.length === 0 ? (
-                <div className="p-4 text-center rounded-xl bg-[#0D0E12] border border-gray-800 text-gray-400">
-                  No registered workers found.
+                <div className="p-4 text-center rounded-xl bg-[#0c1310] border border-slate-800 text-slate-400">
+                  No registered workers found in roster.
                 </div>
               ) : (
-                <div className="max-h-52 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
                   {workers.map((worker) => {
                     const isAvailable = worker.workerStatus === 'AVAILABLE';
                     const isSelected = selectedWorkerId === worker.id;
@@ -198,63 +300,62 @@ export function AssignWorkerModal({
                             setError(null);
                           }
                         }}
-                        className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
+                        className={`p-2.5 rounded-xl border transition-all flex items-center justify-between ${
                           !isAvailable
-                            ? 'opacity-40 cursor-not-allowed bg-[#0D0E12] border-gray-800'
+                            ? 'opacity-40 cursor-not-allowed bg-black/20 border-white/5'
                             : isSelected
-                            ? 'bg-blue-950/30 border-blue-500/70 text-white cursor-pointer'
-                            : 'bg-[#0D0E12] border-gray-800 hover:border-gray-700 cursor-pointer'
+                            ? 'bg-emerald-500/20 border-emerald-400 text-white cursor-pointer shadow-md'
+                            : 'bg-black/30 border-white/10 hover:border-emerald-500/40 cursor-pointer'
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5">
                           <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-semibold ${
+                            className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
                               isSelected
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-emerald-500 text-white'
                                 : isAvailable
-                                ? 'bg-gray-800 text-emerald-400'
-                                : 'bg-gray-900 text-gray-600'
+                                ? 'bg-emerald-500/20 text-emerald-300'
+                                : 'bg-slate-800 text-slate-500'
                             }`}
                           >
                             {worker.name ? worker.name.charAt(0).toUpperCase() : 'W'}
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-200">
+                              <span className="font-semibold text-white">
                                 {worker.name || worker.username}
                               </span>
-                              <span className="text-[11px] text-gray-500">
+                              <span className="text-[10px] text-slate-400 font-mono">
                                 @{worker.username}
                               </span>
                             </div>
                             {worker.phone && (
-                              <div className="flex items-center gap-1 text-[11px] text-gray-400 mt-0.5">
-                                <Phone className="w-3 h-3 text-gray-500" />
-                                <span>{worker.phone}</span>
-                              </div>
+                              <span className="text-[10px] text-slate-400 block">
+                                {worker.phone}
+                              </span>
                             )}
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2">
                           {isAvailable ? (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              Available
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              Ready for Work
                             </span>
                           ) : worker.workerStatus === 'BUSY' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-400 border border-amber-500/30">
                               <Clock className="w-3 h-3" />
-                              Busy
+                              Busy on Site
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-800 text-gray-500 border border-gray-700/50">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-white/5">
                               Off Duty
                             </span>
                           )}
 
                           {isSelected && (
-                            <CheckCircle2 className="w-4 h-4 text-blue-400" />
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                           )}
                         </div>
                       </div>
@@ -264,24 +365,122 @@ export function AssignWorkerModal({
               )}
             </div>
 
+            {/* 2. Exact Map URL & Navigation Pinpoint */}
             <div>
-              <label className="block mb-1 font-medium text-gray-300">
-                Dispatch Instructions (Optional)
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Notes or instructions for the worker..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-[#0D0E12] border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-gray-500 resize-none"
+              <div className="flex items-center justify-between mb-1">
+                <label className="font-bold text-slate-300 flex items-center gap-1.5">
+                  <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Exact Site Location in Map (GPS / Google Maps URL)</span>
+                </label>
+                {generatedMapSearchUrl && (
+                  <a
+                    href={generatedMapSearchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>Test Map Link</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+              <input
+                type="text"
+                value={mapUrl}
+                onChange={(e) => setMapUrl(e.target.value)}
+                placeholder="Paste Google Maps pin link (https://maps.app.goo.gl/...)"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-gray-800">
+            {/* 3. Location Remarks & Road Access */}
+            <div>
+              <label className="font-bold text-slate-300 block mb-1">
+                Location Remarks (Landmarks, Road Width & Access Notes)
+              </label>
+              <textarea
+                rows={2}
+                value={locationRemarks}
+                onChange={(e) => setLocationRemarks(e.target.value)}
+                placeholder="e.g. Near Nileshwar bridge, narrow lane entry, gate code #4421, JCB can enter easily"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            {/* 4. Machinery & Hourly Calculation Toggle (JCB / Earth Excavator / Crane) */}
+            <div className="bg-[#121f18] border border-emerald-500/20 rounded-2xl p-3.5 space-y-2">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isHourlyCalculated}
+                  onChange={(e) => setIsHourlyCalculated(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 bg-black/40 border-white/20"
+                />
+                <div className="flex flex-col">
+                  <span className="font-bold text-white flex items-center gap-1.5">
+                    <Timer className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Hourly Working Calculation (e.g. JCB / Excavator Meter)</span>
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Enables on-site live working hours tracker when the worker arrives
+                  </span>
+                </div>
+              </label>
+
+              {isHourlyCalculated && (
+                <div className="pt-2 pl-6 border-t border-white/5 flex items-center gap-3 animate-in fade-in">
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Hourly Rate (₹ / Hour) Optional
+                    </label>
+                    <input
+                      type="number"
+                      value={hourlyRate}
+                      onChange={(e) => setHourlyRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="e.g. 1200"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Target Completion Date
+                    </label>
+                    <input
+                      type="date"
+                      value={deadline}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setDeadline(e.target.value)}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Dispatch Instructions & Work Details */}
+            <div>
+              <label className="font-bold text-slate-300 block mb-1">
+                Other Work Details & Instructions for Worker
+              </label>
+              <textarea
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Specific operational instructions, tools required, or customer preferences..."
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                * Note: Field worker will receive site location, map navigation, and technical tasks.
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-emerald-500/20">
               <button
                 type="button"
                 onClick={onClose}
-                className="py-2 px-4 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium transition-colors border border-gray-700/60"
+                disabled={assigning}
+                className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -289,17 +488,17 @@ export function AssignWorkerModal({
               <button
                 type="submit"
                 disabled={assigning || !selectedWorkerId}
-                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                className="flex items-center gap-2 bg-[#2A835F] hover:bg-[#236D4F] disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-emerald-950/40 cursor-pointer"
               >
                 {assigning ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Assigning...</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Assigning Dispatch...</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Assign Worker</span>
+                    <Send className="w-4 h-4" />
+                    <span>Confirm & Dispatch</span>
                   </>
                 )}
               </button>

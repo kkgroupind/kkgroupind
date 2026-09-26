@@ -17,6 +17,9 @@ import {
   AssignWorkerDto,
   UpdateEnquiryStatusDto,
   UpdateWorkerDutyDto,
+  AcceptJobDto,
+  StartWorkTimerDto,
+  StopWorkTimerDto,
 } from './dto';
 
 @Controller('enquiries')
@@ -28,9 +31,9 @@ export class EnquiryController {
   @HttpCode(HttpStatus.CREATED)
   async createEnquiry(
     @Body() dto: CreateEnquiryDto,
-    @CurrentUser('id') customerId?: string,
+    @CurrentUser() user?: { id?: string; role?: Role },
   ) {
-    return this.enquiryService.createEnquiry(dto, customerId);
+    return this.enquiryService.createEnquiry(dto, user);
   }
 
   @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
@@ -68,6 +71,36 @@ export class EnquiryController {
     @Query('status') status?: ServiceStatus,
   ) {
     return this.enquiryService.getWorkerJobs(workerId, status);
+  }
+
+  @Roles(Role.WORKER)
+  @Patch('worker/:id/accept')
+  async acceptWorkerJob(
+    @Param('id') id: string,
+    @Body() dto: AcceptJobDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.acceptWorkerJob(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Post('worker/:id/start-timer')
+  async startWorkTimer(
+    @Param('id') id: string,
+    @Body() dto: StartWorkTimerDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.startWorkTimer(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Post('worker/:id/stop-timer')
+  async stopWorkTimer(
+    @Param('id') id: string,
+    @Body() dto: StopWorkTimerDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.stopWorkTimer(id, workerId, dto);
   }
 
   @Roles(Role.WORKER)

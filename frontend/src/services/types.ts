@@ -128,8 +128,22 @@ export interface ServiceEnquiry {
   customerName: string;
   customerEmail?: string | null;
   customerPhone: string;
+  state?: string;
+  district?: string;
+  city?: string | null;
   location?: string | null;
+  mapUrl?: string | null;
+  locationRemarks?: string | null;
   preferredDate?: string | null;
+  deadline?: string | null;
+  createdByRole?: UserRole;
+  createdById?: string | null;
+  isHourlyCalculated?: boolean;
+  hourlyRate?: number | null;
+  workStartedAt?: string | null;
+  workEndedAt?: string | null;
+  workDurationMinutes?: number | null;
+  workerAcceptance?: string | null;
   message: string;
   status: ServiceStatus;
   notes?: string | null;
@@ -141,7 +155,7 @@ export interface ServiceEnquiry {
   createdAt: string;
   updatedAt: string;
   customer?: { id: string; name?: string | null; email?: string | null; phone?: string | null; avatar?: string | null };
-  officeStaff?: { id: string; name?: string | null; username?: string | null; avatar?: string | null };
+  officeStaff?: { id: string; name?: string | null; username?: string | null; phone?: string | null; avatar?: string | null };
   worker?: {
     id: string;
     name?: string | null;
@@ -150,6 +164,13 @@ export interface ServiceEnquiry {
     avatar?: string | null;
     workerStatus: WorkerStatus;
   };
+  creator?: {
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    phone?: string | null;
+    role: UserRole;
+  } | null;
 }
 
 export interface WorkerWithAvailability {

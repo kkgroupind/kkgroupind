@@ -119,6 +119,11 @@ export const ENQUIRY_MESSAGES = {
   STATUS_UPDATED_SUCCESS: 'Work ticket status updated successfully',
   ENQUIRIES_FETCHED_SUCCESS: 'Service enquiries retrieved successfully',
   WORKERS_FETCHED_SUCCESS: 'Available workers retrieved successfully',
+  JOB_ACCEPTED_SUCCESS: 'Job assignment accepted successfully',
+  WORK_TIMER_STARTED: 'On-site working timer started successfully',
+  WORK_TIMER_STOPPED: 'On-site work completed and hours logged successfully',
+  WORKER_ALREADY_BUSY: 'Worker currently has an ongoing assignment',
+  CANNOT_ASSIGN_UNAVAILABLE: 'Work can only be assigned to available workers',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {

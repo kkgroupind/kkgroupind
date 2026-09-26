@@ -7,14 +7,17 @@ import {
   MapPin,
   Phone,
   User,
-  ChevronDown,
   Layers,
   Calendar,
+  Sparkles,
+  Clock,
 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
 import { EnquiryService } from '@/services/enquiry.service';
 import { StylishDropdown, DropdownOption } from '@/components/Common/StylishDropdown';
+import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
+import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
 import { validateMobileNumber, sanitizePhoneInput } from '@/validations';
 import { useToast } from '@/context/toast-context';
 
@@ -36,6 +39,7 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
     { id: 'tile', name: t.servicesList.tile },
     { id: 'electrical', name: t.servicesList.electrical },
     { id: 'plumbing', name: t.servicesList.plumbing },
+    { id: 'borewell', name: 'Borewell Drilling & Water Survey' },
   ];
 
   const serviceDropdownOptions: DropdownOption[] = SERVICES.map((s) => ({
@@ -45,8 +49,11 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
 
   const [selectedServiceId, setSelectedServiceId] = useState(SERVICES[0].id);
   const [customerName, setCustomerName] = useState('');
+  const [countryCode, setCountryCode] = useState('+91');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [location, setLocation] = useState('');
+  const [district, setDistrict] = useState('Kasaragod');
+  const [city, setCity] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -70,19 +77,27 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
       return;
     }
 
-    // Strict 10-digit mobile number validation with large toast warnings
-    const phoneValidation = validateMobileNumber(customerPhone, language);
-    if (!phoneValidation.isValid) {
-      const title =
-        phoneValidation.title ||
-        (language === 'ml'
-          ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക'
-          : 'Invalid Mobile Number');
-      const msg =
-        phoneValidation.error ||
-        (language === 'ml'
-          ? 'ദയവായി സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക'
-          : 'Please enter a valid 10-digit mobile number');
+    // Phone validation: for +91, validate 10 digits
+    if (countryCode === '+91') {
+      const phoneValidation = validateMobileNumber(customerPhone, language);
+      if (!phoneValidation.isValid) {
+        const title =
+          phoneValidation.title ||
+          (language === 'ml'
+            ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക'
+            : 'Invalid Mobile Number');
+        const msg =
+          phoneValidation.error ||
+          (language === 'ml'
+            ? 'ദയവായി സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക'
+            : 'Please enter a valid 10-digit mobile number');
+        setErrorMessage(msg);
+        toast.warning(title, msg);
+        return;
+      }
+    } else if (customerPhone.trim().length < 6) {
+      const title = 'Invalid Mobile Number';
+      const msg = 'Please enter a valid international mobile number.';
       setErrorMessage(msg);
       toast.warning(title, msg);
       return;
@@ -90,13 +105,20 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
 
     setIsSubmitting(true);
     try {
+      const fullPhone = `${countryCode} ${customerPhone.trim()}`;
+      const locationString = [city.trim(), district, 'Kerala'].filter(Boolean).join(', ');
+
       const res = await EnquiryService.createEnquiry({
         serviceName: currentService.name,
         customerName: customerName.trim(),
-        customerPhone: phoneValidation.cleanPhone,
-        location: location.trim() || undefined,
-        message: `Quick enquiry from Home Hero for ${currentService.name}${
-          location.trim() ? ` (Location: ${location.trim()})` : ''
+        customerPhone: fullPhone,
+        state: 'Kerala',
+        district,
+        city: city.trim() || undefined,
+        location: locationString,
+        deadline: deadline || undefined,
+        message: `Direct quick enquiry for ${currentService.name}. Location: ${locationString}${
+          deadline ? `. Target Deadline: ${deadline}` : ''
         }`,
       });
 
@@ -108,7 +130,6 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
       setSubmittedRef(trackingCode);
       onSuccess?.(trackingCode);
 
-      // Large success toast
       toast.success(
         language === 'ml'
           ? 'അന്വേഷണം വിജയകരമായി അയച്ചു!'
@@ -139,32 +160,33 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
     setSubmittedRef(null);
     setCustomerName('');
     setCustomerPhone('');
-    setLocation('');
+    setCity('');
+    setDeadline('');
     setErrorMessage(null);
   };
 
   return (
     <div className={`w-full ${className}`}>
       {/* ========================================================
-          1. DESKTOP VIEW: Sleek Horizontal Rectangular Enquiry Bar
+          1. DESKTOP VIEW: Sleek Bento Multi-Field Hero Container
       ======================================================== */}
       <div className="hidden lg:block w-full">
         {submittedRef ? (
-          <div className="w-full bg-white/95 backdrop-blur-2xl border-2 border-white/80 rounded-2xl lg:rounded-3xl xl:rounded-full p-4 lg:p-6 px-6 lg:px-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] flex items-center justify-between gap-4 text-slate-800 animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-full bg-[#0c1310]/95 backdrop-blur-2xl border-2 border-emerald-500/40 rounded-3xl p-6 px-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4 text-white animate-in fade-in zoom-in-95 duration-300">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-[#EBF6F1] flex items-center justify-center shrink-0 shadow-inner">
-                <CheckCircle2 className="w-6 h-6 text-[#2A835F]" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-black uppercase tracking-wider text-[#2A835F]">
-                    {language === 'ml' ? 'അന്വേഷണം സ്വീകരിച്ചു' : 'Enquiry Received'}
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                    {language === 'ml' ? 'അന്വേഷണം സ്വീകരിച്ചു' : 'Enquiry Dispatched'}
                   </span>
-                  <span className="font-mono text-xs font-bold bg-[#EBF6F1] text-[#2A835F] px-2 py-0.5 rounded-full">
+                  <span className="font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
                     REF: {submittedRef}
                   </span>
                 </div>
-                <p className="text-xs lg:text-sm font-bold text-slate-700 truncate">
+                <p className="text-sm font-bold text-slate-300 truncate">
                   {t.successMsg}
                 </p>
               </div>
@@ -172,7 +194,7 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
             <button
               type="button"
               onClick={handleReset}
-              className="bg-[#2A835F] hover:bg-[#236D4F] text-white px-6 py-3 rounded-xl lg:rounded-2xl xl:rounded-full font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md shrink-0 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md shrink-0 cursor-pointer"
             >
               {t.submitAnother}
             </button>
@@ -180,109 +202,261 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="w-full bg-white/95 backdrop-blur-2xl border-2 border-white/80 rounded-2xl lg:rounded-3xl xl:rounded-full py-3.5 lg:py-4 xl:py-4.5 px-4 lg:px-6 xl:px-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] flex items-center justify-between gap-3 lg:gap-4 xl:gap-5 text-slate-800 transition-all hover:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.4)]"
+            className="w-full bg-[#0c1310]/90 backdrop-blur-2xl border border-emerald-500/30 rounded-3xl p-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] flex flex-col gap-3 text-slate-200 transition-all hover:border-emerald-500/50"
           >
-            {/* Segment 1: Service Selector with StylishDropdown */}
-            <div className="flex-[1.2] min-w-0 flex items-center gap-2.5 lg:gap-3">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-2xl bg-[#EBF6F1] flex items-center justify-center shrink-0">
-                <Layers className="w-4 h-4 text-[#2A835F]" />
-              </div>
-              <div className="flex flex-col text-left w-full min-w-0">
-                <StylishDropdown
-                  options={serviceDropdownOptions}
-                  value={selectedServiceId}
-                  onChange={setSelectedServiceId}
-                  label={t.chooseService}
-                  variant="inline"
-                />
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="w-px h-8 lg:h-10 bg-slate-200/90 shrink-0" />
-
-            {/* Segment 2: Customer Name */}
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 lg:gap-3">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0">
-                <User className="w-4 h-4 text-slate-500" />
-              </div>
-              <div className="flex flex-col text-left w-full min-w-0">
-                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-wider text-slate-400 mb-0.5 truncate">
-                  {t.yourName}
-                </label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder={t.namePlaceholder}
-                  className="w-full text-xs lg:text-sm font-bold text-slate-900 placeholder-slate-400 bg-transparent focus:outline-none truncate"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Vertical Divider */}
-            <div className="w-px h-8 lg:h-10 bg-slate-200/90 shrink-0" />
-
-            {/* Segment 3: Customer Phone */}
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 lg:gap-3">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0">
-                <Phone className="w-4 h-4 text-slate-500" />
-              </div>
-              <div className="flex flex-col text-left w-full min-w-0">
-                <div className="flex items-center justify-between mb-0.5">
-                  <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-wider text-slate-400 truncate">
-                    {t.phoneNumber}
-                  </label>
-                  <span className="text-[9px] font-bold text-slate-400">
-                    {customerPhone.length > 0 ? `${customerPhone.length}/10` : '10 Digits'}
-                  </span>
+            {/* Top Row: Service, Name, Mobile with Searchable Country Code */}
+            <div className="grid grid-cols-12 gap-3 items-center">
+              {/* Service Selection */}
+              <div className="col-span-4 flex items-center gap-2.5 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                  <Layers className="w-4 h-4 text-emerald-400" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs lg:text-sm font-black text-[#2A835F] select-none shrink-0">
-                    +91
-                  </span>
+                <div className="flex flex-col text-left w-full min-w-0">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
+                    {t.chooseService}
+                  </label>
+                  <StylishDropdown
+                    options={serviceDropdownOptions}
+                    value={selectedServiceId}
+                    onChange={setSelectedServiceId}
+                    label={t.chooseService}
+                    variant="inline"
+                  />
+                </div>
+              </div>
+
+              {/* Customer Name */}
+              <div className="col-span-4 flex items-center gap-2.5 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
+                <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
+                  <User className="w-4 h-4 text-slate-400" />
+                </div>
+                <div className="flex flex-col text-left w-full min-w-0">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
+                    {t.yourName}
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder={t.namePlaceholder}
+                    className="w-full text-xs font-bold text-white placeholder-slate-500 bg-transparent focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Mobile with Searchable Country Code */}
+              <div className="col-span-4 flex items-center gap-2 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
+                <div className="shrink-0">
+                  <CountryCodeSelect
+                    value={countryCode}
+                    onChange={setCountryCode}
+                  />
+                </div>
+                <div className="flex flex-col text-left w-full min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
+                      {t.phoneNumber}
+                    </label>
+                    {countryCode === '+91' && (
+                      <span className="text-[9px] font-bold text-slate-500">
+                        {customerPhone.length > 0 ? `${customerPhone.length}/10` : '10 Digits'}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="tel"
                     inputMode="numeric"
-                    maxLength={10}
+                    maxLength={countryCode === '+91' ? 10 : 15}
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                    placeholder="9876543210"
-                    className="w-full text-xs lg:text-sm font-bold text-slate-900 placeholder-slate-400 bg-transparent focus:outline-none tracking-wider"
+                    placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
+                    className="w-full text-xs font-bold text-white placeholder-slate-500 bg-transparent focus:outline-none tracking-wider"
                     required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Vertical Divider */}
-            <div className="w-px h-8 lg:h-10 bg-slate-200/90 shrink-0" />
-
-            {/* Segment 4: Location */}
-            <div className="flex-1 min-w-0 flex items-center gap-2.5 lg:gap-3">
-              <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-2xl bg-slate-100 flex items-center justify-center shrink-0">
-                <MapPin className="w-4 h-4 text-slate-500" />
+            {/* Bottom Row: Kerala Location (District & City), Optional Deadline & Enquire Button */}
+            <div className="grid grid-cols-12 gap-3 items-end pt-1 border-t border-white/5">
+              {/* Kerala Location Select (District + City with Custom Typing) */}
+              <div className="col-span-6">
+                <KeralaLocationSelect
+                  district={district}
+                  city={city}
+                  onDistrictChange={setDistrict}
+                  onCityChange={setCity}
+                />
               </div>
-              <div className="flex flex-col text-left w-full min-w-0">
-                <label className="text-[10px] lg:text-[11px] font-black uppercase tracking-wider text-slate-400 mb-0.5 truncate">
-                  {t.location}
+
+              {/* Optional Deadline */}
+              <div className="col-span-3">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                  Target Deadline <span className="text-slate-500 font-normal">(Optional)</span>
                 </label>
+                <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <input
+                    type="date"
+                    value={deadline}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setDeadline(e.target.value)}
+                    className="w-full bg-transparent text-xs text-white focus:outline-none [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+
+              {/* Enquire Now Button */}
+              <div className="col-span-3">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-900/40 transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>{t.submitting}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{language === 'ml' ? 'അന്വേഷിക്കുക' : 'Enquire Now'}</span>
+                      <ArrowRight className="w-4 h-4 text-white shrink-0" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+        {errorMessage && (
+          <p className="text-red-400 text-xs font-medium text-center mt-2 drop-shadow">
+            {errorMessage}
+          </p>
+        )}
+      </div>
+
+      {/* ========================================================
+          2. MOBILE VIEW: Compact Card with Full Capabilities
+      ======================================================== */}
+      <div className="block lg:hidden w-full max-w-md mx-auto">
+        {submittedRef ? (
+          <div className="w-full bg-[#0c1310]/95 backdrop-blur-xl border border-emerald-500/40 rounded-3xl p-5 shadow-2xl text-white text-center animate-in fade-in zoom-in-95 duration-300">
+            <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+            </div>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+              {language === 'ml' ? 'അന്വേഷണം ലഭിച്ചു!' : 'Enquiry Received!'}
+            </span>
+            <span className="font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full block w-fit mx-auto mt-1 mb-2 border border-emerald-500/30">
+              REF: {submittedRef}
+            </span>
+            <p className="text-xs font-semibold text-slate-300 leading-relaxed mb-4">
+              {t.successMsg}
+            </p>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer"
+            >
+              {t.submitAnother}
+            </button>
+          </div>
+        ) : (
+          <form
+            onSubmit={handleSubmit}
+            className="w-full bg-[#0c1310]/95 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-4 sm:p-5 shadow-2xl text-white flex flex-col gap-3"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>{language === 'ml' ? 'ദ്രുത അന്വേഷണം' : 'Quick Enquiry'}</span>
+              </div>
+              <span className="text-[11px] font-bold text-slate-400">
+                Kerala Operations Only
+              </span>
+            </div>
+
+            {/* Service */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                {t.chooseService}
+              </label>
+              <StylishDropdown
+                options={serviceDropdownOptions}
+                value={selectedServiceId}
+                onChange={setSelectedServiceId}
+                label={t.chooseService}
+              />
+            </div>
+
+            {/* Name */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                {t.yourName}
+              </label>
+              <input
+                type="text"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder={t.namePlaceholder}
+                className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                required
+              />
+            </div>
+
+            {/* Mobile with Country Code */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                {t.phoneNumber}
+              </label>
+              <div className="flex items-center gap-1.5">
+                <CountryCodeSelect
+                  value={countryCode}
+                  onChange={setCountryCode}
+                />
                 <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder={t.locationPlaceholder}
-                  className="w-full text-xs lg:text-sm font-bold text-slate-900 placeholder-slate-400 bg-transparent focus:outline-none truncate"
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={countryCode === '+91' ? 10 : 15}
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
+                  placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
+                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  required
                 />
               </div>
             </div>
 
-            {/* Submit Action Button */}
+            {/* Kerala Location */}
+            <KeralaLocationSelect
+              district={district}
+              city={city}
+              onDistrictChange={setDistrict}
+              onCityChange={setCity}
+            />
+
+            {/* Target Deadline */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Target Deadline <span className="text-slate-500 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="date"
+                value={deadline}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setDeadline(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50 [color-scheme:dark]"
+              />
+            </div>
+
+            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#2A835F] hover:bg-[#236D4F] text-white px-5 lg:px-7 xl:px-8 py-3.5 lg:py-4 rounded-xl lg:rounded-2xl xl:rounded-full font-black text-xs lg:text-sm uppercase tracking-wider inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all active:scale-95 shrink-0 cursor-pointer disabled:opacity-60 whitespace-nowrap"
+              className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer mt-1 disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -292,161 +466,11 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
               ) : (
                 <>
                   <span>{language === 'ml' ? 'അന്വേഷിക്കുക' : 'Enquire Now'}</span>
-                  <ArrowRight className="w-4 h-4 text-white shrink-0" />
+                  <ArrowRight className="w-4 h-4 text-white" />
                 </>
               )}
             </button>
           </form>
-        )}
-        {errorMessage && (
-          <p className="text-red-300 text-xs font-medium text-center mt-2 drop-shadow">
-            {errorMessage}
-          </p>
-        )}
-      </div>
-
-      {/* ========================================================
-          2. MOBILE VIEW: Vertical Rectangular Squarish Card
-      ======================================================== */}
-      <div className="block lg:hidden w-full max-w-[340px] sm:max-w-[380px] mx-auto">
-        {submittedRef ? (
-          <div className="w-full bg-white/95 backdrop-blur-xl border border-white/60 rounded-3xl p-5 shadow-2xl text-slate-800 flex flex-col justify-between aspect-square text-center animate-in fade-in zoom-in-95 duration-300">
-            <div className="flex flex-col items-center justify-center my-auto">
-              <div className="w-14 h-14 rounded-full bg-[#EBF6F1] flex items-center justify-center mb-3 shadow-inner">
-                <CheckCircle2 className="w-8 h-8 text-[#2A835F]" />
-              </div>
-              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#2A835F]">
-                {language === 'ml' ? 'അന്വേഷണം ലഭിച്ചു!' : 'Enquiry Received!'}
-              </span>
-              <span className="font-mono text-xs font-bold bg-[#EBF6F1] text-[#2A835F] px-3 py-1 rounded-full mt-1 mb-2">
-                REF: {submittedRef}
-              </span>
-              <p className="text-xs font-semibold text-slate-600 max-w-[240px] leading-relaxed">
-                {t.successMsg}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer mt-2"
-            >
-              {t.submitAnother}
-            </button>
-          </div>
-        ) : (
-          <form
-            onSubmit={handleSubmit}
-            className="w-full bg-white/95 backdrop-blur-xl border-2 border-white/80 rounded-3xl p-4 sm:p-5 shadow-2xl text-slate-800 flex flex-col justify-between gap-3 min-h-[340px] sm:min-h-[360px] transition-all"
-          >
-            {/* Header / Kicker */}
-            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
-              <div className="inline-flex items-center gap-1.5 bg-[#EBF6F1] text-[#2A835F] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#2A835F] animate-pulse" />
-                <span>{language === 'ml' ? 'ദ്രുത അന്വേഷണം' : 'Quick Enquiry'}</span>
-              </div>
-              <span className="text-[11px] font-bold text-slate-700">
-                {language === 'ml' ? 'നേരിട്ടുള്ള ബുക്കിംഗ്' : 'Instant Dispatch'}
-              </span>
-            </div>
-
-            {/* Service Dropdown with StylishDropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                {t.chooseService}
-              </label>
-              <StylishDropdown
-                options={serviceDropdownOptions}
-                value={selectedServiceId}
-                onChange={setSelectedServiceId}
-                variant="boxed"
-              />
-            </div>
-
-            {/* Name and Phone (Grid 2 cols for compactness) */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                  {t.yourName}
-                </label>
-                <div className="flex items-center bg-slate-100/90 border border-slate-200/80 rounded-xl px-2.5 py-1.5">
-                  <User className="w-3 h-3 text-slate-400 shrink-0 mr-1.5" />
-                  <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder={t.namePlaceholder.split(' ')[0]}
-                    className="w-full text-xs font-semibold text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                    {t.phoneNumber}
-                  </label>
-                  <span className="text-[9px] font-bold text-slate-400">
-                    {customerPhone.length > 0 ? `${customerPhone.length}/10` : '10 Digits'}
-                  </span>
-                </div>
-                <div className="flex items-center bg-slate-100/90 border border-slate-200/80 rounded-xl px-2.5 py-1.5 focus-within:border-[#2A835F] focus-within:ring-1 focus-within:ring-[#2A835F]/30">
-                  <span className="text-xs font-bold text-[#2A835F] mr-1 select-none">+91</span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    maxLength={10}
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                    placeholder="9876543210"
-                    className="w-full text-xs font-semibold text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none tracking-wider"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Location Input */}
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                {t.location}
-              </label>
-              <div className="flex items-center bg-slate-100/90 border border-slate-200/80 rounded-xl px-2.5 py-1.5">
-                <MapPin className="w-3 h-3 text-slate-400 shrink-0 mr-1.5" />
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder={t.locationPlaceholder}
-                  className="w-full text-xs font-semibold text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-60 cursor-pointer mt-1"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>{t.submitting}</span>
-                </>
-              ) : (
-                <>
-                  <span>{language === 'ml' ? 'അന്വേഷിക്കുക' : 'Enquire Now'}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-white" />
-                </>
-              )}
-            </button>
-          </form>
-        )}
-        {errorMessage && (
-          <p className="text-red-300 text-[11px] font-medium text-center mt-1.5 drop-shadow">
-            {errorMessage}
-          </p>
         )}
       </div>
     </div>
