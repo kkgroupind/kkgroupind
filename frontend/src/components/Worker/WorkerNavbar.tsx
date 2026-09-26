@@ -18,6 +18,7 @@ import {
   User,
   Settings,
   ChevronDown,
+  Briefcase,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -88,27 +89,35 @@ export function WorkerNavbar({
   };
 
   const desktopNavItems: NavItem[] = [
-    { id: 'home', icon: Home, label: 'Dashboard' },
+    { id: 'home', icon: Home, label: 'Home' },
     {
       id: 'tasks',
-      icon: FileText,
-      label: 'Work Orders',
+      icon: Briefcase,
+      label: 'Jobs',
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
-    { id: 'crew', icon: Users, label: 'Squad & Map' },
-    { id: 'profile', icon: UserCircle, label: 'Profile' },
-    { id: 'analytics', icon: BarChart2, label: 'Performance' },
+    {
+      id: 'notifications',
+      icon: Bell,
+      label: 'Notification',
+      badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
+    },
   ];
 
   const mobileNavItems: NavItem[] = [
-    { id: 'home', icon: Home, label: 'Dashboard' },
+    { id: 'home', icon: Home, label: 'Home' },
     {
       id: 'tasks',
-      icon: FileText,
-      label: 'Orders',
+      icon: Briefcase,
+      label: 'Jobs',
       badge: assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
-    { id: 'crew', icon: Users, label: 'Squad' },
+    {
+      id: 'notifications',
+      icon: Bell,
+      label: 'Notification',
+      badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
+    },
     { id: 'profile', icon: UserCircle, label: 'Profile' },
   ];
 
@@ -202,19 +211,6 @@ export function WorkerNavbar({
               <span className="inline sm:hidden text-[11px]">
                 {isOnDuty ? 'Duty ON' : 'Duty OFF'}
               </span>
-            </button>
-
-            {/* Notifications Alert Button */}
-            <button
-              type="button"
-              onClick={() => onTabChange?.('notifications')}
-              aria-label="Alerts"
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
-            >
-              <Bell className="w-4 h-4 text-white" />
-              {hasNotifications && (
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#FF5E88] ring-2 ring-[#5E42B4]" />
-              )}
             </button>
 
             {/* Profile Avatar Trigger & Dropdown Menu */}
@@ -346,7 +342,7 @@ export function WorkerNavbar({
           2. UTMOST MOBILE-FRIENDLY FIXED BOTTOM THUMB NAVIGATION BAR
           Optimized for workers holding smartphone with one hand on field!
       ======================================================== */}
-      <div
+      <nav
         aria-label="Mobile Bottom Navigation"
         className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white/95 backdrop-blur-2xl border-t border-slate-200/90 shadow-[0_-8px_30px_rgba(0,0,0,0.12)] px-2 py-1.5 flex items-center justify-around select-none"
       >
@@ -383,45 +379,7 @@ export function WorkerNavbar({
             </button>
           );
         })}
-
-        {/* Mobile Quick Duty Switch */}
-        <button
-          type="button"
-          onClick={onToggleDuty}
-          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all cursor-pointer min-w-[58px] ${
-            isOnDuty ? 'text-emerald-600' : 'text-slate-400'
-          }`}
-        >
-          <div
-            className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-              isOnDuty ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30' : 'bg-slate-100 text-slate-500'
-            }`}
-          >
-            {isTogglingDuty ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : (
-              <HardHat className="w-4 h-4" />
-            )}
-          </div>
-          <span className="text-[10px] font-bold tracking-tight mt-0.5">
-            {isOnDuty ? 'On Duty' : 'Off Duty'}
-          </span>
-        </button>
-
-        {/* Mobile Quick Sign Out Button */}
-        <button
-          type="button"
-          onClick={onLogout}
-          className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-slate-400 hover:text-rose-600 transition-colors cursor-pointer min-w-[58px]"
-        >
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600">
-            <LogOut className="w-4 h-4" />
-          </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-0.5">
-            Exit
-          </span>
-        </button>
-      </div>
+      </nav>
     </>
   );
 }

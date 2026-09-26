@@ -81,6 +81,21 @@ export interface User {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  attendances?: AttendanceRecord[];
+  officeEnquiries?: Array<ServiceEnquiry & {
+    worker?: { id: string; name?: string | null; username?: string | null; phone?: string | null; avatar?: string | null } | null;
+    customer?: { id: string; name?: string | null; email?: string | null; phone?: string | null } | null;
+  }>;
+  workerAssignments?: Array<ServiceEnquiry & {
+    worker?: { id: string; name?: string | null; username?: string | null; phone?: string | null; avatar?: string | null } | null;
+    customer?: { id: string; name?: string | null; email?: string | null; phone?: string | null; avatar?: string | null } | null;
+    officeStaff?: { id: string; name?: string | null; username?: string | null; phone?: string | null; avatar?: string | null } | null;
+  }>;
+  _count?: {
+    attendances?: number;
+    officeEnquiries?: number;
+    workerAssignments?: number;
+  };
 }
 
 export interface AuthResponse {

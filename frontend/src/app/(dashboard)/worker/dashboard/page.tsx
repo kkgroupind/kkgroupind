@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Bell, Briefcase, HardHat } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { useToast } from '@/context/toast-context';
 import {
@@ -248,9 +249,9 @@ export default function WorkerDashboardPage() {
         onTabChange={(tab) => {
           setActiveTab(tab);
           if (tab === 'tasks') {
-            toast.info('Work Orders', `${jobs.length} total work orders assigned.`);
-          } else if (tab === 'crew') {
-            toast.info('Field Squad', 'Active crew operatives and live GPS radar.');
+            toast.info('Jobs', `${jobs.length} total work orders assigned.`);
+          } else if (tab === 'notifications') {
+            toast.info('Notifications', 'Operational alerts and dispatch updates.');
           }
         }}
         onLogout={handleLogout}
@@ -294,7 +295,7 @@ export default function WorkerDashboardPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              📊 Overview
+              📊 Home
             </button>
             <button
               type="button"
@@ -305,7 +306,7 @@ export default function WorkerDashboardPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <span>📋 Orders</span>
+              <span>💼 Jobs</span>
               {jobs.length > 0 && (
                 <span className="bg-[#FF5E88] text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
                   {jobs.length}
@@ -314,31 +315,130 @@ export default function WorkerDashboardPage() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('crew')}
-              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
-                activeTab === 'crew'
+              onClick={() => setActiveTab('notifications')}
+              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'notifications'
                   ? 'bg-[#5E42B4] text-white shadow-xs scale-[1.02]'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              👥 Squad & Map
+              <span>🔔 Notification</span>
+              {jobs.filter((j) => j.status === 'ASSIGNED').length > 0 && (
+                <span className="bg-[#FF5E88] text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">
+                  {jobs.filter((j) => j.status === 'ASSIGNED').length}
+                </span>
+              )}
             </button>
           </div>
 
-          {/* Mobile View Condition 1: Squad & Map displayed when selected on mobile */}
-          {activeTab === 'crew' && (
-            <div className="lg:hidden w-full bg-white rounded-[28px] p-5 shadow-[0_12px_35px_rgba(94,66,180,0.06)] border border-slate-100/90 flex flex-col gap-5">
-              <WorkerCrewList members={crewMembers} onMessageCrew={handleMessageCrew} />
-              <WorkerLiveMap
-                locationTitle={activeJob?.location || 'Kerala Operations Sector'}
-                operatives={crewMembers}
-                onViewMap={handleViewMap}
-              />
+          {/* Notifications Tab View */}
+          {activeTab === 'notifications' && (
+            <div className="w-full bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(94,66,180,0.06)] border border-slate-100 flex flex-col gap-5">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-50 text-[#5E42B4] flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-[#5E42B4]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-tight">
+                      അറിയിപ്പുകൾ / Notifications
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-400 mt-0.5">
+                      Real-time dispatch updates, duty confirmations and job allocations
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                  {jobs.filter((j) => j.status === 'ASSIGNED').length} New
+                </span>
+              </div>
+
+              {/* Notification Items */}
+              <div className="space-y-3">
+                {/* Daily Duty Status Notice */}
+                <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 flex items-start gap-3.5">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                      isOnDuty
+                        ? 'bg-emerald-50 text-emerald-600'
+                        : 'bg-amber-50 text-amber-600'
+                    }`}
+                  >
+                    <HardHat className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-800">
+                        {isOnDuty
+                          ? 'ഫീൽഡ് ഡ്യൂട്ടി സജീവമാണ് / Attendance Active'
+                          : 'ഡ്യൂട്ടി അവധിയാണ് / Off Duty Status'}
+                      </span>
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        Today
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {isOnDuty
+                        ? 'You are marked Available. Office dispatch desk can allocate new customer work orders to you.'
+                        : 'You are currently Off Duty. Toggle attendance anytime to receive new customer orders.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Real Job Notifications */}
+                {jobs.map((job) => {
+                  const isAssigned = job.status === 'ASSIGNED';
+                  const isInProgress = job.status === 'IN_PROGRESS';
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={() => handleOpenJobModal(job)}
+                      className="p-4 rounded-2xl bg-white hover:bg-slate-50/80 border border-slate-100 hover:border-purple-200 transition-all cursor-pointer shadow-xs flex items-start gap-3.5 group"
+                    >
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                          isAssigned
+                            ? 'bg-purple-50 text-[#5E42B4]'
+                            : isInProgress
+                            ? 'bg-amber-50 text-amber-600'
+                            : 'bg-emerald-50 text-emerald-600'
+                        }`}
+                      >
+                        <Briefcase className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-slate-800 group-hover:text-[#5E42B4] transition-colors">
+                            {isAssigned
+                              ? `New Job Dispatched: ${job.serviceName}`
+                              : isInProgress
+                              ? `Job In Progress: ${job.serviceName}`
+                              : `Completed: ${job.serviceName}`}
+                          </span>
+                          <span className="text-[10px] font-bold font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                            {job.trackingNumber}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                          Client: {job.customerName || 'Customer'} &bull; Site:{' '}
+                          {job.location || 'Kerala Site'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {jobs.length === 0 && (
+                  <div className="text-center py-8 text-xs text-slate-400">
+                    No work order notifications yet. You are all caught up!
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
           {/* Middle Row: Overview Chart Card + 2 Stacked Right Duty Cards */}
-          {(activeTab === 'home' || activeTab === 'analytics' || typeof window === 'undefined') && (
+          {(activeTab === 'home' || typeof window === 'undefined') && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
               {/* Left Big Card: Overview Wavy Chart */}
               <div className="lg:col-span-7 xl:col-span-8 flex">

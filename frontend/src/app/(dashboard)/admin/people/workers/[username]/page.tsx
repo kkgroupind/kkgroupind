@@ -2,16 +2,15 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { PersonDetailView } from '@/components/Admin/person-detail-view';
+import { WorkerDetailView } from '@/components/Admin/WorkerDetailView';
 
 export default function WorkerDetailPage() {
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username || '');
 
   return (
-    <PersonDetailView
+    <WorkerDetailView
       username={username}
-      expectedRole="WORKER"
       backHref="/admin/people/workers"
       categoryLabel="Workers"
     />

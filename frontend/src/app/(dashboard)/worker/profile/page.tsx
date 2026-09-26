@@ -378,7 +378,7 @@ export default function WorkerProfilePage() {
       <WorkerNavbar
         activeTab="profile"
         onTabChange={(tab) => {
-          if (tab === 'home' || tab === 'tasks' || tab === 'crew' || tab === 'analytics') {
+          if (tab === 'home' || tab === 'tasks' || tab === 'notifications' || tab === 'crew' || tab === 'analytics') {
             router.push('/worker/dashboard');
           }
         }}

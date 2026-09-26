@@ -65,7 +65,69 @@ export class PeopleRepository {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { username } });
+    return this.prisma.user.findUnique({
+      where: { username },
+      include: {
+        attendances: {
+          orderBy: { date: 'desc' },
+          take: 60,
+        },
+        officeEnquiries: {
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          include: {
+            worker: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        workerAssignments: {
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          include: {
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+            officeStaff: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            attendances: true,
+            officeEnquiries: true,
+            workerAssignments: true,
+          },
+        },
+      },
+    }) as unknown as Promise<User | null>;
   }
 
   async findByEmail(email: string): Promise<User | null> {
