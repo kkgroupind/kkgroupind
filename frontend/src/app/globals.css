@@ -113,3 +113,156 @@ html[lang="ml"],
   }
 }
 
+/* ==========================================================================
+   KK Group Admin Light Theme Engine
+   Activates when data-admin-theme="light" or class "admin-light" is present.
+   ========================================================================== */
+html[data-admin-theme="light"],
+html.admin-light {
+  color-scheme: light;
+}
+
+html[data-admin-theme="light"] body,
+html.admin-light body {
+  background-color: #F8FAFC;
+  color: #0F172A;
+}
+
+/* Background surfaces */
+html[data-admin-theme="light"] .bg-\[\#0D0E12\],
+html.admin-light .bg-\[\#0D0E12\] {
+  background-color: #F8FAFC !important;
+}
+
+html[data-admin-theme="light"] .bg-\[\#14151A\],
+html.admin-light .bg-\[\#14151A\] {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+}
+
+html[data-admin-theme="light"] .bg-\[\#16181E\],
+html.admin-light .bg-\[\#16181E\] {
+  background-color: #F8FAFC !important;
+}
+
+html[data-admin-theme="light"] .bg-\[\#1A1C23\],
+html.admin-light .bg-\[\#1A1C23\] {
+  background-color: #F1F5F9 !important;
+}
+
+html[data-admin-theme="light"] .bg-\[\#22252E\],
+html.admin-light .bg-\[\#22252E\],
+html[data-admin-theme="light"] .bg-\[\#2A2D35\],
+html.admin-light .bg-\[\#2A2D35\] {
+  background-color: #E2E8F0 !important;
+}
+
+/* Hover surfaces */
+html[data-admin-theme="light"] .hover\:bg-\[\#1A1C23\]:hover,
+html.admin-light .hover\:bg-\[\#1A1C23\]:hover {
+  background-color: #F1F5F9 !important;
+}
+
+html[data-admin-theme="light"] .hover\:bg-\[\#2A2D35\]:hover,
+html.admin-light .hover\:bg-\[\#2A2D35\]:hover {
+  background-color: #E2E8F0 !important;
+}
+
+html[data-admin-theme="light"] .hover\:bg-\[\#14151A\]:hover,
+html.admin-light .hover\:bg-\[\#14151A\]:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Borders */
+html[data-admin-theme="light"] .border-gray-800,
+html.admin-light .border-gray-800,
+html[data-admin-theme="light"] .border-gray-700,
+html.admin-light .border-gray-700,
+html[data-admin-theme="light"] .border-gray-800\/50,
+html.admin-light .border-gray-800\/50,
+html[data-admin-theme="light"] .border-gray-800\/30,
+html.admin-light .border-gray-800\/30,
+html[data-admin-theme="light"] .border-gray-700\/50,
+html.admin-light .border-gray-700\/50 {
+  border-color: #E2E8F0 !important;
+}
+
+/* Typography high contrast */
+html[data-admin-theme="light"] .text-gray-100,
+html.admin-light .text-gray-100,
+html[data-admin-theme="light"] .text-gray-200,
+html.admin-light .text-gray-200 {
+  color: #0F172A !important;
+}
+
+html[data-admin-theme="light"] .text-gray-300,
+html.admin-light .text-gray-300,
+html[data-admin-theme="light"] .text-gray-400,
+html.admin-light .text-gray-400 {
+  color: #334155 !important;
+}
+
+html[data-admin-theme="light"] .text-gray-500,
+html.admin-light .text-gray-500 {
+  color: #64748B !important;
+}
+
+html[data-admin-theme="light"] .text-gray-600,
+html.admin-light .text-gray-600 {
+  color: #94A3B8 !important;
+}
+
+/* Inputs and Forms */
+html[data-admin-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+html.admin-light input:not([type="checkbox"]):not([type="radio"]),
+html[data-admin-theme="light"] select,
+html.admin-light select,
+html[data-admin-theme="light"] textarea,
+html.admin-light textarea {
+  color: #0F172A;
+}
+
+html[data-admin-theme="light"] input::placeholder,
+html.admin-light input::placeholder,
+html[data-admin-theme="light"] textarea::placeholder,
+html.admin-light textarea::placeholder {
+  color: #94A3B8;
+}
+
+/* Tables */
+html[data-admin-theme="light"] thead,
+html.admin-light thead {
+  background-color: #F8FAFC !important;
+  color: #64748B !important;
+}
+
+html[data-admin-theme="light"] tbody tr,
+html.admin-light tbody tr {
+  background-color: #FFFFFF !important;
+}
+
+html[data-admin-theme="light"] tbody tr:hover,
+html.admin-light tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+
+/* Tooltips in charts */
+html[data-admin-theme="light"] .recharts-default-tooltip,
+html.admin-light .recharts-default-tooltip {
+  background-color: #FFFFFF !important;
+  border-color: #E2E8F0 !important;
+  color: #0F172A !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Custom Scrollbars in Light Mode */
+html[data-admin-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb,
+html.admin-light .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #CBD5E1 !important;
+}
+
+html[data-admin-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb:hover,
+html.admin-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94A3B8 !important;
+}
+

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import {
   LayoutDashboard,
   Users,
@@ -83,23 +84,37 @@ interface SidebarProps {
   onToggleCollapse?: () => void; // Desktop toggle
 }
 
-const MenuItem = ({ item, pathname, onClose, isCollapsed }: any) => {
+const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
   if (item.type === 'divider') {
-    return <div className={`h-px bg-gray-800 my-4 ${isCollapsed ? 'mx-2' : 'mx-4'}`} />;
+    return (
+      <div
+        className={`h-px my-4 transition-colors ${
+          isDark ? 'bg-gray-800' : 'bg-slate-200'
+        } ${isCollapsed ? 'mx-2' : 'mx-4'}`}
+      />
+    );
   }
 
   const hasSubItems = !!item.subItems;
-  const isActive = pathname === item.href || (hasSubItems && item.subItems.some((sub: any) => pathname.startsWith(sub.href)));
+  const isActive =
+    pathname === item.href ||
+    (hasSubItems && item.subItems.some((sub: any) => pathname.startsWith(sub.href)));
 
   if (hasSubItems) {
     return (
       <li className="mb-4">
         <div
-          className={`flex items-center ${isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'} text-gray-500`}
+          className={`flex items-center ${
+            isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'
+          } ${isDark ? 'text-gray-500' : 'text-slate-400'}`}
           title={isCollapsed ? item.name : undefined}
         >
           {isCollapsed ? (
-            <item.icon className={`w-5 h-5 ${isActive ? 'text-[#7B4DFF]' : 'text-gray-500'}`} />
+            <item.icon
+              className={`w-5 h-5 ${
+                isActive ? 'text-[#2A835F]' : isDark ? 'text-gray-500' : 'text-slate-400'
+              }`}
+            />
           ) : (
             <span className="font-semibold text-xs uppercase tracking-wider">{item.name}</span>
           )}
@@ -108,15 +123,20 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed }: any) => {
           <ul className="mt-1 space-y-1">
             {item.subItems.map((sub: any) => {
               const SubIcon = sub.icon;
+              const isSubActive = pathname === sub.href;
               return (
                 <li key={sub.name}>
                   <Link
                     href={sub.href}
                     onClick={onClose}
-                    className={`flex items-center gap-3 px-4 py-2.5 mx-2 text-sm rounded-xl transition-colors ${
-                      pathname === sub.href
-                        ? 'bg-[#1A1C23] text-[#7B4DFF] font-medium border border-gray-700/50'
-                        : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                    className={`flex items-center gap-3 px-4 py-2.5 mx-2 text-sm rounded-xl transition-all ${
+                      isSubActive
+                        ? isDark
+                          ? 'bg-[#2A835F]/15 text-[#2A835F] font-semibold border border-[#2A835F]/30'
+                          : 'bg-[#EBF6F1] text-[#2A835F] font-semibold border border-[#2A835F]/25 shadow-xs'
+                        : isDark
+                        ? 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
                     {SubIcon && <SubIcon className="w-4 h-4" />}
@@ -137,10 +157,16 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed }: any) => {
         href={item.href}
         onClick={onClose}
         title={isCollapsed ? item.name : undefined}
-        className={`flex items-center ${isCollapsed ? 'justify-center px-0 py-3 mx-2' : 'px-4 py-2.5 mx-2'} rounded-xl transition-all duration-200 ${
+        className={`flex items-center ${
+          isCollapsed ? 'justify-center px-0 py-3 mx-2' : 'px-4 py-2.5 mx-2'
+        } rounded-xl transition-all duration-200 ${
           isActive
-            ? 'bg-[#1A1C23] text-[#7B4DFF] font-medium border border-gray-700/50'
-            : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+            ? isDark
+              ? 'bg-[#2A835F]/15 text-[#2A835F] font-semibold border border-[#2A835F]/30'
+              : 'bg-[#EBF6F1] text-[#2A835F] font-semibold border border-[#2A835F]/25 shadow-xs'
+            : isDark
+            ? 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
         <div className="flex items-center gap-3">
@@ -156,6 +182,7 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
   const pathname = usePathname();
   const { logout, user } = useAuth();
   const router = useRouter();
+  const { isDark } = useAdminTheme();
 
   const handleLogout = () => {
     logout();
@@ -163,29 +190,47 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
   };
 
   return (
-    <aside className={`flex-shrink-0 bg-[#0D0E12] border-r border-gray-800 flex flex-col h-full overflow-y-auto custom-scrollbar transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-72 lg:w-64'}`}>
+    <aside
+      className={`flex-shrink-0 border-r flex flex-col h-full overflow-y-auto custom-scrollbar transition-all duration-300 ${
+        isDark ? 'bg-[#0D0E12] border-gray-800' : 'bg-white border-slate-200 shadow-sm'
+      } ${isCollapsed ? 'w-20' : 'w-72 lg:w-64'}`}
+    >
       {/* Logo & Close Button */}
       <div className={`p-6 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 relative flex items-center justify-center shrink-0">
             <Image src="/logos/logo-bg.png" alt="KK Group Logo" fill className="object-contain" />
           </div>
-          {!isCollapsed && <span className="text-xl font-semibold text-gray-100 tracking-tight whitespace-nowrap">KK Group</span>}
+          {!isCollapsed && (
+            <span
+              className={`text-xl font-bold tracking-tight whitespace-nowrap ${
+                isDark ? 'text-gray-100' : 'text-slate-900'
+              }`}
+            >
+              KK Group
+            </span>
+          )}
         </div>
         {/* Desktop Collapse Toggle */}
         {!isCollapsed && onToggleCollapse && (
-          <button 
+          <button
             onClick={onToggleCollapse}
-            className="hidden lg:block p-1 text-gray-500 hover:text-gray-300 transition-colors shrink-0"
+            className={`hidden lg:block p-1 transition-colors shrink-0 ${
+              isDark ? 'text-gray-500 hover:text-gray-300' : 'text-slate-400 hover:text-slate-700'
+            }`}
           >
             <ChevronsLeft className="w-5 h-5" />
           </button>
         )}
         {/* Mobile Close Button */}
         {onClose && !isCollapsed && (
-          <button 
+          <button
             onClick={onClose}
-            className="lg:hidden p-2 text-gray-400 hover:text-gray-900 transition-colors bg-gray-50 rounded-lg shrink-0"
+            className={`lg:hidden p-2 rounded-lg shrink-0 transition-colors ${
+              isDark
+                ? 'text-gray-400 hover:text-gray-100 bg-[#1A1C23]'
+                : 'text-slate-500 hover:text-slate-900 bg-slate-100'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -194,12 +239,16 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
 
       {isCollapsed && onToggleCollapse && (
         <div className="flex justify-center mb-4 hidden lg:flex">
-           <button 
-              onClick={onToggleCollapse}
-              className="p-2 text-gray-500 hover:text-gray-300 hover:bg-[#1A1C23] rounded-lg transition-colors"
-           >
-              <Menu className="w-5 h-5" />
-           </button>
+          <button
+            onClick={onToggleCollapse}
+            className={`p-2 rounded-lg transition-colors ${
+              isDark
+                ? 'text-gray-500 hover:text-gray-300 hover:bg-[#1A1C23]'
+                : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
         </div>
       )}
 
@@ -207,35 +256,68 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
       <nav className={`flex-1 pb-6 ${isCollapsed ? 'px-1' : 'px-2'}`}>
         <ul>
           {menuData.map((item, idx) => (
-            <MenuItem key={idx} item={item} pathname={pathname} onClose={onClose} isCollapsed={isCollapsed} />
+            <MenuItem
+              key={idx}
+              item={item}
+              pathname={pathname}
+              onClose={onClose}
+              isCollapsed={isCollapsed}
+              isDark={isDark}
+            />
           ))}
         </ul>
       </nav>
 
       {/* User Profile Footer */}
-      <div className={`p-6 border-t border-gray-800 flex flex-col gap-4 ${isCollapsed ? 'items-center px-2' : ''}`}>
+      <div
+        className={`p-6 border-t flex flex-col gap-4 ${
+          isDark ? 'border-gray-800' : 'border-slate-200'
+        } ${isCollapsed ? 'items-center px-2' : ''}`}
+      >
         <button
-           onClick={handleLogout}
-           title={isCollapsed ? "Log out" : undefined}
-           className={`flex items-center gap-3 py-2 rounded-xl text-gray-400 hover:text-red-400 hover:bg-[#1A1C23] transition-colors font-medium text-sm w-full ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}
-         >
-           <LogOut className="w-5 h-5 shrink-0" />
-           {!isCollapsed && <span>Log out</span>}
+          onClick={handleLogout}
+          title={isCollapsed ? 'Log out' : undefined}
+          className={`flex items-center gap-3 py-2 rounded-xl transition-colors font-medium text-sm w-full cursor-pointer ${
+            isDark
+              ? 'text-gray-400 hover:text-red-400 hover:bg-[#1A1C23]'
+              : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
+          } ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          {!isCollapsed && <span>Log out</span>}
         </button>
         <Link
           href="/admin/settings"
           title="Open Admin Profile & Settings"
-          className={`flex items-center hover:bg-[#1A1C23] p-2 rounded-xl transition-colors ${isCollapsed ? 'justify-center' : 'gap-3'}`}
+          className={`flex items-center p-2 rounded-xl transition-colors ${
+            isDark ? 'hover:bg-[#1A1C23]' : 'hover:bg-slate-100'
+          } ${isCollapsed ? 'justify-center' : 'gap-3'}`}
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7B4DFF] to-indigo-600 p-[2px] shrink-0">
-            <div className="w-full h-full bg-[#1A1C23] rounded-full flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2A835F] to-emerald-600 p-[2px] shrink-0">
+            <div
+              className={`w-full h-full rounded-full flex items-center justify-center font-bold text-sm ${
+                isDark ? 'bg-[#1A1C23] text-white' : 'bg-white text-[#2A835F]'
+              }`}
+            >
               {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
             </div>
           </div>
           {!isCollapsed && (
             <div className="overflow-hidden text-left">
-              <p className="text-sm font-semibold text-gray-200 truncate">{user?.name || user?.username || 'Super Admin'}</p>
-              <p className="text-xs text-gray-500 truncate">{user?.email || `@${user?.username || 'admin'}`}</p>
+              <p
+                className={`text-sm font-semibold truncate ${
+                  isDark ? 'text-gray-200' : 'text-slate-900'
+                }`}
+              >
+                {user?.name || user?.username || 'Super Admin'}
+              </p>
+              <p
+                className={`text-xs truncate ${
+                  isDark ? 'text-gray-500' : 'text-slate-500'
+                }`}
+              >
+                {user?.email || `@${user?.username || 'admin'}`}
+              </p>
             </div>
           )}
         </Link>
