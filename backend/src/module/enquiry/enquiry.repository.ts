@@ -179,7 +179,8 @@ export class EnquiryRepository {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        officeStaff: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true, avatar: true } },
+        officeStaff: { select: { id: true, name: true, username: true, avatar: true } },
       },
     });
   }

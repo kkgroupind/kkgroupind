@@ -16,6 +16,7 @@ interface WorkerDutyCardsProps {
   isTogglingDuty?: boolean;
   activeJobTitle?: string;
   totalTimeWorked?: string;
+  currentMonth?: string;
   onViewActiveJob?: () => void;
 }
 
@@ -23,10 +24,13 @@ export function WorkerDutyCards({
   isOnDuty = true,
   onToggleDuty,
   isTogglingDuty = false,
-  activeJobTitle = 'Palm Harvesting Squad',
-  totalTimeWorked = '748 hr',
+  activeJobTitle = 'Standby / No Active Dispatch',
+  totalTimeWorked = '0 Orders',
+  currentMonth,
   onViewActiveJob,
 }: WorkerDutyCardsProps) {
+  const dynamicMonthFull =
+    currentMonth || new Date().toLocaleString('en-US', { month: 'long' });
   return (
     <div className="flex flex-col gap-4 w-full select-none">
       {/* 1. TOP CARD: Daily Field Duty / Attendance Card */}
@@ -111,13 +115,13 @@ export function WorkerDutyCards({
         <div className="flex items-end justify-between relative z-10 pt-4">
           <div className="flex flex-col">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-pink-100">
-              Total Time
+              Work Orders
             </span>
             <span className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none mt-1">
               {totalTimeWorked}
             </span>
             <span className="text-[11px] font-medium text-pink-200 mt-1">
-              July
+              {dynamicMonthFull}
             </span>
           </div>
 

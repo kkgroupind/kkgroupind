@@ -8,18 +8,37 @@ interface WorkerOverviewChartProps {
   totalCompleted?: string;
   target?: string;
   currentMonth?: string;
+  monthName?: string;
 }
 
 export function WorkerOverviewChart({
-  totalHours = '748 Hr',
-  totalCompleted = '9,178 St',
-  target = '9,200 St',
-  currentMonth = 'Apr',
+  totalHours = '0 Active',
+  totalCompleted = '0 Orders',
+  target = '10 Target',
+  currentMonth,
+  monthName,
 }: WorkerOverviewChartProps) {
+  const dynamicMonth =
+    currentMonth || new Date().toLocaleString('en-US', { month: 'short' });
+  const dynamicMonthFull =
+    monthName || new Date().toLocaleString('en-US', { month: 'long' });
   const [selectedRange, setSelectedRange] = useState('Monthly');
-  const [activeMonth, setActiveMonth] = useState('Apr');
+  const [activeMonth, setActiveMonth] = useState(dynamicMonth);
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
 
   return (
     <div className="w-full bg-[#5E42B4] rounded-[32px] sm:rounded-[36px] p-5 sm:p-6 text-white shadow-[0_20px_45px_rgba(94,66,180,0.32)] relative overflow-hidden flex flex-col justify-between select-none">
@@ -47,12 +66,14 @@ export function WorkerOverviewChart({
 
       {/* Center: Wavy Area Chart Canvas with Active Indicator */}
       <div className="relative w-full h-36 sm:h-40 my-2 z-10">
-        {/* Active Tooltip Badge (Apr - 9,178 Steps) */}
+        {/* Active Tooltip Badge */}
         <div className="absolute left-[36%] sm:left-[37%] top-0 -translate-x-1/2 flex flex-col items-center z-20 pointer-events-none animate-in fade-in zoom-in-95 duration-300">
           <div className="bg-[#1E1B4B]/95 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-xl shadow-xl flex flex-col items-center">
-            <span className="text-xs font-black text-white leading-tight">9,178</span>
+            <span className="text-xs font-black text-white leading-tight">
+              {totalCompleted}
+            </span>
             <span className="text-[9px] font-semibold text-pink-300 uppercase tracking-wider">
-              Steps
+              Completed
             </span>
           </div>
           {/* Stem / Guide line connecting tooltip to pin point */}
@@ -121,26 +142,30 @@ export function WorkerOverviewChart({
 
       {/* Bottom Sculpted Metrics Row matching reference image */}
       <div className="relative z-10 grid grid-cols-3 items-end gap-2 pt-3 border-t border-white/15">
-        {/* Left Column: Total Time */}
+        {/* Left Column: Active Jobs */}
         <div className="flex flex-col items-center text-center">
           <span className="text-[10px] font-medium text-white/70 uppercase tracking-wider">
-            Total Time
+            Active Jobs
           </span>
           <span className="text-sm sm:text-base font-black text-white mt-0.5">
             {totalHours}
           </span>
-          <span className="text-[10px] font-medium text-white/60 mt-0.5">April</span>
+          <span className="text-[10px] font-medium text-white/60 mt-0.5">
+            {dynamicMonthFull}
+          </span>
         </div>
 
-        {/* Center Column: Total Steps with Elevated Pill Frame */}
+        {/* Center Column: Total Completed with Elevated Pill Frame */}
         <div className="bg-white/15 backdrop-blur-md border border-white/20 rounded-2xl sm:rounded-3xl p-2.5 sm:p-3 flex flex-col items-center text-center shadow-lg -translate-y-1">
           <span className="text-[10px] font-medium text-white/80 uppercase tracking-wider">
-            Total Steps
+            Completed Orders
           </span>
           <span className="text-base sm:text-lg font-black text-white tracking-tight mt-0.5">
             {totalCompleted}
           </span>
-          <span className="text-[10px] font-semibold text-pink-200 mt-0.5">April</span>
+          <span className="text-[10px] font-semibold text-pink-200 mt-0.5">
+            {dynamicMonthFull}
+          </span>
         </div>
 
         {/* Right Column: Target */}
@@ -151,7 +176,9 @@ export function WorkerOverviewChart({
           <span className="text-sm sm:text-base font-black text-white mt-0.5">
             {target}
           </span>
-          <span className="text-[10px] font-medium text-white/60 mt-0.5">April</span>
+          <span className="text-[10px] font-medium text-white/60 mt-0.5">
+            {dynamicMonthFull}
+          </span>
         </div>
       </div>
     </div>

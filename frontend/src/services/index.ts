@@ -1,5 +1,5 @@
 import { authService } from './auth.service';
-import { adminDashboardService, peopleService, adminProfileService } from './Admin';
+import { adminDashboardService, peopleService, adminProfileService, adminServicesService } from './Admin';
 import { officeStaffProfileService, officeStaffPeopleService } from './Office-Staff';
 import { workerProfileService } from './Worker';
 import { EnquiryService } from './enquiry.service';
@@ -20,9 +20,11 @@ export const api = {
   ...peopleService,
   ...adminDashboardService,
   ...adminProfileService,
+  ...adminServicesService,
   ...EnquiryService,
   ...AttendanceService,
   officeStaffProfile: officeStaffProfileService,
   officeStaffPeople: officeStaffPeopleService,
   workerProfile: workerProfileService,
+  adminServices: adminServicesService,
 };

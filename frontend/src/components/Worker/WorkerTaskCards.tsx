@@ -33,64 +33,67 @@ export function WorkerTaskCards({
   jobs = [],
   onSelectJob,
 }: WorkerTaskCardsProps) {
-  // Map real jobs or fallback demo cards matching reference exactly
-  const defaultTasks: TaskItem[] = [
-    {
-      id: 'task-1',
-      title: 'Bicycle Drill',
-      subtitle: '36 km / weeks',
-      progress: 45,
-      progressText: '17 / 36km',
-      badgeText: '2 days left',
-      iconType: 'bike',
-    },
-    {
-      id: 'task-2',
-      title: 'Jogging Hero',
-      subtitle: '12 km / month',
-      progress: 13,
-      progressText: '2 / 12km',
-      badgeText: '17 days left',
-      iconType: 'runner',
-    },
-    {
-      id: 'task-3',
-      title: 'Healthy Busy',
-      subtitle: '3600 steps / weeks',
-      progress: 90,
-      progressText: '3200/ 3600 steps',
-      badgeText: '3 days left',
-      iconType: 'shoe',
-    },
-  ];
+  const displayTasks: TaskItem[] =
+    jobs.length > 0
+      ? jobs.slice(0, 6).map((job, idx) => {
+          const isInProgress = job.status === 'IN_PROGRESS';
+          const isCompleted = job.status === 'COMPLETED';
 
-  // If real jobs are available from backend, adapt them nicely into the 3 slots
-  const displayTasks: TaskItem[] = defaultTasks.map((def, idx) => {
-    const job = jobs[idx];
-    if (!job) return def;
+          const progress = isCompleted ? 100 : isInProgress ? 65 : 20;
+          const badgeText = isCompleted
+            ? 'Completed'
+            : isInProgress
+            ? 'In Progress'
+            : 'New Order';
 
-    const isAssigned = job.status === 'ASSIGNED';
-    const isInProgress = job.status === 'IN_PROGRESS';
-    const isCompleted = job.status === 'COMPLETED';
+          const iconTypes: Array<'hardhat' | 'runner' | 'bike' | 'shoe'> = [
+            'hardhat',
+            'runner',
+            'bike',
+          ];
 
-    const progress = isCompleted ? 100 : isInProgress ? 55 : 20;
-    const badgeText = isCompleted
-      ? 'Completed'
-      : isInProgress
-      ? 'Active Work'
-      : 'New Order';
-
-    return {
-      id: job.id,
-      title: job.serviceName || def.title,
-      subtitle: job.customerName ? `Client: ${job.customerName}` : def.subtitle,
-      progress,
-      progressText: job.trackingNumber || def.progressText,
-      badgeText,
-      iconType: idx === 0 ? 'bike' : idx === 1 ? 'runner' : 'shoe',
-      job,
-    };
-  });
+          return {
+            id: job.id,
+            title: job.serviceName,
+            subtitle: job.customerName
+              ? `Client: ${job.customerName}`
+              : job.location || 'Kerala Site',
+            progress,
+            progressText: job.trackingNumber,
+            badgeText,
+            iconType: iconTypes[idx % iconTypes.length],
+            job,
+          };
+        })
+      : [
+          {
+            id: 'standby-orders',
+            title: 'No Assigned Work Orders',
+            subtitle: 'Waiting for office dispatch allocation',
+            progress: 0,
+            progressText: 'Queue: 0 Orders',
+            badgeText: 'Standby',
+            iconType: 'hardhat',
+          },
+          {
+            id: 'standby-duty',
+            title: 'Field Duty Attendance',
+            subtitle: 'Kerala regional workforce network',
+            progress: 100,
+            progressText: 'Duty Active',
+            badgeText: 'Live',
+            iconType: 'runner',
+          },
+          {
+            id: 'standby-comms',
+            title: 'Operations Desk Link',
+            subtitle: 'Connected to office coordinators',
+            progress: 100,
+            progressText: 'Online Link',
+            badgeText: 'Ready',
+            iconType: 'bike',
+          },
+        ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-5 w-full select-none">

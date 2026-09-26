@@ -35,6 +35,7 @@ export default function WorkerDashboardPage() {
   const [isAvailabilityModalOpen, setIsAvailabilityModalOpen] = useState(false);
   const [jobs, setJobs] = useState<ServiceEnquiry[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
+  const [crewMembers, setCrewMembers] = useState<CrewMember[]>([]);
   const [selectedJob, setSelectedJob] = useState<ServiceEnquiry | null>(null);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -75,12 +76,46 @@ export default function WorkerDashboardPage() {
     }
   }, [token]);
 
+  // Fetch active squad members from backend
+  const loadCrew = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await EnquiryService.getActiveWorkers(token);
+      const list: CrewMember[] = (res.workers || [])
+        .filter((w) => w.id !== user?.id)
+        .map((w) => ({
+          id: w.id,
+          name: w.name || w.username || 'Field Operative',
+          role: `${
+            w.workerStatus === 'BUSY'
+              ? 'Active On Field'
+              : w.workerStatus === 'AVAILABLE'
+              ? 'Available &bull; Standby'
+              : 'Off Duty'
+          } &bull; Kerala Hub`,
+          activity:
+            w.workerStatus === 'BUSY'
+              ? 'Active Job'
+              : w.workerStatus === 'AVAILABLE'
+              ? 'Available'
+              : 'Off Duty',
+          avatar: w.avatar || undefined,
+          isOnline: w.workerStatus === 'AVAILABLE' || w.workerStatus === 'BUSY',
+          phone: w.phone || undefined,
+        }));
+      setCrewMembers(list);
+    } catch (err) {
+      console.error('Failed to load active crew:', err);
+    }
+  }, [token, user?.id]);
+
   useEffect(() => {
     if (token) {
       loadJobs();
       loadAttendance();
+      loadCrew();
     }
-  }, [loadJobs, loadAttendance, token]);
+  }, [loadJobs, loadAttendance, loadCrew, token]);
 
   // Open confirmation modal on toggle request
   const handleRequestToggleDuty = () => {
@@ -193,11 +228,15 @@ export default function WorkerDashboardPage() {
 
   // Active job for pink card
   const activeJob = jobs.find((j) => j.status === 'IN_PROGRESS') || jobs[0];
-  const activeJobTitle = activeJob ? activeJob.serviceName : 'No Active Job';
+  const activeJobTitle = activeJob ? activeJob.serviceName : 'Standby / No Active Dispatch';
 
-  // Hours calculated or standard representation
+  // Real job statistics for the current logged-in worker
   const completedJobsCount = jobs.filter((j) => j.status === 'COMPLETED').length;
   const activeJobsCount = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
+  const totalJobsCount = jobs.length;
+
+  const currentMonthShort = new Date().toLocaleString('en-US', { month: 'short' });
+  const currentMonthLong = new Date().toLocaleString('en-US', { month: 'long' });
 
   return (
     <div className="min-h-screen bg-[#E5E8F2] pt-24 sm:pt-28 px-2 sm:px-4 md:px-6 lg:px-8 pb-28 md:pb-10 flex flex-col items-center gap-4 sm:gap-6 font-sans antialiased text-slate-800 selection:bg-[#5E42B4] selection:text-white">
@@ -289,8 +328,12 @@ export default function WorkerDashboardPage() {
           {/* Mobile View Condition 1: Squad & Map displayed when selected on mobile */}
           {activeTab === 'crew' && (
             <div className="lg:hidden w-full bg-white rounded-[28px] p-5 shadow-[0_12px_35px_rgba(94,66,180,0.06)] border border-slate-100/90 flex flex-col gap-5">
-              <WorkerCrewList onMessageCrew={handleMessageCrew} />
-              <WorkerLiveMap onViewMap={handleViewMap} />
+              <WorkerCrewList members={crewMembers} onMessageCrew={handleMessageCrew} />
+              <WorkerLiveMap
+                locationTitle={activeJob?.location || 'Kerala Operations Sector'}
+                operatives={crewMembers}
+                onViewMap={handleViewMap}
+              />
             </div>
           )}
 
@@ -300,14 +343,11 @@ export default function WorkerDashboardPage() {
               {/* Left Big Card: Overview Wavy Chart */}
               <div className="lg:col-span-7 xl:col-span-8 flex">
                 <WorkerOverviewChart
-                  totalHours="748 Hr"
-                  totalCompleted={
-                    completedJobsCount > 0
-                      ? `${completedJobsCount * 120} St`
-                      : '9,178 St'
-                  }
-                  target="9,200 St"
-                  currentMonth="Apr"
+                  totalHours={`${activeJobsCount} Active`}
+                  totalCompleted={`${completedJobsCount} Orders`}
+                  target={`${Math.max(10, totalJobsCount + 2)} Target`}
+                  currentMonth={currentMonthShort}
+                  monthName={currentMonthLong}
                 />
               </div>
 
@@ -318,7 +358,8 @@ export default function WorkerDashboardPage() {
                   onToggleDuty={handleRequestToggleDuty}
                   isTogglingDuty={togglingDuty}
                   activeJobTitle={activeJobTitle}
-                  totalTimeWorked="748 hr"
+                  totalTimeWorked={`${completedJobsCount} Done`}
+                  currentMonth={currentMonthLong}
                   onViewActiveJob={() => {
                     if (activeJob) {
                       handleOpenJobModal(activeJob);
@@ -358,10 +399,14 @@ export default function WorkerDashboardPage() {
           className="hidden lg:flex w-72 xl:w-80 fixed top-24 sm:top-28 bg-white rounded-[32px] sm:rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(94,66,180,0.08)] border border-white/90 flex-col justify-between shrink-0 gap-4 transition-all z-30 max-h-[calc(100vh-8.5rem)] overflow-hidden"
         >
           {/* Top: Friends / Teammates (Clean view, invisible scroll) */}
-          <WorkerCrewList onMessageCrew={handleMessageCrew} />
+          <WorkerCrewList members={crewMembers} onMessageCrew={handleMessageCrew} />
 
           {/* Bottom: Live Map Preview (Fixed inside the sidebar in FULL VIEW) */}
-          <WorkerLiveMap onViewMap={handleViewMap} />
+          <WorkerLiveMap
+            locationTitle={activeJob?.location || 'Kerala Operations Sector'}
+            operatives={crewMembers}
+            onViewMap={handleViewMap}
+          />
         </aside>
       </div>
 

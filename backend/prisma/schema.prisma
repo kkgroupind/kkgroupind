@@ -144,3 +144,26 @@ model ServiceEnquiry {
   @@map("service_enquiries")
 }
 
+model Service {
+  id          String   @id @default(uuid())
+  serviceId   String   @unique
+  name        String
+  slug        String   @unique
+  category    String?  @default("General")
+  description String
+  features    String[] @default([])
+  icon        String?
+  image       String?
+  priceRange  String?
+  duration    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([serviceId])
+  @@index([isActive])
+  @@index([category])
+  @@map("services")
+}
+

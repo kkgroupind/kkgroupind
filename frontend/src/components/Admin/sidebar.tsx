@@ -41,6 +41,7 @@ import {
 const menuData = [
   { name: 'Overview', icon: LayoutDashboard, subItems: [
       { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+      { name: 'Services', icon: Layers, href: '/admin/services' },
   ] },
   { name: 'People', icon: Users, subItems: [
       { name: 'Workers', icon: HardHat, href: '/admin/people/workers' },
@@ -51,7 +52,7 @@ const menuData = [
       { name: 'Enquiries', icon: Inbox, href: '/admin/operations/enquiries' },
       { name: 'Work Orders', icon: FolderKanban, href: '/admin/operations/work-orders' },
       { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
-      { name: 'Services', icon: Layers, href: '/admin/operations/services' },
+      { name: 'Services', icon: Layers, href: '/admin/services' },
     ] },
   { name: 'Attendance & Availability', icon: CalendarCheck, subItems: [
       { name: 'Attendances', icon: CalendarCheck, href: '/admin/attendance' },

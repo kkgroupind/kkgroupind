@@ -3,15 +3,30 @@
 import React from 'react';
 import { MapPin, Navigation, Compass } from 'lucide-react';
 
-interface WorkerLiveMapProps {
-  onViewMap?: () => void;
+export interface LiveMapOperative {
+  id: string;
+  name: string;
+  avatar?: string | null;
 }
 
-export function WorkerLiveMap({ onViewMap }: WorkerLiveMapProps) {
+interface WorkerLiveMapProps {
+  onViewMap?: () => void;
+  locationTitle?: string;
+  operatives?: LiveMapOperative[];
+}
+
+export function WorkerLiveMap({
+  onViewMap,
+  locationTitle = 'Kerala Operations Hub',
+  operatives = [],
+}: WorkerLiveMapProps) {
   const handleOpenGoogleMaps = () => {
-    // Open Kerala site coordinates in GPS
+    // Open Kerala site coordinates or destination in GPS
+    const query = locationTitle
+      ? encodeURIComponent(`${locationTitle}, Kerala`)
+      : '9.9816,76.2999';
     window.open(
-      'https://maps.google.com/?q=9.9816,76.2999',
+      `https://maps.google.com/?q=${query}`,
       '_blank',
       'noopener,noreferrer'
     );
@@ -21,16 +36,16 @@ export function WorkerLiveMap({ onViewMap }: WorkerLiveMapProps) {
     <div className="w-full flex flex-col pt-4 border-t border-slate-100 select-none shrink-0">
       {/* Header: Live map + View */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-black">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-black shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight leading-tight">
               Live Map
             </h3>
-            <span className="text-[10px] font-semibold text-slate-400">
-              Kochi, Kerala &bull; Active Hub
+            <span className="text-[10px] font-semibold text-slate-400 truncate block max-w-[150px]">
+              {locationTitle} &bull; Active Hub
             </span>
           </div>
         </div>
@@ -38,7 +53,7 @@ export function WorkerLiveMap({ onViewMap }: WorkerLiveMapProps) {
         <button
           type="button"
           onClick={handleOpenGoogleMaps}
-          className="text-xs font-bold text-[#5E42B4] hover:underline cursor-pointer flex items-center gap-1"
+          className="text-xs font-bold text-[#5E42B4] hover:underline cursor-pointer flex items-center gap-1 shrink-0"
         >
           <Navigation className="w-3 h-3" />
           <span>GPS</span>
@@ -101,32 +116,46 @@ export function WorkerLiveMap({ onViewMap }: WorkerLiveMapProps) {
         </svg>
 
         {/* Location Label Badge */}
-        <div className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-slate-200/80 shadow-xs flex items-center gap-1.5 z-10">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-[10px] font-extrabold text-slate-700 tracking-tight">
-            Kochi Ops Sector
+        <div className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-slate-200/80 shadow-xs flex items-center gap-1.5 z-10 max-w-[150px] truncate">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
+          <span className="text-[10px] font-extrabold text-slate-700 tracking-tight truncate">
+            {locationTitle}
           </span>
         </div>
 
         {/* Avatar Pin 1 (Left Road) */}
         <div className="absolute left-[20%] top-[45%] -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80"
-              alt="Operative 1"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#5E42B4] text-white flex items-center justify-center text-[10px] font-bold">
+            {operatives[0]?.avatar ? (
+              <img
+                src={operatives[0].avatar}
+                alt={operatives[0].name || 'Operative 1'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <span>{(operatives[0]?.name || 'W').charAt(0).toUpperCase()}</span>
+            )}
           </div>
         </div>
 
         {/* Avatar Pin 2 (Lower Road) */}
         <div className="absolute left-[58%] bottom-[12%] -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md">
-            <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80"
-              alt="Operative 2"
-              className="w-full h-full object-cover"
-            />
+          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#2A835F] text-white flex items-center justify-center text-[10px] font-bold">
+            {operatives[1]?.avatar ? (
+              <img
+                src={operatives[1].avatar}
+                alt={operatives[1].name || 'Operative 2'}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            ) : (
+              <span>{(operatives[1]?.name || 'K').charAt(0).toUpperCase()}</span>
+            )}
           </div>
         </div>
 

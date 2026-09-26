@@ -134,6 +134,20 @@ export const ATTENDANCE_MESSAGES = {
   UNAUTHORIZED_ATTENDANCE: 'You are not authorized to update this attendance record',
 } as const;
 
+export const SERVICE_MESSAGES = {
+  SERVICE_NOT_FOUND: 'Service not found',
+  SERVICE_CREATED_SUCCESS: 'Service created successfully',
+  SERVICE_UPDATED_SUCCESS: 'Service updated successfully',
+  SERVICE_DELETED_SUCCESS: 'Service deleted successfully',
+  SERVICE_STATUS_UPDATED: 'Service status updated successfully',
+  SERVICES_FETCHED_SUCCESS: 'Services retrieved successfully',
+  SERVICE_SEEDED_SUCCESS: 'Services catalog synchronized successfully',
+  NAME_REQUIRED: 'Service name is required',
+  DESCRIPTION_REQUIRED: 'Service description is required',
+  SLUG_ALREADY_EXISTS: 'A service with this name or slug already exists',
+  SERVICE_ID_ALREADY_EXISTS: 'A service with this service ID already exists',
+} as const;
+
 
 
 

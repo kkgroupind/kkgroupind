@@ -44,7 +44,7 @@ export class EnquiryController {
     return this.enquiryService.getAllEnquiries({ status, search, page, limit });
   }
 
-  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF, Role.WORKER)
   @Get('workers')
   async getActiveWorkers() {
     return this.enquiryService.getActiveWorkers();

@@ -56,13 +56,14 @@ export function WorkerHeader({
               src={userAvatar}
               alt={userName}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
           ) : (
-            <img
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80"
-              alt={userName}
-              className="w-full h-full object-cover"
-            />
+            <span className="text-[#5E42B4] font-black text-sm">
+              {(userName || 'W').charAt(0).toUpperCase()}
+            </span>
           )}
         </button>
       </div>
