@@ -110,7 +110,7 @@ export function proxy(request: NextRequest) {
   }
 
   // Office Staff
-  if (pathname.startsWith('/office-staff/dashboard')) {
+  if (pathname.startsWith('/office-staff') && !pathname.startsWith('/office-staff/login')) {
     // Allow instant preview in demo mode
     if (
       request.nextUrl.searchParams.get('demo') === 'true' ||
@@ -153,7 +153,7 @@ export const config = {
     '/dashboard/:path*',
     '/admin/:path*',
     '/worker/dashboard/:path*',
-    '/office-staff/dashboard/:path*',
+    '/office-staff/:path*',
     '/login',
     '/register',
     '/verify-otp',

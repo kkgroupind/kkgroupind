@@ -56,6 +56,7 @@ model User {
   email           String?           @unique
   username        String?           @unique
   phone           String?
+  avatar          String?
   password        String
   role            Role              @default(CUSTOMER)
   workerStatus    WorkerStatus?     @default(AVAILABLE)

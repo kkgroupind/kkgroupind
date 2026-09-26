@@ -6,5 +6,6 @@ export * from './OfficeStaffCalendarView';
 export * from './StaffAttendanceModal';
 export * from './CreateWorkModal';
 export * from './OfficeStaffSidebar';
+export * from './StaffAvatarCropModal';
 
 

@@ -169,6 +169,17 @@ export default function OfficeStaffDashboardPage() {
   const [activeSection, setActiveSection] = useState<OfficeStaffSection>('dashboard');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Sync activeSection from URL query parameters if present
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const sectionParam = params.get('section') as OfficeStaffSection | null;
+      if (sectionParam) {
+        setActiveSection(sectionParam);
+      }
+    }
+  }, []);
+
   // Core Data State
   const [enquiries, setEnquiries] = useState<ServiceEnquiry[]>([]);
   const [workers, setWorkers] = useState<WorkerWithAvailability[]>([]);
@@ -351,11 +362,18 @@ export default function OfficeStaffDashboardPage() {
       {/* Navigation Sidebar */}
       <OfficeStaffSidebar
         activeSection={activeSection}
-        onSelectSection={(sec) => setActiveSection(sec)}
+        onSelectSection={(sec) => {
+          if (sec === 'profile') {
+            router.push('/office-staff/profile');
+            return;
+          }
+          setActiveSection(sec);
+        }}
         isAvailable={isAvailable}
         onToggleAvailability={handleOpenToggleModal}
         userName={user?.name || user?.username || 'Office Staff'}
         userRole={user?.role || 'OFFICE_STAFF'}
+        userAvatar={user?.avatar}
         unreadEnquiriesCount={stats.pendingEnquiries}
         availableWorkersCount={stats.availableWorkers}
         isOpenMobile={isMobileSidebarOpen}
@@ -1450,12 +1468,22 @@ export default function OfficeStaffDashboardPage() {
               <div className="space-y-3 text-xs">
                 <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-200">Account Profile</div>
+                    <div className="font-medium text-gray-200">Account Profile & Security</div>
                     <div className="text-gray-500">Signed in as {user?.name || user?.username} ({user?.role})</div>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Active
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Active
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => router.push('/office-staff/profile')}
+                      className="px-3 py-1.5 rounded-lg bg-[#2A835F] hover:bg-[#236b4e] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <UserCircle className="w-3.5 h-3.5" />
+                      <span>Manage Profile</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between">

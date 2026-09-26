@@ -1,5 +1,6 @@
 import { authService } from './auth.service';
 import { adminDashboardService, peopleService, adminProfileService } from './Admin';
+import { officeStaffProfileService, officeStaffPeopleService } from './Office-Staff';
 import { EnquiryService } from './enquiry.service';
 import { AttendanceService } from './attendance.service';
 
@@ -7,6 +8,7 @@ export * from './types';
 export * from './api-client';
 export * from './auth.service';
 export * from './Admin';
+export * from './Office-Staff';
 export * from './enquiry.service';
 export * from './attendance.service';
 
@@ -18,5 +20,6 @@ export const api = {
   ...adminProfileService,
   ...EnquiryService,
   ...AttendanceService,
+  officeStaffProfile: officeStaffProfileService,
+  officeStaffPeople: officeStaffPeopleService,
 };
-

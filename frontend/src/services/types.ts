@@ -71,6 +71,7 @@ export interface User {
   email?: string | null;
   username?: string | null;
   phone?: string | null;
+  avatar?: string | null;
   role: UserRole;
   workerStatus?: WorkerStatus | null;
   staffStatus?: StaffStatus | null;

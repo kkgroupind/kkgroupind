@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   Users,
@@ -27,6 +28,7 @@ import {
 
 export type OfficeStaffSection =
   | 'dashboard'
+  | 'profile'
   | 'people-customers'
   | 'people-workers'
   | 'operations-enquiries'
@@ -48,6 +50,7 @@ interface OfficeStaffSidebarProps {
   onToggleAvailability?: () => void;
   userName?: string;
   userRole?: string;
+  userAvatar?: string | null;
   onLogout?: () => void;
   unreadEnquiriesCount?: number;
   availableWorkersCount?: number;
@@ -61,12 +64,14 @@ export function OfficeStaffSidebar({
   isAvailable = false,
   onToggleAvailability,
   userName = 'Office Staff',
+  userAvatar,
   onLogout,
   unreadEnquiriesCount = 0,
   availableWorkersCount = 0,
   isOpenMobile = false,
   onCloseMobile,
 }: OfficeStaffSidebarProps) {
+  const router = useRouter();
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({
     people: true,
     operations: true,
@@ -78,6 +83,11 @@ export function OfficeStaffSidebar({
   };
 
   const handleItemClick = (section: OfficeStaffSection) => {
+    if (section === 'profile') {
+      router.push('/office-staff/profile');
+      if (onCloseMobile) onCloseMobile();
+      return;
+    }
     onSelectSection(section);
     if (onCloseMobile) onCloseMobile();
   };
@@ -141,6 +151,25 @@ export function OfficeStaffSidebar({
           >
             <LayoutDashboard className="w-4 h-4 shrink-0" />
             <span>Dashboard</span>
+          </button>
+
+          {/* Staff Profile */}
+          <button
+            type="button"
+            onClick={() => handleItemClick('profile')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
+              isCurrent('profile')
+                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
+                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+            }`}
+          >
+            <UserCircle className="w-4 h-4 shrink-0 text-[#2A835F]" />
+            <div className="flex items-center justify-between flex-1">
+              <span>Staff Profile</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/20 font-medium">
+                Me
+              </span>
+            </div>
           </button>
 
           {/* People Group */}
@@ -440,16 +469,31 @@ export function OfficeStaffSidebar({
 
           {/* User profile row */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center font-medium text-gray-300 text-xs shrink-0">
-                {userName.charAt(0).toUpperCase()}
+            <div
+              onClick={() => {
+                router.push('/office-staff/profile');
+                if (onCloseMobile) onCloseMobile();
+              }}
+              className={`flex items-center gap-2.5 min-w-0 cursor-pointer group p-1.5 rounded-xl transition-all ${
+                isCurrent('profile')
+                  ? 'bg-[#1A1C23] border border-[#2A835F]/40'
+                  : 'hover:opacity-90'
+              }`}
+              title="Manage Staff Profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center font-medium text-gray-300 text-xs shrink-0 group-hover:border-[#2A835F] group-hover:text-emerald-400 transition-colors overflow-hidden">
+                {userAvatar ? (
+                  <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+                ) : (
+                  userName.charAt(0).toUpperCase()
+                )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium text-gray-200 truncate">
+                <span className="text-xs font-medium text-gray-200 truncate group-hover:text-emerald-400 transition-colors">
                   {userName}
                 </span>
                 <span className="text-[11px] text-gray-500 truncate">
-                  Office Staff
+                  Office Staff &bull; Profile
                 </span>
               </div>
             </div>

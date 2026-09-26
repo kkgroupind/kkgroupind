@@ -41,4 +41,10 @@ export const envValidationSchema = Joi.object({
   SMTP_USER: Joi.string().allow('', null),
   SMTP_PASS: Joi.string().allow('', null),
   SMTP_FROM: Joi.string().allow('', null).default('"KK Group" <noreply@kkgroup.com>'),
+
+  CLOUDINARY_APP_NAME: Joi.string().allow('', null),
+  CLOUDINARY_KEY_NAME: Joi.string().allow('', null),
+  CLOUDINARY_API_KEY: Joi.string().allow('', null),
+  CLOUDINARY_API_SECRET: Joi.string().allow('', null),
+  CLOUDINARY_UPLOAD_PRESET: Joi.string().allow('', null),
 });

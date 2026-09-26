@@ -389,13 +389,11 @@ export function OfficeStaffNavbar({
                       type="button"
                       onClick={() => {
                         setIsProfileOpen(false);
-                        alert(
-                          `Staff Profile:\nName: ${userName}\nRole: ${userRole}\nDepartment: Operations & Field Dispatch\nRegional Hub: KK Group Kerala Operations`
-                        );
+                        router.push('/office-staff/profile');
                       }}
                       className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer text-left"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-[#2A835F] flex items-center justify-center shrink-0">
                         <User className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col">
