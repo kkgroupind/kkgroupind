@@ -149,6 +149,18 @@ model ServiceEnquiry {
   workDurationMinutes Int?
   workerAcceptance    String?
 
+  // Unit-Based Service Specification & Wage Calculation System
+  wageType             String?       // HOURLY, PER_TREE, PER_SQFT, PER_POINT, PER_FOOT, DAILY_WAGE, FIXED_VISIT, CUSTOM
+  unitLabel            String?       // "Hour", "Tree", "Sq. Ft.", "Point", "Foot", "Day", "Visit"
+  unitRate             Float?        // Customer billable rate per unit
+  workerUnitWage       Float?        // Worker wage compensation rate per unit
+  estimatedUnits       Float?        // Initial estimated units (e.g. 15 trees, 4 hours, 500 sqft)
+  completedUnits       Float?        // Actual completed count/units logged by worker
+  minUnits             Float?        @default(1)
+  specificationDetails Json?         // Measurements, meter readings, tree specifics, notes
+  totalCalculatedWage  Float?        // workerUnitWage * completedUnits
+  totalCalculatedCost  Float?        // unitRate * completedUnits
+
   message             String
   status              ServiceStatus @default(PENDING)
   notes               String?
@@ -179,25 +191,35 @@ model ServiceEnquiry {
 }
 
 model Service {
-  id          String   @id @default(uuid())
-  serviceId   String   @unique
-  name        String
-  slug        String   @unique
-  category    String?  @default("General")
-  description String
-  features    String[] @default([])
-  icon        String?
-  image       String?
-  priceRange  String?
-  duration    String?
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  serviceId        String   @unique
+  name             String
+  slug             String   @unique
+  category         String?  @default("General")
+  description      String
+  features         String[] @default([])
+  icon             String?
+  image            String?
+  priceRange       String?
+  duration         String?
+
+  // Service Specification & Wage/Pricing Matrix
+  wageType         String?  // HOURLY, PER_TREE, PER_SQFT, PER_POINT, PER_FOOT, DAILY_WAGE, FIXED_VISIT, CUSTOM
+  unitLabel        String?  // "Hour", "Tree", "Sq. Ft.", "Point", "Foot", "Day", "Visit"
+  baseCustomerRate Float?   // Default customer price per unit (e.g. ₹1500/hr, ₹120/tree)
+  baseWorkerWage   Float?   // Default worker wage per unit (e.g. ₹800/hr, ₹80/tree)
+  minUnits         Float?   @default(1)        // Minimum billable units (e.g. 2 hrs, 5 trees)
+  specifications   Json?    // Detailed specification schema, equipment, checklists, safety requirements
+
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@index([serviceId])
   @@index([isActive])
   @@index([category])
+  @@index([wageType])
   @@map("services")
 }
 

@@ -130,6 +130,25 @@ export function ServiceCard({
                 {service.category}
               </span>
             )}
+
+            {/* Wage & Billing Unit Badge */}
+            {service.wageType && (
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                {service.wageType === 'PER_TREE'
+                  ? '🌴 Tree Count'
+                  : service.wageType === 'HOURLY'
+                  ? '⏱️ Hourly Meter'
+                  : service.wageType === 'PER_SQFT'
+                  ? '📐 Sq. Ft. Area'
+                  : service.wageType === 'PER_POINT'
+                  ? '⚡ Point Basis'
+                  : service.wageType === 'PER_FOOT'
+                  ? '📏 Foot Depth'
+                  : service.wageType === 'DAILY_WAGE'
+                  ? '📅 Daily Wage'
+                  : '🔧 Visit Fee'}
+              </span>
+            )}
           </div>
 
           <span
@@ -180,10 +199,51 @@ export function ServiceCard({
       </div>
 
       {/* Footer Info & Action Bar */}
-      <div className="mt-4 pt-3 border-t border-gray-800/60">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 mb-3">
+      <div className="mt-4 pt-3 border-t border-gray-800/60 space-y-2">
+        {/* Unit-Based Wage & Billing Specifications Box */}
+        {(service.baseCustomerRate || service.baseWorkerWage || service.unitLabel) && (
+          <div className="bg-[#181A22] border border-gray-800/80 rounded-xl p-2.5 flex items-center justify-between text-[11px]">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">
+                Customer Rate
+              </span>
+              <span className="font-bold text-white flex items-center gap-0.5">
+                <span>₹{service.baseCustomerRate ?? '—'}</span>
+                <span className="text-gray-400 font-normal">/ {service.unitLabel || 'Unit'}</span>
+              </span>
+            </div>
+
+            <div className="h-6 w-[1px] bg-gray-800" />
+
+            <div className="flex flex-col">
+              <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-semibold">
+                Worker Wage Pay
+              </span>
+              <span className="font-bold text-emerald-300 flex items-center gap-0.5">
+                <span>₹{service.baseWorkerWage ?? '—'}</span>
+                <span className="text-gray-400 font-normal">/ {service.unitLabel || 'Unit'}</span>
+              </span>
+            </div>
+
+            {service.minUnits && service.minUnits > 1 && (
+              <>
+                <div className="h-6 w-[1px] bg-gray-800" />
+                <div className="flex flex-col text-right">
+                  <span className="text-[10px] text-amber-400 uppercase tracking-wider font-semibold">
+                    Min Units
+                  </span>
+                  <span className="font-bold text-amber-200">
+                    {service.minUnits} {service.unitLabel}s
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400 mb-1">
           {service.priceRange && (
-            <div className="flex items-center gap-1.5 text-gray-200 font-medium">
+            <div className="flex items-center gap-1.5 text-gray-300 font-medium text-[11px]">
               <IndianRupee className="w-3.5 h-3.5 text-[#2A835F]" />
               <span>{service.priceRange}</span>
             </div>

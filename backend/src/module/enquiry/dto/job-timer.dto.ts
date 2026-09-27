@@ -13,6 +13,12 @@ export class StopWorkTimerDto {
   durationMinutes?: number;
 
   @IsOptional()
+  completedUnits?: number;
+
+  @IsOptional()
+  specificationDetails?: any;
+
+  @IsOptional()
   @IsString()
   completionNotes?: string;
 }

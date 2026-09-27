@@ -53,6 +53,26 @@ export class CreateServiceDto {
   duration?: string;
 
   @IsOptional()
+  @IsString()
+  wageType?: string;
+
+  @IsOptional()
+  @IsString()
+  unitLabel?: string;
+
+  @IsOptional()
+  baseCustomerRate?: number;
+
+  @IsOptional()
+  baseWorkerWage?: number;
+
+  @IsOptional()
+  minUnits?: number;
+
+  @IsOptional()
+  specifications?: any;
+
+  @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 

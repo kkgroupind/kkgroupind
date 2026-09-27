@@ -27,5 +27,32 @@ export class AssignWorkerDto {
 
   @IsOptional()
   @IsString()
+  wageType?: string;
+
+  @IsOptional()
+  @IsString()
+  unitLabel?: string;
+
+  @IsOptional()
+  @IsNumber()
+  unitRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  workerUnitWage?: number;
+
+  @IsOptional()
+  @IsNumber()
+  estimatedUnits?: number;
+
+  @IsOptional()
+  @IsNumber()
+  minUnits?: number;
+
+  @IsOptional()
+  specificationDetails?: any;
+
+  @IsOptional()
+  @IsString()
   deadline?: string;
 }

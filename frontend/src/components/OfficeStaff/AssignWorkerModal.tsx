@@ -22,6 +22,7 @@ import {
   Briefcase,
   FileText,
   Compass,
+  Sparkles,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 
@@ -50,6 +51,11 @@ export function AssignWorkerModal({
   const [mapUrl, setMapUrl] = useState('');
   const [locationRemarks, setLocationRemarks] = useState('');
   const [notes, setNotes] = useState('');
+  const [wageType, setWageType] = useState('HOURLY');
+  const [unitLabel, setUnitLabel] = useState('Hour');
+  const [unitRate, setUnitRate] = useState<number | ''>('');
+  const [workerUnitWage, setWorkerUnitWage] = useState<number | ''>('');
+  const [estimatedUnits, setEstimatedUnits] = useState<number | ''>('');
   const [isHourlyCalculated, setIsHourlyCalculated] = useState(false);
   const [hourlyRate, setHourlyRate] = useState<number | ''>('');
   const [deadline, setDeadline] = useState('');
@@ -68,13 +74,80 @@ export function AssignWorkerModal({
         setMapUrl(enquiry.mapUrl || '');
         setLocationRemarks(enquiry.locationRemarks || '');
         setNotes(enquiry.notes || '');
-        setIsHourlyCalculated(
-          enquiry.isHourlyCalculated ||
-          enquiry.serviceName?.toLowerCase().includes('jcb') ||
-          enquiry.serviceName?.toLowerCase().includes('excavat') ||
-          false,
-        );
-        setHourlyRate(enquiry.hourlyRate || '');
+
+        const sName = (enquiry.serviceName || '').toLowerCase();
+        let detectedType = enquiry.wageType || 'HOURLY';
+        let detectedUnit = enquiry.unitLabel || 'Hour';
+        let defaultCustRate: number | '' = enquiry.unitRate ?? enquiry.hourlyRate ?? '';
+        let defaultWageRate: number | '' = enquiry.workerUnitWage ?? '';
+        let defaultEstUnits: number | '' = enquiry.estimatedUnits ?? '';
+
+        const isMachinery =
+          sName.includes('jcb') ||
+          sName.includes('excavat') ||
+          sName.includes('loader') ||
+          sName.includes('crane') ||
+          sName.includes('earthmov') ||
+          sName.includes('tractor');
+
+        const shouldAutoClassify =
+          !enquiry.wageType ||
+          (enquiry.wageType === 'HOURLY' && !isMachinery);
+
+        if (shouldAutoClassify) {
+          if (sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || sName.includes('tree')) {
+            detectedType = 'PER_TREE';
+            detectedUnit = 'Tree';
+            defaultCustRate = defaultCustRate || 120;
+            defaultWageRate = defaultWageRate || 80;
+            defaultEstUnits = defaultEstUnits || 10;
+          } else if (isMachinery) {
+            detectedType = 'HOURLY';
+            detectedUnit = 'Hour';
+            defaultCustRate = defaultCustRate || 1600;
+            defaultWageRate = defaultWageRate || 900;
+            defaultEstUnits = defaultEstUnits || 4;
+          } else if (sName.includes('paint') || sName.includes('tile') || sName.includes('marble') || sName.includes('granite')) {
+            detectedType = 'PER_SQFT';
+            detectedUnit = 'Sq. Ft.';
+            defaultCustRate = defaultCustRate || (sName.includes('tile') ? 45 : 24);
+            defaultWageRate = defaultWageRate || (sName.includes('tile') ? 28 : 14);
+            defaultEstUnits = defaultEstUnits || 300;
+          } else if (sName.includes('electr') || sName.includes('wir')) {
+            detectedType = 'PER_POINT';
+            detectedUnit = 'Point';
+            defaultCustRate = defaultCustRate || 450;
+            defaultWageRate = defaultWageRate || 260;
+            defaultEstUnits = defaultEstUnits || 8;
+          } else if (sName.includes('bore') || sName.includes('drill')) {
+            detectedType = 'PER_FOOT';
+            detectedUnit = 'Foot';
+            defaultCustRate = defaultCustRate || 115;
+            defaultWageRate = defaultWageRate || 65;
+            defaultEstUnits = defaultEstUnits || 200;
+          } else if (sName.includes('mason') || sName.includes('brick')) {
+            detectedType = 'DAILY_WAGE';
+            detectedUnit = 'Day / Shift';
+            defaultCustRate = defaultCustRate || 1600;
+            defaultWageRate = defaultWageRate || 1100;
+            defaultEstUnits = defaultEstUnits || 2;
+          } else if (sName.includes('plumb')) {
+            detectedType = 'FIXED_VISIT';
+            detectedUnit = 'Visit / Inspection';
+            defaultCustRate = defaultCustRate || 350;
+            defaultWageRate = defaultWageRate || 220;
+            defaultEstUnits = defaultEstUnits || 1;
+          }
+        }
+
+        setWageType(detectedType);
+        setUnitLabel(detectedUnit);
+        setUnitRate(defaultCustRate);
+        setWorkerUnitWage(defaultWageRate);
+        setEstimatedUnits(defaultEstUnits);
+        setIsHourlyCalculated(detectedType === 'HOURLY');
+        setHourlyRate(detectedType === 'HOURLY' ? defaultCustRate : '');
+
         if (enquiry.deadline) {
           setDeadline(new Date(enquiry.deadline).toISOString().split('T')[0]);
         } else {
@@ -135,6 +208,7 @@ export function AssignWorkerModal({
     setError(null);
 
     try {
+      const isHourly = wageType === 'HOURLY';
       await EnquiryService.assignWorker(
         enquiry.id,
         {
@@ -142,8 +216,13 @@ export function AssignWorkerModal({
           notes: notes.trim() || undefined,
           mapUrl: mapUrl.trim() || undefined,
           locationRemarks: locationRemarks.trim() || undefined,
-          isHourlyCalculated,
-          hourlyRate: hourlyRate === '' ? undefined : Number(hourlyRate),
+          isHourlyCalculated: isHourly,
+          hourlyRate: isHourly && unitRate !== '' ? Number(unitRate) : undefined,
+          wageType,
+          unitLabel: unitLabel.trim() || 'Unit',
+          unitRate: unitRate === '' ? undefined : Number(unitRate),
+          workerUnitWage: workerUnitWage === '' ? undefined : Number(workerUnitWage),
+          estimatedUnits: estimatedUnits === '' ? undefined : Number(estimatedUnits),
           deadline: deadline || undefined,
         },
         undefined,
@@ -473,53 +552,140 @@ export function AssignWorkerModal({
                 )}
               </div>
 
-              {/* Machinery & Hourly Calculation Card (JCB / Earth Equipment) */}
-              <div className="bg-[#1E293B]/60 border border-slate-750/70 rounded-2xl p-4 space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isHourlyCalculated}
-                    onChange={(e) => setIsHourlyCalculated(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#2A835F] focus:ring-[#2A835F] bg-slate-900 border-slate-600"
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-bold text-white text-xs flex items-center gap-1.5">
-                      <Timer className="w-3.5 h-3.5 text-[#34d399]" />
-                      <span>Hourly Meter Calculation (e.g. JCB / Excavator)</span>
+              {/* Service Unit Specification & Wage Rate Configuration Card */}
+              <div className="bg-[#1E293B]/70 border border-slate-750/80 rounded-2xl p-4 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 rounded-lg bg-[#2A835F]/20 text-[#34d399]">
+                      <Sparkles className="w-4 h-4" />
                     </span>
-                    <span className="text-[11px] text-slate-400">
-                      Activates on-site chronometer for heavy equipment work
-                    </span>
-                  </div>
-                </label>
-
-                {isHourlyCalculated && (
-                  <div className="pt-3 border-t border-slate-700/60 grid grid-cols-1 sm:grid-cols-2 gap-3 animate-in fade-in">
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Hourly Rate (₹ / Hour)
-                      </label>
-                      <input
-                        type="number"
-                        value={hourlyRate}
-                        onChange={(e) =>
-                          setHourlyRate(e.target.value === '' ? '' : Number(e.target.value))
-                        }
-                        placeholder="e.g. 1200"
-                        className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F]"
-                      />
+                      <h4 className="font-bold text-white text-xs">
+                        Service Wage & Billing Specification
+                      </h4>
+                      <p className="text-[11px] text-slate-400">
+                        Configures payout to worker and billing to customer
+                      </p>
                     </div>
-                    <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                        Target Completion Date
-                      </label>
-                      <input
-                        type="date"
-                        value={deadline}
-                        min={new Date().toISOString().split('T')[0]}
-                        onChange={(e) => setDeadline(e.target.value)}
-                        className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#2A835F] [color-scheme:dark]"
-                      />
+                  </div>
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                    {wageType === 'PER_TREE'
+                      ? '🌴 Tree Count Basis'
+                      : wageType === 'HOURLY'
+                      ? '⏱️ Hourly Chronometer'
+                      : wageType === 'PER_SQFT'
+                      ? '📐 Area (Sq. Ft.)'
+                      : wageType === 'PER_POINT'
+                      ? '⚡ Electrical Points'
+                      : wageType === 'PER_FOOT'
+                      ? '📏 Foot Depth'
+                      : wageType === 'DAILY_WAGE'
+                      ? '📅 Daily Shift'
+                      : '🔧 Fixed Visit'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Wage / Pricing Model
+                    </label>
+                    <select
+                      value={wageType}
+                      onChange={(e) => {
+                        const newType = e.target.value;
+                        setWageType(newType);
+                        if (newType === 'PER_TREE') { setUnitLabel('Tree'); setUnitRate(120); setWorkerUnitWage(80); setEstimatedUnits(10); }
+                        else if (newType === 'HOURLY') { setUnitLabel('Hour'); setUnitRate(1600); setWorkerUnitWage(900); setEstimatedUnits(4); }
+                        else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); setUnitRate(28); setWorkerUnitWage(16); setEstimatedUnits(300); }
+                        else if (newType === 'PER_POINT') { setUnitLabel('Point'); setUnitRate(450); setWorkerUnitWage(260); setEstimatedUnits(8); }
+                        else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); setUnitRate(115); setWorkerUnitWage(65); setEstimatedUnits(200); }
+                        else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setWorkerUnitWage(1100); setEstimatedUnits(2); }
+                        else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit / Inspection'); setUnitRate(350); setWorkerUnitWage(220); setEstimatedUnits(1); }
+                      }}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                    >
+                      <option value="PER_TREE">🌴 Tree Count (Coconut / Palm Plucking)</option>
+                      <option value="HOURLY">⏱️ Hourly Meter (JCB / Heavy Equipment)</option>
+                      <option value="PER_SQFT">📐 Square Feet Area (Painting / Tiling)</option>
+                      <option value="PER_POINT">⚡ Electrical Points (Concealed Wiring)</option>
+                      <option value="PER_FOOT">📏 Foot Depth (Borewell Drilling)</option>
+                      <option value="DAILY_WAGE">📅 Daily Shift (Masonry / Construction)</option>
+                      <option value="FIXED_VISIT">🔧 Fixed Visit (Plumbing / Inspection)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Target Completion Date
+                    </label>
+                    <input
+                      type="date"
+                      value={deadline}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setDeadline(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#2A835F] [color-scheme:dark]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Est. Quantity ({unitLabel}s)
+                    </label>
+                    <input
+                      type="number"
+                      value={estimatedUnits}
+                      onChange={(e) => setEstimatedUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="e.g. 15"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
+                      Worker Pay (₹ / {unitLabel})
+                    </label>
+                    <input
+                      type="number"
+                      value={workerUnitWage}
+                      onChange={(e) => setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="e.g. 80"
+                      className="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3 py-1.5 text-xs text-emerald-300 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block mb-1">
+                      Client Rate (₹ / {unitLabel})
+                    </label>
+                    <input
+                      type="number"
+                      value={unitRate}
+                      onChange={(e) => setUnitRate(e.target.value === '' ? '' : Number(e.target.value))}
+                      placeholder="e.g. 120"
+                      className="w-full bg-slate-900 border border-sky-500/40 rounded-xl px-3 py-1.5 text-xs text-sky-300 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Calculation Summary Preview */}
+                {estimatedUnits !== '' && (workerUnitWage !== '' || unitRate !== '') && (
+                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-750 flex items-center justify-between text-[11px]">
+                    <div className="text-emerald-300">
+                      <strong>Worker Wage: </strong>
+                      <span>
+                        {estimatedUnits} {unitLabel}s × ₹{workerUnitWage || 0} = ₹
+                        {Math.round(Number(estimatedUnits) * Number(workerUnitWage || 0)).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                    <div className="text-sky-300">
+                      <strong>Billable Cost: </strong>
+                      <span>
+                        {estimatedUnits} {unitLabel}s × ₹{unitRate || 0} = ₹
+                        {Math.round(Number(estimatedUnits) * Number(unitRate || 0)).toLocaleString('en-IN')}
+                      </span>
                     </div>
                   </div>
                 )}

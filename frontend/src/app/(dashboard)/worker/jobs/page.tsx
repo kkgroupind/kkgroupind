@@ -190,22 +190,78 @@ export default function WorkerJobsPage() {
                         <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5E42B4] transition-colors mt-2">
                           {translateService(job.serviceName)}
                         </h3>
+
+                        {(() => {
+                          const sName = (job.serviceName || '').toLowerCase();
+                          const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
+                          const wageType = job.wageType && (job.wageType !== 'HOURLY' || isMachinery)
+                            ? job.wageType
+                            : sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm')
+                            ? 'PER_TREE'
+                            : isMachinery
+                            ? 'HOURLY'
+                            : sName.includes('paint') || sName.includes('tile')
+                            ? 'PER_SQFT'
+                            : sName.includes('electr') || sName.includes('wir')
+                            ? 'PER_POINT'
+                            : sName.includes('bore') || sName.includes('drill')
+                            ? 'PER_FOOT'
+                            : sName.includes('mason') || sName.includes('brick')
+                            ? 'DAILY_WAGE'
+                            : 'FIXED_VISIT';
+
+                          const unitLabel = job.unitLabel || (wageType === 'PER_TREE' ? 'Tree' : wageType === 'HOURLY' ? 'Hour' : wageType === 'PER_SQFT' ? 'Sq. Ft.' : wageType === 'PER_POINT' ? 'Point' : wageType === 'PER_FOOT' ? 'Foot' : wageType === 'DAILY_WAGE' ? 'Day' : 'Visit');
+                          const rate = job.workerUnitWage || (wageType === 'PER_TREE' ? 80 : wageType === 'HOURLY' ? 900 : wageType === 'PER_SQFT' ? 14 : wageType === 'PER_POINT' ? 260 : wageType === 'PER_FOOT' ? 65 : wageType === 'DAILY_WAGE' ? 1100 : 220);
+
+                          return (
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                {wageType === 'PER_TREE'
+                                  ? '🌴 Tree Count Basis'
+                                  : wageType === 'HOURLY'
+                                  ? '⏱️ Hourly Chronometer'
+                                  : wageType === 'PER_SQFT'
+                                  ? '📐 Area (Sq. Ft.)'
+                                  : wageType === 'PER_POINT'
+                                  ? '⚡ Point Basis'
+                                  : wageType === 'PER_FOOT'
+                                  ? '📏 Foot Depth'
+                                  : wageType === 'DAILY_WAGE'
+                                  ? '📅 Daily Shift'
+                                  : '🔧 Fixed Visit'}
+                              </span>
+                              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                ₹{rate} / {unitLabel}
+                              </span>
+                              {job.totalCalculatedWage ? (
+                                <span className="text-[11px] font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                  Payout: ₹{job.totalCalculatedWage.toLocaleString()}
+                                </span>
+                              ) : job.completedUnits ? (
+                                <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                                  {job.completedUnits} {unitLabel}s
+                                </span>
+                              ) : null}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
 
                     <div className="space-y-2 mt-3 text-xs text-slate-600">
                       <div className="flex items-center gap-2">
-                        <span className="text-slate-400">{t('customer')}:</span>
-                        <strong className="text-slate-800">{job.customerName}</strong>
-                        {job.customerPhone && (
-                          <a
-                            href={`tel:${job.customerPhone}`}
-                            className="ml-auto inline-flex items-center gap-1 text-[#5E42B4] font-bold hover:underline"
-                          >
-                            <Phone className="w-3.5 h-3.5" />
-                            <span>{job.customerPhone}</span>
-                          </a>
-                        )}
+                        <span className="text-slate-400">Office Desk:</span>
+                        <strong className="text-slate-800">
+                          {job.officeStaff?.name || 'Dispatch Coordinator'}
+                        </strong>
+                        <a
+                          href={`tel:${job.officeStaff?.phone || '+91 94000 00000'}`}
+                          className="ml-auto inline-flex items-center gap-1 text-emerald-600 font-bold hover:underline"
+                          title="Call Office Coordinator if you have doubts"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>{job.officeStaff?.phone || 'Call Office'}</span>
+                        </a>
                       </div>
 
                       <div className="flex items-center gap-2">

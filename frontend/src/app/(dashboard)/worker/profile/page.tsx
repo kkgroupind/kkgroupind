@@ -17,8 +17,8 @@ import {
   WorkerNavbar,
   WorkerAvatarCropModal,
   WorkerAvailabilityModal,
-  WorkerCrewList,
-  WorkerLiveMap,
+  WorkerFullMapModal,
+  WorkerMapSettingsModal,
 } from '@/components/Worker';
 import {
   User as UserIcon,
@@ -398,8 +398,8 @@ export default function WorkerProfilePage() {
         userRole={authUser?.role || 'WORKER'}
       />
 
-      {/* 2. MAIN PROFILE CONTAINER WITH RIGHT SIDEBAR */}
-      <div className="w-full max-w-[1480px] flex items-start gap-5 lg:gap-6 relative">
+      {/* 2. MAIN PROFILE CONTAINER */}
+      <div className="w-full max-w-5xl mx-auto flex items-start gap-5 lg:gap-6 relative justify-center">
         <div className="flex-1 min-w-0 space-y-6">
         {/* Breadcrumb & Navigation Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs">
@@ -1056,19 +1056,7 @@ export default function WorkerProfilePage() {
           </div>
         </div>
       </div>
-
-      {/* Right Sidebar Panel: Field Squad & Live Map */}
-      <aside
-          aria-label="Field Squad & Live Map"
-          className="hidden lg:flex w-72 xl:w-80 shrink-0 sticky top-28 bg-white rounded-[32px] sm:rounded-[36px] p-5 sm:p-6 shadow-[0_20px_60px_rgba(94,66,180,0.08)] border border-white/90 flex-col justify-between gap-4 transition-all z-30 max-h-[calc(100vh-8.5rem)] overflow-hidden"
-        >
-          <WorkerCrewList members={crewMembers} />
-          <WorkerLiveMap
-            locationTitle={activeJob?.location || 'Kerala Operations Sector'}
-            operatives={crewMembers}
-          />
-        </aside>
-      </div>
+    </div>
 
       {/* ========================================================
           4. MODALS
@@ -1097,6 +1085,13 @@ export default function WorkerProfilePage() {
         userName={name || authUser?.name || 'Operative'}
         currentStatus={workerStatus === 'AVAILABLE' ? 'AVAILABLE' : 'OFF_DUTY'}
       />
+
+      {/* Map Modals */}
+      <WorkerFullMapModal
+        activeJob={activeJob}
+        operatives={crewMembers}
+      />
+      <WorkerMapSettingsModal />
     </div>
   );
 }

@@ -27,6 +27,7 @@ import {
   HardHat,
   Shield,
   Building,
+  Sparkles,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
@@ -265,11 +266,27 @@ export default function AdminEnquiriesPage() {
                     {/* Tracking Number */}
                     <td className="py-3.5 px-4 font-mono font-bold text-emerald-400 whitespace-nowrap">
                       {enquiry.trackingNumber}
-                      {enquiry.isHourlyCalculated && (
+                      {enquiry.wageType === 'PER_TREE' ? (
+                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30">
+                          🌴 Tree Count
+                        </span>
+                      ) : (enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated) ? (
                         <span className="ml-1.5 text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">
                           ⏱️ Hourly Meter
                         </span>
-                      )}
+                      ) : enquiry.wageType === 'PER_SQFT' ? (
+                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">
+                          📐 Sq. Ft.
+                        </span>
+                      ) : enquiry.wageType === 'PER_POINT' ? (
+                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">
+                          ⚡ Points
+                        </span>
+                      ) : enquiry.wageType ? (
+                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">
+                          {enquiry.unitLabel || 'Unit'} Basis
+                        </span>
+                      ) : null}
                     </td>
 
                     {/* Service Name */}
@@ -512,28 +529,71 @@ export default function AdminEnquiriesPage() {
                 )}
               </div>
 
-              {/* Machinery & Hourly Calculation */}
-              {selectedEnquiry.isHourlyCalculated && (
-                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-1.5">
-                  <div className="flex items-center gap-1.5 text-amber-300 font-bold">
-                    <Timer className="w-4 h-4" />
-                    <span>Hourly Meter Active (JCB / Equipment Work)</span>
+              {/* Service Unit Specification & Wage Breakdown Card */}
+              {(selectedEnquiry.wageType || selectedEnquiry.isHourlyCalculated || selectedEnquiry.unitRate || selectedEnquiry.workerUnitWage) && (
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#121f18] to-[#16202E] border border-emerald-500/30 space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#34d399]" />
+                      <span>
+                        {selectedEnquiry.wageType === 'PER_TREE'
+                          ? '🌴 Coconut Palm Tree Plucking Specification'
+                          : (selectedEnquiry.wageType === 'HOURLY' || selectedEnquiry.isHourlyCalculated)
+                          ? '⏱️ JCB / Equipment Hourly Chronometer'
+                          : selectedEnquiry.wageType === 'PER_SQFT'
+                          ? '📐 Area Measurement (Sq. Ft.)'
+                          : selectedEnquiry.wageType === 'PER_POINT'
+                          ? '⚡ Electrical Points Specification'
+                          : selectedEnquiry.wageType === 'PER_FOOT'
+                          ? '📏 Borewell Footage Specification'
+                          : selectedEnquiry.wageType === 'DAILY_WAGE'
+                          ? '📅 Daily Shift Labor Specification'
+                          : '🔧 Fixed Service Visit Specification'}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                      Unit: {selectedEnquiry.unitLabel || 'Unit'}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-slate-300 pt-1">
-                    {selectedEnquiry.hourlyRate && (
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Hourly Rate:</span>
-                        <span className="font-bold text-white">₹{selectedEnquiry.hourlyRate} / Hr</span>
-                      </div>
-                    )}
-                    {selectedEnquiry.workDurationMinutes && (
-                      <div>
-                        <span className="text-slate-400 block text-[10px]">Logged Duration:</span>
-                        <span className="font-bold text-white">
-                          {Math.floor(selectedEnquiry.workDurationMinutes / 60)}h {selectedEnquiry.workDurationMinutes % 60}m
-                        </span>
-                      </div>
-                    )}
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-300">
+                    <div>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Client Rate:</span>
+                      <span className="font-bold text-white">
+                        ₹{selectedEnquiry.unitRate || selectedEnquiry.hourlyRate || '—'} / {selectedEnquiry.unitLabel || 'Unit'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-emerald-400 block text-[10px] uppercase font-bold">Worker Wage:</span>
+                      <span className="font-bold text-emerald-300">
+                        ₹{selectedEnquiry.workerUnitWage || '—'} / {selectedEnquiry.unitLabel || 'Unit'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-amber-400 block text-[10px] uppercase font-bold">Quantity / Units:</span>
+                      <span className="font-bold text-amber-200">
+                        {selectedEnquiry.completedUnits !== null && selectedEnquiry.completedUnits !== undefined
+                          ? `${selectedEnquiry.completedUnits} (Done)`
+                          : selectedEnquiry.estimatedUnits
+                          ? `${selectedEnquiry.estimatedUnits} (Est)`
+                          : selectedEnquiry.workDurationMinutes
+                          ? `${Math.floor(selectedEnquiry.workDurationMinutes / 60)}h ${selectedEnquiry.workDurationMinutes % 60}m`
+                          : 'Pending'}
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-sky-400 block text-[10px] uppercase font-bold">Worker Payout:</span>
+                      <span className="font-bold text-sky-200">
+                        {selectedEnquiry.totalCalculatedWage
+                          ? `₹${selectedEnquiry.totalCalculatedWage.toLocaleString('en-IN')}`
+                          : selectedEnquiry.completedUnits && selectedEnquiry.workerUnitWage
+                          ? `₹${Math.round(selectedEnquiry.completedUnits * selectedEnquiry.workerUnitWage).toLocaleString('en-IN')}`
+                          : '—'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ServicesRepository } from './services.repository';
 import { CreateServiceDto, ListServicesDto, UpdateServiceDto } from './dto';
-import { SERVICE_MESSAGES } from '../../../common';
+import { SERVICE_MESSAGES, KK_STANDARD_SERVICE_SPECS } from '../../../common';
 import { Prisma, Service } from '../../../database';
 
 @Injectable()
@@ -126,6 +126,12 @@ export class ServicesService implements OnModuleInit {
       image: dto.image?.trim() || null,
       priceRange: dto.priceRange?.trim() || null,
       duration: dto.duration?.trim() || null,
+      wageType: dto.wageType?.trim() || 'HOURLY',
+      unitLabel: dto.unitLabel?.trim() || 'Hour',
+      baseCustomerRate: dto.baseCustomerRate !== undefined && dto.baseCustomerRate !== null ? Number(dto.baseCustomerRate) : null,
+      baseWorkerWage: dto.baseWorkerWage !== undefined && dto.baseWorkerWage !== null ? Number(dto.baseWorkerWage) : null,
+      minUnits: dto.minUnits !== undefined && dto.minUnits !== null ? Number(dto.minUnits) : 1,
+      specifications: dto.specifications ?? null,
       isActive: dto.isActive ?? true,
       sortOrder: dto.sortOrder ?? 0,
     });
@@ -266,6 +272,30 @@ export class ServicesService implements OnModuleInit {
       data.duration = dto.duration?.trim() || null;
     }
 
+    if (dto.wageType !== undefined) {
+      data.wageType = dto.wageType?.trim() || 'HOURLY';
+    }
+
+    if (dto.unitLabel !== undefined) {
+      data.unitLabel = dto.unitLabel?.trim() || 'Hour';
+    }
+
+    if (dto.baseCustomerRate !== undefined) {
+      data.baseCustomerRate = dto.baseCustomerRate !== null ? Number(dto.baseCustomerRate) : null;
+    }
+
+    if (dto.baseWorkerWage !== undefined) {
+      data.baseWorkerWage = dto.baseWorkerWage !== null ? Number(dto.baseWorkerWage) : null;
+    }
+
+    if (dto.minUnits !== undefined) {
+      data.minUnits = dto.minUnits !== null ? Number(dto.minUnits) : 1;
+    }
+
+    if (dto.specifications !== undefined) {
+      data.specifications = dto.specifications;
+    }
+
     if (dto.isActive !== undefined) {
       data.isActive = dto.isActive;
     }
@@ -312,142 +342,38 @@ export class ServicesService implements OnModuleInit {
   /**
    * Seed KK Group default operational services
    */
+  /**
+   * Seed KK Group default operational services with full unit specifications
+   */
   async seedDefaultServices() {
-    const DEFAULT_SERVICES = [
-      {
-        name: 'Cococare - Palm Tree Harvesting & Maintenance',
-        category: 'Agriculture',
-        description:
-          'Professional coconut palm tree maintenance, crown cleaning, pest control, and skilled yield harvesting by certified field climbers across Kerala.',
-        features: [
-          'Certified climbers with full ergonomic harness equipment',
-          'Crown cleaning, dead frond pruning & rhinoceros beetle treatment',
-          'Nut yield estimation and selective harvesting',
-          'Organic plantation waste disposal and mulch spreading',
-        ],
-        icon: 'Palmtree',
-        priceRange: '₹80 - ₹150 / Tree',
-        duration: '1 - 3 Hours',
-        sortOrder: 1,
-      },
-      {
-        name: 'JCB Heavy Machinery & Earth Excavation',
-        category: 'Excavation & Heavy Equipment',
-        description:
-          'High-performance JCB backhoe loaders, tracked excavators, site grading, trenching, pond restoration, and basement foundation excavation.',
-        features: [
-          'Verified licensed operators with 5+ years field experience',
-          'Deep trench excavation, basement dig & boundary leveling',
-          'Drainage channel clearing & rainwater pond development',
-          'Available on hourly, daily, or turnkey project contracts',
-        ],
-        icon: 'Tractor',
-        priceRange: '₹1,400 - ₹1,800 / Hour',
-        duration: 'Shift Basis (4-8 Hours)',
-        sortOrder: 2,
-      },
-      {
-        name: 'Masonry & Brick Construction',
-        category: 'Civil & Construction',
-        description:
-          'Master masonry crews for residential and commercial brickwork, stone foundation building, exterior plastering, and structural repairs.',
-        features: [
-          'Traditional Kerala stone masonry & modern cement-block laying',
-          'Precision water-level alignment and plumb-line calibration',
-          'Double-coat waterproof cement plastering with sand grading',
-          'Architectural arches, compound walls & elevation details',
-        ],
-        icon: 'Layers',
-        priceRange: 'Custom Project Quote',
-        duration: 'Project Milestones',
-        sortOrder: 3,
-      },
-      {
-        name: 'Commercial & Residential Painting',
-        category: 'Finishing & Renovation',
-        description:
-          'Full-scale interior and exterior painting squads with mechanized surface preparation, anti-fungal treatment, and weather-guard coating.',
-        features: [
-          'High-pressure water jet washing & acrylic putty skimming',
-          'Weather-proof exterior emulsion with 5-year anti-algal warranty',
-          'Interior luxury velvet & royal sheen roller application',
-          'Authentic Asian Paints, Berger, and Dulux certified materials',
-        ],
-        icon: 'Paintbrush',
-        priceRange: '₹18 - ₹35 / Sq. Ft.',
-        duration: '3 - 7 Days',
-        sortOrder: 4,
-      },
-      {
-        name: 'Tile, Marble & Granite Laying',
-        category: 'Flooring & Surfaces',
-        description:
-          'Precision floor, wall, and bathroom tiling squads specialized in large-format vitrified tiles, natural granite slabs, and Italian marble installation.',
-        features: [
-          'Laser-guided leveling with anti-lippage spacer systems',
-          'Epoxy waterproof grout filling for chemical resistance',
-          'Diamond abrasive pad polishing and edge chamfering',
-          'Staircase bullnosing & custom kitchen countertop fabrication',
-        ],
-        icon: 'Sparkles',
-        priceRange: '₹28 - ₹65 / Sq. Ft.',
-        duration: '2 - 5 Days',
-        sortOrder: 5,
-      },
-      {
-        name: 'Electrical & Wiring Systems',
-        category: 'MEP & Utilities',
-        description:
-          'Licensed wiremen and industrial electricians for complete concealed conduit wiring, main DB dressing, solar grid tie-ins, and three-phase balancing.',
-        features: [
-          'Kerala State Electricity Board (KSEB) compliant standards',
-          'FR-LSH copper cabling with MCB/ELCB surge protection',
-          'Copper plate earth pit installation with chemical backfill',
-          'Generator changeover switches, UPS & high-load AC points',
-        ],
-        icon: 'Zap',
-        priceRange: '₹450 Base / Point-based',
-        duration: 'Same Day / Project',
-        sortOrder: 6,
-      },
-      {
-        name: 'Plumbing & High-Pressure Piping',
-        category: 'MEP & Utilities',
-        description:
-          'Turnkey plumbing installations, CPVC/UPVC pressurized water lines, underground drainage networks, overhead tank setups, and fixture installations.',
-        features: [
-          'Electrofusion & solvent weld joints with hydrostatic testing',
-          'Overhead multi-layer tank installation with automatic float valves',
-          'Concealed diverters, shower columns & sanitary ware fixing',
-          'Submersible pump wiring & rainwater harvesting connections',
-        ],
-        icon: 'Wrench',
-        priceRange: '₹350 Visit / Estimate',
-        duration: 'Same Day Dispatch',
-        sortOrder: 7,
-      },
-      {
-        name: 'Borewell Drilling & Water Testing',
-        category: 'Water & Irrigation',
-        description:
-          'Advanced rotary and DTH rig borewell drilling, geophysical water vein surveys, MS/PVC casing pipe insertion, and accredited lab water potability tests.',
-        features: [
-          'Geological sensor scanning for optimal aquifer detection',
-          'High-diameter heavy rig drilling up to 1,200 ft depth',
-          'Food-grade heavy wall casing pipes with pea gravel packing',
-          'Certified 16-parameter chemical & microbiological water report',
-        ],
-        icon: 'Droplets',
-        priceRange: '₹95 - ₹140 / Foot',
-        duration: '1 - 2 Days',
-        sortOrder: 8,
-      },
-    ];
-
     const results: Service[] = [];
-    for (const def of DEFAULT_SERVICES) {
-      const existing = await this.servicesRepo.findBySlug(this.generateSlug(def.name));
-      if (!existing) {
+    for (const def of KK_STANDARD_SERVICE_SPECS) {
+      const existing =
+        (await this.servicesRepo.findBySlug(this.generateSlug(def.name))) ||
+        (await this.servicesRepo.findMany({
+          where: { name: { contains: def.name.split(' ')[0], mode: 'insensitive' } },
+          take: 1,
+        })).at(0);
+
+      if (existing) {
+        // Upgrade existing service with full unit specifications
+        const updated = await this.servicesRepo.update(existing.id, {
+          category: def.category,
+          description: def.description,
+          features: def.features,
+          icon: def.icon,
+          priceRange: def.priceRange,
+          duration: def.duration,
+          wageType: def.wageType,
+          unitLabel: def.unitLabel,
+          baseCustomerRate: def.baseCustomerRate,
+          baseWorkerWage: def.baseWorkerWage,
+          minUnits: def.minUnits,
+          specifications: def.specifications,
+          sortOrder: def.sortOrder,
+        });
+        results.push(updated);
+      } else {
         const serviceId = await this.generateNextServiceId();
         const slug = await this.getUniqueSlug(def.name);
         const created = await this.servicesRepo.create({
@@ -460,6 +386,12 @@ export class ServicesService implements OnModuleInit {
           icon: def.icon,
           priceRange: def.priceRange,
           duration: def.duration,
+          wageType: def.wageType,
+          unitLabel: def.unitLabel,
+          baseCustomerRate: def.baseCustomerRate,
+          baseWorkerWage: def.baseWorkerWage,
+          minUnits: def.minUnits,
+          specifications: def.specifications,
           sortOrder: def.sortOrder,
           isActive: true,
         });

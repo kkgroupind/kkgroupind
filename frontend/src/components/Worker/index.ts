@@ -9,4 +9,7 @@ export * from './WorkerLiveMap';
 export * from './WorkerJobDetailsModal';
 export * from './WorkerAvailabilityModal';
 export * from './WorkerAvatarCropModal';
+export * from './WorkerFullMapModal';
+export * from './WorkerMapSettingsModal';
 export * from './WorkerShell';
+

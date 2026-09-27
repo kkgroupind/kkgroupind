@@ -1,13 +1,41 @@
 'use client';
 
 import React from 'react';
-import { MapPin, Navigation, Compass } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import {
+  MapPin,
+  Navigation,
+  Compass,
+  Sliders,
+  Maximize2,
+  LocateFixed,
+  Satellite,
+  Layers,
+} from 'lucide-react';
 import { useWorkerLanguage } from '@/context/worker-language-context';
+import { useWorkerMap, TILE_PROVIDERS } from '@/context/worker-map-context';
+import { useWorker } from '@/context/worker-context';
+
+// Dynamic import with SSR disabled for Leaflet map core
+const WorkerLeafletMapCore = dynamic(
+  () => import('./WorkerLeafletMapCore'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full min-h-[140px] bg-slate-100 dark:bg-slate-800/80 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-2 text-xs">
+        <Compass className="w-5 h-5 animate-spin text-[#2A835F]" />
+        <span>Loading Leaflet Map...</span>
+      </div>
+    ),
+  }
+);
 
 export interface LiveMapOperative {
   id: string;
   name: string;
   avatar?: string | null;
+  role?: string;
+  phone?: string | null;
 }
 
 interface WorkerLiveMapProps {
@@ -22,9 +50,20 @@ export function WorkerLiveMap({
   operatives = [],
 }: WorkerLiveMapProps) {
   const { t } = useWorkerLanguage();
+  const {
+    settings,
+    updateSettings,
+    setIsMapSettingsOpen,
+    setIsFullMapOpen,
+    requestGpsLocation,
+    isLocating,
+    userGpsLocation,
+  } = useWorkerMap();
 
-  const handleOpenGoogleMaps = () => {
-    // Open Kerala site coordinates or destination in GPS
+  const { activeJob } = useWorker();
+
+  const handleOpenGoogleMaps = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     const query = locationTitle
       ? encodeURIComponent(`${locationTitle}, Kerala`)
       : '9.9816,76.2999';
@@ -35,147 +74,128 @@ export function WorkerLiveMap({
     );
   };
 
+  const handleExpandMap = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onViewMap) {
+      onViewMap();
+    }
+    setIsFullMapOpen(true);
+  };
+
+  const handleOpenSettings = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsMapSettingsOpen(true);
+  };
+
+  const activeTile = TILE_PROVIDERS[settings.tileLayer] || TILE_PROVIDERS.STREET;
+
   return (
-    <div className="w-full flex flex-col pt-4 border-t border-slate-100 select-none shrink-0">
-      {/* Header: Live map + View */}
-      <div className="flex items-center justify-between mb-3">
+    <div className="w-full flex flex-col pt-3 border-t border-slate-100 select-none shrink-0">
+      {/* Header: Title + Map Settings Button */}
+      <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-black shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight leading-tight">
-              {t('liveMap')}
-            </h3>
-            <span className="text-[10px] font-semibold text-slate-400 truncate block max-w-[150px]">
-              {locationTitle} &bull; Active Hub
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight leading-tight">
+                {t('liveMap')}
+              </h3>
+              <span className="text-[10px] font-bold text-[#2A835F] bg-[#2A835F]/10 px-1.5 py-0.2 rounded-md">
+                Leaflet
+              </span>
+            </div>
+            <span className="text-[10px] font-semibold text-slate-400 truncate block max-w-[140px]">
+              {locationTitle}
             </span>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenGoogleMaps}
-          className="text-xs font-bold text-[#5E42B4] hover:underline cursor-pointer flex items-center gap-1 shrink-0"
-        >
-          <Navigation className="w-3 h-3" />
-          <span>{t('gpsNavigation')}</span>
-        </button>
+        {/* Action icons */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            title="Map Settings (ശൈലി / ക്രമീകരണങ്ങൾ)"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-[#5E42B4] transition-colors cursor-pointer"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExpandMap}
+            title="Expand Fullscreen Map"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#2A835F]/15 text-slate-600 hover:text-[#2A835F] transition-colors cursor-pointer"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
-      {/* Styled Map Thumbnail Canvas matching reference */}
-      <div
-        onClick={onViewMap || handleOpenGoogleMaps}
-        className="relative w-full h-32 sm:h-36 bg-[#F3F5F9] rounded-2xl sm:rounded-3xl border border-slate-200/80 overflow-hidden cursor-pointer group shadow-xs"
-      >
-        {/* Abstract Stylized Road Network SVG */}
-        <svg
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 240 120"
-          preserveAspectRatio="none"
+      {/* Interactive Leaflet Map Thumbnail Container */}
+      <div className="relative w-full h-36 sm:h-40 rounded-2xl sm:rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs group">
+        
+        {/* Floating Tile Badge Top Left */}
+        <div className="absolute top-2 left-2 z-10 pointer-events-auto">
+          <button
+            type="button"
+            onClick={() => {
+              // Quick cycle tile layers
+              const order: ('STREET' | 'SATELLITE' | 'DARK' | 'TERRAIN')[] = ['STREET', 'SATELLITE', 'DARK', 'TERRAIN'];
+              const nextIndex = (order.indexOf(settings.tileLayer) + 1) % order.length;
+              updateSettings({ tileLayer: order[nextIndex] });
+            }}
+            title="Click to toggle map style"
+            className="bg-white/95 backdrop-blur-md px-2 py-0.5 rounded-lg border border-slate-200/80 shadow-xs flex items-center gap-1 text-[10px] font-extrabold text-slate-700 hover:text-[#2A835F] transition-colors"
+          >
+            <Layers className="w-3 h-3 text-[#2A835F]" />
+            <span>{activeTile.name.split(' ')[0]}</span>
+          </button>
+        </div>
+
+        {/* Floating GPS Status Pill Top Right */}
+        <div className="absolute top-2 right-2 z-10 pointer-events-auto flex items-center gap-1">
+          <button
+            type="button"
+            onClick={requestGpsLocation}
+            disabled={isLocating}
+            title="Recalibrate GPS"
+            className="p-1 rounded-lg bg-white/95 backdrop-blur-md border border-slate-200 text-slate-700 hover:text-emerald-600 shadow-xs"
+          >
+            <LocateFixed className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin text-emerald-500' : ''}`} />
+          </button>
+        </div>
+
+        {/* Core Leaflet Map Engine */}
+        <div className="w-full h-full cursor-grab active:cursor-grabbing">
+          <WorkerLeafletMapCore
+            activeJob={activeJob}
+            operatives={operatives as any}
+            height="100%"
+            zoom={13}
+            interactive={true}
+          />
+        </div>
+
+        {/* Hover Expand Overlay */}
+        <div
+          onClick={handleExpandMap}
+          className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none flex items-center justify-center"
         >
-          {/* Subtle Park/Site polygons */}
-          <path d="M 0,0 L 70,0 L 50,40 L 0,30 Z" fill="#E8F4EC" opacity="0.8" />
-          <path d="M 170,80 L 240,70 L 240,120 L 150,120 Z" fill="#E8F4EC" opacity="0.8" />
-
-          {/* Road Lines */}
-          <path
-            d="M -10,35 Q 80,45 130,20 T 250,50"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="8"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 60,-10 Q 70,60 110,80 T 140,130"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="6"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 120,20 Q 160,50 190,40 T 260,110"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="7"
-            strokeLinecap="round"
-          />
-          <path
-            d="M 30,130 Q 90,80 180,95 T 250,85"
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth="6"
-            strokeLinecap="round"
-          />
-
-          {/* Thin Road Dividers */}
-          <path
-            d="M -10,35 Q 80,45 130,20 T 250,50"
-            fill="none"
-            stroke="#CBD5E1"
-            strokeWidth="1.5"
-            strokeDasharray="4 4"
-          />
-        </svg>
-
-        {/* Location Label Badge */}
-        <div className="absolute top-2.5 left-2.5 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-lg border border-slate-200/80 shadow-xs flex items-center gap-1.5 z-10 max-w-[150px] truncate">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" />
-          <span className="text-[10px] font-extrabold text-slate-700 tracking-tight truncate">
-            {locationTitle}
+          <span className="bg-white/90 backdrop-blur-md text-slate-800 text-xs font-bold px-3 py-1 rounded-xl shadow-lg border border-slate-200 flex items-center gap-1">
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Click to Expand Map</span>
           </span>
         </div>
-
-        {/* Avatar Pin 1 (Left Road) */}
-        <div className="absolute left-[20%] top-[45%] -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#5E42B4] text-white flex items-center justify-center text-[10px] font-bold">
-            {operatives[0]?.avatar ? (
-              <img
-                src={operatives[0].avatar}
-                alt={operatives[0].name || 'Operative 1'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : (
-              <span>{(operatives[0]?.name || 'W').charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Avatar Pin 2 (Lower Road) */}
-        <div className="absolute left-[58%] bottom-[12%] -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-          <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white shadow-md bg-[#2A835F] text-white flex items-center justify-center text-[10px] font-bold">
-            {operatives[1]?.avatar ? (
-              <img
-                src={operatives[1].avatar}
-                alt={operatives[1].name || 'Operative 2'}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-            ) : (
-              <span>{(operatives[1]?.name || 'K').charAt(0).toUpperCase()}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Orange/Coral Live Beacon Destination Target (Right Road) */}
-        <div className="absolute right-[14%] top-[42%] -translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform">
-          <div className="relative w-9 h-9 rounded-full bg-[#FF5E4D] text-white flex items-center justify-center shadow-lg shadow-[#FF5E4D]/40">
-            <span className="w-2 h-2 rounded-full bg-white animate-ping absolute" />
-            <Navigation className="w-4 h-4 text-white fill-white rotate-45" />
-          </div>
-        </div>
       </div>
 
-      {/* Quick Launch Directions Pill */}
+      {/* Action Navigation Pill */}
       <button
         type="button"
         onClick={handleOpenGoogleMaps}
-        className="w-full mt-3 py-2 px-3 rounded-2xl bg-purple-50 hover:bg-[#5E42B4] text-[#5E42B4] hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+        className="w-full mt-2.5 py-2 px-3 rounded-2xl bg-purple-50 hover:bg-[#5E42B4] text-[#5E42B4] hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
       >
         <Navigation className="w-3.5 h-3.5" />
         <span>Open Navigation Directions</span>

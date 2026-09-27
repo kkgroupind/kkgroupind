@@ -49,6 +49,12 @@ export function EditServiceModal({
   const [features, setFeatures] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState('');
   const [duration, setDuration] = useState('');
+  const [wageType, setWageType] = useState('HOURLY');
+  const [unitLabel, setUnitLabel] = useState('Hour');
+  const [baseCustomerRate, setBaseCustomerRate] = useState<string>('');
+  const [baseWorkerWage, setBaseWorkerWage] = useState<string>('');
+  const [minUnits, setMinUnits] = useState<string>('1');
+  const [specificationsNotes, setSpecificationsNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -71,6 +77,12 @@ export function EditServiceModal({
       setFeatures(service.features || []);
       setPriceRange(service.priceRange || '');
       setDuration(service.duration || '');
+      setWageType(service.wageType || 'HOURLY');
+      setUnitLabel(service.unitLabel || 'Hour');
+      setBaseCustomerRate(service.baseCustomerRate !== null && service.baseCustomerRate !== undefined ? String(service.baseCustomerRate) : '');
+      setBaseWorkerWage(service.baseWorkerWage !== null && service.baseWorkerWage !== undefined ? String(service.baseWorkerWage) : '');
+      setMinUnits(service.minUnits !== null && service.minUnits !== undefined ? String(service.minUnits) : '1');
+      setSpecificationsNotes(service.specifications?.notes || '');
       setIsActive(service.isActive ?? true);
       setError(null);
     }
@@ -120,6 +132,12 @@ export function EditServiceModal({
         features: features,
         priceRange: priceRange.trim() || undefined,
         duration: duration.trim() || undefined,
+        wageType,
+        unitLabel: unitLabel.trim() || 'Unit',
+        baseCustomerRate: baseCustomerRate ? Number(baseCustomerRate) : undefined,
+        baseWorkerWage: baseWorkerWage ? Number(baseWorkerWage) : undefined,
+        minUnits: minUnits ? Number(minUnits) : 1,
+        specifications: specificationsNotes.trim() ? { notes: specificationsNotes.trim() } : undefined,
         isActive,
       };
 
@@ -333,6 +351,120 @@ export function EditServiceModal({
                   className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Service Specification & Wage Calculation Model */}
+          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-2.5">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#2A835F]" />
+                  <span>Service Unit & Wage Specification Model</span>
+                </h4>
+                <p className="text-[11px] text-gray-400">
+                  Configure whether billing & wages are tree-count, hourly meter, square footage, or point-based
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Wage & Calculation Basis
+                </label>
+                <select
+                  value={wageType}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    setWageType(newType);
+                    if (newType === 'PER_TREE' && (!unitLabel || unitLabel === 'Hour')) setUnitLabel('Tree');
+                    else if (newType === 'HOURLY') setUnitLabel('Hour');
+                    else if (newType === 'PER_SQFT') setUnitLabel('Sq. Ft.');
+                    else if (newType === 'PER_POINT') setUnitLabel('Point');
+                    else if (newType === 'PER_FOOT') setUnitLabel('Foot');
+                    else if (newType === 'DAILY_WAGE') setUnitLabel('Day / Shift');
+                    else if (newType === 'FIXED_VISIT') setUnitLabel('Visit / Inspection');
+                  }}
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                >
+                  <option value="PER_TREE">🌴 Tree Count (e.g. Coconut / Palm Plucking)</option>
+                  <option value="HOURLY">⏱️ Hourly Meter (e.g. JCB / Excavators)</option>
+                  <option value="PER_SQFT">📐 Area / Sq. Ft. (e.g. Painting, Tiling)</option>
+                  <option value="PER_POINT">⚡ Electrical Points (e.g. Wiring, Fixtures)</option>
+                  <option value="PER_FOOT">📏 Foot Depth (e.g. Borewell Drilling)</option>
+                  <option value="DAILY_WAGE">📅 Daily Shift (e.g. Masonry, Carpentry)</option>
+                  <option value="FIXED_VISIT">🔧 Fixed Visit / Inspection (e.g. Plumbing)</option>
+                  <option value="CUSTOM_PROJECT">💼 Custom Lump Sum / Turnkey</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Unit Label Name
+                </label>
+                <input
+                  type="text"
+                  value={unitLabel}
+                  onChange={(e) => setUnitLabel(e.target.value)}
+                  placeholder="e.g. Tree, Hour, Sq. Ft., Point, Foot, Day"
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Customer Rate (₹ / {unitLabel || 'Unit'})
+                </label>
+                <input
+                  type="number"
+                  value={baseCustomerRate}
+                  onChange={(e) => setBaseCustomerRate(e.target.value)}
+                  placeholder="e.g. 120"
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-emerald-400 mb-1">
+                  Worker Wage (₹ / {unitLabel || 'Unit'})
+                </label>
+                <input
+                  type="number"
+                  value={baseWorkerWage}
+                  onChange={(e) => setBaseWorkerWage(e.target.value)}
+                  placeholder="e.g. 80"
+                  className="w-full bg-[#14151A] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-amber-300 mb-1">
+                  Min Billable Units
+                </label>
+                <input
+                  type="number"
+                  value={minUnits}
+                  onChange={(e) => setMinUnits(e.target.value)}
+                  placeholder="e.g. 5"
+                  className="w-full bg-[#14151A] border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                Specification Instructions & Requirements (Optional)
+              </label>
+              <input
+                type="text"
+                value={specificationsNotes}
+                onChange={(e) => setSpecificationsNotes(e.target.value)}
+                placeholder="e.g. Includes crown cleaning, safety gear mandatory, diesel bata separate"
+                className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-[#2A835F]"
+              />
             </div>
           </div>
 

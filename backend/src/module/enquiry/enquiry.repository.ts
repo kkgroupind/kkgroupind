@@ -23,6 +23,12 @@ export class EnquiryRepository {
     customerId?: string;
     createdByRole?: Role;
     createdById?: string;
+    wageType?: string;
+    unitLabel?: string;
+    unitRate?: number;
+    workerUnitWage?: number;
+    minUnits?: number;
+    isHourlyCalculated?: boolean;
   }) {
     return this.prisma.serviceEnquiry.create({
       data: {
@@ -43,6 +49,12 @@ export class EnquiryRepository {
         customerId: data.customerId,
         createdByRole: data.createdByRole || Role.CUSTOMER,
         createdById: data.createdById,
+        wageType: data.wageType,
+        unitLabel: data.unitLabel,
+        unitRate: data.unitRate,
+        workerUnitWage: data.workerUnitWage,
+        minUnits: data.minUnits,
+        isHourlyCalculated: data.isHourlyCalculated || false,
       },
       include: {
         creator: {
@@ -177,6 +189,13 @@ export class EnquiryRepository {
       locationRemarks?: string;
       isHourlyCalculated?: boolean;
       hourlyRate?: number;
+      wageType?: string;
+      unitLabel?: string;
+      unitRate?: number;
+      workerUnitWage?: number;
+      estimatedUnits?: number;
+      minUnits?: number;
+      specificationDetails?: any;
       deadline?: Date;
     },
   ) {
@@ -192,8 +211,15 @@ export class EnquiryRepository {
           notes: data?.notes !== undefined ? data.notes : undefined,
           mapUrl: data?.mapUrl !== undefined ? data.mapUrl : undefined,
           locationRemarks: data?.locationRemarks !== undefined ? data.locationRemarks : undefined,
-          isHourlyCalculated: data?.isHourlyCalculated !== undefined ? data.isHourlyCalculated : undefined,
-          hourlyRate: data?.hourlyRate !== undefined ? data.hourlyRate : undefined,
+          isHourlyCalculated: data?.isHourlyCalculated !== undefined ? data.isHourlyCalculated : (data?.wageType === 'HOURLY'),
+          hourlyRate: data?.hourlyRate !== undefined ? data.hourlyRate : (data?.wageType === 'HOURLY' ? data?.unitRate : undefined),
+          wageType: data?.wageType !== undefined ? data.wageType : undefined,
+          unitLabel: data?.unitLabel !== undefined ? data.unitLabel : undefined,
+          unitRate: data?.unitRate !== undefined ? data.unitRate : data?.hourlyRate,
+          workerUnitWage: data?.workerUnitWage !== undefined ? data.workerUnitWage : undefined,
+          estimatedUnits: data?.estimatedUnits !== undefined ? data.estimatedUnits : undefined,
+          minUnits: data?.minUnits !== undefined ? data.minUnits : undefined,
+          specificationDetails: data?.specificationDetails !== undefined ? data.specificationDetails : undefined,
           deadline: data?.deadline !== undefined ? data.deadline : undefined,
         },
         include: {
@@ -281,7 +307,12 @@ export class EnquiryRepository {
   async stopWorkTimerTransaction(
     enquiryId: string,
     workerId: string,
-    data?: { durationMinutes?: number; completionNotes?: string },
+    data?: {
+      durationMinutes?: number;
+      completedUnits?: number;
+      specificationDetails?: any;
+      completionNotes?: string;
+    },
   ) {
     return this.prisma.$transaction(async (tx) => {
       const enquiry = await tx.serviceEnquiry.findUnique({
@@ -300,6 +331,26 @@ export class EnquiryRepository {
         calculatedMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
       }
 
+      // Compute completed units & wage/cost totals
+      let finalCompletedUnits = data?.completedUnits;
+      if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
+        if (enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated) {
+          finalCompletedUnits = calculatedMinutes
+            ? Math.round((calculatedMinutes / 60) * 10) / 10
+            : enquiry.completedUnits ?? 0;
+        } else {
+          finalCompletedUnits = enquiry.estimatedUnits ?? 1;
+        }
+      }
+
+      const minThreshold = enquiry.minUnits ?? 1;
+      const billableUnits = Math.max(finalCompletedUnits ?? 0, minThreshold);
+      const computedWage = enquiry.workerUnitWage
+        ? Math.round(billableUnits * enquiry.workerUnitWage)
+        : null;
+      const effectiveRate = enquiry.unitRate || enquiry.hourlyRate;
+      const computedCost = effectiveRate ? Math.round(billableUnits * effectiveRate) : null;
+
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
         data: {
@@ -307,6 +358,10 @@ export class EnquiryRepository {
           workEndedAt: now,
           completedAt: now,
           workDurationMinutes: calculatedMinutes,
+          completedUnits: finalCompletedUnits,
+          totalCalculatedWage: computedWage,
+          totalCalculatedCost: computedCost,
+          specificationDetails: data?.specificationDetails ?? enquiry.specificationDetails ?? undefined,
           notes: data?.completionNotes ? data.completionNotes : enquiry.notes,
         },
         include: {
@@ -340,6 +395,10 @@ export class EnquiryRepository {
     enquiryId: string,
     status: ServiceStatus,
     notes?: string,
+    data?: {
+      completedUnits?: number;
+      specificationDetails?: any;
+    },
   ) {
     return this.prisma.$transaction(async (tx) => {
       const enquiry = await tx.serviceEnquiry.findUnique({
@@ -354,12 +413,35 @@ export class EnquiryRepository {
       const isFinished =
         status === ServiceStatus.COMPLETED || status === ServiceStatus.CANCELLED;
 
+      let computedWage: number | null | undefined = undefined;
+      let computedCost: number | null | undefined = undefined;
+      let finalCompletedUnits = data?.completedUnits;
+
+      if (isCompleted) {
+        if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
+          finalCompletedUnits = enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1;
+        }
+        const minThreshold = enquiry.minUnits ?? 1;
+        const billableUnits = Math.max(finalCompletedUnits, minThreshold);
+        computedWage = enquiry.workerUnitWage
+          ? Math.round(billableUnits * enquiry.workerUnitWage)
+          : (enquiry.totalCalculatedWage ?? null);
+        const effectiveRate = enquiry.unitRate || enquiry.hourlyRate;
+        computedCost = effectiveRate
+          ? Math.round(billableUnits * effectiveRate)
+          : (enquiry.totalCalculatedCost ?? null);
+      }
+
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
         data: {
           status,
           notes: notes ? notes : undefined,
           completedAt: isCompleted ? new Date() : undefined,
+          completedUnits: finalCompletedUnits !== undefined ? finalCompletedUnits : undefined,
+          totalCalculatedWage: computedWage !== undefined ? computedWage : undefined,
+          totalCalculatedCost: computedCost !== undefined ? computedCost : undefined,
+          specificationDetails: data?.specificationDetails ?? undefined,
         },
       });
 

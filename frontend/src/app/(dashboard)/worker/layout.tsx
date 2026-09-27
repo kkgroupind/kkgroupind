@@ -2,6 +2,7 @@ import React from 'react';
 import { RoleGuard } from '@/components/role-guard';
 import { WorkerProvider } from '@/context/worker-context';
 import { WorkerLanguageProvider } from '@/context/worker-language-context';
+import { WorkerMapProvider } from '@/context/worker-map-context';
 
 export default function WorkerDashboardLayout({
   children,
@@ -16,7 +17,9 @@ export default function WorkerDashboardLayout({
       accentColor="amber"
     >
       <WorkerLanguageProvider>
-        <WorkerProvider>{children}</WorkerProvider>
+        <WorkerProvider>
+          <WorkerMapProvider>{children}</WorkerMapProvider>
+        </WorkerProvider>
       </WorkerLanguageProvider>
     </RoleGuard>
   );

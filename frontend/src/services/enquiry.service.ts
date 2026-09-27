@@ -28,6 +28,13 @@ export interface AssignWorkerInput {
   locationRemarks?: string;
   isHourlyCalculated?: boolean;
   hourlyRate?: number;
+  wageType?: string;
+  unitLabel?: string;
+  unitRate?: number;
+  workerUnitWage?: number;
+  estimatedUnits?: number;
+  minUnits?: number;
+  specificationDetails?: any;
   deadline?: string;
 }
 
@@ -167,10 +174,15 @@ export const EnquiryService = {
     );
   },
 
-  // Worker: Stop work timer on site & complete work
+  // Worker: Stop work timer on site & complete work (with units/specifications)
   async stopWorkTimer(
     enquiryId: string,
-    data: { durationMinutes?: number; completionNotes?: string },
+    data: {
+      durationMinutes?: number;
+      completedUnits?: number;
+      specificationDetails?: any;
+      completionNotes?: string;
+    },
     token: string,
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
     return request<{ message: string; enquiry: ServiceEnquiry }>(
@@ -189,12 +201,21 @@ export const EnquiryService = {
     status: ServiceStatus,
     notes: string | undefined,
     token: string,
+    extraData?: {
+      completedUnits?: number;
+      specificationDetails?: any;
+    },
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
     return request<{ message: string; enquiry: ServiceEnquiry }>(
       `/enquiries/worker/${enquiryId}/status`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ status, notes }),
+        body: JSON.stringify({
+          status,
+          notes,
+          completedUnits: extraData?.completedUnits,
+          specificationDetails: extraData?.specificationDetails,
+        }),
       },
       token,
     );

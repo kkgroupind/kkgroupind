@@ -6,13 +6,10 @@ import {
   Plus,
   Loader2,
   AlertCircle,
-  CheckCircle2,
   Sparkles,
-  Tag,
   IndianRupee,
   Clock,
   Layers,
-  FileText,
 } from 'lucide-react';
 import { adminServicesService, CreateServiceInput, ServiceItem } from '@/services/Admin/services';
 
@@ -49,12 +46,62 @@ export function CreateServiceModal({
   const [features, setFeatures] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState('');
   const [duration, setDuration] = useState('');
+  const [wageType, setWageType] = useState('HOURLY');
+  const [unitLabel, setUnitLabel] = useState('Hour');
+  const [baseCustomerRate, setBaseCustomerRate] = useState<string>('');
+  const [baseWorkerWage, setBaseWorkerWage] = useState<string>('');
+  const [minUnits, setMinUnits] = useState<string>('1');
+  const [specificationsNotes, setSpecificationsNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleWageTypeChange = (newType: string) => {
+    setWageType(newType);
+    switch (newType) {
+      case 'PER_TREE':
+        setUnitLabel('Tree');
+        setMinUnits('5');
+        if (!priceRange) setPriceRange('₹80 - ₹150 / Tree');
+        break;
+      case 'HOURLY':
+        setUnitLabel('Hour');
+        setMinUnits('2');
+        if (!priceRange) setPriceRange('₹1,400 - ₹1,800 / Hour');
+        break;
+      case 'PER_SQFT':
+        setUnitLabel('Sq. Ft.');
+        setMinUnits('100');
+        if (!priceRange) setPriceRange('₹18 - ₹45 / Sq. Ft.');
+        break;
+      case 'PER_POINT':
+        setUnitLabel('Point');
+        setMinUnits('4');
+        if (!priceRange) setPriceRange('₹350 - ₹550 / Point');
+        break;
+      case 'PER_FOOT':
+        setUnitLabel('Foot');
+        setMinUnits('100');
+        if (!priceRange) setPriceRange('₹95 - ₹140 / Foot');
+        break;
+      case 'DAILY_WAGE':
+        setUnitLabel('Day / Shift');
+        setMinUnits('1');
+        if (!priceRange) setPriceRange('₹1,500 - ₹1,800 / Day');
+        break;
+      case 'FIXED_VISIT':
+        setUnitLabel('Visit / Inspection');
+        setMinUnits('1');
+        if (!priceRange) setPriceRange('₹350 Visit / Estimate');
+        break;
+      default:
+        setUnitLabel('Unit');
+        setMinUnits('1');
+    }
+  };
 
   const handleAddFeature = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -98,6 +145,12 @@ export function CreateServiceModal({
         features: features,
         priceRange: priceRange.trim() || undefined,
         duration: duration.trim() || undefined,
+        wageType,
+        unitLabel: unitLabel.trim() || 'Unit',
+        baseCustomerRate: baseCustomerRate ? Number(baseCustomerRate) : undefined,
+        baseWorkerWage: baseWorkerWage ? Number(baseWorkerWage) : undefined,
+        minUnits: minUnits ? Number(minUnits) : 1,
+        specifications: specificationsNotes.trim() ? { notes: specificationsNotes.trim() } : undefined,
         isActive,
       };
 
@@ -132,7 +185,7 @@ export function CreateServiceModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -262,7 +315,7 @@ export function CreateServiceModal({
               <button
                 type="button"
                 onClick={handleAddFeature}
-                className="px-3.5 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1 transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -280,7 +333,7 @@ export function CreateServiceModal({
                     <button
                       type="button"
                       onClick={() => handleRemoveFeature(idx)}
-                      className="text-gray-400 hover:text-rose-400 ml-1"
+                      className="text-gray-400 hover:text-rose-400 ml-1 cursor-pointer"
                     >
                       &times;
                     </button>
@@ -325,6 +378,110 @@ export function CreateServiceModal({
             </div>
           </div>
 
+          {/* Service Specification & Wage Calculation Model */}
+          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-800 pb-2.5">
+              <div>
+                <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#2A835F]" />
+                  <span>Service Unit & Wage Specification Model</span>
+                </h4>
+                <p className="text-[11px] text-gray-400">
+                  Defines whether billing & wages are tree-count, hourly meter, square footage, or point-based
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Wage & Calculation Basis
+                </label>
+                <select
+                  value={wageType}
+                  onChange={(e) => handleWageTypeChange(e.target.value)}
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                >
+                  <option value="PER_TREE">🌴 Tree Count (e.g. Coconut / Palm Plucking)</option>
+                  <option value="HOURLY">⏱️ Hourly Meter (e.g. JCB / Excavators)</option>
+                  <option value="PER_SQFT">📐 Area / Sq. Ft. (e.g. Painting, Tiling)</option>
+                  <option value="PER_POINT">⚡ Electrical Points (e.g. Wiring, Fixtures)</option>
+                  <option value="PER_FOOT">📏 Foot Depth (e.g. Borewell Drilling)</option>
+                  <option value="DAILY_WAGE">📅 Daily Shift (e.g. Masonry, Carpentry)</option>
+                  <option value="FIXED_VISIT">🔧 Fixed Visit / Inspection (e.g. Plumbing)</option>
+                  <option value="CUSTOM_PROJECT">💼 Custom Lump Sum / Turnkey</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Unit Label Name
+                </label>
+                <input
+                  type="text"
+                  value={unitLabel}
+                  onChange={(e) => setUnitLabel(e.target.value)}
+                  placeholder="e.g. Tree, Hour, Sq. Ft., Point, Foot, Day"
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                  Customer Rate (₹ / {unitLabel || 'Unit'})
+                </label>
+                <input
+                  type="number"
+                  value={baseCustomerRate}
+                  onChange={(e) => setBaseCustomerRate(e.target.value)}
+                  placeholder="e.g. 120"
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-emerald-400 mb-1">
+                  Worker Wage (₹ / {unitLabel || 'Unit'})
+                </label>
+                <input
+                  type="number"
+                  value={baseWorkerWage}
+                  onChange={(e) => setBaseWorkerWage(e.target.value)}
+                  placeholder="e.g. 80"
+                  className="w-full bg-[#14151A] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-amber-300 mb-1">
+                  Min Billable Units
+                </label>
+                <input
+                  type="number"
+                  value={minUnits}
+                  onChange={(e) => setMinUnits(e.target.value)}
+                  placeholder="e.g. 5"
+                  className="w-full bg-[#14151A] border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-medium text-gray-300 mb-1">
+                Specification Instructions & Requirements (Optional)
+              </label>
+              <input
+                type="text"
+                value={specificationsNotes}
+                onChange={(e) => setSpecificationsNotes(e.target.value)}
+                placeholder="e.g. Includes crown cleaning, safety gear mandatory, diesel bata separate"
+                className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-[#2A835F]"
+              />
+            </div>
+          </div>
+
           {/* Active Status Checkbox */}
           <div className="flex items-center gap-2.5 pt-2">
             <input
@@ -344,14 +501,14 @@ export function CreateServiceModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors"
+              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-5 py-2 bg-[#2A835F] hover:bg-emerald-600 text-white rounded-xl text-xs font-medium transition-all shadow-[0_0_15px_rgba(42,131,95,0.4)] disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-5 py-2 bg-[#2A835F] hover:bg-emerald-600 text-white rounded-xl text-xs font-medium transition-all shadow-[0_0_15px_rgba(42,131,95,0.4)] disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
             >
               {isLoading ? (
                 <>

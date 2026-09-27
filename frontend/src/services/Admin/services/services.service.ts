@@ -12,6 +12,12 @@ export interface ServiceItem {
   image?: string | null;
   priceRange?: string | null;
   duration?: string | null;
+  wageType?: string | null;
+  unitLabel?: string | null;
+  baseCustomerRate?: number | null;
+  baseWorkerWage?: number | null;
+  minUnits?: number | null;
+  specifications?: any | null;
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -29,6 +35,12 @@ export interface CreateServiceInput {
   image?: string;
   priceRange?: string;
   duration?: string;
+  wageType?: string;
+  unitLabel?: string;
+  baseCustomerRate?: number;
+  baseWorkerWage?: number;
+  minUnits?: number;
+  specifications?: any;
   isActive?: boolean;
   sortOrder?: number;
 }
@@ -44,6 +56,12 @@ export interface UpdateServiceInput {
   image?: string;
   priceRange?: string;
   duration?: string;
+  wageType?: string;
+  unitLabel?: string;
+  baseCustomerRate?: number;
+  baseWorkerWage?: number;
+  minUnits?: number;
+  specifications?: any;
   isActive?: boolean;
   sortOrder?: number;
 }

@@ -222,6 +222,21 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
                     label={t.chooseService}
                     variant="inline"
                   />
+                  <span className="text-[9px] font-mono text-emerald-400/90 font-medium truncate mt-0.5">
+                    {selectedServiceId === 'cococare'
+                      ? '🌴 ₹80 - ₹150 / Tree'
+                      : selectedServiceId === 'jcb'
+                      ? '⏱️ ₹1,400 - ₹1,800 / Hour'
+                      : selectedServiceId === 'painting'
+                      ? '📐 ₹18 - ₹35 / Sq. Ft.'
+                      : selectedServiceId === 'tiling'
+                      ? '📐 ₹28 - ₹65 / Sq. Ft.'
+                      : selectedServiceId === 'electrical'
+                      ? '⚡ ₹350 - ₹550 / Point'
+                      : selectedServiceId === 'borewell'
+                      ? '📏 ₹95 - ₹140 / Foot'
+                      : '🔧 Standard Estimate'}
+                  </span>
                 </div>
               </div>
 

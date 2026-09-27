@@ -144,6 +144,16 @@ export interface ServiceEnquiry {
   workEndedAt?: string | null;
   workDurationMinutes?: number | null;
   workerAcceptance?: string | null;
+  wageType?: string | null;
+  unitLabel?: string | null;
+  unitRate?: number | null;
+  workerUnitWage?: number | null;
+  estimatedUnits?: number | null;
+  completedUnits?: number | null;
+  minUnits?: number | null;
+  specificationDetails?: any | null;
+  totalCalculatedWage?: number | null;
+  totalCalculatedCost?: number | null;
   message: string;
   status: ServiceStatus;
   notes?: string | null;

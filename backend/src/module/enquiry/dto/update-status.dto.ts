@@ -7,6 +7,12 @@ export class UpdateEnquiryStatusDto {
   status: ServiceStatus;
 
   @IsOptional()
+  completedUnits?: number;
+
+  @IsOptional()
+  specificationDetails?: any;
+
+  @IsOptional()
   @IsString()
   notes?: string;
 }

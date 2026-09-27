@@ -16,6 +16,7 @@ import {
   StopWorkTimerDto,
 } from './dto';
 import { ENQUIRY_MESSAGES } from '../../common';
+import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
 import { Role, ServiceStatus, WorkerStatus } from '../../database';
 
 @Injectable()
@@ -57,6 +58,9 @@ export class EnquiryService {
         .join(', ');
     }
 
+    // Resolve service wage specification dynamically from service name
+    const spec = resolveServiceSpec(dto.serviceName);
+
     const enquiry = await this.enquiryRepo.create({
       trackingNumber,
       serviceName: dto.serviceName,
@@ -75,6 +79,12 @@ export class EnquiryService {
       customerId,
       createdByRole,
       createdById,
+      wageType: spec.wageType,
+      unitLabel: spec.unitLabel,
+      unitRate: spec.baseCustomerRate,
+      workerUnitWage: spec.baseWorkerWage,
+      minUnits: spec.minUnits,
+      isHourlyCalculated: spec.wageType === 'HOURLY',
     });
 
     return {
@@ -156,6 +166,17 @@ export class EnquiryService {
       }
     }
 
+    // Resolve service specification dynamically from service name
+    const isMachinery = /jcb|excavat|crane|earthmov|tractor|loader|grader|റോഡ്|മണ്ണെടുക്കൽ/i.test(enquiry.serviceName);
+    const explicitWageType = dto.wageType && (dto.wageType !== 'HOURLY' || isMachinery) ? dto.wageType : undefined;
+    const spec = resolveServiceSpec(enquiry.serviceName, explicitWageType);
+    const wageType = explicitWageType || spec.wageType;
+    const unitLabel = dto.unitLabel || spec.unitLabel;
+    const unitRate = dto.unitRate !== undefined ? dto.unitRate : (dto.hourlyRate || spec.baseCustomerRate);
+    const workerUnitWage = dto.workerUnitWage !== undefined ? dto.workerUnitWage : spec.baseWorkerWage;
+    const minUnits = dto.minUnits !== undefined ? dto.minUnits : spec.minUnits;
+    const isHourlyCalculated = wageType === 'HOURLY';
+
     const updated = await this.enquiryRepo.assignWorkerTransaction(
       enquiryId,
       dto.workerId,
@@ -164,8 +185,15 @@ export class EnquiryService {
         notes: dto.notes,
         mapUrl: dto.mapUrl,
         locationRemarks: dto.locationRemarks,
-        isHourlyCalculated: dto.isHourlyCalculated,
-        hourlyRate: dto.hourlyRate,
+        isHourlyCalculated,
+        hourlyRate: isHourlyCalculated ? unitRate : dto.hourlyRate,
+        wageType,
+        unitLabel,
+        unitRate,
+        workerUnitWage,
+        estimatedUnits: dto.estimatedUnits || minUnits,
+        minUnits,
+        specificationDetails: dto.specificationDetails,
         deadline: parsedDeadline,
       },
     );
@@ -279,6 +307,10 @@ export class EnquiryService {
       enquiryId,
       dto.status,
       dto.notes,
+      {
+        completedUnits: dto.completedUnits,
+        specificationDetails: dto.specificationDetails,
+      },
     );
 
     return {
