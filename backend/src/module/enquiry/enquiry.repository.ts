@@ -495,4 +495,52 @@ export class EnquiryRepository {
       },
     });
   }
+
+  async markReachedSiteTransaction(
+    enquiryId: string,
+    workerId: string,
+    data?: { notes?: string },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        workerAcceptance: 'REACHED_SITE',
+        notes: data?.notes ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
+
+  async updateJobPayTransaction(
+    enquiryId: string,
+    data: {
+      totalCalculatedWage?: number;
+      workerUnitWage?: number;
+      totalCalculatedCost?: number;
+      unitRate?: number;
+      completedUnits?: number;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        totalCalculatedWage: data.totalCalculatedWage !== undefined ? data.totalCalculatedWage : undefined,
+        workerUnitWage: data.workerUnitWage !== undefined ? data.workerUnitWage : undefined,
+        totalCalculatedCost: data.totalCalculatedCost !== undefined ? data.totalCalculatedCost : undefined,
+        unitRate: data.unitRate !== undefined ? data.unitRate : undefined,
+        completedUnits: data.completedUnits !== undefined ? data.completedUnits : undefined,
+        notes: data.notes ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
 }

@@ -14,6 +14,8 @@ import {
   AcceptJobDto,
   StartWorkTimerDto,
   StopWorkTimerDto,
+  ReachedSiteDto,
+  UpdateJobPayDto,
 } from './dto';
 import { ENQUIRY_MESSAGES } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
@@ -233,6 +235,49 @@ export class EnquiryService {
 
     return {
       message: ENQUIRY_MESSAGES.JOB_ACCEPTED_SUCCESS,
+      enquiry: updated,
+    };
+  }
+
+  async markReachedSite(
+    enquiryId: string,
+    workerId: string,
+    dto?: ReachedSiteDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (enquiry.workerId !== workerId) {
+      throw new ForbiddenException('You are not assigned to this job');
+    }
+
+    const updated = await this.enquiryRepo.markReachedSiteTransaction(
+      enquiryId,
+      workerId,
+      dto,
+    );
+
+    return {
+      message: ENQUIRY_MESSAGES.REACHED_SITE_SUCCESS,
+      enquiry: updated,
+    };
+  }
+
+  async updateJobPay(enquiryId: string, dto: UpdateJobPayDto) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    const updated = await this.enquiryRepo.updateJobPayTransaction(
+      enquiryId,
+      dto,
+    );
+
+    return {
+      message: ENQUIRY_MESSAGES.PAY_UPDATED_SUCCESS,
       enquiry: updated,
     };
   }

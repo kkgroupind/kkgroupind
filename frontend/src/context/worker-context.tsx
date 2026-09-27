@@ -18,6 +18,8 @@ interface WorkerContextType {
   requestToggleDuty: () => void;
   confirmDutyChange: (targetStatus: 'AVAILABLE' | 'OFF_DUTY') => Promise<void>;
   updateJobStatus: (jobId: string, newStatus: 'IN_PROGRESS' | 'COMPLETED', notes?: string) => Promise<void>;
+  acceptJob: (jobId: string, notes?: string) => Promise<void>;
+  markReachedSite: (jobId: string, notes?: string) => Promise<void>;
   actionLoadingId: string | null;
   selectedJob: ServiceEnquiry | null;
   setSelectedJob: React.Dispatch<React.SetStateAction<ServiceEnquiry | null>>;
@@ -191,6 +193,53 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Accept Work Order
+  const acceptJob = async (jobId: string, notes?: string) => {
+    if (!token) return;
+    setActionLoadingId(jobId);
+    try {
+      await EnquiryService.acceptWorkerJob(
+        jobId,
+        {
+          workerAcceptance: 'ACCEPTED',
+          notes: notes || 'Operative accepted work order',
+        },
+        token
+      );
+      toast.success(
+        'ജോലി സ്വീകരിച്ചു / Work Accepted',
+        'Work order accepted. Proceed to work site.'
+      );
+      await refreshJobs();
+    } catch (err: any) {
+      toast.error('Failed to accept work', err?.message || 'Unable to accept work');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Mark Reached Work Site
+  const markReachedSite = async (jobId: string, notes?: string) => {
+    if (!token) return;
+    setActionLoadingId(jobId);
+    try {
+      await EnquiryService.markReachedSite(
+        jobId,
+        token,
+        notes || 'Operative arrived at customer work site'
+      );
+      toast.success(
+        'സൈറ്റിൽ എത്തി / Arrived at Site',
+        'Work site arrival recorded. Timer and work tools unlocked.'
+      );
+      await refreshJobs();
+    } catch (err: any) {
+      toast.error('Failed to record arrival', err?.message || 'Unable to record arrival');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const openJobModal = (job: ServiceEnquiry) => {
     setSelectedJob(job);
     setIsJobModalOpen(true);
@@ -224,6 +273,8 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
         requestToggleDuty,
         confirmDutyChange,
         updateJobStatus,
+        acceptJob,
+        markReachedSite,
         actionLoadingId,
         selectedJob,
         setSelectedJob,

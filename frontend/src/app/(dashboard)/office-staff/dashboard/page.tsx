@@ -48,6 +48,7 @@ import {
   OfficeStaffSection,
   StaffAttendanceModal,
   AssignWorkerModal,
+  UpdateJobPayModal,
   CreateWorkModal,
   OfficeStaffFinanceView,
   OfficeStaffLoadingScreen,
@@ -215,6 +216,8 @@ export default function OfficeStaffDashboardPage() {
   const [isCreateWorkModalOpen, setIsCreateWorkModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedEnquiryToAssign, setSelectedEnquiryToAssign] = useState<ServiceEnquiry | null>(null);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [selectedEnquiryToPay, setSelectedEnquiryToPay] = useState<ServiceEnquiry | null>(null);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -1198,7 +1201,31 @@ export default function OfficeStaffDashboardPage() {
                                   Assign
                                 </button>
                               ) : (
-                                <span className="text-xs text-slate-400 font-semibold">Assigned</span>
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenAssignModal(work)}
+                                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all shadow-xs cursor-pointer"
+                                  >
+                                    Squad
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedEnquiryToPay(work);
+                                      setIsPayModalOpen(true);
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                                      work.totalCalculatedWage
+                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                        : work.status === 'COMPLETED'
+                                        ? 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                                    }`}
+                                  >
+                                    {work.totalCalculatedWage ? `₹${work.totalCalculatedWage}` : 'Finalize Pay'}
+                                  </button>
+                                </div>
                               )}
                             </td>
                           </tr>
@@ -1536,6 +1563,22 @@ export default function OfficeStaffDashboardPage() {
           enquiry={selectedEnquiryToAssign}
           workers={workers}
           token={token || undefined}
+        />
+      )}
+
+      {selectedEnquiryToPay && (
+        <UpdateJobPayModal
+          isOpen={isPayModalOpen}
+          onClose={() => {
+            setIsPayModalOpen(false);
+            setSelectedEnquiryToPay(null);
+          }}
+          enquiry={selectedEnquiryToPay}
+          token={token || undefined}
+          onPayUpdatedSuccess={() => {
+            showToast('Worker pay updated successfully');
+            loadDashboardData();
+          }}
         />
       )}
     </div>

@@ -158,6 +158,45 @@ export const EnquiryService = {
     );
   },
 
+  // Worker: Mark reached work site
+  async markReachedSite(
+    enquiryId: string,
+    token: string,
+    notes?: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/reached-site`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ notes }),
+      },
+      token,
+    );
+  },
+
+  // Admin / Office Staff: Update worker pay after completion
+  async updateJobPay(
+    enquiryId: string,
+    data: {
+      totalCalculatedWage?: number;
+      workerUnitWage?: number;
+      totalCalculatedCost?: number;
+      unitRate?: number;
+      completedUnits?: number;
+      notes?: string;
+    },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/${enquiryId}/pay`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
   // Worker: Start work timer on site
   async startWorkTimer(
     enquiryId: string,

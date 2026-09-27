@@ -124,6 +124,8 @@ export const ENQUIRY_MESSAGES = {
   WORK_TIMER_STOPPED: 'On-site work completed and hours logged successfully',
   WORKER_ALREADY_BUSY: 'Worker currently has an ongoing assignment',
   CANNOT_ASSIGN_UNAVAILABLE: 'Work can only be assigned to available workers',
+  REACHED_SITE_SUCCESS: 'Work site arrival recorded successfully',
+  PAY_UPDATED_SUCCESS: 'Worker payout updated successfully',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {

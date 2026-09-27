@@ -284,15 +284,72 @@ export default function WorkerDashboardPage() {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
-  // Live calculations
-  const liveHourlyWage = Math.round(
-    (Math.max(1, Math.round(timerSeconds / 60)) / 60) * workerRate
-  );
-  const liveUnitWage = Math.round((Number(unitCount) || 1) * workerRate);
+  // State flags for acceptance & on-site arrival
+  const workerAcceptance = currentWork?.workerAcceptance || '';
+  const isAccepted =
+    workerAcceptance === 'ACCEPTED' ||
+    workerAcceptance === 'ACCEPTED_SAME_DAY' ||
+    workerAcceptance === 'REACHED_SITE' ||
+    currentWork?.status === 'IN_PROGRESS';
+
+  const hasReachedSite =
+    workerAcceptance === 'REACHED_SITE' ||
+    currentWork?.status === 'IN_PROGRESS';
 
   // ========================================================
   // 2. ACTION HANDLERS
   // ========================================================
+
+  // Accept Work Order
+  const handleAcceptJob = async () => {
+    if (!currentWork || !token || isSubmittingAction) return;
+    setIsSubmittingAction(true);
+    try {
+      await EnquiryService.acceptWorkerJob(
+        currentWork.id,
+        {
+          workerAcceptance: 'ACCEPTED',
+          notes: 'Operative accepted work order and is preparing to dispatch to site',
+        },
+        token
+      );
+      toast.success(
+        language === 'ml' ? 'ജോലി സ്വീകരിച്ചു' : 'Work Order Accepted',
+        language === 'ml'
+          ? 'സൈറ്റിലേക്ക് പുറപ്പെടാൻ തയ്യാറെടുക്കുക.'
+          : 'Work accepted. Proceed to client work site.'
+      );
+      await refreshJobs();
+    } catch (err: any) {
+      toast.error('Failed to Accept', err?.message || 'Unable to accept work');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  // Mark Reached Work Site
+  const handleReachedSite = async () => {
+    if (!currentWork || !token || isSubmittingAction) return;
+    setIsSubmittingAction(true);
+    try {
+      await EnquiryService.markReachedSite(
+        currentWork.id,
+        token,
+        'Operative arrived at customer site location'
+      );
+      toast.success(
+        language === 'ml' ? 'സൈറ്റിൽ എത്തി' : 'Arrived at Work Site',
+        language === 'ml'
+          ? 'വർക്ക് സൈറ്റിൽ എത്തിയതായി രേഖപ്പെടുത്തി. ഇനി ടൈമർ അല്ലെങ്കിൽ ജോലി ആരംഭിക്കാം.'
+          : 'Site arrival recorded. Timer / work execution unlocked.'
+      );
+      await refreshJobs();
+    } catch (err: any) {
+      toast.error('Failed to record arrival', err?.message || 'Unable to record arrival');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
 
   // Start Hourly Timer (e.g. for JCB)
   const handleStartHourlyTimer = async () => {
@@ -767,6 +824,229 @@ export default function WorkerDashboardPage() {
                   - Daily gets Day Shifts HUD
                   - Fixed Visit gets Visit Confirmation HUD
               ======================================================== */}
+              {/* ========================================================
+                  3-STEP WORK LIFECYCLE PROGRESS STEPPER
+                  1. Work Assigned -> Accept
+                  2. Accepted -> Reached Work Site
+                  3. At Site -> Start Timer / Start Work & Complete
+              ======================================================== */}
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-1.5 sm:gap-3">
+                {/* Step 1: Work Assigned */}
+                <div
+                  className={`flex-1 flex flex-col items-center text-center p-2 rounded-xl transition-all ${
+                    !isAccepted
+                      ? 'bg-amber-100/90 text-amber-950 border border-amber-300 font-bold shadow-xs'
+                      : 'bg-emerald-50 text-emerald-800 border border-emerald-200/70'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        isAccepted
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-amber-600 text-white animate-pulse'
+                      }`}
+                    >
+                      {isAccepted ? '✓' : '1'}
+                    </span>
+                    <span className="text-[11px] font-black truncate">
+                      {language === 'ml' ? 'ജോലി നൽകി' : 'Assigned'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-medium text-slate-500">
+                    {isAccepted
+                      ? language === 'ml'
+                        ? 'സ്വീകരിച്ചു'
+                        : 'Accepted'
+                      : language === 'ml'
+                      ? 'സ്വീകരിക്കുക'
+                      : 'Pending'}
+                  </span>
+                </div>
+
+                <div className="text-slate-300 font-bold text-xs">→</div>
+
+                {/* Step 2: Reached Site */}
+                <div
+                  className={`flex-1 flex flex-col items-center text-center p-2 rounded-xl transition-all ${
+                    isAccepted && !hasReachedSite
+                      ? 'bg-blue-100/90 text-blue-950 border border-blue-300 font-bold shadow-xs animate-pulse'
+                      : hasReachedSite
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/70'
+                      : 'bg-slate-100/70 text-slate-400 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        hasReachedSite
+                          ? 'bg-emerald-600 text-white'
+                          : isAccepted
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-400 text-white'
+                      }`}
+                    >
+                      {hasReachedSite ? '✓' : '2'}
+                    </span>
+                    <span className="text-[11px] font-black truncate">
+                      {language === 'ml' ? 'സൈറ്റിൽ എത്തി' : 'Reached Site'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-medium text-slate-500">
+                    {hasReachedSite
+                      ? language === 'ml'
+                        ? 'സൈറ്റിൽ'
+                        : 'At Site'
+                      : language === 'ml'
+                      ? 'യാത്രയിലാണ്'
+                      : 'En Route'}
+                  </span>
+                </div>
+
+                <div className="text-slate-300 font-bold text-xs">→</div>
+
+                {/* Step 3: Start Timer / Work */}
+                <div
+                  className={`flex-1 flex flex-col items-center text-center p-2 rounded-xl transition-all ${
+                    hasReachedSite && currentWork.status !== 'COMPLETED'
+                      ? 'bg-emerald-100/90 text-emerald-950 border border-emerald-300 font-bold shadow-xs'
+                      : currentWork.status === 'COMPLETED'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/70'
+                      : 'bg-slate-100/70 text-slate-400 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span
+                      className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${
+                        currentWork.status === 'COMPLETED'
+                          ? 'bg-emerald-600 text-white'
+                          : currentWork.status === 'IN_PROGRESS'
+                          ? 'bg-emerald-600 text-white animate-spin'
+                          : hasReachedSite
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-slate-400 text-white'
+                      }`}
+                    >
+                      {currentWork.status === 'COMPLETED' ? '✓' : '3'}
+                    </span>
+                    <span className="text-[11px] font-black truncate">
+                      {isHourly
+                        ? language === 'ml'
+                          ? 'ടൈമർ'
+                          : 'Timer'
+                        : language === 'ml'
+                          ? 'ജോലി'
+                          : 'Work'}
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-medium text-slate-500">
+                    {currentWork.status === 'IN_PROGRESS'
+                      ? language === 'ml'
+                        ? 'നടക്കുന്നു'
+                        : 'Running'
+                      : language === 'ml'
+                      ? 'ആരംഭിക്കുക'
+                      : 'Start'}
+                  </span>
+                </div>
+              </div>
+
+              {/* STEP 1 ACTION CARD: Accept Work Order */}
+              {!isAccepted && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-200 flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm font-black text-lg">
+                      1
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-black text-amber-900">
+                        {language === 'ml' ? 'ഘട്ടം 1: ജോലി സ്വീകരിക്കുക' : 'Step 1: Accept Work Order'}
+                      </h3>
+                      <p className="text-xs text-amber-800/90 mt-0.5">
+                        {language === 'ml'
+                          ? 'ഈ ജോലി നിങ്ങൾക്ക് നൽകിയിരിക്കുന്നു. വിവരങ്ങൾ പരിശോധിച്ച് താഴെ ക്ലിക്ക് ചെയ്ത് സ്വീകരിക്കുക.'
+                          : 'This work order is assigned to you. Review instructions and accept to proceed to the site.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isSubmittingAction}
+                    onClick={handleAcceptJob}
+                    className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                  >
+                    {isSubmittingAction ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    <span>
+                      {language === 'ml' ? 'ജോലി സ്വീകരിക്കുക (Accept Work)' : 'Accept Work Order'}
+                    </span>
+                  </button>
+                </div>
+              )}
+
+              {/* STEP 2 ACTION CARD: Mark Reached Work Site */}
+              {isAccepted && !hasReachedSite && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-blue-50 border-2 border-blue-200 flex flex-col gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm font-black text-lg">
+                      2
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-black text-blue-900">
+                        {language === 'ml' ? 'ഘട്ടം 2: വർക്ക് സൈറ്റിൽ എത്തിച്ചേരുക' : 'Step 2: Reach Work Site'}
+                      </h3>
+                      <p className="text-xs text-blue-800/90 mt-0.5">
+                        {language === 'ml'
+                          ? 'നിങ്ങൾ ജോലി സ്വീകരിച്ചു. വർക്ക് സൈറ്റിൽ എത്തിയ ശേഷം താഴെ ക്ലിക്ക് ചെയ്യുക (അപ്പോൾ ടൈമർ / ജോലി ആരംഭിക്കാൻ സാധിക്കും).'
+                          : 'Work accepted. When you arrive at the client site, click below to confirm arrival and unlock the timer/work.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a
+                      href={googleMapsUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="py-3 px-4 rounded-xl bg-white border border-blue-200 text-blue-700 font-bold text-xs flex items-center justify-center gap-2 hover:bg-blue-50 transition-all shadow-xs"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      <span>{language === 'ml' ? 'റൂട്ട് കാണുക' : 'GPS Directions'}</span>
+                    </a>
+
+                    <button
+                      type="button"
+                      disabled={isSubmittingAction}
+                      onClick={handleReachedSite}
+                      className="flex-1 py-3.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-black text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98 transition-all"
+                    >
+                      {isSubmittingAction ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <MapPin className="w-4 h-4" />
+                      )}
+                      <span>
+                        {language === 'ml' ? 'വർക്ക് സൈറ്റിൽ എത്തിച്ചേർന്നു' : 'I Have Reached Work Site'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ========================================================
+                  STEP 3: WORK EXECUTION & BESPOKE HUD
+                  - ONLY Hourly Machinery gets the timer!
+                  - Per-Tree gets Tree Counter HUD
+                  - Per-Sq.Ft. gets Area Measurement HUD
+                  - Per-Point gets Electrical Points HUD
+                  - Per-Foot gets Borewell Depth HUD
+                  - Daily gets Day Shifts HUD
+                  - Fixed Visit gets Visit Confirmation HUD
+              ======================================================== */}
               <div>
                 {/* 1. HOURLY PAY (JCB, EXCAVATOR, MACHINERY ONLY) */}
                 {isHourly && (
@@ -779,7 +1059,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        ₹{workerRate} / {unitLabel}
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -803,10 +1085,14 @@ export default function WorkerDashboardPage() {
                         {formatTimer(timerSeconds)}
                       </div>
 
-                      <div className="mt-1 text-xs font-black text-emerald-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
+                      <div className="mt-2 text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/50">
+                        <IndianRupee className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                         <span>
-                          {language === 'ml' ? 'വേതനം' : 'Live Wage'}: ₹{liveHourlyWage}
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout will be updated by Admin / Office Staff after work finishes')}
                         </span>
                       </div>
                     </div>
@@ -815,9 +1101,13 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartHourlyTimer}
-                          className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-98 ${
+                            hasReachedSite
+                              ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
                           {isSubmittingAction ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -825,7 +1115,13 @@ export default function WorkerDashboardPage() {
                             <Play className="w-4 h-4 fill-current" />
                           )}
                           <span>
-                            {language === 'ml' ? 'ടൈമർ ആരംഭിക്കുക (Start Timer)' : 'Start Machine & Timer'}
+                            {hasReachedSite
+                              ? language === 'ml'
+                                ? 'ടൈമർ ആരംഭിക്കുക (Start Timer)'
+                                : 'Start Machine & Timer'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ടൈമർ ആരംഭിക്കുക'
+                              : 'Reach Site to Start Timer'}
                           </span>
                         </button>
                       ) : (
@@ -884,7 +1180,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        ₹{workerRate} / {unitLabel}
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -951,10 +1249,14 @@ export default function WorkerDashboardPage() {
                         </button>
                       </div>
 
-                      <div className="text-xs font-black text-emerald-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-emerald-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         <span>
-                          {language === 'ml' ? 'കൂലി' : 'Wage'}: ₹{liveUnitWage} ({unitCount} × ₹{workerRate})
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
                         </span>
                       </div>
                     </div>
@@ -989,16 +1291,28 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-98 ${
+                            hasReachedSite
+                              ? 'bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
                           {isSubmittingAction ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
                           ) : (
                             <Play className="w-4 h-4 fill-current" />
                           )}
-                          <span>{language === 'ml' ? 'ജോലി ആരംഭിക്കുക' : 'Start Tree Harvesting'}</span>
+                          <span>
+                            {hasReachedSite
+                              ? language === 'ml'
+                                ? 'ജോലി ആരംഭിക്കുക'
+                                : 'Start Tree Harvesting'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1014,8 +1328,8 @@ export default function WorkerDashboardPage() {
                           )}
                           <span>
                             {language === 'ml'
-                              ? `പൂർത്തിയായി (${unitCount} തെങ്ങ് - ₹${liveUnitWage})`
-                              : `Submit ${unitCount} Trees & Complete (₹${liveUnitWage})`}
+                              ? `പൂർത്തിയായി (${unitCount} തെങ്ങ് സമർപ്പിക്കുക)`
+                              : `Submit ${unitCount} Trees & Complete`}
                           </span>
                         </button>
                       )}
@@ -1034,7 +1348,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                        ₹{workerRate} / {unitLabel}
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -1080,10 +1396,14 @@ export default function WorkerDashboardPage() {
                         </button>
                       </div>
 
-                      <div className="text-xs font-black text-indigo-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-indigo-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
                         <span>
-                          {language === 'ml' ? 'കൂലി' : 'Wage'}: ₹{liveUnitWage} ({unitCount} Sq.Ft. × ₹{workerRate})
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
                         </span>
                       </div>
                     </div>
@@ -1092,11 +1412,23 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm transition-all shadow-md flex items-center justify-center gap-2 active:scale-98 ${
+                            hasReachedSite
+                              ? 'bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
-                          <span>{language === 'ml' ? 'ജോലി ആരംഭിക്കുക' : 'Start Surface Work'}</span>
+                          <span>
+                            {hasReachedSite
+                              ? language === 'ml'
+                                ? 'ജോലി ആരംഭിക്കുക'
+                                : 'Start Surface Work'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1107,8 +1439,8 @@ export default function WorkerDashboardPage() {
                         >
                           <span>
                             {language === 'ml'
-                              ? `പൂർത്തിയായി (${unitCount} Sq.Ft. - ₹${liveUnitWage})`
-                              : `Submit ${unitCount} Sq.Ft. & Complete (₹${liveUnitWage})`}
+                              ? `പൂർത്തിയായി (${unitCount} Sq.Ft. സമർപ്പിക്കുക)`
+                              : `Submit ${unitCount} Sq.Ft. & Complete`}
                           </span>
                         </button>
                       )}
@@ -1127,7 +1459,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        ₹{workerRate} / {unitLabel}
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -1159,9 +1493,15 @@ export default function WorkerDashboardPage() {
                         </button>
                       </div>
 
-                      <div className="text-xs font-black text-amber-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        <span>Wage: ₹{liveUnitWage} ({unitCount} Points × ₹{workerRate})</span>
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-amber-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
+                        </span>
                       </div>
                     </div>
 
@@ -1169,11 +1509,21 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm transition-all shadow-md"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm transition-all shadow-md ${
+                            hasReachedSite
+                              ? 'bg-amber-600 hover:bg-amber-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
-                          <span>Start Electrical Work</span>
+                          <span>
+                            {hasReachedSite
+                              ? 'Start Electrical Work'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1182,7 +1532,7 @@ export default function WorkerDashboardPage() {
                           onClick={handleSubmitUnitsAndComplete}
                           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-emerald-600 text-white font-black text-xs sm:text-sm shadow-md"
                         >
-                          <span>Submit {unitCount} Points & Complete (₹{liveUnitWage})</span>
+                          <span>Submit {unitCount} Points & Complete</span>
                         </button>
                       )}
                     </div>
@@ -1200,7 +1550,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        ₹{workerRate} / {unitLabel}
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -1233,9 +1585,15 @@ export default function WorkerDashboardPage() {
                         </button>
                       </div>
 
-                      <div className="text-xs font-black text-cyan-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        <span>Wage: ₹{liveUnitWage} ({unitCount} Feet × ₹{workerRate})</span>
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-cyan-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                        <span>
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
+                        </span>
                       </div>
                     </div>
 
@@ -1243,11 +1601,21 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black text-sm shadow-md"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm shadow-md ${
+                            hasReachedSite
+                              ? 'bg-cyan-600 hover:bg-cyan-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
-                          <span>Start Drilling Work</span>
+                          <span>
+                            {hasReachedSite
+                              ? 'Start Drilling Work'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1256,7 +1624,7 @@ export default function WorkerDashboardPage() {
                           onClick={handleSubmitUnitsAndComplete}
                           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-cyan-600 to-emerald-600 text-white font-black text-xs sm:text-sm shadow-md"
                         >
-                          <span>Submit {unitCount} Feet & Complete (₹{liveUnitWage})</span>
+                          <span>Submit {unitCount} Feet & Complete</span>
                         </button>
                       )}
                     </div>
@@ -1274,7 +1642,9 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                        ₹{workerRate} / Day
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
                     </div>
 
@@ -1285,9 +1655,15 @@ export default function WorkerDashboardPage() {
                       <div className="text-3xl font-black font-mono text-rose-300">
                         {unitCount} {unitCount > 1 ? 'Days' : 'Day / Shift'}
                       </div>
-                      <div className="text-xs font-black text-emerald-300 flex items-center gap-1">
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        <span>Wage: ₹{liveUnitWage}</span>
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-rose-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                        <span>
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
+                        </span>
                       </div>
                     </div>
 
@@ -1295,11 +1671,21 @@ export default function WorkerDashboardPage() {
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-sm shadow-md"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm shadow-md ${
+                            hasReachedSite
+                              ? 'bg-rose-600 hover:bg-rose-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
-                          <span>Start Daily Shift</span>
+                          <span>
+                            {hasReachedSite
+                              ? 'Start Daily Shift'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1308,7 +1694,7 @@ export default function WorkerDashboardPage() {
                           onClick={handleSubmitUnitsAndComplete}
                           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-rose-600 to-emerald-600 text-white font-black text-xs sm:text-sm shadow-md"
                         >
-                          <span>Complete Shift (₹{liveUnitWage})</span>
+                          <span>Complete Shift ({unitCount} Days)</span>
                         </button>
                       )}
                     </div>
@@ -1326,19 +1712,44 @@ export default function WorkerDashboardPage() {
                         </span>
                       </div>
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                        ₹{workerRate} Fixed
+                        {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                          ? `₹${currentWork.totalCalculatedWage}`
+                          : (language === 'ml' ? 'ഓഫീസ് പേഔട്ട്' : 'Post-Work Payout')}
                       </span>
+                    </div>
+
+                    <div className="bg-slate-900/90 rounded-xl p-4 border border-teal-900/70 text-center flex flex-col items-center justify-center gap-2">
+                      <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-teal-900/40">
+                        <IndianRupee className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+                        <span>
+                          {currentWork.totalCalculatedWage && currentWork.totalCalculatedWage > 0
+                            ? `${language === 'ml' ? 'നിശ്ചയിച്ച വേതനം' : 'Finalized Payout'}: ₹${currentWork.totalCalculatedWage}`
+                            : (language === 'ml'
+                                ? 'വേതനം ജോലി പൂർത്തിയായ ശേഷം അഡ്മിൻ / ഓഫീസ് സ്റ്റാഫ് നിശ്ചയിക്കും'
+                                : 'Payout finalized by Admin / Office Staff upon completion')}
+                        </span>
+                      </div>
                     </div>
 
                     <div>
                       {currentWork.status === 'ASSIGNED' ? (
                         <button
                           type="button"
-                          disabled={isSubmittingAction}
+                          disabled={isSubmittingAction || !hasReachedSite}
                           onClick={handleStartGeneralWork}
-                          className="w-full py-3.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-black text-sm shadow-md"
+                          className={`w-full py-3.5 px-4 rounded-xl font-black text-sm shadow-md ${
+                            hasReachedSite
+                              ? 'bg-teal-600 hover:bg-teal-500 text-white cursor-pointer'
+                              : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-not-allowed'
+                          }`}
                         >
-                          <span>Start Site Visit</span>
+                          <span>
+                            {hasReachedSite
+                              ? 'Start Site Visit'
+                              : language === 'ml'
+                              ? 'സൈറ്റിൽ എത്തിയ ശേഷം ജോലി തുടങ്ങുക'
+                              : 'Reach Site to Start Work'}
+                          </span>
                         </button>
                       ) : (
                         <button
@@ -1347,7 +1758,7 @@ export default function WorkerDashboardPage() {
                           onClick={handleSubmitUnitsAndComplete}
                           className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm shadow-md"
                         >
-                          <span>Confirm Visit Completed (₹{workerRate})</span>
+                          <span>Confirm Visit Completed</span>
                         </button>
                       )}
                     </div>

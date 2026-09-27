@@ -22,10 +22,12 @@ import {
   List,
   Sparkles,
   User,
+  IndianRupee,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
+import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export default function AdminWorkOrdersPage() {
@@ -44,6 +46,8 @@ export default function AdminWorkOrdersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<ServiceEnquiry | null>(null);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [payOrder, setPayOrder] = useState<ServiceEnquiry | null>(null);
 
   const loadData = useCallback(
     async (showRefreshIndicator = false) => {
@@ -443,6 +447,26 @@ export default function AdminWorkOrdersPage() {
                   </div>
                 </div>
 
+                {/* Worker Payout Banner */}
+                {order.worker && (
+                  <div className="mb-2">
+                    {order.totalCalculatedWage ? (
+                      <div className="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                        <span className="flex items-center gap-1 font-semibold">
+                          <IndianRupee className="w-3 h-3" />
+                          Final Worker Payout:
+                        </span>
+                        <span className="font-bold font-mono">₹{order.totalCalculatedWage.toLocaleString()}</span>
+                      </div>
+                    ) : order.status === 'COMPLETED' ? (
+                      <div className="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                        <span className="font-semibold">Worker Payout:</span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 px-2 py-0.5 rounded-md">Pending Finalization</span>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+
                 {/* Footer Buttons */}
                 <div className="flex items-center justify-between pt-2 gap-2">
                   {!order.worker ? (
@@ -458,17 +482,37 @@ export default function AdminWorkOrdersPage() {
                       <span>Assign Worker</span>
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedOrder(order);
-                        setIsAssignModalOpen(true);
-                      }}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
-                    >
-                      <HardHat className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Reassign / Update Squad</span>
-                    </button>
+                    <div className="flex items-center gap-2 w-full">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedOrder(order);
+                          setIsAssignModalOpen(true);
+                        }}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
+                      >
+                        <HardHat className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Squad</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPayOrder(order);
+                          setIsPayModalOpen(true);
+                        }}
+                        className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          order.totalCalculatedWage
+                            ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30'
+                            : order.status === 'COMPLETED'
+                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 animate-pulse'
+                            : 'bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800'
+                        }`}
+                      >
+                        <IndianRupee className="w-3.5 h-3.5" />
+                        <span>{order.totalCalculatedWage ? 'Update Pay' : 'Finalize Pay'}</span>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -539,7 +583,32 @@ export default function AdminWorkOrdersPage() {
                             Assign
                           </button>
                         ) : (
-                          <span className="text-xs text-gray-500">Dispatched</span>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsAssignModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-all"
+                            >
+                              Squad
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPayOrder(order);
+                                setIsPayModalOpen(true);
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                order.totalCalculatedWage
+                                  ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
+                                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
+                              }`}
+                            >
+                              {order.totalCalculatedWage ? `₹${order.totalCalculatedWage}` : 'Finalize Pay'}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -560,11 +629,27 @@ export default function AdminWorkOrdersPage() {
             setSelectedOrder(null);
           }}
           onAssignedSuccess={() => {
-            loadData();
+            loadData(true);
           }}
           enquiry={selectedOrder}
           workers={workers}
           token={token || undefined}
+        />
+      )}
+
+      {/* Update Pay Modal */}
+      {isPayModalOpen && payOrder && (
+        <UpdateJobPayModal
+          isOpen={isPayModalOpen}
+          onClose={() => {
+            setIsPayModalOpen(false);
+            setPayOrder(null);
+          }}
+          enquiry={payOrder}
+          token={token || undefined}
+          onPayUpdatedSuccess={() => {
+            loadData(true);
+          }}
         />
       )}
 
@@ -573,7 +658,7 @@ export default function AdminWorkOrdersPage() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={() => {
-          loadData();
+          loadData(true);
         }}
         token={token}
         workers={workers}

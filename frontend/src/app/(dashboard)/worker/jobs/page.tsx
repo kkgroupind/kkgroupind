@@ -28,6 +28,8 @@ export default function WorkerJobsPage() {
     loadingJobs,
     openJobModal,
     updateJobStatus,
+    acceptJob,
+    markReachedSite,
     actionLoadingId,
   } = useWorker();
 
@@ -230,14 +232,16 @@ export default function WorkerJobsPage() {
                                   ? '📅 Daily Shift'
                                   : '🔧 Fixed Visit'}
                               </span>
-                              <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                                ₹{rate} / {unitLabel}
-                              </span>
                               {job.totalCalculatedWage ? (
-                                <span className="text-[11px] font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-200">
+                                <span className="text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
                                   Payout: ₹{job.totalCalculatedWage.toLocaleString()}
                                 </span>
-                              ) : job.completedUnits ? (
+                              ) : (
+                                <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                                  {language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion'}
+                                </span>
+                              )}
+                              {job.completedUnits ? (
                                 <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                                   {job.completedUnits} {unitLabel}s
                                 </span>
@@ -309,14 +313,36 @@ export default function WorkerJobsPage() {
                     </button>
 
                     {isAssigned && (
-                      <button
-                        type="button"
-                        disabled={actionLoadingId === job.id}
-                        onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
-                        className="px-4 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E359B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
-                      >
-                        {actionLoadingId === job.id ? t('starting') : t('startJob')}
-                      </button>
+                      <>
+                        {job.workerAcceptance !== 'ACCEPTED' && job.workerAcceptance !== 'REACHED_SITE' ? (
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === job.id}
+                            onClick={() => acceptJob(job.id)}
+                            className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            {actionLoadingId === job.id ? 'Accepting...' : (language === 'ml' ? 'ജോലി സ്വീകരിക്കുക' : 'Accept Work')}
+                          </button>
+                        ) : job.workerAcceptance === 'ACCEPTED' ? (
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === job.id}
+                            onClick={() => markReachedSite(job.id)}
+                            className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            {actionLoadingId === job.id ? 'Recording...' : (language === 'ml' ? 'സൈറ്റിൽ എത്തി' : 'Reached Site')}
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === job.id}
+                            onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
+                            className="px-4 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E359B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                          >
+                            {actionLoadingId === job.id ? t('starting') : (language === 'ml' ? 'ജോലി ആരംഭിക്കുക' : 'Start Work')}
+                          </button>
+                        )}
+                      </>
                     )}
 
                     {isInProgress && (

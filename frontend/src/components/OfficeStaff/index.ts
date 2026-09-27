@@ -9,3 +9,4 @@ export * from './OfficeStaffSidebar';
 export * from './StaffAvatarCropModal';
 export * from './OfficeStaffFinanceView';
 export * from './OfficeStaffLoadingScreen';
+export * from './UpdateJobPayModal';

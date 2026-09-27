@@ -100,43 +100,36 @@ export function AssignWorkerModal({
             detectedType = 'PER_TREE';
             detectedUnit = 'Tree';
             defaultCustRate = defaultCustRate || 120;
-            defaultWageRate = defaultWageRate || 80;
             defaultEstUnits = defaultEstUnits || 10;
           } else if (isMachinery) {
             detectedType = 'HOURLY';
             detectedUnit = 'Hour';
             defaultCustRate = defaultCustRate || 1600;
-            defaultWageRate = defaultWageRate || 900;
             defaultEstUnits = defaultEstUnits || 4;
           } else if (sName.includes('paint') || sName.includes('tile') || sName.includes('marble') || sName.includes('granite')) {
             detectedType = 'PER_SQFT';
             detectedUnit = 'Sq. Ft.';
             defaultCustRate = defaultCustRate || (sName.includes('tile') ? 45 : 24);
-            defaultWageRate = defaultWageRate || (sName.includes('tile') ? 28 : 14);
             defaultEstUnits = defaultEstUnits || 300;
           } else if (sName.includes('electr') || sName.includes('wir')) {
             detectedType = 'PER_POINT';
             detectedUnit = 'Point';
             defaultCustRate = defaultCustRate || 450;
-            defaultWageRate = defaultWageRate || 260;
             defaultEstUnits = defaultEstUnits || 8;
           } else if (sName.includes('bore') || sName.includes('drill')) {
             detectedType = 'PER_FOOT';
             detectedUnit = 'Foot';
             defaultCustRate = defaultCustRate || 115;
-            defaultWageRate = defaultWageRate || 65;
             defaultEstUnits = defaultEstUnits || 200;
           } else if (sName.includes('mason') || sName.includes('brick')) {
             detectedType = 'DAILY_WAGE';
             detectedUnit = 'Day / Shift';
             defaultCustRate = defaultCustRate || 1600;
-            defaultWageRate = defaultWageRate || 1100;
             defaultEstUnits = defaultEstUnits || 2;
           } else if (sName.includes('plumb')) {
             detectedType = 'FIXED_VISIT';
             detectedUnit = 'Visit / Inspection';
             defaultCustRate = defaultCustRate || 350;
-            defaultWageRate = defaultWageRate || 220;
             defaultEstUnits = defaultEstUnits || 1;
           }
         }
@@ -503,13 +496,13 @@ export function AssignWorkerModal({
                       value={wageType}
                       onChange={(newType) => {
                         setWageType(newType);
-                        if (newType === 'PER_TREE') { setUnitLabel('Tree'); setUnitRate(120); setWorkerUnitWage(80); setEstimatedUnits(10); }
-                        else if (newType === 'HOURLY') { setUnitLabel('Hour'); setUnitRate(1600); setWorkerUnitWage(900); setEstimatedUnits(4); }
-                        else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); setUnitRate(28); setWorkerUnitWage(16); setEstimatedUnits(300); }
-                        else if (newType === 'PER_POINT') { setUnitLabel('Point'); setUnitRate(450); setWorkerUnitWage(260); setEstimatedUnits(8); }
-                        else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); setUnitRate(115); setWorkerUnitWage(65); setEstimatedUnits(200); }
-                        else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setWorkerUnitWage(1100); setEstimatedUnits(2); }
-                        else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); setUnitRate(350); setWorkerUnitWage(220); setEstimatedUnits(1); }
+                        if (newType === 'PER_TREE') { setUnitLabel('Tree'); setUnitRate(120); setEstimatedUnits(10); }
+                        else if (newType === 'HOURLY') { setUnitLabel('Hour'); setUnitRate(1600); setEstimatedUnits(4); }
+                        else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); setUnitRate(28); setEstimatedUnits(300); }
+                        else if (newType === 'PER_POINT') { setUnitLabel('Point'); setUnitRate(450); setEstimatedUnits(8); }
+                        else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); setUnitRate(115); setEstimatedUnits(200); }
+                        else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setEstimatedUnits(2); }
+                        else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); setUnitRate(350); setEstimatedUnits(1); }
                       }}
                       variant="blue"
                       size="sm"
@@ -546,13 +539,13 @@ export function AssignWorkerModal({
 
                   <div>
                     <label className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
-                      Worker Pay (₹/{unitLabel})
+                      Worker Pay (₹/{unitLabel}) <span className="text-[9px] text-slate-400 font-normal lowercase">(optional - set after finish)</span>
                     </label>
                     <input
                       type="number"
                       value={workerUnitWage}
                       onChange={(e) => setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))}
-                      placeholder="e.g. 80"
+                      placeholder="Optional"
                       className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-emerald-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                     />
                   </div>

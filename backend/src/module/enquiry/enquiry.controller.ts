@@ -20,6 +20,8 @@ import {
   AcceptJobDto,
   StartWorkTimerDto,
   StopWorkTimerDto,
+  ReachedSiteDto,
+  UpdateJobPayDto,
 } from './dto';
 
 @Controller('enquiries')
@@ -81,6 +83,25 @@ export class EnquiryController {
     @CurrentUser('id') workerId: string,
   ) {
     return this.enquiryService.acceptWorkerJob(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Patch('worker/:id/reached-site')
+  async markReachedSite(
+    @Param('id') id: string,
+    @Body() dto: ReachedSiteDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.markReachedSite(id, workerId, dto);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Patch(':id/pay')
+  async updateJobPay(
+    @Param('id') id: string,
+    @Body() dto: UpdateJobPayDto,
+  ) {
+    return this.enquiryService.updateJobPay(id, dto);
   }
 
   @Roles(Role.WORKER)
