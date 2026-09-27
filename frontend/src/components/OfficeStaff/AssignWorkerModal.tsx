@@ -25,6 +25,17 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+
+const ASSIGN_WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
+  { value: 'PER_TREE', label: '🌴 Tree Count (Coconut / Palm Plucking)' },
+  { value: 'HOURLY', label: '⏱️ Hourly Meter (JCB / Heavy Equipment)' },
+  { value: 'PER_SQFT', label: '📐 Square Feet Area (Painting / Tiling)' },
+  { value: 'PER_POINT', label: '⚡ Electrical Points (Concealed Wiring)' },
+  { value: 'PER_FOOT', label: '📏 Foot Depth (Borewell Drilling)' },
+  { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry / Construction)' },
+  { value: 'FIXED_VISIT', label: '🔧 Fixed Visit (Plumbing / Inspection)' },
+];
 
 interface AssignWorkerModalProps {
   isOpen: boolean;
@@ -590,10 +601,10 @@ export function AssignWorkerModal({
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                       Wage / Pricing Model
                     </label>
-                    <select
+                    <AdminDropdown
+                      options={ASSIGN_WAGE_TYPE_OPTIONS}
                       value={wageType}
-                      onChange={(e) => {
-                        const newType = e.target.value;
+                      onChange={(newType) => {
                         setWageType(newType);
                         if (newType === 'PER_TREE') { setUnitLabel('Tree'); setUnitRate(120); setWorkerUnitWage(80); setEstimatedUnits(10); }
                         else if (newType === 'HOURLY') { setUnitLabel('Hour'); setUnitRate(1600); setWorkerUnitWage(900); setEstimatedUnits(4); }
@@ -603,16 +614,9 @@ export function AssignWorkerModal({
                         else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setWorkerUnitWage(1100); setEstimatedUnits(2); }
                         else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit / Inspection'); setUnitRate(350); setWorkerUnitWage(220); setEstimatedUnits(1); }
                       }}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#2A835F]"
-                    >
-                      <option value="PER_TREE">🌴 Tree Count (Coconut / Palm Plucking)</option>
-                      <option value="HOURLY">⏱️ Hourly Meter (JCB / Heavy Equipment)</option>
-                      <option value="PER_SQFT">📐 Square Feet Area (Painting / Tiling)</option>
-                      <option value="PER_POINT">⚡ Electrical Points (Concealed Wiring)</option>
-                      <option value="PER_FOOT">📏 Foot Depth (Borewell Drilling)</option>
-                      <option value="DAILY_WAGE">📅 Daily Shift (Masonry / Construction)</option>
-                      <option value="FIXED_VISIT">🔧 Fixed Visit (Plumbing / Inspection)</option>
-                    </select>
+                      variant="emerald"
+                      size="sm"
+                    />
                   </div>
 
                   <div>

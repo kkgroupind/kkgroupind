@@ -132,6 +132,9 @@ export interface ServiceEnquiry {
   district?: string;
   city?: string | null;
   location?: string | null;
+  serviceCategory?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   mapUrl?: string | null;
   locationRemarks?: string | null;
   preferredDate?: string | null;

@@ -66,6 +66,27 @@ const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string
   },
 };
 
+const getCategoryIcon = (category?: string | null) => {
+  switch (category) {
+    case 'Agriculture':
+      return <Tractor className="w-5 h-5 text-emerald-400" />;
+    case 'Excavation & Heavy Equipment':
+      return <Wrench className="w-5 h-5 text-amber-400" />;
+    case 'Civil & Construction':
+      return <Layers className="w-5 h-5 text-blue-400" />;
+    case 'Finishing & Renovation':
+      return <Paintbrush className="w-5 h-5 text-purple-400" />;
+    case 'Flooring & Surfaces':
+      return <Sparkles className="w-5 h-5 text-teal-400" />;
+    case 'MEP & Utilities':
+      return <Zap className="w-5 h-5 text-indigo-400" />;
+    case 'Water & Irrigation':
+      return <Droplets className="w-5 h-5 text-sky-400" />;
+    default:
+      return <Layers className="w-5 h-5 text-gray-300" />;
+  }
+};
+
 export function ServiceCard({
   service,
   onEdit,
@@ -96,63 +117,62 @@ export function ServiceCard({
           : 'border-gray-800/40 opacity-75 bg-[#121317]'
       }`}
     >
-      {/* Top ambient color edge */}
-      <div
-        className={`absolute top-0 left-0 right-0 h-[2px] transition-all duration-300 ${
-          service.isActive
-            ? 'bg-gradient-to-r from-transparent via-[#2A835F]/60 to-transparent group-hover:via-[#10B981]'
-            : 'bg-gray-800'
-        }`}
-      />
+      {/* Top ambient color edge matching people cards */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
 
       <div>
-        {/* Header: Service ID, Category & Status Pill */}
+        {/* Header with People-Card Gradient Ring Avatar */}
         <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-2">
-            {/* Unique Sequential Alphanumeric ID Badge */}
-            <button
-              onClick={handleCopyId}
-              title="Click to copy Service ID"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#1A1C23] border border-gray-700/80 font-mono text-xs font-bold text-white hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-sm"
-            >
-              <span>{service.serviceId}</span>
-              {copied ? (
-                <Check className="w-3 h-3 text-emerald-400" />
-              ) : (
-                <Copy className="w-3 h-3 text-gray-500 opacity-60 group-hover:opacity-100" />
-              )}
-            </button>
-
-            {service.category && (
+          <div className="flex items-center gap-3">
+            {/* Avatar with Gradient Ring */}
+            <div className="relative shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-purple-500/20 to-indigo-500/20 p-[2px] shadow-inner">
+                <div className="w-full h-full rounded-2xl bg-[#181920] flex items-center justify-center">
+                  {getCategoryIcon(service.category)}
+                </div>
+              </div>
+              {/* Status Indicator */}
               <span
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
-              >
-                {service.category}
-              </span>
-            )}
+                className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#14151A] shadow-sm ${
+                  service.isActive ? 'bg-emerald-500' : 'bg-rose-500'
+                }`}
+              />
+            </div>
 
-            {/* Wage & Billing Unit Badge */}
-            {service.wageType && (
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                {service.wageType === 'PER_TREE'
-                  ? '🌴 Tree Count'
-                  : service.wageType === 'HOURLY'
-                  ? '⏱️ Hourly Meter'
-                  : service.wageType === 'PER_SQFT'
-                  ? '📐 Sq. Ft. Area'
-                  : service.wageType === 'PER_POINT'
-                  ? '⚡ Point Basis'
-                  : service.wageType === 'PER_FOOT'
-                  ? '📏 Foot Depth'
-                  : service.wageType === 'DAILY_WAGE'
-                  ? '📅 Daily Wage'
-                  : '🔧 Visit Fee'}
-              </span>
-            )}
+            {/* Title & Service ID */}
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  onClick={handleCopyId}
+                  title="Click to copy Service ID"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#1A1C23] border border-gray-700/80 font-mono text-[11px] font-bold text-gray-200 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors shadow-sm"
+                >
+                  <span>{service.serviceId}</span>
+                  {copied ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-gray-500 opacity-60 group-hover:opacity-100" />
+                  )}
+                </button>
+
+                {service.category && (
+                  <span
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${catStyle.bg} ${catStyle.text} ${catStyle.border}`}
+                  >
+                    {service.category}
+                  </span>
+                )}
+              </div>
+
+              <h3 className="text-sm font-bold text-gray-100 tracking-tight leading-snug group-hover:text-[#7B4DFF] transition-colors mt-1">
+                {service.name}
+              </h3>
+            </div>
           </div>
 
+          {/* Status Badge */}
           <span
-            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border shrink-0 ${
               service.isActive
                 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
                 : 'bg-rose-500/10 text-rose-400 border-rose-500/30'
@@ -167,30 +187,46 @@ export function ServiceCard({
           </span>
         </div>
 
-        {/* Title */}
-        <h3 className="text-base font-bold text-gray-100 tracking-tight leading-snug group-hover:text-emerald-400 transition-colors">
-          {service.name}
-        </h3>
-
         {/* Description */}
-        <p className="text-xs text-gray-400 mt-2 line-clamp-3 leading-relaxed">
+        <p className="text-xs text-gray-400 mt-2 line-clamp-2 leading-relaxed">
           {service.description}
         </p>
 
+        {/* Wage & Billing Unit Badge */}
+        {service.wageType && (
+          <div className="mt-2.5">
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 inline-block">
+              {service.wageType === 'PER_TREE'
+                ? '🌴 Tree Count (Coconut/Palm)'
+                : service.wageType === 'HOURLY'
+                ? '⏱️ Hourly Meter (JCB/Machine)'
+                : service.wageType === 'PER_SQFT'
+                ? '📐 Sq. Ft. Area Basis'
+                : service.wageType === 'PER_POINT'
+                ? '⚡ Electrical Point Basis'
+                : service.wageType === 'PER_FOOT'
+                ? '📏 Foot Depth (Borewell)'
+                : service.wageType === 'DAILY_WAGE'
+                ? '📅 Daily Shift Wage'
+                : '🔧 Fixed Visit Charge'}
+            </span>
+          </div>
+        )}
+
         {/* Key Features Chips */}
         {service.features && service.features.length > 0 && (
-          <div className="mt-3.5 pt-3 border-t border-gray-800/60">
-            <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">
-              Key Features & Capabilities
+          <div className="mt-3 pt-2.5 border-t border-gray-800/60">
+            <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1.5">
+              Features &amp; Capabilities
             </div>
             <div className="flex flex-wrap gap-1.5">
               {service.features.map((feat, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 text-[11px] text-gray-300 bg-[#1A1C23] border border-gray-800 px-2 py-0.5 rounded-md"
+                  className="inline-flex items-center gap-1 text-[10px] text-gray-300 bg-[#1A1C23] border border-gray-800 px-2 py-0.5 rounded-md"
                 >
                   <CheckCircle2 className="w-3 h-3 text-[#2A835F] shrink-0" />
-                  <span className="truncate max-w-[220px]">{feat}</span>
+                  <span className="truncate max-w-[200px]">{feat}</span>
                 </span>
               ))}
             </div>
@@ -257,32 +293,33 @@ export function ServiceCard({
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 pt-1">
           {/* Toggle status button */}
           <button
             onClick={() => onToggleStatus(service.id)}
             disabled={isToggling}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
               service.isActive
-                ? 'bg-gray-800/40 hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 border-gray-700/60 hover:border-rose-500/30'
+                ? 'bg-[#1A1C23] hover:bg-rose-500/10 text-gray-300 hover:text-rose-400 border-gray-800 hover:border-rose-500/30'
                 : 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
             }`}
           >
-            <Power className="w-3 h-3" />
+            <Power className="w-3.5 h-3.5" />
             <span>{service.isActive ? 'Deactivate' : 'Activate'}</span>
           </button>
 
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => onEdit(service)}
-              className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 hover:border-gray-700 transition-colors text-xs font-semibold"
               title="Edit Service"
             >
-              <Pencil className="w-3.5 h-3.5" />
+              <Pencil className="w-3.5 h-3.5 text-gray-400" />
+              <span>Edit</span>
             </button>
             <button
               onClick={() => onDelete(service.id, service.name)}
-              className="p-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors"
+              className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-rose-500/20 text-gray-400 hover:text-rose-400 border border-gray-800 hover:border-rose-500/30 transition-colors"
               title="Delete Service"
             >
               <Trash2 className="w-3.5 h-3.5" />

@@ -18,6 +18,28 @@ import {
   Check,
 } from 'lucide-react';
 import { api, User, UpdatePersonData } from '@/services';
+import { AdminDropdown, AdminDropdownOption } from './admin-dropdown';
+
+const ROLE_OPTIONS: AdminDropdownOption[] = [
+  {
+    value: 'WORKER',
+    label: 'Worker (Field Operations)',
+    badge: 'Field',
+    badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  },
+  {
+    value: 'OFFICE_STAFF',
+    label: 'Office Staff (Coordinator)',
+    badge: 'Office',
+    badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+  },
+  {
+    value: 'CUSTOMER',
+    label: 'Customer (Client)',
+    badge: 'Client',
+    badgeColor: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  },
+];
 
 interface EditPersonModalProps {
   isOpen: boolean;
@@ -391,15 +413,13 @@ export function EditPersonModal({
                 <label className="block text-xs font-medium text-gray-300 mb-1.5">
                   System Role
                 </label>
-                <select
+                <AdminDropdown
+                  options={ROLE_OPTIONS}
                   value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2 text-sm text-gray-100 focus:outline-none focus:border-[#7B4DFF] transition-all"
-                >
-                  <option value="WORKER">Worker (Field Operations)</option>
-                  <option value="OFFICE_STAFF">Office Staff (Coordinator)</option>
-                  <option value="CUSTOMER">Customer (Client)</option>
-                </select>
+                  onChange={(val) => setRole(val as any)}
+                  variant="purple"
+                  size="md"
+                />
               </div>
 
               <div>

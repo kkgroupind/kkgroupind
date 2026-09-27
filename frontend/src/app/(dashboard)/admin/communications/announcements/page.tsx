@@ -16,6 +16,35 @@ import {
   Trash2,
   Tag,
 } from 'lucide-react';
+import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+
+const AUDIENCE_OPTIONS: AdminDropdownOption[] = [
+  { value: 'ALL', label: 'All Personnel', badge: 'Company-wide' },
+  {
+    value: 'WORKERS',
+    label: 'Field Workers Only',
+    badge: 'Field squad',
+    badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  },
+  {
+    value: 'OFFICE_STAFF',
+    label: 'Office Staff Only',
+    badge: 'HQ / Desk',
+    badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+  },
+];
+
+const PRIORITY_OPTIONS: AdminDropdownOption[] = [
+  { value: 'LOW', label: 'Low Priority', badge: 'Informational' },
+  { value: 'NORMAL', label: 'Normal Priority', badge: 'Standard' },
+  {
+    value: 'URGENT',
+    label: 'Urgent Alert',
+    badge: 'Critical',
+    badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+  },
+];
 
 interface Announcement {
   id: string;
@@ -68,6 +97,7 @@ export default function AdminAnnouncementsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [audienceFilter, setAudienceFilter] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKERS'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
 
   // New Announcement Form State
   const [newTitle, setNewTitle] = useState('');
@@ -120,9 +150,17 @@ export default function AdminAnnouncementsPage() {
   };
 
   const handleDelete = (id: string) => {
-    if (!confirm('Are you sure you want to delete this announcement?')) return;
-    const updated = announcements.filter((a) => a.id !== id);
+    const target = announcements.find((a) => a.id === id);
+    if (target) {
+      setDeleteTarget(target);
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    const updated = announcements.filter((a) => a.id !== deleteTarget.id);
     saveAnnouncements(updated);
+    setDeleteTarget(null);
   };
 
   const filteredAnnouncements = useMemo(() => {
@@ -293,30 +331,26 @@ export default function AdminAnnouncementsPage() {
                   <label className="block mb-1 font-medium text-gray-300">
                     Target Audience *
                   </label>
-                  <select
+                  <AdminDropdown
+                    options={AUDIENCE_OPTIONS}
                     value={newAudience}
-                    onChange={(e: any) => setNewAudience(e.target.value)}
-                    className="w-full bg-[#0D0E12] border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-gray-500"
-                  >
-                    <option value="ALL">All Personnel</option>
-                    <option value="WORKERS">Field Workers Only</option>
-                    <option value="OFFICE_STAFF">Office Staff Only</option>
-                  </select>
+                    onChange={(val) => setNewAudience(val as any)}
+                    variant="purple"
+                    size="md"
+                  />
                 </div>
 
                 <div>
                   <label className="block mb-1 font-medium text-gray-300">
                     Priority Level *
                   </label>
-                  <select
+                  <AdminDropdown
+                    options={PRIORITY_OPTIONS}
                     value={newPriority}
-                    onChange={(e: any) => setNewPriority(e.target.value)}
-                    className="w-full bg-[#0D0E12] border border-gray-700 rounded-lg px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-gray-500"
-                  >
-                    <option value="LOW">Low</option>
-                    <option value="NORMAL">Normal</option>
-                    <option value="URGENT">Urgent Alert</option>
-                  </select>
+                    onChange={(val) => setNewPriority(val as any)}
+                    variant="purple"
+                    size="md"
+                  />
                 </div>
               </div>
 
@@ -354,6 +388,26 @@ export default function AdminAnnouncementsPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Announcement Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Announcement"
+        message="Are you sure you want to permanently delete this broadcast announcement? It will immediately disappear from staff and worker noticeboards."
+        confirmText="Delete Notice"
+        variant="danger"
+        itemDetails={
+          deleteTarget
+            ? [
+                { label: 'Title', value: deleteTarget.title },
+                { label: 'Audience', value: deleteTarget.audience },
+                { label: 'Priority', value: deleteTarget.priority },
+              ]
+            : undefined
+        }
+      />
     </div>
   );
 }

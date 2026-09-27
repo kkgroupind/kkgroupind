@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { adminServicesService, ServiceItem, UpdateServiceInput } from '@/services/Admin/services';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 interface EditServiceModalProps {
   isOpen: boolean;
@@ -31,6 +32,22 @@ const CATEGORY_PRESETS = [
   'MEP & Utilities',
   'Water & Irrigation',
   'Facility Maintenance',
+];
+
+const CATEGORY_OPTIONS: AdminDropdownOption[] = [
+  ...CATEGORY_PRESETS.map((cat) => ({ value: cat, label: cat })),
+  { value: 'Other', label: 'Other (Custom Category)' },
+];
+
+const WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
+  { value: 'PER_TREE', label: '🌴 Tree Count (Coconut / Palm Plucking)' },
+  { value: 'HOURLY', label: '⏱️ Hourly Meter (JCB / Excavators)' },
+  { value: 'PER_SQFT', label: '📐 Area / Sq. Ft. (Painting, Tiling)' },
+  { value: 'PER_POINT', label: '⚡ Electrical Points (Wiring, Fixtures)' },
+  { value: 'PER_FOOT', label: '📏 Foot Depth (Borewell Drilling)' },
+  { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry, Carpentry)' },
+  { value: 'FIXED_VISIT', label: '🔧 Fixed Visit / Inspection (Plumbing)' },
+  { value: 'CUSTOM_PROJECT', label: '💼 Custom Lump Sum / Turnkey' },
 ];
 
 export function EditServiceModal({
@@ -153,33 +170,36 @@ export function EditServiceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#14151A] border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Top subtle glow line matching People modal */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/50 to-transparent" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-[#1A1C23] sticky top-0 z-10">
+        <div className="flex items-center justify-between p-6 border-b border-gray-800/80 bg-[#16171D]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF]">
               <Pencil className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-100">
+              <h2 className="text-lg font-bold text-gray-100">
                 Modify Service
               </h2>
-              <p className="text-xs text-gray-400 font-mono">
+              <p className="text-xs text-gray-400 font-mono mt-0.5">
                 Service ID: <span className="text-emerald-400 font-bold">{service.serviceId}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-200 bg-[#1A1C23] hover:bg-[#232630] rounded-xl border border-gray-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -226,18 +246,13 @@ export function EditServiceModal({
               <label className="block text-xs font-medium text-gray-300 mb-1.5">
                 Category
               </label>
-              <select
+              <AdminDropdown
+                options={CATEGORY_OPTIONS}
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2A835F]"
-              >
-                {CATEGORY_PRESETS.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-                <option value="Other">Other (Custom Category)</option>
-              </select>
+                onChange={(val) => setCategory(val)}
+                variant="emerald"
+                size="md"
+              />
             </div>
 
             {category === 'Other' && (
@@ -373,10 +388,10 @@ export function EditServiceModal({
                 <label className="block text-[11px] font-medium text-gray-300 mb-1">
                   Wage & Calculation Basis
                 </label>
-                <select
+                <AdminDropdown
+                  options={WAGE_TYPE_OPTIONS}
                   value={wageType}
-                  onChange={(e) => {
-                    const newType = e.target.value;
+                  onChange={(newType) => {
                     setWageType(newType);
                     if (newType === 'PER_TREE' && (!unitLabel || unitLabel === 'Hour')) setUnitLabel('Tree');
                     else if (newType === 'HOURLY') setUnitLabel('Hour');
@@ -386,17 +401,9 @@ export function EditServiceModal({
                     else if (newType === 'DAILY_WAGE') setUnitLabel('Day / Shift');
                     else if (newType === 'FIXED_VISIT') setUnitLabel('Visit / Inspection');
                   }}
-                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
-                >
-                  <option value="PER_TREE">🌴 Tree Count (e.g. Coconut / Palm Plucking)</option>
-                  <option value="HOURLY">⏱️ Hourly Meter (e.g. JCB / Excavators)</option>
-                  <option value="PER_SQFT">📐 Area / Sq. Ft. (e.g. Painting, Tiling)</option>
-                  <option value="PER_POINT">⚡ Electrical Points (e.g. Wiring, Fixtures)</option>
-                  <option value="PER_FOOT">📏 Foot Depth (e.g. Borewell Drilling)</option>
-                  <option value="DAILY_WAGE">📅 Daily Shift (e.g. Masonry, Carpentry)</option>
-                  <option value="FIXED_VISIT">🔧 Fixed Visit / Inspection (e.g. Plumbing)</option>
-                  <option value="CUSTOM_PROJECT">💼 Custom Lump Sum / Turnkey</option>
-                </select>
+                  variant="emerald"
+                  size="md"
+                />
               </div>
 
               <div>
@@ -481,32 +488,36 @@ export function EditServiceModal({
               Active in service catalog
             </label>
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl text-xs font-medium transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="px-5 py-2 bg-[#2A835F] hover:bg-emerald-600 text-white rounded-xl text-xs font-medium transition-all shadow-[0_0_15px_rgba(42,131,95,0.4)] disabled:opacity-50 inline-flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Saving Changes...</span>
-                </>
-              ) : (
-                <span>Update Service</span>
-              )}
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Footer matching People modal */}
+        <div className="p-6 border-t border-gray-800/80 bg-[#16171D] flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl border border-gray-800 text-gray-300 hover:bg-[#1A1C23] text-sm font-semibold transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              const form = (e.currentTarget.closest('.relative')?.querySelector('form') as HTMLFormElement);
+              if (form) form.requestSubmit();
+            }}
+            disabled={isLoading}
+            className="px-6 py-2.5 rounded-xl bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white text-sm font-bold shadow-lg shadow-[#7B4DFF]/25 hover:shadow-[#7B4DFF]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving Changes...</span>
+              </>
+            ) : (
+              <span>Update Service</span>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

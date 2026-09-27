@@ -8,6 +8,7 @@ import { PeopleCards } from '@/components/Admin/people-cards';
 import { PeopleSkeleton } from '@/components/Admin/people-skeleton';
 import { CreatePersonModal } from '@/components/Admin/create-person-modal';
 import { EditPersonModal } from '@/components/Admin/edit-person-modal';
+import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
 import { Users, Plus, Search, RefreshCw, LayoutGrid, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -23,6 +24,7 @@ export default function CustomersPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<User | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -80,17 +82,23 @@ export default function CustomersPage() {
     loadPeople(searchTerm, page, true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!token) return;
-    if (!confirm('Are you sure you want to delete this customer?')) return;
+  const handleDeletePrompt = (id: string) => {
+    const target = people.find((p) => p.id === id);
+    if (target) {
+      setDeleteTarget(target);
+    }
+  };
 
-    setIsDeleting(id);
+  const handleConfirmDelete = async () => {
+    if (!token || !deleteTarget) return;
+
+    setIsDeleting(deleteTarget.id);
     try {
-      await api.deletePerson(id, token);
+      await api.deletePerson(deleteTarget.id, token);
+      setDeleteTarget(null);
       loadPeople(searchTerm, page);
     } catch (error) {
       console.error('Failed to delete customer', error);
-      alert('Failed to delete customer');
     } finally {
       setIsDeleting(null);
     }
@@ -209,7 +217,7 @@ export default function CustomersPage() {
           meta={meta}
           onPageChange={setPage}
           onEdit={(person) => setEditingPerson(person)}
-          onDelete={handleDelete}
+          onDelete={handleDeletePrompt}
           isDeleting={isDeleting}
           basePath="/admin/people/customers"
         />
@@ -219,7 +227,7 @@ export default function CustomersPage() {
           meta={meta}
           onPageChange={setPage}
           onEdit={(person) => setEditingPerson(person)}
-          onDelete={handleDelete}
+          onDelete={handleDeletePrompt}
           isDeleting={isDeleting}
           basePath="/admin/people/customers"
         />
@@ -239,6 +247,26 @@ export default function CustomersPage() {
         onClose={() => setEditingPerson(null)}
         token={token!}
         onSuccess={() => loadPeople(searchTerm, page)}
+      />
+
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Customer Profile"
+        message="Are you sure you want to permanently delete this customer account? All associated customer profile records and access privileges will be revoked."
+        confirmText="Delete Customer"
+        variant="danger"
+        isLoading={!!isDeleting}
+        itemDetails={
+          deleteTarget
+            ? [
+                { label: 'Name', value: deleteTarget.name },
+                { label: 'Email', value: deleteTarget.email || 'N/A' },
+                { label: 'Phone', value: deleteTarget.phone || 'N/A' },
+              ]
+            : undefined
+        }
       />
     </div>
   );

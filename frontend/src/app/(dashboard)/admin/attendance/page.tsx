@@ -15,8 +15,28 @@ import {
   CheckCircle2,
   AlertCircle,
   Coffee,
+  LayoutGrid,
+  List,
+  Phone,
 } from 'lucide-react';
 import { AttendanceService, AttendanceOverviewResponse } from '@/services';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+
+const ATTENDANCE_ROLE_OPTIONS: AdminDropdownOption[] = [
+  { value: 'ALL', label: 'All Personnel' },
+  {
+    value: 'OFFICE_STAFF',
+    label: 'Office Staff',
+    badge: 'HQ',
+    badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+  },
+  {
+    value: 'WORKER',
+    label: 'Field Workers',
+    badge: 'Field',
+    badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+  },
+];
 
 export default function AdminAttendancePage() {
   const { token, user, isLoading: authLoading } = useAuth();
@@ -27,6 +47,7 @@ export default function AdminAttendancePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKER'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   const loadAttendance = useCallback(
     async (showRefresh = false) => {
@@ -166,25 +187,169 @@ export default function AdminAttendancePage() {
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
-          {(['ALL', 'OFFICE_STAFF', 'WORKER'] as const).map((r) => (
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+          <div className="w-48">
+            <AdminDropdown
+              options={ATTENDANCE_ROLE_OPTIONS}
+              value={roleFilter}
+              onChange={(val) => setRoleFilter(val as any)}
+              variant="purple"
+              size="md"
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-[#1A1C23] border border-gray-800 p-1 rounded-xl shrink-0">
             <button
-              key={r}
-              onClick={() => setRoleFilter(r)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                roleFilter === r
-                  ? 'bg-[#1A1C23] text-white border border-gray-700'
-                  : 'bg-[#0D0E12] text-gray-400 hover:text-white border border-gray-800'
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
               }`}
+              title="Grid View"
             >
-              {r === 'ALL' ? 'All Roles' : r === 'OFFICE_STAFF' ? 'Office Staff' : 'Field Workers'}
+              <LayoutGrid className="w-4 h-4" />
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Attendance Table */}
-      <div className="bg-[#14151A] rounded-xl border border-gray-800 overflow-hidden">
+      {/* Main Attendance Content: Cards or Table */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoading ? (
+            <div className="col-span-full py-16 text-center text-gray-500">
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#7B4DFF]" />
+              <span>Loading attendance roster...</span>
+            </div>
+          ) : filteredPersonnel.length === 0 ? (
+            <div className="col-span-full py-16 text-center text-gray-500">
+              No personnel found matching your filter criteria.
+            </div>
+          ) : (
+            filteredPersonnel.map((person) => {
+              const checkIn = person.todayAttendance?.checkInAt;
+              const notes = person.todayAttendance?.notes;
+
+              return (
+                <div
+                  key={person.id}
+                  className="bg-[#14151A] rounded-2xl border border-gray-800 p-5 space-y-4 hover:border-gray-700 transition-all flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center font-bold text-sm text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700">
+                          {person.avatar ? (
+                            <img
+                              src={person.avatar || undefined}
+                              alt={person.name || person.username || 'Avatar'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            (person.name || person.username || 'P')[0].toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-100">
+                            {person.name || person.username}
+                          </h4>
+                          <span className="text-[11px] text-gray-500 font-mono">
+                            @{person.username}
+                          </span>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                          person.displayStatus === 'AVAILABLE'
+                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                            : person.displayStatus === 'BUSY'
+                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            person.displayStatus === 'AVAILABLE'
+                              ? 'bg-emerald-500'
+                              : person.displayStatus === 'BUSY'
+                              ? 'bg-blue-500'
+                              : 'bg-amber-500'
+                          }`}
+                        />
+                        {person.displayStatus}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-[#0D0E12] rounded-xl border border-gray-800/80 space-y-1.5 text-xs text-gray-400">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Role:</span>
+                        <span className="text-gray-300 font-medium flex items-center gap-1">
+                          {person.type === 'OFFICE_STAFF' ? (
+                            <>
+                              <Briefcase className="w-3.5 h-3.5 text-purple-400" />
+                              <span>Office Staff</span>
+                            </>
+                          ) : (
+                            <>
+                              <HardHat className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Field Worker</span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Contact:</span>
+                        <span className="text-gray-300 font-mono">{person.phone || '—'}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-500">Check-In:</span>
+                        <span className="text-gray-300 font-mono">
+                          {checkIn ? (
+                            <span className="text-emerald-400 font-semibold">
+                              {new Date(checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600">Pending</span>
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    {notes && (
+                      <p className="text-[11px] text-gray-400 italic bg-[#0D0E12] px-3 py-1.5 rounded-lg border border-gray-800/50">
+                        &ldquo;{notes}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        /* Attendance Table */
+        <div className="bg-[#14151A] rounded-xl border border-gray-800 overflow-hidden">
         <div className="p-4 border-b border-gray-800 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-100">
             Today&#39;s Attendance Roster &bull; {data?.date || new Date().toISOString().split('T')[0]}
@@ -230,7 +395,7 @@ export default function AdminAttendancePage() {
                           <div className="relative w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-xs text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
                             {person.avatar ? (
                               <img
-                                src={person.avatar}
+                                src={person.avatar || undefined}
                                 alt={person.name || person.username || 'Avatar'}
                                 className="w-full h-full object-cover"
                                 onError={(e) => {
@@ -310,6 +475,7 @@ export default function AdminAttendancePage() {
           </table>
         </div>
       </div>
-    </div>
-  );
+    )}
+  </div>
+);
 }

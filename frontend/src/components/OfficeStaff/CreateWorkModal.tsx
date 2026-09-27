@@ -24,6 +24,7 @@ import {
 import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
 import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
 import { sanitizePhoneInput } from '@/validations';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export interface CreateWorkModalProps {
   isOpen: boolean;
@@ -43,6 +44,11 @@ const SERVICES_CATALOG = [
   'Plumbing & High-Pressure Piping',
   'Borewell Drilling & Water Testing',
 ];
+
+const SERVICE_OPTIONS: AdminDropdownOption[] = SERVICES_CATALOG.map((s) => ({
+  value: s,
+  label: s,
+}));
 
 export function CreateWorkModal({
   isOpen,
@@ -188,17 +194,14 @@ export function CreateWorkModal({
             <label className="block mb-1 font-bold text-slate-300">
               Service Catalog *
             </label>
-            <select
+            <AdminDropdown
+              options={SERVICE_OPTIONS}
               value={serviceName}
-              onChange={(e) => setServiceName(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-            >
-              {SERVICES_CATALOG.map((s) => (
-                <option key={s} value={s} className="bg-slate-900 text-white">
-                  {s}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setServiceName(val)}
+              variant="emerald"
+              size="md"
+              searchable
+            />
           </div>
 
           {/* Customer Details */}
@@ -297,20 +300,22 @@ export function CreateWorkModal({
             <label className="block mb-1 font-bold text-slate-300">
               Assign to Field Worker (Optional)
             </label>
-            <select
+            <AdminDropdown
+              options={[
+                { value: '', label: '-- Leave Unassigned (Queue Only) --' },
+                ...availableWorkers.map((w) => ({
+                  value: w.id,
+                  label: `${w.name || w.username} (Available)`,
+                  badge: 'Available',
+                  badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                })),
+              ]}
               value={selectedWorkerId}
-              onChange={(e) => setSelectedWorkerId(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-            >
-              <option value="" className="bg-slate-900 text-slate-400">
-                -- Leave Unassigned (Queue Only) --
-              </option>
-              {availableWorkers.map((w) => (
-                <option key={w.id} value={w.id} className="bg-slate-900 text-white">
-                  {w.name || w.username} (Available)
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setSelectedWorkerId(val)}
+              variant="emerald"
+              size="md"
+              searchable
+            />
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-emerald-500/20">

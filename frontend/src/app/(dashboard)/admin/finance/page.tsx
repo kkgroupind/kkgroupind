@@ -18,6 +18,7 @@ import {
   ServiceEnquiry,
   User,
 } from '@/services';
+import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
 import {
   IndianRupee,
   Calendar as CalendarIcon,
@@ -52,7 +53,10 @@ import {
   RefreshCw,
   Layers,
   Sparkles,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 import {
   BarChart,
   Bar,
@@ -131,12 +135,70 @@ export default function AdminFinancePage() {
   const [filterService, setFilterService] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dateFilterMode, setDateFilterMode] = useState<'selected' | 'month' | 'all'>('selected');
+  const [txnViewMode, setTxnViewMode] = useState<'grid' | 'table'>('grid');
+
+  const filterTypeOptions: AdminDropdownOption[] = [
+    { value: 'ALL', label: 'All Types (Income & Expense)' },
+    {
+      value: 'INCOME',
+      label: 'Income Only (വരുമാനം)',
+      badge: 'Income',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    },
+    {
+      value: 'EXPENSE',
+      label: 'Expense Only (ചെലവ്)',
+      badge: 'Expense',
+      badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+    },
+  ];
+
+  const filterStatusOptions: AdminDropdownOption[] = [
+    { value: 'ALL', label: 'All Verification Status' },
+    {
+      value: 'VERIFIED',
+      label: 'Verified & Approved',
+      badge: 'Verified',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    },
+    {
+      value: 'PENDING',
+      label: 'Pending Admin Verification',
+      badge: 'Pending',
+      badgeColor: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+    },
+    {
+      value: 'REJECTED',
+      label: 'Rejected',
+      badge: 'Rejected',
+      badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+    },
+  ];
+
+  const filterCategoryOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: 'ALL', label: 'All Categories' },
+      ...INCOME_CATEGORIES.map((c) => ({ value: c.id, label: `Income: ${c.label}` })),
+      ...EXPENSE_CATEGORIES.map((c) => ({ value: c.id, label: `Expense: ${c.label}` })),
+    ],
+    [],
+  );
+
+  const filterServiceOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: 'ALL', label: 'All Service Squads' },
+      ...SERVICE_OPTIONS.map((s) => ({ value: s, label: s })),
+    ],
+    [],
+  );
 
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDayDrawerOpen, setIsDayDrawerOpen] = useState(false);
   const [inspectTxn, setInspectTxn] = useState<FinancialTransaction | null>(null);
   const [editingTxn, setEditingTxn] = useState<FinancialTransaction | null>(null);
+  const [deleteTxnTarget, setDeleteTxnTarget] = useState<FinancialTransaction | null>(null);
+  const [isDeletingTxn, setIsDeletingTxn] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<CreateTransactionPayload>({
@@ -153,6 +215,33 @@ export default function AdminFinancePage() {
     enquiryId: '',
     workerId: '',
   });
+
+  const modalCategoryOptions: AdminDropdownOption[] = useMemo(() => {
+    const cats = formData.type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+    return cats.map((c) => ({ value: c.id, label: `${c.label} (${c.ml})` }));
+  }, [formData.type]);
+
+  const modalPaymentOptions: AdminDropdownOption[] = useMemo(
+    () => PAYMENT_METHODS.map((m) => ({ value: m.id, label: m.label })),
+    [],
+  );
+
+  const modalServiceOptions: AdminDropdownOption[] = useMemo(
+    () => SERVICE_OPTIONS.map((s) => ({ value: s, label: s })),
+    [],
+  );
+
+  const modalEnquiryOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: '', label: '-- No Direct Ticket Link --' },
+      ...enquiries.map((e) => ({
+        value: e.id,
+        label: `${e.trackingNumber} - ${e.customerName} (${e.serviceName})`,
+      })),
+    ],
+    [enquiries],
+  );
+
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [successToast, setSuccessToast] = useState<string | null>(null);
@@ -343,18 +432,28 @@ export default function AdminFinancePage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to permanently delete this financial record? This action is logged.')) {
-      return;
+  const handleDelete = (id: string) => {
+    const target = transactions.find((t) => t.id === id) || inspectTxn;
+    if (target) {
+      setDeleteTxnTarget(target);
     }
+  };
+
+  const confirmDeleteTransaction = async () => {
+    if (!token || !deleteTxnTarget) return;
+
+    setIsDeletingTxn(true);
     try {
-      await FinanceService.deleteTransaction(token, id);
+      await FinanceService.deleteTransaction(token, deleteTxnTarget.id);
       showToast('Transaction deleted successfully');
       setInspectTxn(null);
+      setDeleteTxnTarget(null);
       fetchData();
       fetchTransactions();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete transaction');
+      showToast(err.message || 'Failed to delete transaction');
+    } finally {
+      setIsDeletingTxn(false);
     }
   };
 
@@ -828,215 +927,396 @@ export default function AdminFinancePage() {
 
             </div>
 
-            {/* Dropdown Filters */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Dropdown Filters using AdminDropdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {/* Type Filter */}
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold border focus:outline-none ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="ALL">All Types (Income & Expense)</option>
-                <option value="INCOME">Income Only (വരുമാനം)</option>
-                <option value="EXPENSE">Expense Only (ചെലവ്)</option>
-              </select>
+              <div>
+                <AdminDropdown
+                  options={filterTypeOptions}
+                  value={filterType}
+                  onChange={(val) => setFilterType(val)}
+                  variant="emerald"
+                  size="md"
+                />
+              </div>
 
               {/* Status Filter */}
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold border focus:outline-none ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="ALL">All Verification Status</option>
-                <option value="VERIFIED">Verified & Approved</option>
-                <option value="PENDING">Pending Admin Verification</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
+              <div>
+                <AdminDropdown
+                  options={filterStatusOptions}
+                  value={filterStatus}
+                  onChange={(val) => setFilterStatus(val)}
+                  variant="emerald"
+                  size="md"
+                />
+              </div>
 
               {/* Category Filter */}
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold border focus:outline-none ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="ALL">All Categories</option>
-                <optgroup label="Income">
-                  {INCOME_CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="Expenses">
-                  {EXPENSE_CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </optgroup>
-              </select>
+              <div>
+                <AdminDropdown
+                  options={filterCategoryOptions}
+                  value={filterCategory}
+                  onChange={(val) => setFilterCategory(val)}
+                  variant="emerald"
+                  size="md"
+                  searchable
+                />
+              </div>
 
               {/* Service Unit Filter */}
-              <select
-                value={filterService}
-                onChange={(e) => setFilterService(e.target.value)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold border focus:outline-none ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <option value="ALL">All Service Units / Squads</option>
-                {SERVICE_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+              <div>
+                <AdminDropdown
+                  options={filterServiceOptions}
+                  value={filterService}
+                  onChange={(val) => setFilterService(val)}
+                  variant="emerald"
+                  size="md"
+                  searchable
+                />
+              </div>
+            </div>
+
+            {/* View Mode Toggle Header */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-semibold text-slate-400">
+                Found {transactions.length} transactions
+              </span>
+
+              <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1">
+                <button
+                  type="button"
+                  onClick={() => setTxnViewMode('grid')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    txnViewMode === 'grid'
+                      ? 'bg-[#7B4DFF] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                  title="Card Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTxnViewMode('table')}
+                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                    txnViewMode === 'table'
+                      ? 'bg-[#7B4DFF] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                  title="Table View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className={`border-b text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}>
-                <tr>
-                  <th className="py-4 px-4 sm:px-6">Transaction</th>
-                  <th className="py-4 px-4">Date & Service</th>
-                  <th className="py-4 px-4">Party / Payee</th>
-                  <th className="py-4 px-4">Payment Mode</th>
-                  <th className="py-4 px-4">Amount</th>
-                  <th className="py-4 px-4">Status</th>
-                  <th className="py-4 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {transactions.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-400">
-                      No financial records matching your filters.
-                    </td>
-                  </tr>
-                ) : (
-                  transactions.map((txn) => {
+          {/* Content: Default Bento Cards or Table */}
+          {txnViewMode === 'grid' ? (
+            <div className="p-4 sm:p-6">
+              {transactions.length === 0 ? (
+                <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center">
+                  <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-3">
+                    <FileSpreadsheet className="w-7 h-7 text-gray-500" />
+                  </div>
+                  <h4 className="font-semibold text-gray-200">No Financial Records Found</h4>
+                  <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                    No transactions match your currently selected filters.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {transactions.map((txn) => {
                     const isIncome = txn.type === 'INCOME';
                     return (
-                      <tr 
-                        key={txn.id} 
-                        className={`transition-colors hover:bg-slate-500/5 ${
-                          txn.status === 'PENDING' ? 'bg-amber-500/5' : ''
-                        }`}
+                      <div
+                        key={txn.id}
+                        className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
                       >
-                        {/* Txn Number */}
-                        <td className="py-4 px-4 sm:px-6 font-mono font-bold">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                            <span className="text-[#2A835F] hover:underline cursor-pointer" onClick={() => setInspectTxn(txn)}>
-                              {txn.transactionNumber}
-                            </span>
-                          </div>
-                          <div className="text-[11px] font-normal text-slate-400 mt-0.5">
-                            {txn.category.replace(/_/g, ' ')}
-                          </div>
-                        </td>
+                        {/* Top ambient glow line */}
+                        <div
+                          className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent ${
+                            isIncome ? 'group-hover:via-emerald-500/70' : 'group-hover:via-rose-500/70'
+                          } transition-all duration-300`}
+                        />
 
-                        {/* Date & Service */}
-                        <td className="py-4 px-4">
-                          <div className="font-semibold">{txn.dateString}</div>
-                          <div className="text-xs text-slate-500 truncate max-w-[180px]">
-                            {txn.serviceType || 'General Overhead'}
-                          </div>
-                        </td>
+                        <div>
+                          {/* Header: Icon, Txn Code, Status */}
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="relative shrink-0">
+                                <div
+                                  className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${
+                                    isIncome
+                                      ? 'from-emerald-500 to-teal-600'
+                                      : 'from-rose-500 to-pink-600'
+                                  } p-[2px] shadow-sm`}
+                                >
+                                  <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-xs text-gray-100">
+                                    <IndianRupee
+                                      className={`w-5 h-5 ${
+                                        isIncome ? 'text-emerald-400' : 'text-rose-400'
+                                      }`}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
 
-                        {/* Party / Payee */}
-                        <td className="py-4 px-4">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">
-                            {txn.customerName || txn.vendorName || 'Direct Cash Transaction'}
-                          </div>
-                          {txn.enquiry && (
-                            <div className="text-[11px] text-[#2A835F]">
-                              Ticket: {txn.enquiry.trackingNumber}
+                              <div className="min-w-0">
+                                <span
+                                  onClick={() => setInspectTxn(txn)}
+                                  className="font-mono text-xs font-semibold text-gray-100 hover:text-emerald-400 transition-colors cursor-pointer truncate block"
+                                >
+                                  {txn.transactionNumber}
+                                </span>
+                                <span className="text-[11px] text-gray-400 truncate block mt-0.5">
+                                  {txn.category.replace(/_/g, ' ')}
+                                </span>
+                              </div>
                             </div>
-                          )}
-                        </td>
 
-                        {/* Payment Mode */}
-                        <td className="py-4 px-4">
-                          <span className="font-semibold">{txn.paymentMethod}</span>
-                          {txn.referenceNumber && (
-                            <div className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">
-                              {txn.referenceNumber}
-                            </div>
-                          )}
-                        </td>
-
-                        {/* Amount */}
-                        <td className="py-4 px-4">
-                          <span className={`font-black text-sm sm:text-base ${
-                            isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                          }`}>
-                            {isIncome ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-4 px-4">
-                          {txn.status === 'VERIFIED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                              <CheckCircle2 className="w-3 h-3" />
-                              Verified
-                            </span>
-                          )}
-                          {txn.status === 'PENDING' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
-                              <Clock className="w-3 h-3" />
-                              Pending Approval
-                            </span>
-                          )}
-                          {txn.status === 'REJECTED' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
-                              <AlertCircle className="w-3 h-3" />
-                              Rejected
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Actions */}
-                        <td className="py-4 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {txn.status === 'PENDING' && (
-                              <button
-                                onClick={() => handleVerify(txn.id, 'VERIFIED')}
-                                className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors"
-                                title="Approve & Verify"
-                              >
-                                <Check className="w-4 h-4 stroke-[2.5]" />
-                              </button>
+                            {txn.status === 'VERIFIED' ? (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider shrink-0">
+                                Verified
+                              </span>
+                            ) : txn.status === 'PENDING' ? (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase tracking-wider shrink-0 animate-pulse">
+                                Pending
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 uppercase tracking-wider shrink-0">
+                                Rejected
+                              </span>
                             )}
-                            <button
-                              onClick={() => setInspectTxn(txn)}
-                              className="p-1.5 rounded-lg hover:bg-slate-500/10 text-slate-400 hover:text-slate-200 transition-colors"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(txn.id)}
-                              className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
-                        </td>
-                      </tr>
+
+                          {/* Amount Banner */}
+                          <div className="mb-3">
+                            <span
+                              className={`text-xl font-extrabold tracking-tight ${
+                                isIncome ? 'text-emerald-400' : 'text-rose-400'
+                              }`}
+                            >
+                              {isIncome ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
+                            </span>
+                          </div>
+
+                          {/* Middle Details (Border-y) */}
+                          <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
+                            <div className="flex items-center justify-between text-gray-400">
+                              <span className="flex items-center gap-1.5">
+                                <CalendarIcon className="w-3.5 h-3.5 text-gray-500" />
+                                <span>Date</span>
+                              </span>
+                              <span className="text-gray-200 font-medium">{txn.dateString}</span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-gray-400">
+                              <span className="flex items-center gap-1.5">
+                                <Layers className="w-3.5 h-3.5 text-gray-500" />
+                                <span>Service Squad</span>
+                              </span>
+                              <span className="text-gray-200 font-medium truncate max-w-[150px]">
+                                {txn.serviceType || 'General'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-gray-400">
+                              <span className="flex items-center gap-1.5">
+                                <CreditCard className="w-3.5 h-3.5 text-gray-500" />
+                                <span>Party</span>
+                              </span>
+                              <span className="text-gray-200 truncate max-w-[150px]">
+                                {txn.customerName || txn.vendorName || 'Direct'}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-gray-400">
+                              <span className="flex items-center gap-1.5">
+                                <Banknote className="w-3.5 h-3.5 text-gray-500" />
+                                <span>Payment Mode</span>
+                              </span>
+                              <span className="text-gray-300 font-medium">
+                                {txn.paymentMethod}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer Action Buttons */}
+                        <div className="flex items-center justify-between pt-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setInspectTxn(txn)}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-gray-400" />
+                            <span>Inspect</span>
+                          </button>
+
+                          {txn.status === 'PENDING' && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerify(txn.id, 'VERIFIED')}
+                              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm transition-all cursor-pointer"
+                              title="Approve & Verify"
+                            >
+                              Approve
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(txn.id)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-all cursor-pointer"
+                            title="Delete Record"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead className={`border-b text-xs font-bold uppercase tracking-wider ${
+                  isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+                }`}>
+                  <tr>
+                    <th className="py-4 px-4 sm:px-6">Transaction</th>
+                    <th className="py-4 px-4">Date &amp; Service</th>
+                    <th className="py-4 px-4">Party / Payee</th>
+                    <th className="py-4 px-4">Payment Mode</th>
+                    <th className="py-4 px-4">Amount</th>
+                    <th className="py-4 px-4">Status</th>
+                    <th className="py-4 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  {transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                        No financial records matching your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((txn) => {
+                      const isIncome = txn.type === 'INCOME';
+                      return (
+                        <tr 
+                          key={txn.id} 
+                          className={`transition-colors hover:bg-slate-500/5 ${
+                            txn.status === 'PENDING' ? 'bg-amber-500/5' : ''
+                          }`}
+                        >
+                          <td className="py-4 px-4 sm:px-6 font-mono font-bold">
+                            <div className="flex items-center gap-2">
+                              <span className={`w-2 h-2 rounded-full ${isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                              <span className="text-[#2A835F] hover:underline cursor-pointer" onClick={() => setInspectTxn(txn)}>
+                                {txn.transactionNumber}
+                              </span>
+                            </div>
+                            <div className="text-[11px] font-normal text-slate-400 mt-0.5">
+                              {txn.category.replace(/_/g, ' ')}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="font-semibold">{txn.dateString}</div>
+                            <div className="text-xs text-slate-500 truncate max-w-[180px]">
+                              {txn.serviceType || 'General Overhead'}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200">
+                              {txn.customerName || txn.vendorName || 'Direct Cash Transaction'}
+                            </div>
+                            {txn.enquiry && (
+                              <div className="text-[11px] text-[#2A835F]">
+                                Ticket: {txn.enquiry.trackingNumber}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className="font-semibold">{txn.paymentMethod}</span>
+                            {txn.referenceNumber && (
+                              <div className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">
+                                {txn.referenceNumber}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4">
+                            <span className={`font-black text-sm sm:text-base ${
+                              isIncome ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
+                            }`}>
+                              {isIncome ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4">
+                            {txn.status === 'VERIFIED' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <CheckCircle2 className="w-3 h-3" />
+                                Verified
+                              </span>
+                            )}
+                            {txn.status === 'PENDING' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 animate-pulse">
+                                <Clock className="w-3 h-3" />
+                                Pending Approval
+                              </span>
+                            )}
+                            {txn.status === 'REJECTED' && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                                <AlertCircle className="w-3 h-3" />
+                                Rejected
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {txn.status === 'PENDING' && (
+                                <button
+                                  onClick={() => handleVerify(txn.id, 'VERIFIED')}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors"
+                                  title="Approve &amp; Verify"
+                                >
+                                  <Check className="w-4 h-4 stroke-[2.5]" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => setInspectTxn(txn)}
+                                className="p-1.5 rounded-lg hover:bg-slate-500/10 text-slate-400 hover:text-slate-200 transition-colors"
+                                title="View Details"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(txn.id)}
+                                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
         </div>
       )}
@@ -1320,46 +1600,33 @@ export default function AdminFinancePage() {
                 </div>
               </div>
 
-              {/* Category & Payment Method */}
+              {/* Category & Payment Method using AdminDropdown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
                     Category *
                   </label>
-                  <select
+                  <AdminDropdown
+                    options={modalCategoryOptions}
                     value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    {formData.type === 'INCOME' ? (
-                      INCOME_CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.label} ({c.ml})</option>
-                      ))
-                    ) : (
-                      EXPENSE_CATEGORIES.map((c) => (
-                        <option key={c.id} value={c.id}>{c.label} ({c.ml})</option>
-                      ))
-                    )}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, category: val as any })}
+                    variant="emerald"
+                    size="md"
+                    searchable
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
                     Payment Method *
                   </label>
-                  <select
-                    value={formData.paymentMethod}
-                    onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    {PAYMENT_METHODS.map((m) => (
-                      <option key={m.id} value={m.id}>{m.label}</option>
-                    ))}
-                  </select>
+                  <AdminDropdown
+                    options={modalPaymentOptions}
+                    value={formData.paymentMethod || 'UPI'}
+                    onChange={(val) => setFormData({ ...formData, paymentMethod: val as any })}
+                    variant="emerald"
+                    size="md"
+                  />
                 </div>
               </div>
 
@@ -1369,17 +1636,14 @@ export default function AdminFinancePage() {
                   <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
                     Service Squad / Unit
                   </label>
-                  <select
+                  <AdminDropdown
+                    options={modalServiceOptions}
                     value={formData.serviceType || ''}
-                    onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    {SERVICE_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, serviceType: val })}
+                    variant="emerald"
+                    size="md"
+                    searchable
+                  />
                 </div>
 
                 <div>
@@ -1437,20 +1701,14 @@ export default function AdminFinancePage() {
                   <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
                     Link to Enquiry Ticket (Optional)
                   </label>
-                  <select
+                  <AdminDropdown
+                    options={modalEnquiryOptions}
                     value={formData.enquiryId || ''}
-                    onChange={(e) => setFormData({ ...formData, enquiryId: e.target.value || undefined })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <option value="">-- No Direct Ticket Link --</option>
-                    {enquiries.map((enq) => (
-                      <option key={enq.id} value={enq.id}>
-                        {enq.trackingNumber} - {enq.customerName} ({enq.serviceName})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(val) => setFormData({ ...formData, enquiryId: val || undefined })}
+                    variant="emerald"
+                    size="md"
+                    searchable
+                  />
                 </div>
               </div>
 
@@ -1600,6 +1858,29 @@ export default function AdminFinancePage() {
           </div>
         </div>
       )}
+
+      {/* Financial Record Deletion Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={!!deleteTxnTarget}
+        onClose={() => setDeleteTxnTarget(null)}
+        onConfirm={confirmDeleteTransaction}
+        title="Delete Financial Transaction"
+        message="Are you sure you want to permanently delete this financial transaction record? This action will adjust financial ledgers and is logged to administrator audit trails."
+        confirmText="Delete Record"
+        variant="danger"
+        isLoading={isDeletingTxn}
+        itemDetails={
+          deleteTxnTarget
+            ? [
+                { label: 'Ref #', value: deleteTxnTarget.transactionNumber },
+                { label: 'Type', value: deleteTxnTarget.type },
+                { label: 'Category', value: deleteTxnTarget.category.replace(/_/g, ' ') },
+                { label: 'Amount', value: `₹${Number(deleteTxnTarget.amount).toLocaleString('en-IN')}` },
+                { label: 'Date', value: deleteTxnTarget.dateString },
+              ]
+            : undefined
+        }
+      />
 
     </div>
   );

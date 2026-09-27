@@ -7,31 +7,31 @@ import {
   Inbox,
   Search,
   RefreshCw,
-  Filter,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
+  Plus,
   Phone,
   Mail,
   MapPin,
   Calendar,
-  UserCheck,
-  ChevronRight,
   Send,
   Eye,
   X,
-  Plus,
-  Navigation,
-  ExternalLink,
-  Timer,
   HardHat,
   Shield,
   Building,
   Sparkles,
+  LayoutGrid,
+  List,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Briefcase,
+  ChevronRight,
+  User,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export default function AdminEnquiriesPage() {
   const { token, user, isLoading: authLoading } = useAuth();
@@ -43,6 +43,7 @@ export default function AdminEnquiriesPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Modals
   const [selectedEnquiry, setSelectedEnquiry] = useState<ServiceEnquiry | null>(null);
@@ -131,18 +132,88 @@ export default function AdminEnquiriesPage() {
     };
   }, [enquiries, workers]);
 
+  const statusDropdownOptions: AdminDropdownOption[] = [
+    { value: 'ALL', label: 'All Statuses', badge: `${metrics.total}` },
+    {
+      value: 'PENDING',
+      label: 'Pending Assignment',
+      badge: `${metrics.pending}`,
+      badgeColor: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+      icon: Clock,
+    },
+    {
+      value: 'ASSIGNED',
+      label: 'Squad Assigned',
+      badge: `${enquiries.filter((e) => e.status === 'ASSIGNED').length}`,
+      badgeColor: 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+      icon: HardHat,
+    },
+    {
+      value: 'IN_PROGRESS',
+      label: 'In Execution',
+      badge: `${enquiries.filter((e) => e.status === 'IN_PROGRESS').length}`,
+      badgeColor: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+      icon: Sparkles,
+    },
+    {
+      value: 'COMPLETED',
+      label: 'Completed & Fulfilled',
+      badge: `${metrics.completed}`,
+      badgeColor: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+      icon: CheckCircle2,
+    },
+  ];
+
+  const getStatusTheme = (status: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return {
+          bg: 'bg-emerald-500/10',
+          text: 'text-emerald-400',
+          border: 'border-emerald-500/20',
+          ring: 'from-emerald-500 to-teal-600',
+          glow: 'group-hover:via-emerald-500/60',
+        };
+      case 'IN_PROGRESS':
+        return {
+          bg: 'bg-blue-500/10',
+          text: 'text-blue-400',
+          border: 'border-blue-500/20',
+          ring: 'from-blue-500 to-cyan-600',
+          glow: 'group-hover:via-blue-500/60',
+        };
+      case 'ASSIGNED':
+        return {
+          bg: 'bg-purple-500/10',
+          text: 'text-purple-400',
+          border: 'border-purple-500/20',
+          ring: 'from-purple-500 to-indigo-600',
+          glow: 'group-hover:via-[#7B4DFF]/60',
+        };
+      case 'PENDING':
+      default:
+        return {
+          bg: 'bg-amber-500/10',
+          text: 'text-amber-400',
+          border: 'border-amber-500/20',
+          ring: 'from-amber-500 to-orange-600',
+          glow: 'group-hover:via-amber-500/60',
+        };
+    }
+  };
+
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-slate-200">
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2 bg-[#0c1310] border border-emerald-500/30 rounded-xl">
-              <Inbox className="w-6 h-6 text-emerald-400" />
+          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
+            <div className="p-2.5 bg-[#14151A] border border-gray-800 rounded-2xl shadow-sm">
+              <Inbox className="w-6 h-6 text-[#7B4DFF]" />
             </div>
             Customer Enquiries &amp; Dispatch Queue
           </h1>
-          <p className="text-slate-400 text-xs sm:text-sm mt-1">
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">
             Review service requests, verify creator attribution, and assign to available field operatives
           </p>
         </div>
@@ -151,18 +222,18 @@ export default function AdminEnquiriesPage() {
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#0c1310] hover:bg-[#121f18] border border-emerald-500/30 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
             title="Reload data"
           >
             <RefreshCw
-              className={`w-4 h-4 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span>{isRefreshing ? 'Refreshing...' : 'Reload'}</span>
           </button>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-[#2A835F] hover:bg-[#236D4F] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white shadow-lg transition-all ml-auto sm:ml-0 cursor-pointer"
+            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6839EF] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Create Enquiry</span>
@@ -171,426 +242,567 @@ export default function AdminEnquiriesPage() {
       </div>
 
       {/* Metric Cards Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="p-4 rounded-2xl bg-[#0c1310] border border-emerald-500/20">
-          <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Total Enquiries</span>
-          <div className="text-2xl font-black text-white mt-1">{metrics.total}</div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Registered in Kerala hub</span>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-gray-500/60 transition-all duration-300" />
+          <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
+            Total Enquiries
+          </span>
+          <div className="text-2xl font-bold text-gray-100 mt-1">{metrics.total}</div>
+          <span className="text-[11px] text-gray-500 mt-1 block">Registered in Kerala hub</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0c1310] border border-amber-500/20">
-          <span className="text-[11px] text-amber-400 font-bold uppercase tracking-wider">Pending Assignment</span>
-          <div className="text-2xl font-black text-amber-400 mt-1">{metrics.pending}</div>
-          <span className="text-[11px] text-amber-500/80 mt-1 block">Awaiting worker allocation</span>
+        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent group-hover:via-amber-500/70 transition-all duration-300" />
+          <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+            Pending Assignment
+          </span>
+          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.pending}</div>
+          <span className="text-[11px] text-amber-400/70 mt-1 block">Awaiting worker allocation</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0c1310] border border-emerald-500/30">
-          <span className="text-[11px] text-emerald-400 font-bold uppercase tracking-wider">Ready Workers</span>
-          <div className="text-2xl font-black text-emerald-400 mt-1">
+        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent group-hover:via-emerald-500/70 transition-all duration-300" />
+          <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
+            Ready Workers
+          </span>
+          <div className="text-2xl font-bold text-emerald-400 mt-1">
             {metrics.availableWorkers}{' '}
-            <span className="text-xs text-slate-400 font-normal">/ {metrics.totalWorkers} total</span>
+            <span className="text-xs text-gray-400 font-normal">/ {metrics.totalWorkers} total</span>
           </div>
-          <span className="text-[11px] text-emerald-500/80 mt-1 block">Ready for immediate dispatch</span>
+          <span className="text-[11px] text-emerald-400/70 mt-1 block">Ready for immediate dispatch</span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-[#0c1310] border border-blue-500/20">
-          <span className="text-[11px] text-blue-400 font-bold uppercase tracking-wider">Active Missions</span>
-          <div className="text-2xl font-black text-blue-400 mt-1">{metrics.inProgress}</div>
-          <span className="text-[11px] text-blue-400/80 mt-1 block">Dispatched or in progress</span>
+        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent group-hover:via-blue-500/70 transition-all duration-300" />
+          <span className="text-[11px] text-blue-400 font-semibold uppercase tracking-wider">
+            Active Missions
+          </span>
+          <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
+          <span className="text-[11px] text-blue-400/70 mt-1 block">Dispatched or in execution</span>
         </div>
       </div>
 
-      {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-2xl bg-[#0c1310] border border-emerald-500/20">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* Filter, Search & View Controls Bar */}
+      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
           <input
             type="text"
             placeholder="Search code, customer, service, city..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-black/40 border border-white/10 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto">
-          {['ALL', 'PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].map((st) => (
+        <div className="flex items-center gap-3">
+          {/* Admin Custom Dropdown */}
+          <div className="w-56">
+            <AdminDropdown
+              options={statusDropdownOptions}
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val)}
+              variant="purple"
+              size="md"
+            />
+          </div>
+
+          {/* View Mode Toggle */}
+          <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                statusFilter === st
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                  : 'bg-black/30 text-slate-400 hover:text-white border border-white/5'
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
               }`}
+              title="Card Grid View"
             >
-              {st}
+              <LayoutGrid className="w-4 h-4" />
             </button>
-          ))}
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-[#0c1310] rounded-2xl border border-emerald-500/20 overflow-hidden shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-[#101b15] text-slate-400 font-bold border-b border-emerald-500/20">
-              <tr>
-                <th className="py-3.5 px-4">Tracking Code</th>
-                <th className="py-3.5 px-4">Service</th>
-                <th className="py-3.5 px-4">Client</th>
-                <th className="py-3.5 px-4">Location (Kerala)</th>
-                <th className="py-3.5 px-4">Source / Creator</th>
-                <th className="py-3.5 px-4">Status</th>
-                <th className="py-3.5 px-4">Assigned Worker</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/5">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-400">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-400" />
-                    <span>Loading enquiries...</span>
-                  </td>
-                </tr>
-              ) : filteredEnquiries.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
-                    No enquiries found matching your criteria.
-                  </td>
-                </tr>
-              ) : (
-                filteredEnquiries.map((enquiry) => (
-                  <tr key={enquiry.id} className="hover:bg-white/[0.02] transition-colors">
-                    {/* Tracking Number */}
-                    <td className="py-3.5 px-4 font-mono font-bold text-emerald-400 whitespace-nowrap">
-                      {enquiry.trackingNumber}
-                      {enquiry.wageType === 'PER_TREE' ? (
-                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-500/30">
-                          🌴 Tree Count
-                        </span>
-                      ) : (enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated) ? (
-                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30">
-                          ⏱️ Hourly Meter
-                        </span>
-                      ) : enquiry.wageType === 'PER_SQFT' ? (
-                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">
-                          📐 Sq. Ft.
-                        </span>
-                      ) : enquiry.wageType === 'PER_POINT' ? (
-                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded border border-purple-500/30">
-                          ⚡ Points
-                        </span>
-                      ) : enquiry.wageType ? (
-                        <span className="ml-1.5 text-[9px] font-sans font-bold bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">
-                          {enquiry.unitLabel || 'Unit'} Basis
-                        </span>
-                      ) : null}
-                    </td>
+      {/* Main Content Area: Default Card Grid */}
+      {isLoading ? (
+        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#7B4DFF] mb-3" />
+          <h3 className="text-gray-200 font-semibold text-base mb-1">Loading Enquiries...</h3>
+          <p className="text-gray-500 text-xs">Fetching registered Kerala operations tickets</p>
+        </div>
+      ) : filteredEnquiries.length === 0 ? (
+        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
+            <Inbox className="w-7 h-7 text-gray-500" />
+          </div>
+          <h3 className="text-gray-200 font-semibold text-base mb-1">No Enquiries Found</h3>
+          <p className="text-gray-500 text-xs max-w-sm">
+            No work requests match the chosen status filter or search keywords.
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* Bento Cards View (Matching PeopleCards Design System) */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredEnquiries.map((enquiry) => {
+            const theme = getStatusTheme(enquiry.status);
+            const dateStr = enquiry.createdAt
+              ? new Date(enquiry.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
+              : 'Unknown';
 
-                    {/* Service Name */}
-                    <td className="py-3.5 px-4 font-semibold text-white whitespace-nowrap">
-                      {enquiry.serviceName}
-                    </td>
+            return (
+              <div
+                key={enquiry.id}
+                className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+              >
+                {/* Subtle top ambient glow */}
+                <div
+                  className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent ${theme.glow} transition-all duration-300`}
+                />
 
+                <div>
+                  {/* Top Header: Avatar/Icon, Service Name, Status Badge */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="relative shrink-0">
+                        <div
+                          className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${theme.ring} p-[2px] shadow-sm`}
+                        >
+                          <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
+                            <Briefcase className="w-5 h-5 text-gray-200" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <h4 className="font-semibold text-gray-100 hover:text-[#7B4DFF] transition-colors truncate block text-base">
+                          {enquiry.serviceName}
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="font-mono text-xs font-semibold text-[#7B4DFF]">
+                            {enquiry.trackingNumber}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <span
+                      className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border ${theme.bg} ${theme.text} ${theme.border} uppercase tracking-wider shrink-0`}
+                    >
+                      {enquiry.status.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  {/* Wage Model & Rate Tag */}
+                  <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                    {enquiry.wageType === 'PER_TREE' ? (
+                      <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+                        🌴 Tree Count Model
+                      </span>
+                    ) : enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated ? (
+                      <span className="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        ⏱️ Hourly Meter Model
+                      </span>
+                    ) : enquiry.wageType === 'PER_SQFT' ? (
+                      <span className="text-[10px] font-bold bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-lg border border-blue-500/20">
+                        📐 Sq. Ft. Model
+                      </span>
+                    ) : enquiry.wageType === 'PER_POINT' ? (
+                      <span className="text-[10px] font-bold bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-lg border border-purple-500/20">
+                        ⚡ Points Model
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold bg-gray-800 text-gray-300 px-2 py-0.5 rounded-lg border border-gray-700">
+                        {enquiry.unitLabel || 'Standard'} Basis
+                      </span>
+                    )}
+
+                    {enquiry.unitRate ? (
+                      <span className="text-[10px] font-mono text-gray-400 bg-[#1A1C23] px-2 py-0.5 rounded-lg border border-gray-800">
+                        ₹{enquiry.unitRate} / {enquiry.unitLabel || 'Unit'}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {/* Details List (Exact PeopleCards Border-y Style) */}
+                  <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
                     {/* Customer */}
-                    <td className="py-3.5 px-4">
-                      <div className="font-semibold text-slate-200">{enquiry.customerName}</div>
-                      <div className="text-[11px] text-slate-400 font-mono">{enquiry.customerPhone}</div>
-                    </td>
+                    <div className="flex items-center justify-between text-gray-400 gap-2">
+                      <span className="flex items-center gap-2 text-gray-400 truncate">
+                        <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate text-gray-200 font-medium">
+                          {enquiry.customerName}
+                        </span>
+                      </span>
+                      <span className="text-gray-400 font-mono text-[11px] shrink-0">
+                        {enquiry.customerPhone}
+                      </span>
+                    </div>
 
                     {/* Location */}
-                    <td className="py-3.5 px-4 max-w-[180px] truncate">
-                      <div className="flex items-center gap-1 text-slate-200">
-                        <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                    <div className="flex items-center justify-between text-gray-400 gap-2">
+                      <span className="flex items-center gap-2 text-gray-400 truncate">
+                        <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                         <span className="truncate">
                           {enquiry.city || enquiry.district || enquiry.location || 'Kerala'}
                         </span>
-                      </div>
+                      </span>
                       {enquiry.deadline && (
-                        <div className="text-[10px] text-amber-400/90 font-medium mt-0.5">
-                          Deadline: {new Date(enquiry.deadline).toLocaleDateString()}
-                        </div>
+                        <span className="text-amber-400/90 text-[11px] shrink-0">
+                          Due: {new Date(enquiry.deadline).toLocaleDateString()}
+                        </span>
                       )}
-                    </td>
+                    </div>
 
-                    {/* Source / Creator Attribution Flag */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      {enquiry.createdByRole === 'OFFICE_STAFF' ? (
-                        <div className="flex flex-col">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 w-fit">
-                            🏢 Office Staff
+                    {/* Assigned Operative */}
+                    <div className="flex items-center justify-between text-gray-400 gap-2">
+                      <span className="flex items-center gap-2 text-gray-400 truncate">
+                        <HardHat className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate">
+                          {enquiry.worker ? (
+                            <span className="text-emerald-400 font-medium">
+                              {enquiry.worker.name || enquiry.worker.username}
+                            </span>
+                          ) : (
+                            <span className="text-amber-400 font-medium">Unassigned</span>
+                          )}
+                        </span>
+                      </span>
+                      {enquiry.worker && (
+                        <span className="text-[10px] text-gray-500 font-mono">
+                          {enquiry.worker.phone || ''}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Source / Creator Attribution */}
+                    <div className="flex items-center justify-between text-gray-400">
+                      <span className="flex items-center gap-2 text-gray-400">
+                        <Shield className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        <span>Source</span>
+                      </span>
+                      <span>
+                        {enquiry.createdByRole === 'OFFICE_STAFF' ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            🏢 Office Staff ({enquiry.creator?.name || 'Staff'})
                           </span>
-                          <span className="text-[10px] text-slate-400 mt-0.5">
-                            {enquiry.creator?.name || 'Staff Member'}
-                          </span>
-                        </div>
-                      ) : enquiry.createdByRole === 'SUPER_ADMIN' ? (
-                        <div className="flex flex-col">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 w-fit">
+                        ) : enquiry.createdByRole === 'SUPER_ADMIN' ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                             👑 Super Admin
                           </span>
-                          <span className="text-[10px] text-slate-400 mt-0.5">
-                            {enquiry.creator?.name || 'Admin'}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 w-fit">
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             🌐 Customer Web
                           </span>
-                          <span className="text-[10px] text-slate-400 mt-0.5">
-                            Self-Service
-                          </span>
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Status */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                          enquiry.status === 'COMPLETED'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : enquiry.status === 'IN_PROGRESS'
-                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse'
-                            : enquiry.status === 'ASSIGNED'
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                            : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        }`}
-                      >
-                        {enquiry.status.replace('_', ' ')}
+                        )}
                       </span>
-                    </td>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Assigned Worker */}
-                    <td className="py-3.5 px-4 whitespace-nowrap">
-                      {enquiry.worker ? (
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-white">
-                            {enquiry.worker.name || enquiry.worker.username}
+                {/* Card Action Footer */}
+                <div className="flex items-center justify-between pt-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedEnquiry(enquiry);
+                      setIsDetailsModalOpen(true);
+                    }}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700 cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-gray-400" />
+                    <span>View Ticket</span>
+                  </button>
+
+                  {enquiry.status === 'PENDING' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedEnquiry(enquiry);
+                        setIsAssignModalOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF] hover:bg-[#6839EF] text-white shadow-[0_0_15px_rgba(123,77,255,0.25)] transition-all cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Dispatch</span>
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Alternative Table View */
+        <div className="bg-[#14151A] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-gray-300">
+              <thead className="bg-[#0D0E12] text-gray-400 font-semibold border-b border-gray-800">
+                <tr>
+                  <th className="py-3.5 px-4">Tracking Code</th>
+                  <th className="py-3.5 px-4">Service</th>
+                  <th className="py-3.5 px-4">Client</th>
+                  <th className="py-3.5 px-4">Location (Kerala)</th>
+                  <th className="py-3.5 px-4">Source / Creator</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Assigned Worker</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800">
+                {filteredEnquiries.map((enquiry) => {
+                  const theme = getStatusTheme(enquiry.status);
+                  return (
+                    <tr key={enquiry.id} className="hover:bg-[#1A1C23]/60 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-[#7B4DFF] whitespace-nowrap">
+                        {enquiry.trackingNumber}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-gray-100 whitespace-nowrap">
+                        {enquiry.serviceName}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-gray-200">{enquiry.customerName}</div>
+                        <div className="text-[11px] text-gray-400 font-mono">{enquiry.customerPhone}</div>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-[180px] truncate">
+                        <div className="flex items-center gap-1 text-gray-200">
+                          <MapPin className="w-3 h-3 text-[#7B4DFF] shrink-0" />
+                          <span className="truncate">
+                            {enquiry.city || enquiry.district || enquiry.location || 'Kerala'}
                           </span>
-                          {enquiry.workerAcceptance && (
-                            <span className="text-[10px] text-emerald-400 font-medium">
-                              ✓ Accepted
-                            </span>
-                          )}
                         </div>
-                      ) : (
-                        <span className="text-amber-400 font-semibold text-[11px]">Unassigned</span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedEnquiry(enquiry);
-                            setIsDetailsModalOpen(true);
-                          }}
-                          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer"
-                          title="View Full Details"
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {enquiry.createdByRole === 'OFFICE_STAFF' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            🏢 Office Staff
+                          </span>
+                        ) : enquiry.createdByRole === 'SUPER_ADMIN' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            👑 Super Admin
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            🌐 Customer Web
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wider ${theme.bg} ${theme.text} ${theme.border}`}
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        {enquiry.status === 'PENDING' && (
+                          {enquiry.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {enquiry.worker ? (
+                          <div className="flex items-center gap-1.5 text-gray-200 font-medium">
+                            <HardHat className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>{enquiry.worker.name || enquiry.worker.username}</span>
+                          </div>
+                        ) : (
+                          <span className="text-amber-400 text-xs font-semibold">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedEnquiry(enquiry);
-                              setIsAssignModalOpen(true);
+                              setIsDetailsModalOpen(true);
                             }}
-                            className="px-3 py-1 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800"
+                            title="View details"
                           >
-                            Assign
+                            <Eye className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                          {enquiry.status === 'PENDING' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiry(enquiry);
+                                setIsAssignModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 rounded-lg bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-[11px] font-bold shadow-sm"
+                            >
+                              Dispatch
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Details Modal */}
+      {/* Enquiry Details Modal (100% Matching People Modal Styling) */}
       {isDetailsModalOpen && selectedEnquiry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in">
-          <div className="w-full max-w-xl bg-[#0c1310] rounded-3xl border border-emerald-500/30 p-6 space-y-4 text-xs text-slate-300 shadow-2xl my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Inbox className="w-4 h-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+            {/* Top ambient glow line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/60 to-transparent" />
+
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14151A]">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#1A1C23] border border-gray-800 rounded-xl">
+                  <Inbox className="w-5 h-5 text-[#7B4DFF]" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Work Order Dossier</h3>
-                  <span className="font-mono text-emerald-400 text-xs font-bold">
-                    {selectedEnquiry.trackingNumber}
-                  </span>
+                  <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
+                    <span>Ticket Details</span>
+                    <span className="font-mono text-xs text-[#7B4DFF] px-2 py-0.5 rounded-md bg-[#7B4DFF]/10 border border-[#7B4DFF]/20">
+                      {selectedEnquiry.trackingNumber}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    Registered request information and operations dispatch status
+                  </p>
                 </div>
               </div>
+
               <button
+                type="button"
                 onClick={() => setIsDetailsModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer"
+                className="p-2 text-gray-400 hover:text-gray-200 bg-[#1A1C23] hover:bg-[#232630] rounded-xl border border-gray-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              {/* Creator Flag & Status */}
-              <div className="p-3 rounded-2xl bg-[#121f18] border border-emerald-500/20 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Origin &amp; Creator</span>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {selectedEnquiry.createdByRole === 'OFFICE_STAFF' ? (
-                      <span className="text-purple-300 font-semibold">
-                        🏢 Office Staff: {selectedEnquiry.creator?.name || 'Staff Member'}
-                      </span>
-                    ) : selectedEnquiry.createdByRole === 'SUPER_ADMIN' ? (
-                      <span className="text-amber-300 font-semibold">
-                        👑 Super Admin: {selectedEnquiry.creator?.name || 'Admin'}
-                      </span>
-                    ) : (
-                      <span className="text-emerald-300 font-semibold">
-                        🌐 Customer Self-Service (Web)
-                      </span>
-                    )}
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
+              {/* Service & Customer Stats Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">
+                    Requested Service
+                  </span>
+                  <div className="font-bold text-gray-100 text-sm">
+                    {selectedEnquiry.serviceName}
                   </div>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block text-right">Status</span>
-                  <span className="font-bold text-emerald-400 block text-right">{selectedEnquiry.status}</span>
-                </div>
-              </div>
-
-              {/* Service & Client Grid */}
-              <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-[#121f18] border border-white/5">
-                <div>
-                  <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Service</span>
-                  <span className="font-bold text-white text-sm">{selectedEnquiry.serviceName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Preferred Schedule</span>
-                  <span className="font-semibold text-slate-200">
-                    {selectedEnquiry.preferredDate
-                      ? new Date(selectedEnquiry.preferredDate).toLocaleDateString()
-                      : 'Immediate Dispatch'}
+                  <span className="text-xs text-gray-400 block mt-0.5">
+                    Category: {selectedEnquiry.serviceCategory || 'General Operations'}
                   </span>
                 </div>
-                <div>
-                  <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Customer Name</span>
-                  <span className="text-white font-medium">{selectedEnquiry.customerName}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Phone</span>
-                  <a
-                    href={`tel:${selectedEnquiry.customerPhone}`}
-                    className="text-emerald-400 font-bold hover:underline"
-                  >
-                    {selectedEnquiry.customerPhone}
-                  </a>
+
+                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">
+                    Customer Information
+                  </span>
+                  <div className="font-bold text-gray-100 text-sm">
+                    {selectedEnquiry.customerName}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                    <span className="font-mono">{selectedEnquiry.customerPhone}</span>
+                    {selectedEnquiry.customerEmail && <span>• {selectedEnquiry.customerEmail}</span>}
+                  </div>
                 </div>
               </div>
 
-              {/* Location & GPS Link */}
-              <div className="p-3.5 rounded-2xl bg-[#121f18] border border-white/5 space-y-2">
-                <span className="text-slate-400 block text-[10px] font-bold uppercase">Location &amp; GPS</span>
-                <div className="text-white font-medium flex items-start gap-1.5">
-                  <MapPin className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>{selectedEnquiry.location || `${selectedEnquiry.city || ''}, ${selectedEnquiry.district || 'Kasaragod'}, Kerala`}</span>
+              {/* Kerala Location Details */}
+              <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80 space-y-2">
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
+                  Location &amp; Coordinates (Kerala Operations)
+                </span>
+                <div className="flex items-center gap-2 text-gray-200 text-xs">
+                  <MapPin className="w-4 h-4 text-[#7B4DFF] shrink-0" />
+                  <span className="font-medium">
+                    {[selectedEnquiry.location, selectedEnquiry.city, selectedEnquiry.district]
+                      .filter(Boolean)
+                      .join(', ') || 'Kerala, India'}
+                  </span>
                 </div>
-
-                {selectedEnquiry.mapUrl && (
-                  <div className="pt-2 border-t border-white/5">
-                    <a
-                      href={selectedEnquiry.mapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/30 transition-all"
-                    >
-                      <Navigation className="w-3.5 h-3.5" />
-                      <span>Open GPS Pin in Google Maps</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
-
-                {selectedEnquiry.locationRemarks && (
-                  <div className="pt-1 text-slate-300">
-                    <strong className="text-slate-400">Road / Access Remarks: </strong>
-                    {selectedEnquiry.locationRemarks}
+                {selectedEnquiry.latitude && selectedEnquiry.longitude && (
+                  <div className="text-[11px] text-gray-400 font-mono">
+                    GPS Coordinates: {selectedEnquiry.latitude.toFixed(6)},{' '}
+                    {selectedEnquiry.longitude.toFixed(6)}
                   </div>
                 )}
               </div>
 
-              {/* Service Unit Specification & Wage Breakdown Card */}
-              {(selectedEnquiry.wageType || selectedEnquiry.isHourlyCalculated || selectedEnquiry.unitRate || selectedEnquiry.workerUnitWage) && (
-                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#121f18] to-[#16202E] border border-emerald-500/30 space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
-                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#34d399]" />
-                      <span>
-                        {selectedEnquiry.wageType === 'PER_TREE'
-                          ? '🌴 Coconut Palm Tree Plucking Specification'
-                          : (selectedEnquiry.wageType === 'HOURLY' || selectedEnquiry.isHourlyCalculated)
-                          ? '⏱️ JCB / Equipment Hourly Chronometer'
-                          : selectedEnquiry.wageType === 'PER_SQFT'
-                          ? '📐 Area Measurement (Sq. Ft.)'
-                          : selectedEnquiry.wageType === 'PER_POINT'
-                          ? '⚡ Electrical Points Specification'
-                          : selectedEnquiry.wageType === 'PER_FOOT'
-                          ? '📏 Borewell Footage Specification'
-                          : selectedEnquiry.wageType === 'DAILY_WAGE'
-                          ? '📅 Daily Shift Labor Specification'
-                          : '🔧 Fixed Service Visit Specification'}
-                      </span>
+              {/* Wage Model Box */}
+              {selectedEnquiry.wageType && (
+                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                  <div className="flex items-center justify-between border-b border-gray-800/60 pb-2">
+                    <span className="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                      <span>Wage &amp; Billing Calculation Model</span>
                     </span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#7B4DFF]/10 text-[#7B4DFF] border border-[#7B4DFF]/20">
                       Unit: {selectedEnquiry.unitLabel || 'Unit'}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-300">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <div>
-                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Client Rate:</span>
-                      <span className="font-bold text-white">
-                        ₹{selectedEnquiry.unitRate || selectedEnquiry.hourlyRate || '—'} / {selectedEnquiry.unitLabel || 'Unit'}
+                      <span className="text-gray-500 block text-[10px] uppercase font-bold">
+                        Client Rate
+                      </span>
+                      <span className="font-bold text-gray-200">
+                        ₹{selectedEnquiry.unitRate || selectedEnquiry.hourlyRate || '—'} /{' '}
+                        {selectedEnquiry.unitLabel || 'Unit'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-emerald-400 block text-[10px] uppercase font-bold">Worker Wage:</span>
-                      <span className="font-bold text-emerald-300">
+                      <span className="text-emerald-400 block text-[10px] uppercase font-bold">
+                        Worker Wage
+                      </span>
+                      <span className="font-bold text-emerald-400">
                         ₹{selectedEnquiry.workerUnitWage || '—'} / {selectedEnquiry.unitLabel || 'Unit'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-amber-400 block text-[10px] uppercase font-bold">Quantity / Units:</span>
-                      <span className="font-bold text-amber-200">
-                        {selectedEnquiry.completedUnits !== null && selectedEnquiry.completedUnits !== undefined
+                      <span className="text-amber-400 block text-[10px] uppercase font-bold">
+                        Quantity / Units
+                      </span>
+                      <span className="font-bold text-amber-300">
+                        {selectedEnquiry.completedUnits !== null &&
+                        selectedEnquiry.completedUnits !== undefined
                           ? `${selectedEnquiry.completedUnits} (Done)`
                           : selectedEnquiry.estimatedUnits
                           ? `${selectedEnquiry.estimatedUnits} (Est)`
-                          : selectedEnquiry.workDurationMinutes
-                          ? `${Math.floor(selectedEnquiry.workDurationMinutes / 60)}h ${selectedEnquiry.workDurationMinutes % 60}m`
                           : 'Pending'}
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-sky-400 block text-[10px] uppercase font-bold">Worker Payout:</span>
-                      <span className="font-bold text-sky-200">
+                      <span className="text-blue-400 block text-[10px] uppercase font-bold">
+                        Worker Payout
+                      </span>
+                      <span className="font-bold text-blue-300">
                         {selectedEnquiry.totalCalculatedWage
                           ? `₹${selectedEnquiry.totalCalculatedWage.toLocaleString('en-IN')}`
                           : selectedEnquiry.completedUnits && selectedEnquiry.workerUnitWage
-                          ? `₹${Math.round(selectedEnquiry.completedUnits * selectedEnquiry.workerUnitWage).toLocaleString('en-IN')}`
+                          ? `₹${Math.round(
+                              selectedEnquiry.completedUnits * selectedEnquiry.workerUnitWage,
+                            ).toLocaleString('en-IN')}`
                           : '—'}
                       </span>
                     </div>
@@ -598,29 +810,33 @@ export default function AdminEnquiriesPage() {
                 </div>
               )}
 
-              {/* Message */}
-              <div className="p-3.5 rounded-2xl bg-[#121f18] border border-white/5">
-                <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Customer Requirements</span>
-                <p className="text-slate-200 italic">&ldquo;{selectedEnquiry.message}&rdquo;</p>
+              {/* Message / Requirements */}
+              <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+                <span className="text-gray-500 block mb-1 text-[10px] font-bold uppercase tracking-wider">
+                  Customer Requirements
+                </span>
+                <p className="text-gray-200 text-xs italic">&ldquo;{selectedEnquiry.message}&rdquo;</p>
               </div>
 
               {/* Assigned Worker */}
               {selectedEnquiry.worker && (
-                <div className="p-3.5 rounded-2xl bg-[#121f18] border border-emerald-500/30 flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-[#1A1C23] border border-emerald-500/30 flex items-center justify-between">
                   <div>
-                    <span className="text-slate-400 block mb-0.5 text-[10px] font-bold uppercase">Assigned Field Operative</span>
+                    <span className="text-gray-500 block mb-0.5 text-[10px] font-bold uppercase tracking-wider">
+                      Assigned Field Operative
+                    </span>
                     <span className="font-bold text-emerald-400 text-sm">
                       {selectedEnquiry.worker.name || selectedEnquiry.worker.username}
                     </span>
                     {selectedEnquiry.workerAcceptance && (
-                      <span className="block text-[10px] text-slate-300 mt-0.5">
+                      <span className="block text-[10px] text-gray-400 mt-0.5">
                         Acceptance: {selectedEnquiry.workerAcceptance}
                       </span>
                     )}
                   </div>
                   <a
                     href={`tel:${selectedEnquiry.worker.phone}`}
-                    className="text-xs font-bold text-slate-300 hover:text-white"
+                    className="text-xs font-mono font-bold text-gray-300 hover:text-white px-3 py-1.5 bg-[#14151A] rounded-lg border border-gray-800"
                   >
                     {selectedEnquiry.worker.phone || 'No phone'}
                   </a>
@@ -628,11 +844,12 @@ export default function AdminEnquiriesPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-800 bg-[#14151A]">
               <button
                 type="button"
                 onClick={() => setIsDetailsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-gray-800 transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -643,7 +860,7 @@ export default function AdminEnquiriesPage() {
                     setIsDetailsModalOpen(false);
                     setIsAssignModalOpen(true);
                   }}
-                  className="px-5 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white font-bold text-xs shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
                 >
                   Dispatch to Worker
                 </button>

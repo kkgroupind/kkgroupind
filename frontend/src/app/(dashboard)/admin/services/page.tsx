@@ -21,6 +21,8 @@ import { adminServicesService, ServiceItem } from '@/services/Admin/services';
 import { ServiceCard } from '@/components/Admin/services/ServiceCard';
 import { CreateServiceModal } from '@/components/Admin/services/CreateServiceModal';
 import { EditServiceModal } from '@/components/Admin/services/EditServiceModal';
+import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
+import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export default function AdminServicesPage() {
   const { token, user, isLoading: authLoading } = useAuth();
@@ -36,6 +38,8 @@ export default function AdminServicesPage() {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Status Banner / Feedback
@@ -127,17 +131,24 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleDeleteService = async (id: string, name: string) => {
-    if (!token) return;
-    if (!confirm(`Are you sure you want to delete service "${name}"?`)) return;
+  const handleDeleteService = (id: string, name: string) => {
+    setDeleteTarget({ id, name });
+  };
 
+  const handleConfirmDeleteService = async () => {
+    if (!token || !deleteTarget) return;
+
+    setIsDeleting(true);
     try {
-      await adminServicesService.deleteService(id, token);
-      setServices((prev) => prev.filter((s) => s.id !== id));
-      showFeedback('success', `Service "${name}" was successfully removed.`);
+      await adminServicesService.deleteService(deleteTarget.id, token);
+      setServices((prev) => prev.filter((s) => s.id !== deleteTarget.id));
+      showFeedback('success', `Service "${deleteTarget.name}" was successfully removed.`);
+      setDeleteTarget(null);
     } catch (err: any) {
       console.error('Delete service error', err);
       showFeedback('error', err?.message || 'Failed to delete service.');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -149,6 +160,27 @@ export default function AdminServicesPage() {
     });
     return Array.from(set);
   }, [services]);
+
+  const categoryOptions: AdminDropdownOption[] = useMemo(() => [
+    { value: 'ALL', label: 'All Categories' },
+    ...categories.map((cat) => ({ value: cat, label: cat })),
+  ], [categories]);
+
+  const statusOptions: AdminDropdownOption[] = useMemo(() => [
+    { value: 'ALL', label: 'All Statuses' },
+    {
+      value: 'ACTIVE',
+      label: 'Active Deployable',
+      badge: 'Active',
+      badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+    },
+    {
+      value: 'INACTIVE',
+      label: 'Inactive / Draft',
+      badge: 'Draft',
+      badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
+    },
+  ], []);
 
   const activeCount = useMemo(() => services.filter((s) => s.isActive).length, [services]);
   const inactiveCount = services.length - activeCount;
@@ -209,7 +241,7 @@ export default function AdminServicesPage() {
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#2A835F] hover:bg-emerald-600 text-white rounded-xl text-xs font-semibold shadow-[0_0_20px_rgba(42,131,95,0.4)] transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white rounded-xl text-xs font-semibold shadow-[0_0_20px_rgba(123,77,255,0.4)] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>New Service</span>
@@ -217,26 +249,38 @@ export default function AdminServicesPage() {
         </div>
       </div>
 
-      {/* KPI Bento Cards */}
+      {/* KPI Bento Cards with People styling */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Services */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Total Registered
+        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Total Registered
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF]">
+              <Layers className="w-4 h-4" />
+            </div>
           </div>
           <div className="text-2xl font-extrabold text-white mt-1">
             {services.length}
           </div>
           <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
-            <Hash className="w-3 h-3 text-emerald-400" />
+            <Hash className="w-3 h-3 text-[#7B4DFF]" />
             <span>Alphanumeric Sequential Ledger</span>
           </div>
         </div>
 
         {/* Active Deployments */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Active Deployable
+        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-emerald-500/60 transition-all duration-300" />
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Active Deployable
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Sparkles className="w-4 h-4" />
+            </div>
           </div>
           <div className="text-2xl font-extrabold text-emerald-400 mt-1">
             {activeCount}
@@ -248,9 +292,15 @@ export default function AdminServicesPage() {
         </div>
 
         {/* Inactive / Archived */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Inactive / Draft
+        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-rose-500/60 transition-all duration-300" />
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Inactive / Draft
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+              <AlertCircle className="w-4 h-4" />
+            </div>
           </div>
           <div className="text-2xl font-extrabold text-rose-400 mt-1">
             {inactiveCount}
@@ -261,9 +311,15 @@ export default function AdminServicesPage() {
         </div>
 
         {/* Operational Categories */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group">
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-            Categories
+        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-indigo-500/60 transition-all duration-300" />
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+              Categories
+            </div>
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Tag className="w-4 h-4" />
+            </div>
           </div>
           <div className="text-2xl font-extrabold text-indigo-400 mt-1">
             {categories.length || '—'}
@@ -285,58 +341,33 @@ export default function AdminServicesPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, ID (e.g. KKS-001), or description..."
-            className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] transition-all"
+            className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
           />
         </div>
 
-        {/* Category & Status Filters */}
+        {/* Category & Status Filters using AdminDropdown */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Category Filter */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-[#1A1C23] border border-gray-800 text-gray-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-[#2A835F]"
-          >
-            <option value="ALL">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          {/* Category Filter using AdminDropdown */}
+          <div className="w-52">
+            <AdminDropdown
+              options={categoryOptions}
+              value={selectedCategory}
+              onChange={(val) => setSelectedCategory(val)}
+              variant="purple"
+              size="md"
+              searchable={categories.length > 5}
+            />
+          </div>
 
-          {/* Status Tabs */}
-          <div className="flex items-center p-1 bg-[#1A1C23] border border-gray-800 rounded-xl">
-            <button
-              onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === 'ALL'
-                  ? 'bg-[#2A835F] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setStatusFilter('ACTIVE')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === 'ACTIVE'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'text-gray-400 hover:text-emerald-400'
-              }`}
-            >
-              Active
-            </button>
-            <button
-              onClick={() => setStatusFilter('INACTIVE')}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === 'INACTIVE'
-                  ? 'bg-rose-600 text-white shadow-sm'
-                  : 'text-gray-400 hover:text-rose-400'
-              }`}
-            >
-              Inactive
-            </button>
+          {/* Status Filter using AdminDropdown */}
+          <div className="w-48">
+            <AdminDropdown
+              options={statusOptions}
+              value={statusFilter}
+              onChange={(val) => setStatusFilter(val as any)}
+              variant="purple"
+              size="md"
+            />
           </div>
         </div>
       </div>
@@ -412,6 +443,25 @@ export default function AdminServicesPage() {
           setServices((prev) => prev.map((s) => (s.id === updatedSrv.id ? updatedSrv : s)));
           showFeedback('success', `Service "${updatedSrv.name}" updated successfully!`);
         }}
+      />
+
+      <ConfirmationModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDeleteService}
+        title="Delete Service Offering"
+        message={`Are you sure you want to permanently remove "${deleteTarget?.name || 'this service'}" from the catalog? Customers will no longer be able to select or request this service.`}
+        confirmText="Delete Service"
+        variant="danger"
+        isLoading={isDeleting}
+        itemDetails={
+          deleteTarget
+            ? [
+                { label: 'Service Name', value: deleteTarget.name },
+                { label: 'Service ID', value: deleteTarget.id },
+              ]
+            : undefined
+        }
       />
     </div>
   );
