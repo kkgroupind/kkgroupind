@@ -1,156 +1,124 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import NextLink from 'next/link';
-import { Search, Bell, Settings, MessageSquare, Sun, Moon, Menu } from 'lucide-react';
-import { useAuth } from '@/context/auth-context';
-import { useAdminTheme } from '@/context/admin-theme-context';
+import { Search, Bell, Settings, Maximize, Minimize, Menu } from 'lucide-react';
 
 interface NavbarProps {
   onMenuClick?: () => void;
 }
 
 export function Navbar({ onMenuClick }: NavbarProps) {
-  const { user } = useAuth();
-  const { theme, setTheme, toggleTheme, isDark } = useAdminTheme();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  const handleToggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else if ((document.documentElement as any).webkitRequestFullscreen) {
+          await (document.documentElement as any).webkitRequestFullscreen();
+        } else if ((document.documentElement as any).msRequestFullscreen) {
+          await (document.documentElement as any).msRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any).webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        } else if ((document as any).msExitFullscreen) {
+          await (document as any).msExitFullscreen();
+        }
+      }
+    } catch (err) {
+      console.warn('Unable to toggle fullscreen mode:', err);
+    }
+  };
 
   return (
-    <header
-      className={`h-20 flex items-center justify-between px-4 lg:px-8 border-b shrink-0 transition-colors duration-200 ${
-        isDark
-          ? 'bg-[#0D0E12] border-gray-800 text-gray-200'
-          : 'bg-white border-slate-200 text-slate-800 shadow-sm'
-      }`}
-    >
+    <header className="h-20 flex items-center justify-between px-4 lg:px-8 border-b shrink-0 bg-[#0D0E12] border-gray-800 text-gray-200">
       <div className="flex items-center gap-4 flex-1">
         {/* Mobile Menu Button */}
         <button
           onClick={onMenuClick}
-          className={`lg:hidden p-2 transition-colors rounded-xl shadow-sm border ${
-            isDark
-              ? 'text-gray-400 hover:text-gray-100 bg-[#1A1C23] border-gray-800'
-              : 'text-slate-600 hover:text-slate-900 bg-slate-100 border-slate-200'
-          }`}
+          className="lg:hidden p-2 transition-colors rounded-xl shadow-sm border text-gray-400 hover:text-gray-100 bg-[#1A1C23] border-gray-800"
+          aria-label="Toggle Mobile Menu"
         >
           <Menu className="w-5 h-5" />
         </button>
 
         {/* Search */}
-        <div
-          className={`relative w-full max-w-md hidden sm:flex items-center rounded-full p-1 border transition-colors ${
-            isDark
-              ? 'bg-[#1A1C23] border-gray-800'
-              : 'bg-slate-100 border-slate-200'
-          }`}
-        >
+        <div className="relative w-full max-w-md hidden sm:flex items-center rounded-full p-1 border bg-[#1A1C23] border-gray-800">
           <div className="pl-4 flex items-center pointer-events-none">
-            <Search className={`h-4 w-4 ${isDark ? 'text-gray-400' : 'text-slate-500'}`} />
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
           <input
             type="text"
             placeholder="Search resources, workers, orders..."
-            className={`block w-full pl-3 pr-4 py-2 border-none bg-transparent text-sm focus:outline-none focus:ring-0 ${
-              isDark
-                ? 'text-gray-200 placeholder-gray-500'
-                : 'text-slate-900 placeholder-slate-400 font-medium'
-            }`}
+            className="block w-full pl-3 pr-4 py-2 border-none bg-transparent text-sm focus:outline-none focus:ring-0 text-gray-200 placeholder-gray-500"
           />
           <button
-            className={`text-xs font-semibold px-4 py-1.5 rounded-full transition-colors cursor-pointer ${
-              isDark
-                ? 'bg-[#2A2D35] hover:bg-[#3A3D45] text-gray-300'
-                : 'bg-white hover:bg-slate-200 text-slate-700 shadow-sm'
-            }`}
+            className="text-xs font-semibold px-4 py-1.5 rounded-full transition-colors cursor-pointer bg-[#2A2D35] hover:bg-[#3A3D45] text-gray-300"
           >
             Search
           </button>
         </div>
       </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-3 lg:gap-4 ml-4">
-        {/* Mobile Theme Toggle Button */}
+      {/* Right Actions: Only Fullscreen, Notifications, and Settings */}
+      <div className="flex items-center gap-2.5 sm:gap-3 ml-4">
+        {/* Fullscreen Toggle Button */}
         <button
-          onClick={toggleTheme}
-          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          className={`sm:hidden p-2.5 rounded-full border transition-all cursor-pointer ${
-            isDark
-              ? 'bg-[#1A1C23] border-gray-800 text-amber-400 hover:text-amber-300'
-              : 'bg-slate-100 border-slate-200 text-[#2A835F] hover:text-[#236D4F]'
-          }`}
+          onClick={handleToggleFullscreen}
+          title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          className="p-2.5 rounded-xl border border-gray-800 bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-gray-100 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+          aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
         >
-          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {isFullscreen ? (
+            <Minimize className="w-4 h-4 text-emerald-400" />
+          ) : (
+            <Maximize className="w-4 h-4" />
+          )}
         </button>
 
-        {/* Desktop Theme Switcher Pill */}
-        <div
-          className={`hidden sm:flex items-center gap-1 rounded-full p-1 border transition-colors ${
-            isDark
-              ? 'bg-[#1A1C23] border-gray-800'
-              : 'bg-slate-100 border-slate-200'
-          }`}
+        {/* Notifications Button */}
+        <NextLink
+          href="/admin/communications/notifications"
+          className="p-2.5 rounded-xl border border-gray-800 bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-gray-100 transition-colors relative shadow-sm flex items-center justify-center cursor-pointer"
+          title="Notifications"
+          aria-label="Notifications"
         >
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            title="Light Theme"
-            className={`p-2 rounded-full transition-all cursor-pointer ${
-              !isDark
-                ? 'bg-white text-amber-600 shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
-            }`}
-          >
-            <Sun className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            title="Dark Theme"
-            className={`p-2 rounded-full transition-all cursor-pointer ${
-              isDark
-                ? 'bg-[#2A835F] text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-700 hover:bg-black/5'
-            }`}
-          >
-            <Moon className="w-4 h-4" />
-          </button>
-        </div>
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-[#7B4DFF] rounded-full ring-2 ring-[#0D0E12] animate-pulse" />
+        </NextLink>
 
-        {/* Notifications & Settings Group */}
-        <div
-          className={`flex items-center gap-1.5 rounded-full p-1 border px-2 transition-colors ${
-            isDark
-              ? 'bg-[#1A1C23] border-gray-800 text-gray-400'
-              : 'bg-slate-100 border-slate-200 text-slate-600'
-          }`}
+        {/* Settings Button */}
+        <NextLink
+          href="/admin/settings"
+          className="p-2.5 rounded-xl border border-gray-800 bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-gray-100 transition-colors shadow-sm flex items-center justify-center cursor-pointer"
+          title="Admin Settings & Profile"
+          aria-label="Admin Settings & Profile"
         >
-          <button
-            className={`p-2 transition-colors rounded-full relative cursor-pointer ${
-              isDark ? 'hover:text-gray-200' : 'hover:text-slate-900'
-            }`}
-            title="Notifications"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#2A835F] rounded-full"></span>
-          </button>
-          <button
-            className={`p-2 transition-colors rounded-full cursor-pointer ${
-              isDark ? 'hover:text-gray-200' : 'hover:text-slate-900'
-            }`}
-            title="Messages"
-          >
-            <MessageSquare className="w-4 h-4" />
-          </button>
-          <NextLink
-            href="/admin/settings"
-            className={`p-2 transition-colors rounded-full ${
-              isDark ? 'hover:text-gray-200' : 'hover:text-slate-900'
-            }`}
-            title="Admin Settings & Profile"
-          >
-            <Settings className="w-4 h-4" />
-          </NextLink>
-        </div>
+          <Settings className="w-4 h-4" />
+        </NextLink>
       </div>
     </header>
   );

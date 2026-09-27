@@ -144,12 +144,12 @@ export function OfficeStaffNavbar({
               title="Return to KK Group Homepage"
               className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer"
             >
-              {/* KK Group Emerald Sparkle Star Emblem */}
-              <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-xl sm:rounded-2xl bg-[#EBF6F1] border border-[#C3E6D5] flex items-center justify-center text-[#2A835F] shadow-xs group-hover:scale-105 group-hover:bg-[#d8efe5] transition-all shrink-0">
+              {/* KK Group Emblem */}
+              <div className="w-8 h-8 sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-xl sm:rounded-2xl bg-[#1B2CC1]/10 border border-[#7692FF]/30 flex items-center justify-center text-[#1B2CC1] shadow-xs group-hover:scale-105 group-hover:bg-[#1B2CC1]/20 transition-all shrink-0">
                 <svg
                   viewBox="0 0 24 24"
-                  fill="#2A835F"
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-[#2A835F] shrink-0"
+                  fill="#1B2CC1"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-[#1B2CC1] shrink-0"
                 >
                   <path d="M12 0L14.7 9.3L24 12L14.7 14.7L12 24L9.3 14.7L0 12L9.3 9.3L12 0Z" />
                 </svg>
@@ -158,10 +158,10 @@ export function OfficeStaffNavbar({
               {/* Brand Typography & Office Staff Tag */}
               <div className="flex flex-col justify-center">
                 <div className="flex items-center gap-1.5 sm:gap-2">
-                  <span className="text-sm sm:text-base lg:text-lg font-black tracking-tight leading-none text-[#0F172A] font-sans whitespace-nowrap">
+                  <span className="text-sm sm:text-base lg:text-lg font-black tracking-tight leading-none text-[#091540] font-sans whitespace-nowrap">
                     KK GROUP
                   </span>
-                  <span className="text-[9px] sm:text-[10px] font-extrabold bg-[#EBF6F1] text-[#2A835F] border border-[#C3E6D5] px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
+                  <span className="text-[9px] sm:text-[10px] font-extrabold bg-[#ABD2FA]/30 text-[#091540] border border-[#7692FF]/30 px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
                     OFFICE STAFFS
                   </span>
                 </div>
@@ -190,13 +190,13 @@ export function OfficeStaffNavbar({
                   onClick={() => handleItemClick(cat.id)}
                   className={`flex items-center gap-1.5 px-2.5 lg:px-3.5 xl:px-4 py-1.5 lg:py-2 rounded-xl text-xs lg:text-sm font-bold transition-all cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'bg-white text-[#2A835F] shadow-[0_2px_8px_rgba(0,0,0,0.06)] ring-1 ring-slate-200/60 font-extrabold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                      ? 'bg-white text-[#1B2CC1] shadow-[0_2px_8px_rgba(27,44,193,0.12)] ring-1 ring-[#7692FF]/30 font-extrabold'
+                      : 'text-slate-600 hover:text-[#091540] hover:bg-white/60'
                   }`}
                 >
                   <Icon
                     className={`w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-[#2A835F]' : 'text-slate-400'
+                      isActive ? 'text-[#1B2CC1]' : 'text-slate-400'
                     }`}
                   />
                   {/* Fluid label: short on medium tablet, full on desktop */}
@@ -231,7 +231,7 @@ export function OfficeStaffNavbar({
               >
                 <RefreshCw
                   className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
-                    isRefreshing ? 'animate-spin text-[#2A835F]' : ''
+                    isRefreshing ? 'animate-spin text-[#1B2CC1]' : ''
                   }`}
                 />
               </button>
@@ -262,7 +262,7 @@ export function OfficeStaffNavbar({
                   type="button"
                   onClick={onCreateInvoice}
                   title="Create New Service Order"
-                  className="sm:hidden w-8 h-8 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
+                  className="sm:hidden w-8 h-8 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white flex items-center justify-center shadow-xs transition-all cursor-pointer active:scale-95 shrink-0"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -271,7 +271,7 @@ export function OfficeStaffNavbar({
                 <button
                   type="button"
                   onClick={onCreateInvoice}
-                  className="hidden sm:flex items-center gap-1.5 lg:gap-2 bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs sm:text-sm font-bold px-3 lg:px-4 py-2 sm:py-2.5 rounded-xl shadow-[0_3px_12px_rgba(42,131,95,0.25)] transition-all cursor-pointer active:scale-95"
+                  className="hidden sm:flex items-center gap-1.5 lg:gap-2 bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs sm:text-sm font-bold px-3 lg:px-4 py-2 sm:py-2.5 rounded-xl shadow-[0_3px_12px_rgba(27,44,193,0.25)] transition-all cursor-pointer active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   <span className="whitespace-nowrap">New Order</span>
@@ -287,14 +287,14 @@ export function OfficeStaffNavbar({
                 disabled={isTogglingAvailability}
                 className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                   isAvailable
-                    ? 'bg-[#EBF6F1] text-[#2A835F] border-[#C3E6D5] hover:bg-emerald-100/80'
+                    ? 'bg-[#ABD2FA]/20 text-[#091540] border-[#7692FF]/40 hover:bg-[#ABD2FA]/30'
                     : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100/80'
                 }`}
                 title={isAvailable ? 'Click to change desk availability' : 'Click to mark as Available'}
               >
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    isAvailable ? 'bg-[#2A835F] animate-pulse' : 'bg-amber-500'
+                    isAvailable ? 'bg-[#1B2CC1] animate-pulse' : 'bg-amber-500'
                   }`}
                 />
                 <span className="whitespace-nowrap">
@@ -339,7 +339,7 @@ export function OfficeStaffNavbar({
                   <span className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[110px]">
                     {userName}
                   </span>
-                  <span className="text-[10px] font-semibold text-[#2A835F] leading-tight">
+                  <span className="text-[10px] font-semibold text-[#1B2CC1] leading-tight">
                     Office Staff
                   </span>
                 </div>
@@ -367,16 +367,16 @@ export function OfficeStaffNavbar({
                       />
                     </div>
                     <div className="flex flex-col min-w-0">
-                      <span className="text-sm font-bold text-slate-900 truncate">
+                      <span className="text-sm font-bold text-[#091540] truncate">
                         {userName}
                       </span>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] font-extrabold bg-[#EBF6F1] text-[#2A835F] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                        <span className="text-[10px] font-extrabold bg-[#ABD2FA]/30 text-[#091540] px-2 py-0.5 rounded-full uppercase tracking-wider border border-[#7692FF]/30">
                           {userRole === 'OFFICE_STAFF' ? 'OFFICE STAFF' : userRole}
                         </span>
                       </div>
                       <span className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#1B2CC1] animate-pulse" />
                         Desk Active &bull; കേരളം
                       </span>
                     </div>
@@ -391,9 +391,9 @@ export function OfficeStaffNavbar({
                         setIsProfileOpen(false);
                         router.push('/office-staff/profile');
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#091540] transition-colors cursor-pointer text-left"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-[#2A835F] flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100 text-[#1B2CC1] flex items-center justify-center shrink-0">
                         <User className="w-4 h-4" />
                       </div>
                       <div className="flex flex-col">
@@ -411,7 +411,7 @@ export function OfficeStaffNavbar({
                         setIsProfileOpen(false);
                         if (onTabChange) onTabChange('estimates');
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer text-left"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#091540] transition-colors cursor-pointer text-left"
                     >
                       <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
                         <Settings className="w-4 h-4" />
@@ -433,14 +433,14 @@ export function OfficeStaffNavbar({
                       }}
                       className={`w-full px-3 py-2 rounded-xl border flex items-center justify-between my-1 cursor-pointer transition-colors text-left ${
                         isAvailable
-                          ? 'bg-[#EBF6F1]/70 border-[#C3E6D5]/80 hover:bg-[#EBF6F1]'
+                          ? 'bg-[#ABD2FA]/20 border-[#7692FF]/30 hover:bg-[#ABD2FA]/30'
                           : 'bg-amber-50/70 border-amber-200/80 hover:bg-amber-50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <ShieldCheck
                           className={`w-4 h-4 ${
-                            isAvailable ? 'text-[#2A835F]' : 'text-amber-600'
+                            isAvailable ? 'text-[#1B2CC1]' : 'text-amber-600'
                           }`}
                         />
                         <span className="text-xs font-bold text-slate-800">Dispatch Desk</span>
@@ -448,7 +448,7 @@ export function OfficeStaffNavbar({
                       <span
                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
                           isAvailable
-                            ? 'bg-[#2A835F] text-white'
+                            ? 'bg-[#1B2CC1] text-white'
                             : 'bg-amber-600 text-white'
                         }`}
                       >
@@ -506,13 +506,13 @@ export function OfficeStaffNavbar({
               type="button"
               onClick={() => handleItemClick(cat.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1 px-1 rounded-xl transition-all relative cursor-pointer min-w-0 max-w-[70px] ${
-                isActive ? 'text-[#2A835F]' : 'text-slate-400 hover:text-slate-600'
+                isActive ? 'text-[#1B2CC1]' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               <div
                 className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                   isActive
-                    ? 'bg-[#EBF6F1] text-[#2A835F] shadow-xs font-bold'
+                    ? 'bg-[#ABD2FA]/30 text-[#1B2CC1] shadow-xs font-bold'
                     : 'text-slate-500'
                 }`}
               >
@@ -521,7 +521,7 @@ export function OfficeStaffNavbar({
 
               <span
                 className={`text-[10px] tracking-tight mt-0.5 truncate w-full text-center ${
-                  isActive ? 'font-black text-[#2A835F]' : 'font-medium'
+                  isActive ? 'font-black text-[#1B2CC1]' : 'font-medium'
                 }`}
               >
                 {cat.shortLabel || cat.label}

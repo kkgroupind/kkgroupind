@@ -68,35 +68,35 @@ export function OfficeStaffCrewView({
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-white/80 shadow-md flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
               Total Squad Size
             </span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+            <div className="text-2xl font-black text-[#091540] mt-1">
               {workers.length} Operatives
             </div>
             <span className="text-[11px] text-slate-400">Kerala certified field workforce</span>
           </div>
-          <div className="w-11 h-11 rounded-2xl bg-[#EBF6F1] text-[#2A835F] flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-[#ABD2FA]/30 text-[#1B2CC1] flex items-center justify-center">
             <Users className="w-5 h-5" />
           </div>
         </div>
       </div>
 
       {/* Operatives Grid */}
-      <div className="bg-[#12131D] rounded-[32px] p-5 sm:p-7 text-white shadow-2xl border border-slate-800/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-800">
+      <div className="bg-[#091540] rounded-[32px] p-5 sm:p-7 text-white shadow-2xl border border-[#7692FF]/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#7692FF]/20">
           <div>
             <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <HardHat className="w-5 h-5 text-emerald-400" />
+              <HardHat className="w-5 h-5 text-[#ABD2FA]" />
               <span>Certified Kerala Field Crew & Squad Registry</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#ABD2FA]/80 mt-0.5">
               Live status, workloads, and dispatch management for KK Group field teams.
             </p>
           </div>
-          <span className="text-xs font-semibold bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/30 w-fit">
+          <span className="text-xs font-semibold bg-[#1B2CC1]/30 text-[#ABD2FA] px-3 py-1 rounded-full border border-[#7692FF]/30 w-fit">
             {readyCount} of {workers.length} Ready
           </span>
         </div>
@@ -220,7 +220,7 @@ export function OfficeStaffCrewView({
                     }}
                     className={`flex-1 text-xs font-bold py-2 rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                       isAvailable
-                        ? 'bg-[#2A835F] hover:bg-[#236D4F] text-white shadow-md'
+                        ? 'bg-[#1B2CC1] hover:bg-[#15239E] text-white shadow-md shadow-[#1B2CC1]/20'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
                     }`}
                   >

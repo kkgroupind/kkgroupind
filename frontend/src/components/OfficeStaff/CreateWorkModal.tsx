@@ -153,20 +153,25 @@ export function CreateWorkModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
     >
-      <div className="w-full max-w-2xl bg-[#0c1310] rounded-3xl border border-emerald-500/30 text-slate-200 overflow-hidden relative shadow-2xl my-8">
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
+
+      <div className="relative w-full max-w-2xl bg-white border border-[#7692FF]/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10 text-slate-800">
+        {/* Top subtle glow line matching brand palette */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1B2CC1]/50 to-transparent" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-emerald-500/20 bg-[#101b15]">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <div className="w-10 h-10 rounded-xl bg-[#1B2CC1]/10 border border-[#1B2CC1]/20 flex items-center justify-center text-[#1B2CC1]">
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white">
-                Create & Dispatch Work Order
+              <h2 className="text-lg font-bold text-[#091540]">
+                Create &amp; Dispatch Work Order
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Log direct client enquiry and optionally assign field personnel
               </p>
             </div>
@@ -175,30 +180,31 @@ export function CreateWorkModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-2 text-slate-400 hover:text-[#091540] bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar text-xs">
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs">
           {error && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-              <span>{error}</span>
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 text-xs flex items-center gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span className="font-medium">{error}</span>
             </div>
           )}
 
           {/* Service */}
           <div>
-            <label className="block mb-1 font-bold text-slate-300">
+            <label className="block mb-1.5 font-bold text-slate-700">
               Service Catalog *
             </label>
             <AdminDropdown
               options={SERVICE_OPTIONS}
               value={serviceName}
               onChange={(val) => setServiceName(val)}
-              variant="emerald"
+              variant="blue"
               size="md"
               searchable
             />
@@ -207,7 +213,7 @@ export function CreateWorkModal({
           {/* Customer Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 font-bold text-slate-300">
+              <label className="block mb-1.5 font-bold text-slate-700">
                 Customer Name *
               </label>
               <input
@@ -216,18 +222,19 @@ export function CreateWorkModal({
                 placeholder="Full Name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
               />
             </div>
 
             <div>
-              <label className="block mb-1 font-bold text-slate-300">
+              <label className="block mb-1.5 font-bold text-slate-700">
                 Mobile Number *
               </label>
               <div className="flex items-center gap-1.5">
                 <CountryCodeSelect
                   value={countryCode}
                   onChange={setCountryCode}
+                  variant="blue"
                 />
                 <input
                   type="tel"
@@ -235,13 +242,13 @@ export function CreateWorkModal({
                   placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
                 />
               </div>
             </div>
           </div>
 
-          {/* Kerala Location Select (Kasaragod Default, Search & Select, Custom Typing) */}
+          {/* Kerala Location Select */}
           <KeralaLocationSelect
             district={district}
             city={city}
@@ -252,8 +259,8 @@ export function CreateWorkModal({
           {/* Map URL & Deadline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1 font-bold text-slate-300 flex items-center gap-1.5">
-                <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+              <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5 text-[#1B2CC1]" />
                 <span>Google Maps URL / Coordinates (Optional)</span>
               </label>
               <input
@@ -261,13 +268,13 @@ export function CreateWorkModal({
                 placeholder="https://maps.app.goo.gl/..."
                 value={mapUrl}
                 onChange={(e) => setMapUrl(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
               />
             </div>
 
             <div>
-              <label className="block mb-1 font-bold text-slate-300 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-emerald-400" />
+              <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-[#1B2CC1]" />
                 <span>Target Deadline (Optional)</span>
               </label>
               <input
@@ -275,30 +282,31 @@ export function CreateWorkModal({
                 min={new Date().toISOString().split('T')[0]}
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 [color-scheme:dark]"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] focus:outline-none focus:border-[#1B2CC1] transition-all"
               />
             </div>
           </div>
 
           {/* Message / Scope of Work */}
           <div>
-            <label className="block mb-1 font-bold text-slate-300">
+            <label className="block mb-1.5 font-bold text-slate-700">
               Work Description / Scope *
             </label>
             <textarea
-              rows={2}
+              rows={3}
               required
               placeholder="Scope of work, special tools or requirements..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] resize-none transition-all"
             />
           </div>
 
           {/* Assign Worker Now (Optional) */}
-          <div className="border-t border-white/10 pt-3">
-            <label className="block mb-1 font-bold text-slate-300">
-              Assign to Field Worker (Optional)
+          <div className="pt-2">
+            <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
+              <HardHat className="w-3.5 h-3.5 text-[#1B2CC1]" />
+              <span>Assign to Field Operative (Optional)</span>
             </label>
             <AdminDropdown
               options={[
@@ -307,45 +315,50 @@ export function CreateWorkModal({
                   value: w.id,
                   label: `${w.name || w.username} (Available)`,
                   badge: 'Available',
-                  badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+                  badgeColor: 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20',
                 })),
               ]}
               value={selectedWorkerId}
               onChange={(val) => setSelectedWorkerId(val)}
-              variant="emerald"
+              variant="blue"
               size="md"
               searchable
             />
           </div>
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-emerald-500/20">
-            <button
-              type="button"
-              onClick={onClose}
-              className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-semibold transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-emerald-950/40 cursor-pointer disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Creating...</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Create Work Order</span>
-                </>
-              )}
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Footer matching brand styling */}
+        <div className="p-6 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              const form = (e.currentTarget.closest('.relative')?.querySelector('form') as HTMLFormElement);
+              if (form) form.requestSubmit();
+            }}
+            disabled={isSubmitting}
+            className="px-6 py-2.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-sm font-bold shadow-md shadow-[#1B2CC1]/25 hover:shadow-[#1B2CC1]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Creating...</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                <span>Create Work Order</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

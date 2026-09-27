@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   X,
-  UserCheck,
   Phone,
   AlertCircle,
   Loader2,
@@ -13,15 +12,8 @@ import {
   User,
   MapPin,
   ExternalLink,
-  Navigation,
-  Timer,
-  Calendar,
-  Layers,
-  Search,
   HardHat,
-  Briefcase,
-  FileText,
-  Compass,
+  Search,
   Sparkles,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
@@ -67,8 +59,6 @@ export function AssignWorkerModal({
   const [unitRate, setUnitRate] = useState<number | ''>('');
   const [workerUnitWage, setWorkerUnitWage] = useState<number | ''>('');
   const [estimatedUnits, setEstimatedUnits] = useState<number | ''>('');
-  const [isHourlyCalculated, setIsHourlyCalculated] = useState(false);
-  const [hourlyRate, setHourlyRate] = useState<number | ''>('');
   const [deadline, setDeadline] = useState('');
 
   const [assigning, setAssigning] = useState(false);
@@ -156,48 +146,34 @@ export function AssignWorkerModal({
         setUnitRate(defaultCustRate);
         setWorkerUnitWage(defaultWageRate);
         setEstimatedUnits(defaultEstUnits);
-        setIsHourlyCalculated(detectedType === 'HOURLY');
-        setHourlyRate(detectedType === 'HOURLY' ? defaultCustRate : '');
-
-        if (enquiry.deadline) {
-          setDeadline(new Date(enquiry.deadline).toISOString().split('T')[0]);
-        } else {
-          setDeadline('');
-        }
+        setDeadline(enquiry.deadline ? enquiry.deadline.split('T')[0] : '');
       }
     }
   }, [isOpen, token, enquiry]);
 
   const fetchWorkers = async () => {
+    if (!token) return;
     setLoadingWorkers(true);
-    setError(null);
     try {
-      const res = await EnquiryService.getActiveWorkers(token || '');
+      const res = await EnquiryService.getActiveWorkers(token);
       setWorkers(res.workers || []);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load workers roster');
+    } catch (err) {
+      console.error('Failed to load workers for assignment', err);
     } finally {
       setLoadingWorkers(false);
     }
   };
 
-  const workerMetrics = useMemo(() => {
-    const total = workers.length;
-    const available = workers.filter((w) => w.workerStatus === 'AVAILABLE').length;
-    const busy = workers.filter((w) => w.workerStatus === 'BUSY').length;
-    const offDuty = workers.filter((w) => w.workerStatus === 'OFF_DUTY').length;
-    return { total, available, busy, offDuty };
-  }, [workers]);
-
   const filteredWorkers = useMemo(() => {
-    if (!workerSearch.trim()) return workers;
-    const q = workerSearch.toLowerCase().trim();
-    return workers.filter(
-      (w) =>
-        (w.name && w.name.toLowerCase().includes(q)) ||
-        (w.username && w.username.toLowerCase().includes(q)) ||
-        (w.phone && w.phone.includes(q)),
-    );
+    return workers.filter((w) => {
+      const q = workerSearch.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        (w.name || '').toLowerCase().includes(q) ||
+        (w.username || '').toLowerCase().includes(q) ||
+        (w.phone || '').includes(q)
+      );
+    });
   }, [workers, workerSearch]);
 
   if (!isOpen || !enquiry) return null;
@@ -205,13 +181,13 @@ export function AssignWorkerModal({
   const handleAssign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedWorkerId) {
-      setError('Please select an operative from the available roster.');
+      setError('Please select an operative from the available list.');
       return;
     }
 
     const worker = workers.find((w) => w.id === selectedWorkerId);
     if (!worker || worker.workerStatus !== 'AVAILABLE') {
-      setError('Selected operative is currently not available for assignment.');
+      setError('The selected operative is currently unavailable.');
       return;
     }
 
@@ -248,7 +224,6 @@ export function AssignWorkerModal({
     }
   };
 
-  // Google Maps preview URL
   const generatedMapSearchUrl =
     mapUrl.trim() ||
     (enquiry.location
@@ -261,32 +236,29 @@ export function AssignWorkerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
     >
-      <div
-        className="fixed inset-0"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-4xl bg-[#111827] border border-slate-700/80 rounded-[28px] shadow-[0_25px_70px_rgba(0,0,0,0.65)] overflow-hidden text-slate-200 my-auto z-10 flex flex-col max-h-[92vh]">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-[#0F172A]/80 backdrop-blur-md shrink-0">
+      <div className="relative w-full max-w-4xl bg-white border border-[#7692FF]/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10 text-slate-800">
+        {/* Top subtle glow line matching brand palette */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1B2CC1]/50 to-transparent" />
+
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#2A835F]/15 border border-[#2A835F]/30 flex items-center justify-center text-[#2A835F] shadow-inner">
-              <UserCheck className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl bg-[#1B2CC1]/10 border border-[#1B2CC1]/20 flex items-center justify-center text-[#1B2CC1]">
+              <HardHat className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  Dispatch Work Order
-                </h2>
-                <span className="font-mono text-xs font-bold text-[#2A835F] bg-[#2A835F]/15 px-2.5 py-0.5 rounded-full border border-[#2A835F]/30">
+                <h2 className="text-lg font-bold text-[#091540]">Dispatch Work Order</h2>
+                <span className="font-mono text-xs font-bold text-[#1B2CC1] bg-[#1B2CC1]/10 px-2.5 py-0.5 rounded-lg border border-[#1B2CC1]/20">
                   {enquiry.trackingNumber}
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Review site specifics, configure machinery parameters, and assign an active operative
+              <p className="text-xs text-slate-500 mt-0.5">
+                Assign operative, review location specifics, and configure wage parameters
               </p>
             </div>
           </div>
@@ -295,75 +267,59 @@ export function AssignWorkerModal({
             type="button"
             onClick={onClose}
             disabled={assigning}
-            className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+            className="p-2 text-slate-400 hover:text-[#091540] bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Body: Balanced 2-Column Bento Layout */}
-        <div className="p-5 sm:p-6 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+        {/* Modal Body */}
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-5">
           {error && (
-            <div className="p-3.5 rounded-2xl bg-red-950/40 border border-red-500/30 text-red-200 text-xs flex items-center gap-2.5 animate-in fade-in">
-              <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 text-xs flex items-center gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
               <span className="font-medium">{error}</span>
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-            {/* ========================================================
-                LEFT COLUMN (5 Cols): Work Order Context & Location
-            ======================================================== */}
+            {/* LEFT COLUMN: Job Overview & Location (5 cols) */}
             <div className="lg:col-span-5 space-y-4">
-              {/* Service & Creator Card */}
-              <div className="bg-[#1E293B]/60 border border-slate-750/70 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Service Order
-                  </span>
-                  {/* Origin Badge */}
-                  {enquiry.createdByRole === 'OFFICE_STAFF' ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/30">
-                      🏢 Office Staff: {enquiry.creator?.name || 'Staff Member'}
-                    </span>
-                  ) : enquiry.createdByRole === 'SUPER_ADMIN' ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                      👑 Super Admin
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2A835F]/15 text-[#34d399] border border-[#2A835F]/30">
-                      🌐 Customer Web
-                    </span>
-                  )}
+              {/* Job Specification Card */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                  Order Details
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold text-white leading-snug">
+                  <h3 className="text-sm font-bold text-[#091540]">
                     {enquiry.serviceName}
                   </h3>
-                  <div className="flex items-center gap-2 text-xs text-slate-300 mt-1">
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1">
                     <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span className="font-medium">{enquiry.customerName}</span>
-                    <span className="text-slate-500">•</span>
-                    <span className="font-mono text-slate-400">{enquiry.customerPhone}</span>
+                    <span className="font-medium text-slate-700">{enquiry.customerName}</span>
+                    <span>•</span>
+                    <span className="font-mono">{enquiry.customerPhone}</span>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-slate-700/50 text-xs">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Customer Requirements
-                  </span>
-                  <p className="text-slate-300 italic bg-black/20 p-2.5 rounded-xl border border-white/5 leading-relaxed">
-                    &ldquo;{enquiry.message}&rdquo;
-                  </p>
-                </div>
+                {enquiry.message && (
+                  <div className="pt-2 border-t border-slate-200 text-xs">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                      Customer Scope
+                    </span>
+                    <p className="text-slate-700 text-xs italic bg-white p-2.5 rounded-lg border border-slate-200 leading-relaxed">
+                      &ldquo;{enquiry.message}&rdquo;
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Site Location & GPS Directions */}
-              <div className="bg-[#1E293B]/60 border border-slate-750/70 rounded-2xl p-4 space-y-3">
+              {/* Site Location & Instructions */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-[#2A835F]" />
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#1B2CC1]" />
                     <span>Site Location (Kerala)</span>
                   </span>
                   {generatedMapSearchUrl && (
@@ -371,93 +327,61 @@ export function AssignWorkerModal({
                       href={generatedMapSearchUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] text-[#34d399] hover:underline flex items-center gap-1 font-semibold"
+                      className="text-xs text-[#1B2CC1] hover:underline flex items-center gap-1 font-semibold"
                     >
-                      <span>Preview Pin</span>
+                      <span>Google Maps</span>
                       <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                 </div>
 
-                <div className="text-xs text-slate-200 font-semibold bg-black/20 p-2.5 rounded-xl border border-white/5">
-                  {enquiry.location || `${enquiry.city || ''}, ${enquiry.district || 'Kasaragod'}, Kerala`}
+                <div className="text-xs text-slate-800 font-medium bg-white p-2.5 rounded-lg border border-slate-200">
+                  {enquiry.location || `${enquiry.city || ''}, ${enquiry.district || 'Kerala'}`}
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Map GPS URL or Coordinates
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+                    Google Maps Link (Optional)
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={mapUrl}
-                      onChange={(e) => setMapUrl(e.target.value)}
-                      placeholder="Paste Google Maps URL (https://maps.app.goo.gl/...)"
-                      className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={mapUrl}
+                    onChange={(e) => setMapUrl(e.target.value)}
+                    placeholder="https://maps.app.goo.gl/..."
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
+                  />
                 </div>
 
                 <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                    Road Access &amp; Landmark Instructions
+                  <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+                    Landmark &amp; Road Instructions
                   </label>
                   <textarea
                     rows={2}
                     value={locationRemarks}
                     onChange={(e) => setLocationRemarks(e.target.value)}
-                    placeholder="e.g. Near Nileshwar bridge, narrow lane entry, gate code #4421, JCB can enter easily"
-                    className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] resize-none"
+                    placeholder="e.g. Near bridge, wide road for JCB entry..."
+                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all resize-none"
                   />
                 </div>
               </div>
             </div>
 
-            {/* ========================================================
-                RIGHT COLUMN (7 Cols): Operative Selection & Dispatch
-            ======================================================== */}
+            {/* RIGHT COLUMN: Operative Roster & Wage Setup (7 cols) */}
             <div className="lg:col-span-7 space-y-4">
-              {/* Roster Availability Statistics Pills */}
-              <div className="grid grid-cols-4 gap-2">
-                <div className="bg-[#1E293B]/70 border border-[#2A835F]/30 rounded-2xl p-2.5 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#34d399] block">
-                    Available
-                  </span>
-                  <span className="text-lg font-black text-white">{workerMetrics.available}</span>
-                </div>
-                <div className="bg-[#1E293B]/70 border border-amber-500/30 rounded-2xl p-2.5 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block">
-                    Busy
-                  </span>
-                  <span className="text-lg font-black text-white">{workerMetrics.busy}</span>
-                </div>
-                <div className="bg-[#1E293B]/70 border border-slate-750 rounded-2xl p-2.5 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Off Duty
-                  </span>
-                  <span className="text-lg font-black text-slate-300">{workerMetrics.offDuty}</span>
-                </div>
-                <div className="bg-[#1E293B]/70 border border-slate-750 rounded-2xl p-2.5 text-center">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Total
-                  </span>
-                  <span className="text-lg font-black text-slate-300">{workerMetrics.total}</span>
-                </div>
-              </div>
-
-              {/* Operative Selection Box */}
-              <div className="bg-[#1E293B]/60 border border-slate-750/70 rounded-2xl p-4 space-y-3">
+              {/* Select Operative Card */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <HardHat className="w-3.5 h-3.5 text-[#2A835F]" />
-                    <span>Select Available Operative *</span>
+                  <label className="text-xs font-bold text-[#091540] flex items-center gap-1.5">
+                    <HardHat className="w-4 h-4 text-[#1B2CC1]" />
+                    <span>Select Operative *</span>
                   </label>
                   <button
                     type="button"
                     onClick={fetchWorkers}
-                    className="text-[11px] text-[#34d399] hover:underline cursor-pointer font-medium"
+                    className="text-xs text-[#1B2CC1] hover:underline cursor-pointer font-medium"
                   >
-                    Refresh Roster
+                    Refresh List
                   </button>
                 </div>
 
@@ -469,22 +393,22 @@ export function AssignWorkerModal({
                     placeholder="Search by worker name, username, or phone..."
                     value={workerSearch}
                     onChange={(e) => setWorkerSearch(e.target.value)}
-                    className="w-full bg-slate-900/80 border border-slate-700 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-white border border-slate-300 rounded-xl pl-8 pr-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
                   />
                 </div>
 
-                {/* Worker Cards Grid / Scroll Area */}
+                {/* Worker List */}
                 {loadingWorkers ? (
-                  <div className="p-8 flex items-center justify-center gap-2 text-slate-400 text-xs">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#2A835F]" />
-                    <span>Checking operative availability...</span>
+                  <div className="p-6 flex items-center justify-center gap-2 text-slate-400 text-xs">
+                    <Loader2 className="w-4 h-4 animate-spin text-[#1B2CC1]" />
+                    <span>Checking worker availability...</span>
                   </div>
                 ) : filteredWorkers.length === 0 ? (
-                  <div className="p-6 text-center rounded-xl bg-slate-900/60 border border-slate-800 text-slate-400 text-xs">
+                  <div className="p-6 text-center rounded-xl bg-white border border-slate-200 text-slate-500 text-xs">
                     No matching operatives found.
                   </div>
                 ) : (
-                  <div className="max-h-52 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                     {filteredWorkers.map((worker) => {
                       const isAvailable = worker.workerStatus === 'AVAILABLE';
                       const isSelected = selectedWorkerId === worker.id;
@@ -500,27 +424,19 @@ export function AssignWorkerModal({
                           }}
                           className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
                             !isAvailable
-                              ? 'opacity-40 cursor-not-allowed bg-slate-900/30 border-slate-800/60'
+                              ? 'opacity-50 cursor-not-allowed bg-slate-100 border-slate-200'
                               : isSelected
-                              ? 'bg-[#2A835F]/20 border-[#2A835F] text-white shadow-md cursor-pointer'
-                              : 'bg-slate-900/70 border-slate-750 hover:border-slate-600 hover:bg-slate-800/80 cursor-pointer'
+                              ? 'bg-[#1B2CC1]/10 border-[#1B2CC1] text-[#091540] shadow-xs cursor-pointer'
+                              : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 cursor-pointer'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div
-                              className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold ${
-                                isSelected
-                                  ? 'bg-[#2A835F] text-white'
-                                  : isAvailable
-                                  ? 'bg-[#2A835F]/15 text-[#34d399]'
-                                  : 'bg-slate-800 text-slate-500'
-                              }`}
-                            >
+                            <div className="w-9 h-9 rounded-xl bg-[#1B2CC1]/10 border border-[#1B2CC1]/20 flex items-center justify-center font-bold text-xs text-[#1B2CC1] shrink-0">
                               {worker.name ? worker.name.charAt(0).toUpperCase() : 'W'}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <span className="font-semibold text-white text-xs">
+                                <span className="font-semibold text-[#091540] text-xs">
                                   {worker.name || worker.username}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-mono">
@@ -528,7 +444,7 @@ export function AssignWorkerModal({
                                 </span>
                               </div>
                               {worker.phone && (
-                                <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                                <span className="text-[11px] text-slate-500 font-mono block mt-0.5">
                                   {worker.phone}
                                 </span>
                               )}
@@ -537,23 +453,23 @@ export function AssignWorkerModal({
 
                           <div className="flex items-center gap-2">
                             {isAvailable ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#2A835F]/15 text-[#34d399] border border-[#2A835F]/30">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse" />
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 border border-emerald-500/30">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 Ready
                               </span>
                             ) : worker.workerStatus === 'BUSY' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 border border-amber-500/30">
                                 <Clock className="w-3 h-3" />
                                 On Site
                               </span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
                                 Off Duty
                               </span>
                             )}
 
                             {isSelected && (
-                              <CheckCircle2 className="w-4 h-4 text-[#34d399]" />
+                              <CheckCircle2 className="w-4 h-4 text-[#1B2CC1]" />
                             )}
                           </div>
                         </div>
@@ -563,43 +479,24 @@ export function AssignWorkerModal({
                 )}
               </div>
 
-              {/* Service Unit Specification & Wage Rate Configuration Card */}
-              <div className="bg-[#1E293B]/70 border border-slate-750/80 rounded-2xl p-4 space-y-3.5">
-                <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+              {/* Wage & Billing Parameters */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded-lg bg-[#2A835F]/20 text-[#34d399]">
-                      <Sparkles className="w-4 h-4" />
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-white text-xs">
-                        Service Wage & Billing Specification
-                      </h4>
-                      <p className="text-[11px] text-slate-400">
-                        Configures payout to worker and billing to customer
-                      </p>
-                    </div>
+                    <Sparkles className="w-4 h-4 text-[#1B2CC1]" />
+                    <h4 className="font-bold text-[#091540] text-xs">
+                      Wage &amp; Billing Calculation
+                    </h4>
                   </div>
-                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                    {wageType === 'PER_TREE'
-                      ? '🌴 Tree Count Basis'
-                      : wageType === 'HOURLY'
-                      ? '⏱️ Hourly Chronometer'
-                      : wageType === 'PER_SQFT'
-                      ? '📐 Area (Sq. Ft.)'
-                      : wageType === 'PER_POINT'
-                      ? '⚡ Electrical Points'
-                      : wageType === 'PER_FOOT'
-                      ? '📏 Foot Depth'
-                      : wageType === 'DAILY_WAGE'
-                      ? '📅 Daily Shift'
-                      : '🔧 Fixed Visit'}
+                  <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-800 border border-amber-500/20">
+                    {wageType}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Wage / Pricing Model
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                      Wage Model
                     </label>
                     <AdminDropdown
                       options={ASSIGN_WAGE_TYPE_OPTIONS}
@@ -612,15 +509,15 @@ export function AssignWorkerModal({
                         else if (newType === 'PER_POINT') { setUnitLabel('Point'); setUnitRate(450); setWorkerUnitWage(260); setEstimatedUnits(8); }
                         else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); setUnitRate(115); setWorkerUnitWage(65); setEstimatedUnits(200); }
                         else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setWorkerUnitWage(1100); setEstimatedUnits(2); }
-                        else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit / Inspection'); setUnitRate(350); setWorkerUnitWage(220); setEstimatedUnits(1); }
+                        else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); setUnitRate(350); setWorkerUnitWage(220); setEstimatedUnits(1); }
                       }}
-                      variant="emerald"
+                      variant="blue"
                       size="sm"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
                       Target Completion Date
                     </label>
                     <input
@@ -628,102 +525,99 @@ export function AssignWorkerModal({
                       value={deadline}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setDeadline(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#2A835F] [color-scheme:dark]"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                      Est. Quantity ({unitLabel}s)
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                      Est. Units ({unitLabel})
                     </label>
                     <input
                       type="number"
                       value={estimatedUnits}
                       onChange={(e) => setEstimatedUnits(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="e.g. 15"
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-1">
-                      Worker Pay (₹ / {unitLabel})
+                    <label className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
+                      Worker Pay (₹/{unitLabel})
                     </label>
                     <input
                       type="number"
                       value={workerUnitWage}
                       onChange={(e) => setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="e.g. 80"
-                      className="w-full bg-slate-900 border border-emerald-500/40 rounded-xl px-3 py-1.5 text-xs text-emerald-300 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-emerald-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block mb-1">
-                      Client Rate (₹ / {unitLabel})
+                    <label className="text-[10px] font-bold text-[#1B2CC1] uppercase tracking-wider block mb-1">
+                      Client Rate (₹/{unitLabel})
                     </label>
                     <input
                       type="number"
                       value={unitRate}
                       onChange={(e) => setUnitRate(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder="e.g. 120"
-                      className="w-full bg-slate-900 border border-sky-500/40 rounded-xl px-3 py-1.5 text-xs text-sky-300 placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#1B2CC1] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
                 </div>
 
-                {/* Calculation Summary Preview */}
+                {/* Calculation Preview */}
                 {estimatedUnits !== '' && (workerUnitWage !== '' || unitRate !== '') && (
-                  <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-750 flex items-center justify-between text-[11px]">
-                    <div className="text-emerald-300">
-                      <strong>Worker Wage: </strong>
-                      <span>
-                        {estimatedUnits} {unitLabel}s × ₹{workerUnitWage || 0} = ₹
-                        {Math.round(Number(estimatedUnits) * Number(workerUnitWage || 0)).toLocaleString('en-IN')}
+                  <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">
+                    <div className="text-emerald-700 font-semibold">
+                      <span>Worker Wage: </span>
+                      <span className="font-bold">
+                        ₹{Math.round(Number(estimatedUnits) * Number(workerUnitWage || 0)).toLocaleString('en-IN')}
                       </span>
                     </div>
-                    <div className="text-sky-300">
-                      <strong>Billable Cost: </strong>
-                      <span>
-                        {estimatedUnits} {unitLabel}s × ₹{unitRate || 0} = ₹
-                        {Math.round(Number(estimatedUnits) * Number(unitRate || 0)).toLocaleString('en-IN')}
+                    <div className="text-[#1B2CC1] font-semibold">
+                      <span>Client Billable: </span>
+                      <span className="font-bold">
+                        ₹{Math.round(Number(estimatedUnits) * Number(unitRate || 0)).toLocaleString('en-IN')}
                       </span>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Dispatch Operational Notes */}
-              <div className="bg-[#1E293B]/60 border border-slate-750/70 rounded-2xl p-4 space-y-2">
-                <label className="text-xs font-bold text-white block">
+              {/* Notes for Worker */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <label className="text-xs font-bold text-slate-700 block">
                   Instructions for Operative (Optional)
                 </label>
                 <textarea
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Special instructions, equipment to bring, safety gear or arrival timing..."
-                  className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#2A835F] resize-none"
+                  placeholder="Special instructions, required equipment, safety gear or arrival timing..."
+                  className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] resize-none"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Actions Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-[#0F172A]/90 backdrop-blur-md shrink-0">
-          <p className="text-[11px] text-slate-400 hidden sm:block">
-            * Field operative will receive GPS navigation, site instructions, and operational scope.
-          </p>
-
+        {/* Pinned Footer matching brand styling */}
+        <div className="p-6 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-between">
+          <span className="text-xs text-slate-500 hidden sm:inline">
+            The assigned operative will receive mobile notification and job navigation.
+          </span>
           <div className="flex items-center gap-3 ml-auto">
             <button
               type="button"
               onClick={onClose}
               disabled={assigning}
-              className="py-2.5 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+              className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -732,17 +626,17 @@ export function AssignWorkerModal({
               type="button"
               onClick={handleAssign}
               disabled={assigning || !selectedWorkerId}
-              className="flex items-center gap-2 bg-[#2A835F] hover:bg-[#236D4F] disabled:opacity-50 text-white font-bold py-2.5 px-6 rounded-xl transition-all shadow-lg hover:shadow-[#2A835F]/20 active:scale-95 cursor-pointer text-xs"
+              className="px-6 py-2.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-sm font-bold shadow-md shadow-[#1B2CC1]/25 hover:shadow-[#1B2CC1]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {assigning ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Assigning Dispatch...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Dispatching...</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Confirm &amp; Dispatch</span>
+                  <Send className="w-4 h-4" />
+                  <span>Confirm Dispatch</span>
                 </>
               )}
             </button>

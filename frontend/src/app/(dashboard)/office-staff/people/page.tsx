@@ -11,7 +11,6 @@ import {
   User,
 } from '@/services';
 import {
-  Users,
   HardHat,
   UserCircle,
   Plus,
@@ -24,25 +23,24 @@ import {
   Loader2,
   X,
   Edit2,
-  AtSign,
   ArrowLeft,
-  Filter,
   Briefcase,
-  Shield,
+  Activity,
+  Coffee,
   MessageCircle,
   Menu,
 } from 'lucide-react';
-import { OfficeStaffSidebar } from '@/components/OfficeStaff';
+import { OfficeStaffSidebar, OfficeStaffLoadingScreen } from '@/components/OfficeStaff';
 
 export default function OfficeStaffPeoplePage() {
   const { token, user: authUser, isLoading: authLoading, logout } = useAuth();
   const router = useRouter();
 
   // State
-  const [people, setPeople] = useState<User[]>([]);
+  const [workers, setWorkers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<'ALL' | 'WORKER' | 'CUSTOMER'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'AVAILABLE' | 'BUSY' | 'OFF_DUTY'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -50,15 +48,14 @@ export default function OfficeStaffPeoplePage() {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedPerson, setSelectedPerson] = useState<User | null>(null);
+  const [selectedWorker, setSelectedWorker] = useState<User | null>(null);
 
-  // Create Form State
+  // Create Form State (Always WORKER)
   const [createName, setCreateName] = useState('');
   const [createUsername, setCreateUsername] = useState('');
   const [createPhone, setCreatePhone] = useState('');
   const [createEmail, setCreateEmail] = useState('');
   const [createPassword, setCreatePassword] = useState('');
-  const [createRole, setCreateRole] = useState<'WORKER' | 'CUSTOMER'>('CUSTOMER');
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
 
   // Username validation for Create modal
@@ -80,40 +77,33 @@ export default function OfficeStaffPeoplePage() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1. Auth check & URL param sync
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const roleParam = params.get('role');
-      if (roleParam === 'WORKER' || roleParam === 'CUSTOMER') {
-        setRoleFilter(roleParam);
-      }
-    }
-  }, []);
-
+  // 1. Auth check
   useEffect(() => {
     if (!authLoading) {
       if (!token || (authUser?.role !== 'OFFICE_STAFF' && authUser?.role !== 'SUPER_ADMIN')) {
         router.push('/office-staff/login');
         return;
       }
-      loadPeople();
+      loadWorkers();
     }
   }, [authLoading, token, authUser, router]);
 
-  // 2. Fetch people list
-  const loadPeople = useCallback(async () => {
+  // 2. Fetch field workers list
+  const loadWorkers = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     setErrorMessage(null);
     try {
       const res = await officeStaffPeopleService.listPeople(token, {
+        role: 'WORKER',
         limit: 100,
       });
-      setPeople(res.data || []);
+      // Ensure only workers are kept
+      const workerList = (res.data || []).filter((u) => u.role === 'WORKER');
+      setWorkers(workerList);
     } catch (err: any) {
-      console.error('Failed to load people:', err);
-      setErrorMessage(err?.message || 'Failed to load people directory');
+      console.error('Failed to load workers:', err);
+      setErrorMessage(err?.message || 'Failed to load field workers directory');
     } finally {
       setIsLoading(false);
     }
@@ -149,18 +139,20 @@ export default function OfficeStaffPeoplePage() {
           setCreateUsernameStatus('taken');
           setCreateUsernameSuggestions(res.suggestions || []);
         }
-      } catch (e) {
+      } catch (err) {
         setCreateUsernameStatus('idle');
       }
     }, 450);
 
     return () => {
-      if (usernameDebounceRef.current) clearTimeout(usernameDebounceRef.current);
+      if (usernameDebounceRef.current) {
+        clearTimeout(usernameDebounceRef.current);
+      }
     };
   }, [createUsername, token]);
 
-  // 4. Handle Create Person
-  const handleCreatePerson = async (e: React.FormEvent) => {
+  // 4. Handle Create Worker
+  const handleCreateWorker = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
 
@@ -183,12 +175,12 @@ export default function OfficeStaffPeoplePage() {
         mobileNumber: createPhone.trim(),
         username: createUsername.trim().toLowerCase(),
         password: createPassword,
-        role: createRole,
+        role: 'WORKER',
         email: createEmail.trim() || undefined,
       };
 
-      const res = await officeStaffPeopleService.createPerson(payload, token);
-      showToast(`${createRole === 'WORKER' ? 'Field Worker' : 'Customer'} created successfully!`);
+      await officeStaffPeopleService.createPerson(payload, token);
+      showToast('Field Worker created successfully!');
       setIsCreateModalOpen(false);
       // Reset form
       setCreateName('');
@@ -196,28 +188,28 @@ export default function OfficeStaffPeoplePage() {
       setCreatePhone('');
       setCreateEmail('');
       setCreatePassword('');
-      loadPeople();
+      loadWorkers();
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to create person record');
+      setErrorMessage(err?.message || 'Failed to create worker account');
     } finally {
       setIsSubmittingCreate(false);
     }
   };
 
   // 5. Open Edit Modal
-  const openEditModal = (person: User) => {
-    setSelectedPerson(person);
-    setEditName(person.name || '');
-    setEditPhone(person.phone || '');
-    setEditEmail(person.email || '');
-    setEditWorkerStatus(person.workerStatus || 'AVAILABLE');
+  const openEditModal = (worker: User) => {
+    setSelectedWorker(worker);
+    setEditName(worker.name || '');
+    setEditPhone(worker.phone || '');
+    setEditEmail(worker.email || '');
+    setEditWorkerStatus(worker.workerStatus || 'AVAILABLE');
     setIsEditModalOpen(true);
   };
 
   // 6. Handle Edit Save
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token || !selectedPerson) return;
+    if (!token || !selectedWorker) return;
 
     setIsSubmittingEdit(true);
     try {
@@ -225,56 +217,75 @@ export default function OfficeStaffPeoplePage() {
         name: editName.trim(),
         mobileNumber: editPhone.trim() || undefined,
         email: editEmail.trim() || undefined,
-        workerStatus: selectedPerson.role === 'WORKER' ? editWorkerStatus : undefined,
+        workerStatus: editWorkerStatus,
       };
 
-      await officeStaffPeopleService.updatePerson(selectedPerson.id, payload, token);
-      showToast('Person details updated successfully!');
+      await officeStaffPeopleService.updatePerson(selectedWorker.id, payload, token);
+      showToast('Worker details updated successfully!');
       setIsEditModalOpen(false);
-      loadPeople();
+      loadWorkers();
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Failed to update person record');
+      setErrorMessage(err?.message || 'Failed to update worker record');
     } finally {
       setIsSubmittingEdit(false);
     }
   };
 
+  // 7. Quick Status Update
+  const handleQuickStatusChange = async (workerId: string, newStatus: 'AVAILABLE' | 'BUSY' | 'OFF_DUTY') => {
+    if (!token) return;
+    try {
+      await officeStaffPeopleService.updatePerson(workerId, { workerStatus: newStatus }, token);
+      setWorkers((prev) =>
+        prev.map((w) => (w.id === workerId ? { ...w, workerStatus: newStatus } : w))
+      );
+      showToast(`Status updated to ${newStatus}`);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update worker status');
+    }
+  };
+
   // Filtered List
-  const filteredPeople = people.filter((p) => {
-    if (roleFilter !== 'ALL' && p.role !== roleFilter) return false;
+  const filteredWorkers = workers.filter((w) => {
+    if (statusFilter !== 'ALL' && w.workerStatus !== statusFilter) return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchName = p.name?.toLowerCase().includes(term);
-      const matchUsername = p.username?.toLowerCase().includes(term);
-      const matchPhone = p.phone?.toLowerCase().includes(term);
-      const matchEmail = p.email?.toLowerCase().includes(term);
+      const matchName = w.name?.toLowerCase().includes(term);
+      const matchUsername = w.username?.toLowerCase().includes(term);
+      const matchPhone = w.phone?.toLowerCase().includes(term);
+      const matchEmail = w.email?.toLowerCase().includes(term);
       return matchName || matchUsername || matchPhone || matchEmail;
     }
     return true;
   });
 
-  const workerCount = people.filter((p) => p.role === 'WORKER').length;
-  const customerCount = people.filter((p) => p.role === 'CUSTOMER').length;
-  const availableWorkersCount = people.filter(
-    (p) => p.role === 'WORKER' && p.workerStatus === 'AVAILABLE',
-  ).length;
+  const totalWorkersCount = workers.length;
+  const availableWorkersCount = workers.filter((w) => w.workerStatus === 'AVAILABLE').length;
+  const busyWorkersCount = workers.filter((w) => w.workerStatus === 'BUSY').length;
+  const offDutyWorkersCount = workers.filter((w) => w.workerStatus === 'OFF_DUTY').length;
+
+  if (authLoading || (isLoading && workers.length === 0)) {
+    return (
+      <OfficeStaffLoadingScreen
+        title="Loading Field Workers & Workforce..."
+        subtitle="ഫീൽഡ് വർക്കേഴ്സ് & ലൈവ് സ്റ്റാറ്റസ് • ഡയറക്ടറി"
+        statusText="Synchronizing worker records and live availability..."
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#0D0E12] text-gray-100 flex">
+    <div className="min-h-screen bg-[#ABD2FA] text-slate-800 flex">
       {/* Navigation Sidebar */}
       <OfficeStaffSidebar
-        activeSection={roleFilter === 'WORKER' ? 'people-workers' : 'people-customers'}
+        activeSection="people-workers"
         onSelectSection={(sec) => {
-          if (sec === 'people-customers') {
-            setRoleFilter('CUSTOMER');
+          if (sec === 'profile') {
+            router.push('/office-staff/profile');
             return;
           }
           if (sec === 'people-workers') {
-            setRoleFilter('WORKER');
-            return;
-          }
-          if (sec === 'profile') {
-            router.push('/office-staff/profile');
+            // Already here
             return;
           }
           router.push(`/office-staff/dashboard?section=${sec}`);
@@ -294,598 +305,558 @@ export default function OfficeStaffPeoplePage() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-[#0D0E12]">
+      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-[#ABD2FA]">
         {/* Top Header */}
-        <header className="border-b border-gray-800/80 bg-[#0E1017]/90 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+        <header className="border-b border-[#7692FF]/30 bg-white/90 backdrop-blur-xl sticky top-0 z-30 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between shadow-xs">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg bg-gray-800 text-gray-300 hover:text-white"
+              className="lg:hidden p-2 rounded-lg bg-slate-100 text-slate-700 hover:text-[#091540]"
             >
               <Menu className="w-4 h-4" />
             </button>
             <Link
               href="/office-staff/dashboard"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-800/80 hover:bg-gray-700/80 text-gray-300 hover:text-white transition-all text-xs font-semibold border border-gray-700/60"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-[#091540] transition-all text-xs font-semibold border border-slate-200"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to Desk</span>
             </Link>
-            <div className="h-4 w-px bg-gray-800 hidden sm:block" />
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                People Management Directory
-              </h1>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#EBF6F1]/10 text-[#2A835F] border border-[#2A835F]/30">
-                OFFICE STAFF
+            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <h1 className="text-sm sm:text-base font-bold text-[#091540] tracking-tight">
+                  Field Workers &amp; Workforce
+                </h1>
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#1B2CC1]/10 text-[#1B2CC1] border border-[#1B2CC1]/30">
+                  OFFICE STAFF
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-500 hidden sm:inline">
+                ഫീൽഡ് വർക്കേഴ്സ് & ലൈവ് സ്റ്റാറ്റസ് • Kerala Operations
               </span>
             </div>
-            <span className="text-[11px] text-gray-400 hidden sm:inline">
-              വർക്കേഴ്സ് & കസ്റ്റമേഴ്സ് • Kerala Field Operations
-            </span>
           </div>
-        </div>
 
-        {/* Quick Add Button */}
-        <button
-          type="button"
-          onClick={() => {
-            setCreateRole('CUSTOMER');
-            setIsCreateModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#2A835F] hover:bg-[#236b4e] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Register Person</span>
-        </button>
-      </header>
+          {/* Quick Add Button */}
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Register Worker</span>
+          </button>
+        </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Toast Notification */}
-        {toastMessage && (
-          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
-
-        {errorMessage && (
-          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Summary Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#12141C]/90 rounded-2xl border border-gray-800/80 p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-xs text-gray-400">Total Customers</span>
-              <div className="text-xl font-black text-white mt-0.5">{customerCount}</div>
+        {/* Main Content */}
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>{toastMessage}</span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
-              <UserCircle className="w-5 h-5" />
+          )}
+
+          {errorMessage && (
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-800 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
             </div>
-          </div>
+          )}
 
-          <div className="bg-[#12141C]/90 rounded-2xl border border-gray-800/80 p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-xs text-gray-400">Total Field Workers</span>
-              <div className="text-xl font-black text-white mt-0.5">{workerCount}</div>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
-              <HardHat className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-[#12141C]/90 rounded-2xl border border-gray-800/80 p-4 shadow-sm flex items-center justify-between">
-            <div>
-              <span className="text-xs text-gray-400">Available for Dispatch</span>
-              <div className="text-xl font-black text-emerald-400 mt-0.5">
-                {availableWorkersCount}
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-              <Briefcase className="w-5 h-5" />
-            </div>
-          </div>
-        </div>
-
-        {/* Filter and Search Controls */}
-        <div className="bg-[#12141C]/90 rounded-2xl border border-gray-800/80 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Segmented Filter */}
-          <div className="flex items-center gap-1.5 p-1 bg-[#0E1017] rounded-xl border border-gray-800 text-xs font-semibold w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setRoleFilter('ALL')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
-                roleFilter === 'ALL'
-                  ? 'bg-gray-800 text-white shadow-xs'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              All People ({people.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter('WORKER')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
-                roleFilter === 'WORKER'
-                  ? 'bg-gray-800 text-white shadow-xs'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Field Workers ({workerCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setRoleFilter('CUSTOMER')}
-              className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
-                roleFilter === 'CUSTOMER'
-                  ? 'bg-gray-800 text-white shadow-xs'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              Customers ({customerCount})
-            </button>
-          </div>
-
-          {/* Search Box & Refresh */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3 top-2.5" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search name, phone, user..."
-                className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl pl-9 pr-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#2A835F]"
-              />
-              {searchTerm && (
-                <button
-                  type="button"
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-2.5 text-gray-500 hover:text-gray-300"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={loadPeople}
-              title="Refresh Directory"
-              className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors border border-gray-700/60"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#2A835F]' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* People Table */}
-        <div className="bg-[#12141C]/90 rounded-2xl border border-gray-800/80 overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-[#0E1017] text-gray-400 font-semibold border-b border-gray-800">
-                <tr>
-                  <th className="py-3 px-4">Name & Username</th>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-4">Contact</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Assignments</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800/70">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-500">
-                      <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#2A835F] mb-2" />
-                      Loading People records...
-                    </td>
-                  </tr>
-                ) : filteredPeople.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-500">
-                      No matching records found.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPeople.map((person) => {
-                    const isWorker = person.role === 'WORKER';
-                    const assignmentCount =
-                      (person as any)?._count?.workerAssignments ||
-                      (person as any)?._count?.customerEnquiries ||
-                      0;
-
-                    return (
-                      <tr key={person.id} className="hover:bg-[#161922] transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center font-bold text-xs text-gray-200">
-                              {(person.name || person.username || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-bold text-white">
-                                {person.name || 'Unnamed'}
-                              </span>
-                              <span className="font-mono text-[11px] text-gray-500">
-                                @{person.username}
-                              </span>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${
-                              isWorker
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                                : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                            }`}
-                          >
-                            {isWorker ? (
-                              <HardHat className="w-3 h-3" />
-                            ) : (
-                              <UserCircle className="w-3 h-3" />
-                            )}
-                            <span>{isWorker ? 'Field Worker' : 'Customer'}</span>
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <div className="flex flex-col gap-0.5">
-                            {person.phone ? (
-                              <div className="flex items-center gap-1.5 text-gray-300">
-                                <Phone className="w-3 h-3 text-gray-500" />
-                                <span>{person.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-gray-600">—</span>
-                            )}
-                            {person.email && (
-                              <span className="text-[11px] text-gray-500 truncate max-w-[160px]">
-                                {person.email}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4">
-                          {isWorker ? (
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${
-                                person.workerStatus === 'AVAILABLE'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                  : person.workerStatus === 'BUSY'
-                                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                                  : 'bg-gray-800 text-gray-400 border border-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  person.workerStatus === 'AVAILABLE'
-                                    ? 'bg-emerald-400'
-                                    : person.workerStatus === 'BUSY'
-                                    ? 'bg-amber-400'
-                                    : 'bg-gray-500'
-                                }`}
-                              />
-                              {person.workerStatus || 'AVAILABLE'}
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                              Active Client
-                            </span>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-4 font-medium text-gray-300">
-                          {assignmentCount}{' '}
-                          <span className="text-gray-500 text-[10px]">
-                            {isWorker ? 'jobs' : 'enquiries'}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            {person.phone && (
-                              <a
-                                href={`https://wa.me/${person.phone.replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                title="WhatsApp"
-                                className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-                              >
-                                <MessageCircle className="w-3.5 h-3.5" />
-                              </a>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => openEditModal(person)}
-                              title="Edit Record"
-                              className="p-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-
-      {/* CREATE PERSON MODAL */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#12141C] border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800">
+          {/* Summary Stats Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white rounded-2xl border border-white/80 shadow-md p-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-white">Register New Person</h3>
-                <p className="text-[11px] text-gray-400">
-                  Onboard a new field worker or customer client record.
-                </p>
+                <span className="text-xs text-slate-500 font-medium">Total Workers</span>
+                <div className="text-xl font-black text-[#091540] mt-0.5">{totalWorkersCount}</div>
               </div>
+              <div className="w-10 h-10 rounded-xl bg-[#1B2CC1]/10 text-[#1B2CC1] flex items-center justify-center border border-[#1B2CC1]/20">
+                <HardHat className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-white/80 shadow-md p-4 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-500 font-medium">Available</span>
+                <div className="text-xl font-black text-emerald-700 mt-0.5">{availableWorkersCount}</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center border border-emerald-500/20">
+                <Activity className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-white/80 shadow-md p-4 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-500 font-medium">Busy on Site</span>
+                <div className="text-xl font-black text-blue-700 mt-0.5">{busyWorkersCount}</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center border border-blue-500/20">
+                <Briefcase className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-white/80 shadow-md p-4 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-500 font-medium">Off Duty / Leave</span>
+                <div className="text-xl font-black text-slate-700 mt-0.5">{offDutyWorkersCount}</div>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-slate-500/10 text-slate-600 flex items-center justify-center border border-slate-500/20">
+                <Coffee className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Filter and Search Controls */}
+          <div className="bg-white rounded-2xl border border-white/80 shadow-md p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {/* Status Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold w-full sm:w-auto">
               <button
                 type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-400 hover:text-white"
+                onClick={() => setStatusFilter('ALL')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
+                  statusFilter === 'ALL'
+                    ? 'bg-[#1B2CC1] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-[#091540]'
+                }`}
               >
-                <X className="w-5 h-5" />
+                All Workers ({totalWorkersCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('AVAILABLE')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
+                  statusFilter === 'AVAILABLE'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-emerald-700'
+                }`}
+              >
+                Available ({availableWorkersCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('BUSY')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
+                  statusFilter === 'BUSY'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-blue-700'
+                }`}
+              >
+                Busy ({busyWorkersCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter('OFF_DUTY')}
+                className={`px-3 py-1.5 rounded-lg transition-colors flex-1 sm:flex-initial ${
+                  statusFilter === 'OFF_DUTY'
+                    ? 'bg-slate-700 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-800'
+                }`}
+              >
+                Off Duty ({offDutyWorkersCount})
               </button>
             </div>
 
-            <form onSubmit={handleCreatePerson} className="space-y-3.5 mt-4">
-              {/* Role Selector */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Designated Role</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setCreateRole('CUSTOMER')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-                      createRole === 'CUSTOMER'
-                        ? 'bg-blue-500/20 border-blue-500 text-blue-300'
-                        : 'bg-[#0E1017] border-gray-800 text-gray-400'
-                    }`}
-                  >
-                    <UserCircle className="w-3.5 h-3.5" />
-                    <span>Customer</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCreateRole('WORKER')}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${
-                      createRole === 'WORKER'
-                        ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                        : 'bg-[#0E1017] border-gray-800 text-gray-400'
-                    }`}
-                  >
-                    <HardHat className="w-3.5 h-3.5" />
-                    <span>Field Worker</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Full Name */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Full Name *</label>
+            {/* Search Box & Refresh */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
-                  value={createName}
-                  onChange={(e) => setCreateName(e.target.value)}
-                  placeholder="e.g. Radhakrishnan V."
-                  required
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search name, phone, @user..."
+                  className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl pl-9 pr-3.5 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
                 />
-              </div>
-
-              {/* Username with live check */}
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <label className="font-semibold text-gray-300">Username *</label>
-                  {createUsernameStatus === 'checking' && (
-                    <span className="text-[10px] text-gray-400 flex items-center gap-1">
-                      <Loader2 className="w-2.5 h-2.5 animate-spin" /> Checking...
-                    </span>
-                  )}
-                  {createUsernameStatus === 'available' && (
-                    <span className="text-[10px] text-emerald-400 flex items-center gap-1">
-                      <CheckCircle2 className="w-2.5 h-2.5" /> Available
-                    </span>
-                  )}
-                  {createUsernameStatus === 'taken' && (
-                    <span className="text-[10px] text-rose-400 flex items-center gap-1">
-                      <AlertCircle className="w-2.5 h-2.5" /> Already in use
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={createUsername}
-                  onChange={(e) => setCreateUsername(e.target.value)}
-                  placeholder="e.g. radha_worker"
-                  required
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none"
-                />
-                {createUsernameSuggestions.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-gray-400 pt-1">
-                    <span>Suggestions:</span>
-                    {createUsernameSuggestions.map((sug) => (
-                      <button
-                        key={sug}
-                        type="button"
-                        onClick={() => setCreateUsername(sug)}
-                        className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 hover:text-white"
-                      >
-                        {sug}
-                      </button>
-                    ))}
-                  </div>
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 )}
               </div>
 
-              {/* Mobile Phone */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Mobile Phone *</label>
-                <input
-                  type="tel"
-                  value={createPhone}
-                  onChange={(e) => setCreatePhone(e.target.value)}
-                  placeholder="+91 98460 00000"
-                  required
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={loadWorkers}
+                title="Refresh Directory"
+                className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#091540] transition-colors border border-slate-200"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#1B2CC1]' : ''}`} />
+              </button>
+            </div>
+          </div>
 
-              {/* Email (Optional or required for customer) */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">
-                  Email Address {createRole === 'CUSTOMER' ? '*' : '(Optional)'}
-                </label>
-                <input
-                  type="email"
-                  value={createEmail}
-                  onChange={(e) => setCreateEmail(e.target.value)}
-                  placeholder="client@gmail.com"
-                  required={createRole === 'CUSTOMER'}
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none"
-                />
-              </div>
+          {/* Workers Table */}
+          <div className="bg-white rounded-2xl border border-white/80 overflow-hidden shadow-md">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-700">
+                <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                  <tr>
+                    <th className="py-3 px-4">Field Worker</th>
+                    <th className="py-3 px-4">Contact</th>
+                    <th className="py-3 px-4">Availability Status</th>
+                    <th className="py-3 px-4">Active Assignments</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#1B2CC1] mb-2" />
+                        Loading Field Worker records...
+                      </td>
+                    </tr>
+                  ) : filteredWorkers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        No field workers found matching the selected criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredWorkers.map((worker) => {
+                      const assignmentCount = (worker as any)?._count?.workerAssignments || 0;
 
-              {/* Temporary Password */}
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Password *</label>
-                <input
-                  type="password"
-                  value={createPassword}
-                  onChange={(e) => setCreatePassword(e.target.value)}
-                  placeholder="Min 8 chars, 1 uppercase, 1 number"
-                  required
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white placeholder-gray-600 focus:outline-none"
-                />
-              </div>
+                      return (
+                        <tr key={worker.id} className="hover:bg-slate-50/80 transition-colors">
+                          {/* Worker Name & Username */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-xl bg-[#091540] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                                {(worker.name || worker.username || 'W').charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="font-bold text-[#091540] truncate">
+                                  {worker.name || worker.username}
+                                </span>
+                                <span className="font-mono text-[11px] text-[#1B2CC1]">
+                                  @{worker.username}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
 
-              <div className="pt-3 flex justify-end gap-2">
+                          {/* Contact Info */}
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col gap-0.5">
+                              {worker.phone ? (
+                                <div className="flex items-center gap-1.5 text-slate-700">
+                                  <Phone className="w-3 h-3 text-slate-400" />
+                                  <span>{worker.phone}</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic">No phone</span>
+                              )}
+                              {worker.email && (
+                                <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                                  <Mail className="w-3 h-3 text-slate-400" />
+                                  <span className="truncate max-w-[140px]">{worker.email}</span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Live Status Pill & Quick Switch */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={worker.workerStatus || 'AVAILABLE'}
+                                onChange={(e) =>
+                                  handleQuickStatusChange(
+                                    worker.id,
+                                    e.target.value as 'AVAILABLE' | 'BUSY' | 'OFF_DUTY',
+                                  )
+                                }
+                                className={`text-[11px] font-semibold py-1 px-2.5 rounded-full border cursor-pointer focus:outline-none transition-colors ${
+                                  worker.workerStatus === 'AVAILABLE'
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                    : worker.workerStatus === 'BUSY'
+                                    ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                                }`}
+                              >
+                                <option value="AVAILABLE">&#9679; Available</option>
+                                <option value="BUSY">&#9679; Busy</option>
+                                <option value="OFF_DUTY">&#9679; Off Duty</option>
+                              </select>
+                            </div>
+                          </td>
+
+                          {/* Active Assignments */}
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-[#091540] mr-1.5">
+                              {assignmentCount}
+                            </span>
+                            <span className="text-slate-400 text-[10px]">
+                              jobs
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3 px-4 text-right">
+                            <div className="inline-flex items-center gap-1.5">
+                              {worker.phone && (
+                                <a
+                                  href={`https://wa.me/${worker.phone.replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title="WhatsApp Worker"
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 transition-colors"
+                                >
+                                  <MessageCircle className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(worker)}
+                                title="Edit Worker Details"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-[#091540] transition-colors border border-slate-200"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+
+        {/* CREATE WORKER MODAL */}
+        {isCreateModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-[#7692FF]/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div>
+                  <h3 className="text-sm font-bold text-[#091540]">Register Field Worker</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Onboard a new field technician or worker for Kerala operations.
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold"
+                  className="text-slate-400 hover:text-[#091540]"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingCreate || createUsernameStatus === 'taken'}
-                  className="px-4 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236b4e] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5"
-                >
-                  {isSubmittingCreate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                  <span>Create Account</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* EDIT PERSON MODAL */}
-      {isEditModalOpen && selectedPerson && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#12141C] border border-gray-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800">
-              <div>
-                <h3 className="text-sm font-bold text-white">Edit Person Details</h3>
-                <p className="text-[11px] text-gray-400">
-                  Update info for @{selectedPerson.username} ({selectedPerson.role})
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveEdit} className="space-y-3.5 mt-4">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Full Name</label>
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Phone</label>
-                <input
-                  type="tel"
-                  value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-300">Email</label>
-                <input
-                  type="email"
-                  value={editEmail}
-                  onChange={(e) => setEditEmail(e.target.value)}
-                  className="w-full bg-[#0E1017] border border-gray-800 focus:border-[#2A835F] rounded-xl px-3 py-2 text-xs text-white"
-                />
-              </div>
-
-              {selectedPerson.role === 'WORKER' && (
+              <form onSubmit={handleCreateWorker} className="space-y-3.5 mt-4">
+                {/* Full Name */}
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-300">Worker Availability</label>
-                  <select
-                    value={editWorkerStatus}
-                    onChange={(e: any) => setEditWorkerStatus(e.target.value)}
-                    className="w-full bg-[#0E1017] border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                  >
-                    <option value="AVAILABLE">AVAILABLE (Ready for Assignment)</option>
-                    <option value="BUSY">BUSY (Active on Job Site)</option>
-                    <option value="OFF_DUTY">OFF DUTY (Leave / Unavailable)</option>
-                  </select>
+                  <label className="text-xs font-semibold text-slate-700">Full Name *</label>
+                  <input
+                    type="text"
+                    value={createName}
+                    onChange={(e) => setCreateName(e.target.value)}
+                    placeholder="e.g. Radhakrishnan V."
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
                 </div>
-              )}
 
-              <div className="pt-3 flex justify-end gap-2">
+                {/* Username with live check */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-semibold text-slate-700">Username *</label>
+                    {createUsernameStatus === 'checking' && (
+                      <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                        <Loader2 className="w-2.5 h-2.5 animate-spin" /> Checking...
+                      </span>
+                    )}
+                    {createUsernameStatus === 'available' && (
+                      <span className="text-[10px] text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-2.5 h-2.5" /> Available
+                      </span>
+                    )}
+                    {createUsernameStatus === 'taken' && (
+                      <span className="text-[10px] text-rose-600 flex items-center gap-1">
+                        <AlertCircle className="w-2.5 h-2.5" /> Already in use
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={createUsername}
+                    onChange={(e) => setCreateUsername(e.target.value)}
+                    placeholder="e.g. radha_worker"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                  {createUsernameSuggestions.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-500 pt-1">
+                      <span>Suggestions:</span>
+                      {createUsernameSuggestions.map((sug) => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setCreateUsername(sug)}
+                          className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 hover:text-[#091540] border border-slate-200"
+                        >
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Phone */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Mobile Phone *</label>
+                  <input
+                    type="tel"
+                    value={createPhone}
+                    onChange={(e) => setCreatePhone(e.target.value)}
+                    placeholder="+91 98460 00000"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                {/* Email (Optional) */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    value={createEmail}
+                    onChange={(e) => setCreateEmail(e.target.value)}
+                    placeholder="worker@gmail.com"
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                {/* Temporary Password */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Initial Password *</label>
+                  <input
+                    type="password"
+                    value={createPassword}
+                    onChange={(e) => setCreatePassword(e.target.value)}
+                    placeholder="Min 8 chars, 1 uppercase, 1 number"
+                    required
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                <div className="pt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreateModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingCreate || createUsernameStatus === 'taken'}
+                    className="px-4 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] disabled:opacity-50 text-white text-xs font-bold flex items-center gap-1.5 shadow-md"
+                  >
+                    {isSubmittingCreate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    <span>Register Worker</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* EDIT WORKER MODAL */}
+        {isEditModalOpen && selectedWorker && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white border border-[#7692FF]/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                <div>
+                  <h3 className="text-sm font-bold text-[#091540]">Edit Worker Details</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Update info and availability for @{selectedWorker.username}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold"
+                  className="text-slate-400 hover:text-[#091540]"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingEdit}
-                  className="px-4 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236b4e] text-white text-xs font-bold flex items-center gap-1.5"
-                >
-                  {isSubmittingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                  <span>Save Changes</span>
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSaveEdit} className="space-y-3.5 mt-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Full Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Phone</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Email</label>
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] focus:outline-none focus:ring-1 focus:ring-[#1B2CC1]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Worker Availability</label>
+                  <select
+                    value={editWorkerStatus}
+                    onChange={(e: any) => setEditWorkerStatus(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 focus:border-[#1B2CC1] rounded-xl px-3 py-2 text-xs text-[#091540] focus:outline-none"
+                  >
+                    <option value="AVAILABLE">&#9679; AVAILABLE (Ready for Assignment)</option>
+                    <option value="BUSY">&#9679; BUSY (Active on Job Site)</option>
+                    <option value="OFF_DUTY">&#9679; OFF DUTY (Leave / Unavailable)</option>
+                  </select>
+                </div>
+
+                <div className="pt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold border border-slate-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEdit}
+                    className="px-4 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 shadow-md"
+                  >
+                    {isSubmittingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    <span>Save Changes</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
     </div>
   );

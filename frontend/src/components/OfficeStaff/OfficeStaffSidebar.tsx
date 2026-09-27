@@ -5,25 +5,13 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
-  Users,
-  Briefcase,
   HardHat,
   UserCircle,
   FolderKanban,
-  ClipboardCheck,
-  Box,
-  CalendarCheck,
-  Activity,
-  Coffee,
-  BarChart3,
-  Bell,
-  ScrollText,
-  Settings,
   ChevronDown,
   ChevronRight,
   LogOut,
   X,
-  Radio,
   IndianRupee,
 } from 'lucide-react';
 
@@ -75,9 +63,7 @@ export function OfficeStaffSidebar({
 }: OfficeStaffSidebarProps) {
   const router = useRouter();
   const [openGroups, setOpenGroups] = useState<{ [key: string]: boolean }>({
-    people: true,
     operations: true,
-    workforce: true,
   });
 
   const toggleGroup = (key: string) => {
@@ -107,22 +93,23 @@ export function OfficeStaffSidebar({
       )}
 
       {/* Sidebar Container */}
+      {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#0D0E12] border-r border-gray-800 text-gray-300 flex flex-col justify-between transition-transform duration-200 ease-in-out select-none ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-[#091540] border-r border-[#1B2CC1]/25 text-white flex flex-col justify-between transition-transform duration-200 ease-in-out select-none shadow-2xl ${
           isOpenMobile ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
         {/* Top: Brand Header */}
-        <div className="p-5 border-b border-gray-800 flex items-center justify-between">
+        <div className="p-5 border-b border-[#1B2CC1]/25 flex items-center justify-between bg-[#060E2C]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 relative flex items-center justify-center shrink-0">
               <Image src="/logos/logo-bg.png" alt="KK Group Logo" fill className="object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="font-semibold text-sm text-gray-100 tracking-tight leading-tight">
+              <span className="font-bold text-sm text-white tracking-tight leading-tight">
                 KK Group
               </span>
-              <span className="text-[11px] text-gray-500 font-medium">
+              <span className="text-[11px] text-[#ABD2FA] font-medium">
                 Office Staff Portal
               </span>
             </div>
@@ -132,7 +119,7 @@ export function OfficeStaffSidebar({
             <button
               type="button"
               onClick={onCloseMobile}
-              className="lg:hidden p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+              className="lg:hidden p-1.5 rounded-lg text-[#ABD2FA] hover:text-white hover:bg-white/10 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -145,100 +132,25 @@ export function OfficeStaffSidebar({
           <button
             type="button"
             onClick={() => handleItemClick('dashboard')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left ${
               isCurrent('dashboard')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4 shrink-0" />
+            <LayoutDashboard className={`w-4 h-4 shrink-0 ${isCurrent('dashboard') ? 'text-white' : 'text-[#7692FF]'}`} />
             <span>Dashboard</span>
           </button>
 
-          {/* Staff Profile */}
-          <button
-            type="button"
-            onClick={() => handleItemClick('profile')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
-              isCurrent('profile')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-            }`}
-          >
-            <UserCircle className="w-4 h-4 shrink-0 text-[#2A835F]" />
-            <div className="flex items-center justify-between flex-1">
-              <span>Staff Profile</span>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/20 font-medium">
-                Me
-              </span>
-            </div>
-          </button>
-
-          {/* People Group */}
-          <div className="pt-3">
-            <button
-              type="button"
-              onClick={() => toggleGroup('people')}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors"
-            >
-              <span className="flex items-center gap-2">
-                <Users className="w-3.5 h-3.5" />
-                <span>People</span>
-              </span>
-              {openGroups.people ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            {openGroups.people && (
-              <div className="mt-1 space-y-0.5 pl-3 border-l border-gray-800 ml-3">
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('people-customers')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('people-customers')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <UserCircle className="w-4 h-4 shrink-0" />
-                  <span>Customers</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('people-workers')}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('people-workers')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <HardHat className="w-4 h-4 shrink-0" />
-                    <span>Workers</span>
-                  </div>
-                  {availableWorkersCount > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-normal">
-                      {availableWorkersCount}
-                    </span>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* Operations Group */}
-          <div className="pt-3">
+          <div className="pt-2">
             <button
               type="button"
               onClick={() => toggleGroup('operations')}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#7692FF] hover:text-white transition-colors"
             >
               <span className="flex items-center gap-2">
-                <FolderKanban className="w-3.5 h-3.5" />
+                <FolderKanban className="w-3.5 h-3.5 text-[#7692FF]" />
                 <span>Operations</span>
               </span>
               {openGroups.operations ? (
@@ -249,22 +161,22 @@ export function OfficeStaffSidebar({
             </button>
 
             {openGroups.operations && (
-              <div className="mt-1 space-y-0.5 pl-3 border-l border-gray-800 ml-3">
+              <div className="mt-1 space-y-0.5 pl-3 border-l border-[#7692FF]/25 ml-3">
                 <button
                   type="button"
                   onClick={() => handleItemClick('operations-enquiries')}
-                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('operations-enquiries')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                  className={`w-full flex items-center justify-between px-3 py-1.5 rounded-lg transition-all text-left text-sm ${
+                    isCurrent('operations-enquiries') || isCurrent('operations-works')
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                      : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-2.5">
-                    <FolderKanban className="w-4 h-4 shrink-0" />
-                    <span>Enquiries</span>
+                    <FolderKanban className={`w-4 h-4 shrink-0 ${isCurrent('operations-enquiries') || isCurrent('operations-works') ? 'text-white' : 'text-[#7692FF]'}`} />
+                    <span>Job Orders</span>
                   </div>
                   {unreadEnquiriesCount > 0 && (
-                    <span className="text-xs px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-400 border border-blue-500/20 font-normal">
+                    <span className="text-xs px-2 py-0.5 rounded-md font-bold bg-[#7692FF]/30 text-white border border-[#7692FF]/40">
                       {unreadEnquiriesCount}
                     </span>
                   )}
@@ -272,200 +184,105 @@ export function OfficeStaffSidebar({
 
                 <button
                   type="button"
-                  onClick={() => handleItemClick('operations-works')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('operations-works')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <FolderKanban className="w-4 h-4 shrink-0" />
-                  <span>Works</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => handleItemClick('operations-assignments')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-left text-sm ${
                     isCurrent('operations-assignments')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                      : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <ClipboardCheck className="w-4 h-4 shrink-0" />
-                  <span>Assignments</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('operations-services')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('operations-services')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <Box className="w-4 h-4 shrink-0" />
-                  <span>Services</span>
+                  <HardHat className={`w-4 h-4 shrink-0 ${isCurrent('operations-assignments') ? 'text-white' : 'text-amber-300'}`} />
+                  <span>Workforce Dispatch</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleItemClick('operations-finance')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
+                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-left text-sm ${
                     isCurrent('operations-finance')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                      : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <IndianRupee className="w-4 h-4 shrink-0 text-[#2A835F]" />
-                  <span>Finance & Collections</span>
+                  <IndianRupee className={`w-4 h-4 shrink-0 ${isCurrent('operations-finance') ? 'text-white' : 'text-emerald-300'}`} />
+                  <span>Finance &amp; Collections</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Workforce Group */}
-          <div className="pt-3">
+          {/* Field Workers & Workforce (Unified) */}
+          <div className="pt-2">
             <button
               type="button"
-              onClick={() => toggleGroup('workforce')}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors"
+              onClick={() => handleItemClick('people-workers')}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all text-left ${
+                isCurrent('people-workers') ||
+                isCurrent('workforce-attendance') ||
+                isCurrent('workforce-availability') ||
+                isCurrent('workforce-leave')
+                  ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                  : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
+              }`}
             >
-              <span className="flex items-center gap-2">
-                <CalendarCheck className="w-3.5 h-3.5" />
-                <span>Workforce</span>
-              </span>
-              {openGroups.workforce ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-3">
+                <HardHat className={`w-4 h-4 shrink-0 ${
+                  isCurrent('people-workers') ||
+                  isCurrent('workforce-attendance') ||
+                  isCurrent('workforce-availability') ||
+                  isCurrent('workforce-leave')
+                    ? 'text-white'
+                    : 'text-[#7692FF]'
+                }`} />
+                <span>Field Workers</span>
+              </div>
+              {availableWorkersCount > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-md font-bold bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                  {availableWorkersCount}
+                </span>
               )}
             </button>
-
-            {openGroups.workforce && (
-              <div className="mt-1 space-y-0.5 pl-3 border-l border-gray-800 ml-3">
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('workforce-attendance')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('workforce-attendance')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <CalendarCheck className="w-4 h-4 shrink-0" />
-                  <span>Attendance</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('workforce-availability')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('workforce-availability')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <Activity className="w-4 h-4 shrink-0" />
-                  <span>Availability</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('workforce-leave')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-colors text-left text-sm ${
-                    isCurrent('workforce-leave')
-                      ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                      : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-                  }`}
-                >
-                  <Coffee className="w-4 h-4 shrink-0" />
-                  <span>Leave</span>
-                </button>
-              </div>
-            )}
           </div>
 
-          <div className="my-3 border-t border-gray-800" />
-
-          {/* Reports */}
+          {/* Staff Profile */}
           <button
             type="button"
-            onClick={() => handleItemClick('reports')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
-              isCurrent('reports')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
+            onClick={() => handleItemClick('profile')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left ${
+              isCurrent('profile')
+                ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <BarChart3 className="w-4 h-4 shrink-0" />
-            <span>Reports</span>
-          </button>
-
-          {/* Notifications */}
-          <button
-            type="button"
-            onClick={() => handleItemClick('notifications')}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-colors text-left ${
-              isCurrent('notifications')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="w-4 h-4 shrink-0" />
-              <span>Notifications</span>
+            <UserCircle className={`w-4 h-4 shrink-0 ${isCurrent('profile') ? 'text-white' : 'text-[#7692FF]'}`} />
+            <div className="flex items-center justify-between flex-1">
+              <span>Staff Profile</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                isCurrent('profile')
+                  ? 'bg-white/20 text-white'
+                  : 'bg-[#7692FF]/20 text-[#ABD2FA] border border-[#7692FF]/30'
+              }`}>
+                Me
+              </span>
             </div>
-            {unreadEnquiriesCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
-            )}
-          </button>
-
-          {/* Activity Logs */}
-          <button
-            type="button"
-            onClick={() => handleItemClick('activity-logs')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
-              isCurrent('activity-logs')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-            }`}
-          >
-            <ScrollText className="w-4 h-4 shrink-0" />
-            <span>Activity Logs</span>
-          </button>
-
-          {/* Settings */}
-          <button
-            type="button"
-            onClick={() => handleItemClick('settings')}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-left ${
-              isCurrent('settings')
-                ? 'bg-[#1A1C23] text-white font-medium border border-gray-700/50'
-                : 'text-gray-400 hover:bg-[#1A1C23] hover:text-gray-200'
-            }`}
-          >
-            <Settings className="w-4 h-4 shrink-0" />
-            <span>Settings</span>
           </button>
         </div>
 
         {/* Bottom Section: Availability and User */}
-        <div className="p-4 border-t border-gray-800 space-y-3 bg-[#0a0b0e]">
+        <div className="p-4 border-t border-[#1B2CC1]/25 space-y-3 bg-[#060E2C]">
           {/* Status Indicator & Change */}
-          <div className="p-2.5 rounded-xl bg-[#14161d] border border-gray-800 flex items-center justify-between">
+          <div className="p-2.5 rounded-xl bg-[#0D1C52] border border-[#1B2CC1]/30 flex items-center justify-between">
             <div className="flex items-center gap-2.5 min-w-0">
               <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  isAvailable ? 'bg-emerald-500' : 'bg-amber-500'
+                className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                  isAvailable ? 'bg-emerald-400 shadow-sm' : 'bg-amber-400'
                 }`}
               />
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium text-gray-200 truncate">
+                <span className="text-xs font-semibold text-white truncate">
                   {isAvailable ? 'Available' : 'Unavailable'}
                 </span>
-                <span className="text-[11px] text-gray-500 truncate">
+                <span className="text-[11px] text-[#ABD2FA] truncate">
                   {isAvailable ? 'Ready for tasks' : 'Off duty'}
                 </span>
               </div>
@@ -475,52 +292,57 @@ export function OfficeStaffSidebar({
               <button
                 type="button"
                 onClick={onToggleAvailability}
-                className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 hover:text-white transition-colors border border-gray-700/60"
+                className="px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-xs text-white transition-colors border border-white/20 font-medium"
               >
                 Change
               </button>
             )}
           </div>
 
-          {/* User profile row */}
-          <div className="flex items-center justify-between pt-1">
+          {/* User profile card & Red Logout below */}
+          <div className="flex flex-col gap-2 pt-1 border-t border-[#1B2CC1]/20">
+            {/* 1. Staff Profile Card */}
             <div
               onClick={() => {
                 router.push('/office-staff/profile');
                 if (onCloseMobile) onCloseMobile();
               }}
-              className={`flex items-center gap-2.5 min-w-0 cursor-pointer group p-1.5 rounded-xl transition-all ${
+              className={`flex items-center gap-2.5 w-full cursor-pointer group p-2 rounded-xl transition-all ${
                 isCurrent('profile')
-                  ? 'bg-[#1A1C23] border border-[#2A835F]/40'
-                  : 'hover:opacity-90'
+                  ? 'bg-[#1B2CC1] text-white shadow-md'
+                  : 'bg-[#0D1C52] hover:bg-[#122468] border border-[#1B2CC1]/30 text-white'
               }`}
               title="Manage Staff Profile"
             >
-              <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center font-medium text-gray-300 text-xs shrink-0 group-hover:border-[#2A835F] group-hover:text-emerald-400 transition-colors overflow-hidden">
-                {userAvatar ? (
-                  <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
-                ) : (
-                  userName.charAt(0).toUpperCase()
-                )}
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1B2CC1] to-[#7692FF] p-[2px] shrink-0">
+                <div className="w-full h-full rounded-xl bg-[#091540] flex items-center justify-center font-bold text-xs text-white overflow-hidden">
+                  {userAvatar ? (
+                    <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+                  ) : (
+                    userName.charAt(0).toUpperCase()
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-medium text-gray-200 truncate group-hover:text-emerald-400 transition-colors">
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-xs font-bold text-white group-hover:text-[#ABD2FA] truncate transition-colors">
                   {userName}
                 </span>
-                <span className="text-[11px] text-gray-500 truncate">
-                  Office Staff &bull; Profile
+                <span className="text-[10px] text-[#ABD2FA]/70 truncate font-mono">
+                  Office Staff &bull; Portal
                 </span>
               </div>
             </div>
 
+            {/* 2. Logout Button in Red */}
             {onLogout && (
               <button
                 type="button"
                 onClick={onLogout}
                 title="Log out"
-                className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                className="flex items-center gap-2 py-2 px-3 rounded-xl transition-all font-semibold text-xs w-full cursor-pointer bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 hover:text-white border border-rose-400/30 shadow-xs"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-4 h-4 shrink-0 text-rose-300" />
+                <span>Log out</span>
               </button>
             )}
           </div>

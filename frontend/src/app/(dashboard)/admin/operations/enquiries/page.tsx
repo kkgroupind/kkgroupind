@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import {
@@ -211,14 +212,22 @@ export default function AdminEnquiriesPage() {
             <div className="p-2.5 bg-[#14151A] border border-gray-800 rounded-2xl shadow-sm">
               <Inbox className="w-6 h-6 text-[#7B4DFF]" />
             </div>
-            Customer Enquiries &amp; Dispatch Queue
+            Job Orders &amp; Enquiries
           </h1>
           <p className="text-gray-400 text-xs sm:text-sm mt-1">
-            Review service requests, verify creator attribution, and assign to available field operatives
+            Centralized operational management for client booking requests, field execution, and worker dispatch
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
+          <Link
+            href="/admin/operations/assignments"
+            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all cursor-pointer shadow-sm"
+          >
+            <HardHat className="w-4 h-4 text-emerald-400" />
+            <span>Workforce Dispatch</span>
+          </Link>
+
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing || isLoading}
@@ -236,7 +245,7 @@ export default function AdminEnquiriesPage() {
             className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6839EF] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Create Enquiry</span>
+            <span>New Order</span>
           </button>
         </div>
       </div>

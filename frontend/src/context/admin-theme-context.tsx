@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
-type AdminTheme = 'dark' | 'light';
+type AdminTheme = 'dark';
 
 interface AdminThemeContextType {
   theme: AdminTheme;
@@ -11,60 +11,38 @@ interface AdminThemeContextType {
   isDark: boolean;
 }
 
-const AdminThemeContext = createContext<AdminThemeContextType | undefined>(undefined);
-
-const THEME_STORAGE_KEY = 'kk_admin_theme';
+const AdminThemeContext = createContext<AdminThemeContextType>({
+  theme: 'dark',
+  toggleTheme: () => {},
+  setTheme: () => {},
+  isDark: true,
+});
 
 export function AdminThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<AdminTheme>('dark');
-  const [isMounted, setIsMounted] = useState(false);
-
   useEffect(() => {
-    setIsMounted(true);
-    const saved = localStorage.getItem(THEME_STORAGE_KEY) as AdminTheme | null;
-    if (saved === 'light' || saved === 'dark') {
-      setThemeState(saved);
-      applyThemeToDom(saved);
-    } else {
-      // Default to dark mode for cinematic KK Group styling
-      setThemeState('dark');
-      applyThemeToDom('dark');
-    }
-  }, []);
-
-  const applyThemeToDom = (newTheme: AdminTheme) => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    root.setAttribute('data-admin-theme', newTheme);
-    if (newTheme === 'light') {
-      root.classList.add('admin-light');
-      root.classList.remove('admin-dark');
-    } else {
-      root.classList.add('admin-dark');
-      root.classList.remove('admin-light');
-    }
-  };
+    root.setAttribute('data-admin-theme', 'dark');
+    root.classList.add('admin-dark');
+    root.classList.remove('admin-light');
 
-  const setTheme = (newTheme: AdminTheme) => {
-    setThemeState(newTheme);
+    // Clean up any stale light theme preference from local storage
     if (typeof window !== 'undefined') {
-      localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+      try {
+        localStorage.removeItem('kk_admin_theme');
+      } catch (e) {
+        // ignore storage errors
+      }
     }
-    applyThemeToDom(newTheme);
-  };
-
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-  };
+  }, []);
 
   return (
     <AdminThemeContext.Provider
       value={{
-        theme,
-        toggleTheme,
-        setTheme,
-        isDark: theme === 'dark',
+        theme: 'dark',
+        toggleTheme: () => {},
+        setTheme: () => {},
+        isDark: true,
       }}
     >
       {children}
@@ -73,15 +51,5 @@ export function AdminThemeProvider({ children }: { children: React.ReactNode }) 
 }
 
 export function useAdminTheme(): AdminThemeContextType {
-  const context = useContext(AdminThemeContext);
-  if (!context) {
-    // Graceful fallback if called outside provider
-    return {
-      theme: 'dark',
-      toggleTheme: () => {},
-      setTheme: () => {},
-      isDark: true,
-    };
-  }
-  return context;
+  return useContext(AdminThemeContext);
 }

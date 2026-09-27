@@ -50,6 +50,7 @@ import {
   AssignWorkerModal,
   CreateWorkModal,
   OfficeStaffFinanceView,
+  OfficeStaffLoadingScreen,
 } from '@/components/OfficeStaff';
 
 // Services Master Catalog
@@ -192,6 +193,16 @@ export default function OfficeStaffDashboardPage() {
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
+
+  // Unified Workers & Workforce Subtabs
+  const [workerSubTab, setWorkerSubTab] = useState<'directory' | 'availability' | 'attendance' | 'leave'>('directory');
+
+  useEffect(() => {
+    if (activeSection === 'workforce-attendance') setWorkerSubTab('attendance');
+    else if (activeSection === 'workforce-availability') setWorkerSubTab('availability');
+    else if (activeSection === 'workforce-leave') setWorkerSubTab('leave');
+    else if (activeSection === 'people-workers' || activeSection === 'people-customers') setWorkerSubTab('directory');
+  }, [activeSection]);
 
   // Attendance & Availability
   const [isAvailable, setIsAvailable] = useState(false);
@@ -351,12 +362,16 @@ export default function OfficeStaffDashboardPage() {
   const customersList = useMemo(() => people.filter((p) => p.role === 'CUSTOMER'), [people]);
   const workersList = useMemo(() => workers, [workers]);
 
+  if (authLoading || (!user && isLoadingData)) {
+    return <OfficeStaffLoadingScreen title="Connecting Operations Desk..." />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#0D0E12] text-gray-200 flex font-sans antialiased">
+    <div className="min-h-screen bg-[#ABD2FA] text-[#091540] flex font-sans antialiased">
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-[#14161D] text-gray-100 px-4 py-2.5 rounded-xl shadow-xl border border-gray-700 flex items-center gap-2.5 text-xs">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
+        <div className="fixed top-5 right-5 z-50 bg-white text-[#091540] px-4 py-2.5 rounded-xl shadow-xl border border-[#7692FF]/40 flex items-center gap-2.5 text-xs font-bold animate-in fade-in">
+          <div className="w-2 h-2 rounded-full bg-[#1B2CC1]" />
           <span>{toastMessage}</span>
         </div>
       )}
@@ -389,23 +404,23 @@ export default function OfficeStaffDashboardPage() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-[#0D0E12]">
+      <div className="flex-1 lg:ml-64 flex flex-col min-w-0 bg-[#ABD2FA]">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 bg-[#0D0E12]/95 backdrop-blur border-b border-gray-800 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-[#7692FF]/30 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4 shadow-xs">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-lg bg-gray-800 text-gray-300 hover:text-white"
+              className="lg:hidden p-2 rounded-xl bg-white text-[#1B2CC1] hover:bg-[#ABD2FA]/30 border border-[#7692FF]/30 transition-colors shadow-xs"
             >
               <Menu className="w-4 h-4" />
             </button>
 
             <div className="flex flex-col min-w-0">
-              <span className="text-[11px] text-gray-500 font-medium">
+              <span className="text-[11px] text-[#1B2CC1] font-bold uppercase tracking-wider">
                 Office Staff Portal
               </span>
-              <h1 className="text-sm sm:text-base font-semibold text-gray-100 tracking-tight truncate capitalize">
+              <h1 className="text-sm sm:text-base font-bold text-[#091540] tracking-tight truncate capitalize">
                 {activeSection.replace('-', ' / ')}
               </h1>
             </div>
@@ -418,18 +433,18 @@ export default function OfficeStaffDashboardPage() {
               type="button"
               onClick={handleOpenToggleModal}
               disabled={isTogglingAvailability}
-              className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+              className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shadow-xs cursor-pointer ${
                 isAvailable
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/15'
-                  : 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/15'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100/70'
+                  : 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100/70'
               }`}
             >
               <span
                 className={`w-2 h-2 rounded-full ${
-                  isAvailable ? 'bg-emerald-500' : 'bg-amber-500'
+                  isAvailable ? 'bg-emerald-600 animate-pulse' : 'bg-amber-500'
                 }`}
               />
-              <span>{isAvailable ? 'Available' : 'Unavailable'}</span>
+              <span>{isAvailable ? 'Available on Desk' : 'Off Duty'}</span>
             </button>
 
             {/* Refresh Button */}
@@ -440,7 +455,7 @@ export default function OfficeStaffDashboardPage() {
                 showToast('Data refreshed');
               }}
               disabled={isLoadingData}
-              className="p-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700/60 text-xs font-medium flex items-center gap-1.5 transition-colors"
+              className="p-2 sm:px-3 rounded-xl bg-white hover:bg-[#ABD2FA]/20 text-[#1B2CC1] border border-[#7692FF]/30 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
@@ -450,7 +465,7 @@ export default function OfficeStaffDashboardPage() {
             <button
               type="button"
               onClick={() => setIsCreateWorkModalOpen(true)}
-              className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-3 py-2 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all shadow-md shadow-[#1B2CC1]/25 cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>Create Work</span>
@@ -467,89 +482,89 @@ export default function OfficeStaffDashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div
                   onClick={() => setActiveSection('operations-enquiries')}
-                  className="p-5 rounded-xl bg-[#14161D] border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer"
+                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
                 >
-                  <div className="flex items-center justify-between text-gray-400 mb-3">
-                    <span className="text-xs font-medium">Pending Enquiries</span>
-                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
+                  <div className="flex items-center justify-between text-[#091540] mb-3">
+                    <span className="text-xs font-bold">Pending Enquiries</span>
+                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
                       <FolderKanban className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-100">
+                  <div className="text-2xl font-black text-[#091540]">
                     {stats.pendingEnquiries}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1 block">
+                  <span className="text-xs text-slate-500 mt-1 block font-medium">
                     {stats.totalEnquiries} total requests
                   </span>
                 </div>
 
                 <div
                   onClick={() => setActiveSection('operations-works')}
-                  className="p-5 rounded-xl bg-[#14161D] border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer"
+                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
                 >
-                  <div className="flex items-center justify-between text-gray-400 mb-3">
-                    <span className="text-xs font-medium">Active Works</span>
-                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
+                  <div className="flex items-center justify-between text-[#091540] mb-3">
+                    <span className="text-xs font-bold">Active Works</span>
+                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
                       <ClipboardCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-100">
+                  <div className="text-2xl font-black text-[#091540]">
                     {stats.activeWorks}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1 block">
+                  <span className="text-xs text-slate-500 mt-1 block font-medium">
                     Assigned and in progress
                   </span>
                 </div>
 
                 <div
                   onClick={() => setActiveSection('workforce-availability')}
-                  className="p-5 rounded-xl bg-[#14161D] border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer"
+                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
                 >
-                  <div className="flex items-center justify-between text-gray-400 mb-3">
-                    <span className="text-xs font-medium">Available Workers</span>
-                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
+                  <div className="flex items-center justify-between text-[#091540] mb-3">
+                    <span className="text-xs font-bold">Available Workers</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">
                       <HardHat className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-emerald-400">
+                  <div className="text-2xl font-black text-emerald-600">
                     {stats.availableWorkers}
                   </div>
-                  <span className="text-xs text-gray-500 mt-1 block">
+                  <span className="text-xs text-slate-500 mt-1 block font-medium">
                     {stats.busyWorkers} busy &bull; {stats.offDutyWorkers} away
                   </span>
                 </div>
 
                 <div
                   onClick={handleOpenToggleModal}
-                  className="p-5 rounded-xl bg-[#14161D] border border-gray-800 hover:border-gray-700 transition-colors cursor-pointer"
+                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
                 >
-                  <div className="flex items-center justify-between text-gray-400 mb-3">
-                    <span className="text-xs font-medium">Desk Presence</span>
-                    <div className="w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-300">
+                  <div className="flex items-center justify-between text-[#091540] mb-3">
+                    <span className="text-xs font-bold">Desk Presence</span>
+                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
                       <ShieldCheck className="w-4 h-4" />
                     </div>
                   </div>
-                  <div className="text-xl font-bold text-gray-100 flex items-center gap-2">
+                  <div className="text-xl font-black text-[#091540] flex items-center gap-2">
                     <span
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-2.5 h-2.5 rounded-full ${
                         isAvailable ? 'bg-emerald-500' : 'bg-amber-500'
                       }`}
                     />
                     <span>{isAvailable ? 'Available' : 'Unavailable'}</span>
                   </div>
-                  <span className="text-xs text-blue-400 font-medium mt-1 block">
+                  <span className="text-xs text-[#1B2CC1] font-bold mt-1 block">
                     Click to change status
                   </span>
                 </div>
               </div>
 
               {/* Action Banner */}
-              <div className="p-4 sm:p-5 rounded-xl bg-[#14161D] border border-gray-800 flex flex-wrap items-center justify-between gap-4">
+              <div className="p-5 rounded-2xl bg-white border border-white/80 shadow-[0_4px_16px_rgba(9,21,64,0.06)] flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-100">
+                  <h3 className="text-sm font-bold text-[#091540]">
                     Operations Dispatch Desk
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5 font-medium">
                     Directly create work orders, assign available workers, or review incoming requests.
                   </p>
                 </div>
@@ -558,7 +573,7 @@ export default function OfficeStaffDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setIsCreateWorkModalOpen(true)}
-                    className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-md shadow-[#1B2CC1]/25"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Create Work</span>
@@ -566,7 +581,7 @@ export default function OfficeStaffDashboardPage() {
                   <button
                     type="button"
                     onClick={() => setActiveSection('operations-assignments')}
-                    className="px-3.5 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium flex items-center gap-1.5 transition-colors border border-gray-700/60"
+                    className="px-3.5 py-2 rounded-xl bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] text-xs font-bold flex items-center gap-1.5 transition-colors border border-[#7692FF]/40"
                   >
                     <ClipboardCheck className="w-3.5 h-3.5" />
                     <span>Assignments</span>
@@ -575,15 +590,15 @@ export default function OfficeStaffDashboardPage() {
               </div>
 
               {/* Recent Works Table */}
-              <div className="bg-[#14161D] rounded-xl border border-gray-800 overflow-hidden">
-                <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-gray-100">
+              <div className="bg-white rounded-2xl border border-white/80 shadow-[0_4px_16px_rgba(9,21,64,0.06)] overflow-hidden">
+                <div className="p-4 border-b border-sky-100 flex items-center justify-between bg-[#F8FBFF]">
+                  <h3 className="text-sm font-bold text-[#091540]">
                     Recent Works & Enquiries
                   </h3>
                   <button
                     type="button"
                     onClick={() => setActiveSection('operations-works')}
-                    className="text-xs font-medium text-blue-400 hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#1B2CC1] hover:underline flex items-center gap-1"
                   >
                     <span>View all</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -591,60 +606,60 @@ export default function OfficeStaffDashboardPage() {
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-gray-300">
-                    <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
+                  <table className="w-full text-left text-xs text-slate-700">
+                    <thead className="bg-[#091540]/5 text-[#091540] font-bold border-b border-[#7692FF]/20">
                       <tr>
-                        <th className="py-2.5 px-4">Tracking Code</th>
-                        <th className="py-2.5 px-4">Customer</th>
-                        <th className="py-2.5 px-4">Service</th>
-                        <th className="py-2.5 px-4">Status</th>
-                        <th className="py-2.5 px-4">Assigned Worker</th>
-                        <th className="py-2.5 px-4 text-right">Action</th>
+                        <th className="py-3 px-4">Tracking Code</th>
+                        <th className="py-3 px-4">Customer</th>
+                        <th className="py-3 px-4">Service</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4">Assigned Worker</th>
+                        <th className="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-800">
+                    <tbody className="divide-y divide-sky-100">
                       {filteredEnquiries.slice(0, 8).map((job) => (
-                        <tr key={job.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                          <td className="py-2.5 px-4 font-mono font-medium text-gray-200">
+                        <tr key={job.id} className="hover:bg-[#ABD2FA]/15 transition-colors">
+                          <td className="py-3 px-4 font-mono font-bold text-[#1B2CC1]">
                             {job.trackingNumber}
                           </td>
-                          <td className="py-2.5 px-4">
-                            <div className="font-medium text-gray-100">{job.customerName}</div>
-                            <div className="text-[11px] text-gray-500">{job.customerPhone}</div>
+                          <td className="py-3 px-4">
+                            <div className="font-bold text-slate-900">{job.customerName}</div>
+                            <div className="text-[11px] text-slate-500">{job.customerPhone}</div>
                           </td>
-                          <td className="py-2.5 px-4 text-gray-300 max-w-xs truncate">
+                          <td className="py-3 px-4 text-slate-700 max-w-xs truncate font-medium">
                             {job.serviceName}
                           </td>
-                          <td className="py-2.5 px-4">
+                          <td className="py-3 px-4">
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${
+                              className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
                                 job.status === 'COMPLETED'
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : job.status === 'IN_PROGRESS'
-                                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                  ? 'bg-sky-50 text-[#1B2CC1] border border-sky-200'
                                   : job.status === 'ASSIGNED'
-                                  ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20'
-                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
                               }`}
                             >
                               {job.status}
                             </span>
                           </td>
-                          <td className="py-2.5 px-4">
+                          <td className="py-3 px-4">
                             {job.worker ? (
-                              <span className="font-medium text-gray-200">
+                              <span className="font-semibold text-slate-900">
                                 {job.worker.name || job.worker.username}
                               </span>
                             ) : (
-                              <span className="text-gray-500 italic">Unassigned</span>
+                              <span className="text-slate-400 italic font-medium">Unassigned</span>
                             )}
                           </td>
-                          <td className="py-2.5 px-4 text-right">
+                          <td className="py-3 px-4 text-right">
                             {job.status === 'PENDING' ? (
                               <button
                                 type="button"
                                 onClick={() => handleOpenAssignModal(job)}
-                                className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors"
+                                className="px-3 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-semibold transition-colors shadow-xs"
                               >
                                 Assign
                               </button>
@@ -652,7 +667,7 @@ export default function OfficeStaffDashboardPage() {
                               <button
                                 type="button"
                                 onClick={() => setActiveSection('operations-works')}
-                                className="px-2.5 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium transition-colors"
+                                className="px-3 py-1 rounded-lg bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] border border-[#7692FF]/30 text-xs font-semibold transition-colors"
                               >
                                 View
                               </button>
@@ -667,66 +682,118 @@ export default function OfficeStaffDashboardPage() {
             </div>
           )}
 
-          {/* Section: People */}
-          {activeSection.startsWith('people') && (
+          {/* Section: Field Workers & Workforce (Unified) */}
+          {(activeSection.startsWith('people') || activeSection.startsWith('workforce')) && (
             <div className="space-y-6">
-              {/* People Subtabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-[#14161D] rounded-xl border border-gray-800 w-fit text-xs font-medium">
+              {/* Workers & Workforce Subtabs */}
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white/80 rounded-xl border border-white/90 shadow-xs w-fit text-xs font-medium">
                 <button
                   type="button"
-                  onClick={() => setActiveSection('people-customers')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    activeSection === 'people-customers'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                  onClick={() => setWorkerSubTab('directory')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                    workerSubTab === 'directory'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
-                  Customers ({customersList.length})
+                  <HardHat className="w-3.5 h-3.5" />
+                  <span>Workers Directory ({workersList.length})</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setActiveSection('people-workers')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    activeSection === 'people-workers'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                  onClick={() => setWorkerSubTab('availability')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                    workerSubTab === 'availability'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
-                  Workers ({workersList.length})
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>Live Availability ({stats.availableWorkers} Available)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWorkerSubTab('attendance')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                    workerSubTab === 'attendance'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
+                  }`}
+                >
+                  <CalendarCheck className="w-3.5 h-3.5" />
+                  <span>Daily Attendance</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWorkerSubTab('leave')}
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                    workerSubTab === 'leave'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
+                  }`}
+                >
+                  <Coffee className="w-3.5 h-3.5" />
+                  <span>Leave Records ({stats.offDutyWorkers})</span>
                 </button>
               </div>
 
-              {/* Customers View */}
-              {activeSection === 'people-customers' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 overflow-hidden">
-                  <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-100">Customer Directory</h3>
-                    <span className="text-xs text-gray-400">{customersList.length} clients</span>
+              {/* 1. Workers Directory View */}
+              {workerSubTab === 'directory' && (
+                <div className="bg-white rounded-2xl border border-white/80 shadow-md overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#091540]">Field Workers Directory</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Active personnel registered for Kerala operations</p>
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-emerald-700 font-semibold">{stats.availableWorkers} Available</span>
+                      <span className="text-slate-300">&bull;</span>
+                      <span className="text-blue-700 font-semibold">{stats.busyWorkers} Busy</span>
+                      <span className="text-slate-300">&bull;</span>
+                      <span className="text-slate-500 font-semibold">{stats.offDutyWorkers} Off Duty</span>
+                    </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
                           <th className="py-2.5 px-4">Name</th>
-                          <th className="py-2.5 px-4">Email</th>
+                          <th className="py-2.5 px-4">Username</th>
                           <th className="py-2.5 px-4">Phone</th>
                           <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4">Registered Date</th>
+                          <th className="py-2.5 px-4">Active Assignments</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-800">
-                        {customersList.map((customer) => (
-                          <tr key={customer.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                            <td className="py-2.5 px-4 font-medium text-gray-100">{customer.name || customer.username}</td>
-                            <td className="py-2.5 px-4 text-gray-300">{customer.email || '—'}</td>
-                            <td className="py-2.5 px-4 text-gray-300">{customer.phone || '—'}</td>
+                      <tbody className="divide-y divide-slate-100">
+                        {workersList.map((worker) => (
+                          <tr key={worker.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-2.5 px-4 font-bold text-[#091540]">{worker.name || worker.username}</td>
+                            <td className="py-2.5 px-4 font-mono text-[#1B2CC1] font-semibold">@{worker.username}</td>
+                            <td className="py-2.5 px-4 text-slate-600">{worker.phone || '—'}</td>
                             <td className="py-2.5 px-4">
-                              <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                Active
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                  worker.workerStatus === 'AVAILABLE'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : worker.workerStatus === 'BUSY'
+                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                    : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                }`}
+                              >
+                                <span
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    worker.workerStatus === 'AVAILABLE'
+                                      ? 'bg-emerald-500'
+                                      : worker.workerStatus === 'BUSY'
+                                      ? 'bg-blue-500'
+                                      : 'bg-slate-400'
+                                  }`}
+                                />
+                                {worker.workerStatus}
                               </span>
                             </td>
-                            <td className="py-2.5 px-4 text-gray-400">
-                              {new Date(customer.createdAt).toLocaleDateString()}
+                            <td className="py-2.5 px-4 font-bold text-slate-700">
+                              {worker._count?.workerAssignments ?? 0}
                             </td>
                           </tr>
                         ))}
@@ -736,63 +803,154 @@ export default function OfficeStaffDashboardPage() {
                 </div>
               )}
 
-              {/* Workers View */}
-              {activeSection === 'people-workers' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 overflow-hidden">
-                  <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                    <h3 className="text-sm font-semibold text-gray-100">Workers Directory</h3>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="text-emerald-400 font-medium">{stats.availableWorkers} Available</span>
-                      <span className="text-gray-600">&bull;</span>
-                      <span className="text-amber-400 font-medium">{stats.busyWorkers} Busy</span>
+              {/* 2. Live Availability View */}
+              {workerSubTab === 'availability' && (
+                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#091540]">Live Worker Availability</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">Real-time status of on-duty and dispatch-ready staff</p>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      {stats.availableWorkers} ready for dispatch
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    {workers.map((worker) => (
+                      <div
+                        key={worker.id}
+                        className={`p-3.5 rounded-xl border transition-all bg-slate-50 hover:bg-white hover:shadow-xs ${
+                          worker.workerStatus === 'AVAILABLE'
+                            ? 'border-emerald-200'
+                            : worker.workerStatus === 'BUSY'
+                            ? 'border-blue-200'
+                            : 'border-slate-200 opacity-70'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-[#091540]">
+                            {worker.name || worker.username}
+                          </span>
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              worker.workerStatus === 'AVAILABLE'
+                                ? 'bg-emerald-500'
+                                : worker.workerStatus === 'BUSY'
+                                ? 'bg-blue-500'
+                                : 'bg-slate-400'
+                            }`}
+                          />
+                        </div>
+                        <div className="text-[11px] text-slate-500 mb-2">
+                          {worker.phone || 'No phone'}
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200">
+                          <span className="text-slate-500 font-medium">Status:</span>
+                          <span className={
+                            worker.workerStatus === 'AVAILABLE' ? 'text-emerald-700 font-bold' : 'text-slate-600 font-medium'
+                          }>
+                            {worker.workerStatus}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Daily Attendance View */}
+              {workerSubTab === 'attendance' && (
+                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-[#091540]">Daily Attendance & Presence</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Presence records for {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleOpenToggleModal}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                        isAvailable
+                          ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                          : 'bg-[#1B2CC1] hover:bg-[#15239E] text-white'
+                      }`}
+                    >
+                      {isAvailable ? 'Mark Desk as Away' : 'Mark Desk as Available'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Office Staff Attendance */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <h4 className="text-xs font-bold text-[#091540] mb-3">Office Staff Desk</h4>
+                      <div className="space-y-2">
+                        {attendanceOverview?.officeStaff?.map((s: any) => (
+                          <div key={s.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/60">
+                            <span className="font-semibold text-slate-800">{s.name || s.username}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                              s.isAvailable ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {s.isAvailable ? 'Available' : 'Away'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Workers Attendance */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                      <h4 className="text-xs font-bold text-[#091540] mb-3">Field Workers</h4>
+                      <div className="space-y-2">
+                        {attendanceOverview?.workers?.map((w: any) => (
+                          <div key={w.id} className="flex items-center justify-between text-xs py-1 border-b border-slate-200/60">
+                            <span className="font-semibold text-slate-800">{w.name || w.username}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                              w.workerStatus === 'AVAILABLE'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : w.workerStatus === 'BUSY'
+                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {w.workerStatus}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
-                        <tr>
-                          <th className="py-2.5 px-4">Name</th>
-                          <th className="py-2.5 px-4">Username</th>
-                          <th className="py-2.5 px-4">Phone</th>
-                          <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4">Active Assignments</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-800">
-                        {workersList.map((worker) => (
-                          <tr key={worker.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                            <td className="py-2.5 px-4 font-medium text-gray-100">{worker.name || worker.username}</td>
-                            <td className="py-2.5 px-4 font-mono text-gray-400">@{worker.username}</td>
-                            <td className="py-2.5 px-4 text-gray-300">{worker.phone || '—'}</td>
-                            <td className="py-2.5 px-4">
-                              <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${
-                                  worker.workerStatus === 'AVAILABLE'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                    : worker.workerStatus === 'BUSY'
-                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                    : 'bg-gray-800 text-gray-400 border border-gray-700'
-                                }`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    worker.workerStatus === 'AVAILABLE'
-                                      ? 'bg-emerald-500'
-                                      : worker.workerStatus === 'BUSY'
-                                      ? 'bg-blue-500'
-                                      : 'bg-gray-500'
-                                  }`}
-                                />
-                                {worker.workerStatus}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-4 font-medium text-gray-300">
-                              {worker._count?.workerAssignments ?? 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                </div>
+              )}
+
+              {/* 4. Leave Records View */}
+              {workerSubTab === 'leave' && (
+                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
+                  <h3 className="text-sm font-bold text-[#091540]">Personnel on Leave / Off Duty</h3>
+                  <div className="space-y-2">
+                    {workers
+                      .filter((w) => w.workerStatus === 'OFF_DUTY')
+                      .map((w) => (
+                        <div
+                          key={w.id}
+                          className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-xs"
+                        >
+                          <div>
+                            <span className="font-bold text-[#091540]">{w.name || w.username}</span>
+                            <div className="text-[11px] text-slate-500">Phone: {w.phone || '—'}</div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                            Off Duty
+                          </span>
+                        </div>
+                      ))}
+                    {workers.filter((w) => w.workerStatus === 'OFF_DUTY').length === 0 && (
+                      <div className="p-8 text-center text-slate-400 text-xs italic">
+                        No personnel currently marked as off duty today.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -803,14 +961,14 @@ export default function OfficeStaffDashboardPage() {
           {activeSection.startsWith('operations') && (
             <div className="space-y-6">
               {/* Operations Subtabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-[#14161D] rounded-xl border border-gray-800 w-fit text-xs font-medium">
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-white/80 rounded-xl border border-white/90 shadow-xs w-fit text-xs font-medium">
                 <button
                   type="button"
                   onClick={() => setActiveSection('operations-enquiries')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     activeSection === 'operations-enquiries'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
                   Enquiries ({stats.pendingEnquiries})
@@ -818,10 +976,10 @@ export default function OfficeStaffDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveSection('operations-works')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     activeSection === 'operations-works'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
                   Works ({enquiries.length})
@@ -829,10 +987,10 @@ export default function OfficeStaffDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveSection('operations-assignments')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     activeSection === 'operations-assignments'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
                   Assignments
@@ -840,10 +998,10 @@ export default function OfficeStaffDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveSection('operations-services')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg transition-all ${
                     activeSection === 'operations-services'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
                   Services ({SERVICES_CATALOG.length})
@@ -851,10 +1009,10 @@ export default function OfficeStaffDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setActiveSection('operations-finance')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
                     activeSection === 'operations-finance'
-                      ? 'bg-emerald-600 text-white'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-[#091540]'
                   }`}
                 >
                   <IndianRupee className="w-3.5 h-3.5" />
@@ -864,11 +1022,11 @@ export default function OfficeStaffDashboardPage() {
 
               {/* 1. Enquiries View */}
               {activeSection === 'operations-enquiries' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
+                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-100">Pending Customer Enquiries</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <h3 className="text-sm font-bold text-[#091540]">Pending Customer Enquiries</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
                         New requests waiting for worker assignment.
                       </p>
                     </div>
@@ -876,7 +1034,7 @@ export default function OfficeStaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIsCreateWorkModalOpen(true)}
-                      className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Create Work</span>
@@ -884,8 +1042,8 @@ export default function OfficeStaffDashboardPage() {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
                           <th className="py-2.5 px-4">Tracking Code</th>
                           <th className="py-2.5 px-4">Customer</th>
@@ -895,24 +1053,24 @@ export default function OfficeStaffDashboardPage() {
                           <th className="py-2.5 px-4 text-right">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-800">
+                      <tbody className="divide-y divide-slate-100">
                         {enquiries
                           .filter((e) => e.status === 'PENDING')
                           .map((enquiry) => (
-                            <tr key={enquiry.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                              <td className="py-2.5 px-4 font-mono font-medium text-emerald-400">
+                            <tr key={enquiry.id} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="py-2.5 px-4 font-mono font-bold text-[#1B2CC1]">
                                 {enquiry.trackingNumber}
                               </td>
                               <td className="py-2.5 px-4">
-                                <div className="font-medium text-gray-100">{enquiry.customerName}</div>
-                                <div className="text-[11px] text-gray-500">{enquiry.customerPhone}</div>
+                                <div className="font-bold text-[#091540]">{enquiry.customerName}</div>
+                                <div className="text-[11px] text-slate-500">{enquiry.customerPhone}</div>
                               </td>
-                              <td className="py-2.5 px-4 text-gray-300">{enquiry.serviceName}</td>
-                              <td className="py-2.5 px-4 text-gray-400 max-w-xs truncate">
+                              <td className="py-2.5 px-4 text-slate-700 font-medium">{enquiry.serviceName}</td>
+                              <td className="py-2.5 px-4 text-slate-600 max-w-xs truncate">
                                 {enquiry.message}
                               </td>
                               <td className="py-2.5 px-4">
-                                <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                   PENDING
                                 </span>
                               </td>
@@ -920,7 +1078,7 @@ export default function OfficeStaffDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAssignModal(enquiry)}
-                                  className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors"
+                                  className="px-3 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                                 >
                                   Assign Worker
                                 </button>
@@ -929,7 +1087,7 @@ export default function OfficeStaffDashboardPage() {
                           ))}
                         {enquiries.filter((e) => e.status === 'PENDING').length === 0 && (
                           <tr>
-                            <td colSpan={6} className="py-8 text-center text-gray-500 italic">
+                            <td colSpan={6} className="py-8 text-center text-slate-400 italic">
                               No pending enquiries.
                             </td>
                           </tr>
@@ -942,11 +1100,11 @@ export default function OfficeStaffDashboardPage() {
 
               {/* 2. Works View */}
               {activeSection === 'operations-works' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
+                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-100">All Work Orders</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <h3 className="text-sm font-bold text-[#091540]">All Work Orders</h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
                         Overview of all works created directly or through enquiries.
                       </p>
                     </div>
@@ -954,7 +1112,7 @@ export default function OfficeStaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIsCreateWorkModalOpen(true)}
-                      className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Create Work Order</span>
@@ -969,10 +1127,10 @@ export default function OfficeStaffDashboardPage() {
                           key={st}
                           type="button"
                           onClick={() => setStatusFilter(st)}
-                          className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
                             statusFilter === st
-                              ? 'bg-gray-800 text-white border border-gray-700'
-                              : 'bg-[#0D0E12] text-gray-400 hover:text-white border border-gray-800'
+                              ? 'bg-[#1B2CC1] text-white shadow-xs'
+                              : 'bg-slate-100 text-slate-600 hover:text-[#091540] border border-slate-200'
                           }`}
                         >
                           {st}
@@ -982,8 +1140,8 @@ export default function OfficeStaffDashboardPage() {
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-gray-300">
-                      <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
                           <th className="py-2.5 px-4">Code</th>
                           <th className="py-2.5 px-4">Service</th>
@@ -993,38 +1151,38 @@ export default function OfficeStaffDashboardPage() {
                           <th className="py-2.5 px-4 text-right">Actions</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-800">
+                      <tbody className="divide-y divide-slate-100">
                         {filteredEnquiries.map((work) => (
-                          <tr key={work.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                            <td className="py-2.5 px-4 font-mono font-medium text-gray-200">
+                          <tr key={work.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-2.5 px-4 font-mono font-bold text-[#1B2CC1]">
                               {work.trackingNumber}
                             </td>
-                            <td className="py-2.5 px-4 text-gray-200 font-medium">
+                            <td className="py-2.5 px-4 text-slate-800 font-medium">
                               {work.serviceName}
                             </td>
                             <td className="py-2.5 px-4">
-                              <div className="text-gray-100 font-medium">{work.customerName}</div>
-                              <div className="text-[11px] text-gray-500">{work.customerPhone}</div>
+                              <div className="text-[#091540] font-bold">{work.customerName}</div>
+                              <div className="text-[11px] text-slate-500">{work.customerPhone}</div>
                             </td>
                             <td className="py-2.5 px-4">
                               {work.worker ? (
-                                <span className="font-medium text-gray-200">
+                                <span className="font-semibold text-[#091540]">
                                   {work.worker.name || work.worker.username}
                                 </span>
                               ) : (
-                                <span className="text-amber-400 text-[11px] font-medium">Unassigned</span>
+                                <span className="text-amber-700 text-[11px] font-semibold">Unassigned</span>
                               )}
                             </td>
                             <td className="py-2.5 px-4">
                               <span
-                                className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                                   work.status === 'COMPLETED'
-                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                     : work.status === 'IN_PROGRESS'
-                                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                     : work.status === 'ASSIGNED'
-                                    ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20'
-                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
                                 }`}
                               >
                                 {work.status}
@@ -1035,12 +1193,12 @@ export default function OfficeStaffDashboardPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenAssignModal(work)}
-                                  className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors"
+                                  className="px-2.5 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                                 >
                                   Assign
                                 </button>
                               ) : (
-                                <span className="text-xs text-gray-500">Assigned</span>
+                                <span className="text-xs text-slate-400 font-semibold">Assigned</span>
                               )}
                             </td>
                           </tr>
@@ -1055,13 +1213,13 @@ export default function OfficeStaffDashboardPage() {
               {activeSection === 'operations-assignments' && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Left: Pending Works */}
-                  <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
+                  <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-100 flex items-center gap-2">
-                        <FolderKanban className="w-4 h-4 text-amber-400" />
+                      <h3 className="text-sm font-bold text-[#091540] flex items-center gap-2">
+                        <FolderKanban className="w-4 h-4 text-[#1B2CC1]" />
                         <span>Pending Works</span>
                       </h3>
-                      <span className="text-xs text-amber-400 font-medium">
+                      <span className="text-xs text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                         {enquiries.filter((e) => e.status === 'PENDING').length} unassigned
                       </span>
                     </div>
@@ -1072,38 +1230,38 @@ export default function OfficeStaffDashboardPage() {
                         .map((enq) => (
                           <div
                             key={enq.id}
-                            className="p-3.5 rounded-lg bg-[#0D0E12] border border-gray-800 hover:border-gray-700 transition-colors space-y-2"
+                            className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-[#1B2CC1]/40 transition-colors space-y-2"
                           >
                             <div className="flex items-start justify-between">
                               <div>
-                                <span className="text-[11px] font-mono font-medium text-emerald-400">
+                                <span className="text-[11px] font-mono font-bold text-[#1B2CC1]">
                                   {enq.trackingNumber}
                                 </span>
-                                <h4 className="text-xs font-medium text-gray-100 mt-0.5">
+                                <h4 className="text-xs font-bold text-[#091540] mt-0.5">
                                   {enq.serviceName}
                                 </h4>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => handleOpenAssignModal(enq)}
-                                className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-colors"
+                                className="px-2.5 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
                               >
                                 Dispatch
                               </button>
                             </div>
-                            <div className="text-xs text-gray-300">
+                            <div className="text-xs text-slate-600">
                               Customer: {enq.customerName} ({enq.customerPhone})
                             </div>
                             {enq.location && (
-                              <div className="text-[11px] text-gray-500 flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-gray-600" />
+                              <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-slate-400" />
                                 <span>{enq.location}</span>
                               </div>
                             )}
                           </div>
                         ))}
                       {enquiries.filter((e) => e.status === 'PENDING').length === 0 && (
-                        <div className="p-8 text-center text-gray-500 text-xs italic">
+                        <div className="p-8 text-center text-slate-400 text-xs italic">
                           No pending works.
                         </div>
                       )}
@@ -1111,13 +1269,13 @@ export default function OfficeStaffDashboardPage() {
                   </div>
 
                   {/* Right: Available Workers */}
-                  <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
+                  <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-semibold text-gray-100 flex items-center gap-2">
-                        <HardHat className="w-4 h-4 text-emerald-400" />
+                      <h3 className="text-sm font-bold text-[#091540] flex items-center gap-2">
+                        <HardHat className="w-4 h-4 text-[#1B2CC1]" />
                         <span>Available Workers</span>
                       </h3>
-                      <span className="text-xs text-emerald-400 font-medium">
+                      <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                         {stats.availableWorkers} ready
                       </span>
                     </div>
@@ -1128,31 +1286,31 @@ export default function OfficeStaffDashboardPage() {
                         .map((w) => (
                           <div
                             key={w.id}
-                            className="p-3.5 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between"
+                            className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-gray-800 text-gray-300 font-medium flex items-center justify-center text-xs">
+                              <div className="w-8 h-8 rounded-lg bg-[#ABD2FA]/30 text-[#091540] font-bold flex items-center justify-center text-xs">
                                 {w.name ? w.name.charAt(0) : 'W'}
                               </div>
                               <div>
-                                <h4 className="text-xs font-medium text-gray-100">
+                                <h4 className="text-xs font-bold text-[#091540]">
                                   {w.name || w.username}
                                 </h4>
-                                <div className="text-[11px] text-gray-500 flex items-center gap-2">
+                                <div className="text-[11px] text-slate-500 flex items-center gap-2">
                                   <span>{w.phone || 'No phone'}</span>
                                   <span>&bull;</span>
-                                  <span className="text-emerald-400">Available</span>
+                                  <span className="text-emerald-700 font-semibold">Available</span>
                                 </div>
                               </div>
                             </div>
 
-                            <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               Available
                             </span>
                           </div>
                         ))}
                       {workers.filter((w) => w.workerStatus === 'AVAILABLE').length === 0 && (
-                        <div className="p-8 text-center text-gray-500 text-xs italic">
+                        <div className="p-8 text-center text-slate-400 text-xs italic">
                           No workers currently available.
                         </div>
                       )}
@@ -1167,31 +1325,31 @@ export default function OfficeStaffDashboardPage() {
                   {SERVICES_CATALOG.map((svc) => (
                     <div
                       key={svc.id}
-                      className="p-5 rounded-xl bg-[#14161D] border border-gray-800 hover:border-gray-700 transition-colors flex flex-col justify-between gap-3"
+                      className="p-5 rounded-2xl bg-white border border-white/80 shadow-md hover:shadow-lg transition-all flex flex-col justify-between gap-3"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#ABD2FA]/30 text-[#091540] border border-[#7692FF]/30">
                             {svc.category}
                           </span>
-                          <span className="text-xs text-gray-500">{svc.turnaround}</span>
+                          <span className="text-xs text-slate-500 font-medium">{svc.turnaround}</span>
                         </div>
-                        <h4 className="text-sm font-semibold text-gray-100">
+                        <h4 className="text-sm font-bold text-[#091540]">
                           {svc.title}
                         </h4>
-                        <p className="text-xs text-gray-400 leading-relaxed">
+                        <p className="text-xs text-slate-500 leading-relaxed">
                           {svc.description}
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-gray-800 flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Lead: {svc.squadLead}</span>
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                        <span className="text-slate-500">Lead: {svc.squadLead}</span>
                         <button
                           type="button"
                           onClick={() => {
                             setIsCreateWorkModalOpen(true);
                           }}
-                          className="text-blue-400 hover:underline font-medium flex items-center gap-1"
+                          className="text-[#1B2CC1] hover:underline font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <span>New Order</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1212,219 +1370,34 @@ export default function OfficeStaffDashboardPage() {
             </div>
           )}
 
-          {/* Section: Workforce */}
-          {activeSection.startsWith('workforce') && (
-            <div className="space-y-6">
-              {/* Workforce Subtabs */}
-              <div className="flex items-center gap-1.5 p-1 bg-[#14161D] rounded-xl border border-gray-800 w-fit text-xs font-medium">
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('workforce-attendance')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    activeSection === 'workforce-attendance'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Attendance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('workforce-availability')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    activeSection === 'workforce-availability'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Availability ({stats.availableWorkers} Available)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('workforce-leave')}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    activeSection === 'workforce-leave'
-                      ? 'bg-gray-800 text-white'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Leave Records ({stats.offDutyWorkers})
-                </button>
-              </div>
-
-              {/* 1. Attendance View */}
-              {activeSection === 'workforce-attendance' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-100">Daily Attendance</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        Presence records for {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={handleOpenToggleModal}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        isAvailable
-                          ? 'bg-amber-600 hover:bg-amber-500 text-white'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                      }`}
-                    >
-                      {isAvailable ? 'Mark as Away' : 'Mark as Available'}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Office Staff Attendance */}
-                    <div className="p-4 rounded-xl bg-[#0D0E12] border border-gray-800">
-                      <h4 className="text-xs font-semibold text-gray-300 mb-3">Office Staff</h4>
-                      <div className="space-y-2">
-                        {attendanceOverview?.officeStaff?.map((s: any) => (
-                          <div key={s.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-800/60">
-                            <span className="font-medium text-gray-200">{s.name || s.username}</span>
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                              s.isAvailable ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-gray-800 text-gray-400'
-                            }`}>
-                              {s.isAvailable ? 'Available' : 'Away'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Workers Attendance */}
-                    <div className="p-4 rounded-xl bg-[#0D0E12] border border-gray-800">
-                      <h4 className="text-xs font-semibold text-gray-300 mb-3">Field Workers</h4>
-                      <div className="space-y-2">
-                        {attendanceOverview?.workers?.map((w: any) => (
-                          <div key={w.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-800/60">
-                            <span className="font-medium text-gray-200">{w.name || w.username}</span>
-                            <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                              w.workerStatus === 'AVAILABLE'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : w.workerStatus === 'BUSY'
-                                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                : 'bg-gray-800 text-gray-400'
-                            }`}>
-                              {w.workerStatus}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 2. Availability View */}
-              {activeSection === 'workforce-availability' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-100">Live Worker Availability</h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    {workers.map((worker) => (
-                      <div
-                        key={worker.id}
-                        className={`p-3.5 rounded-lg border transition-colors ${
-                          worker.workerStatus === 'AVAILABLE'
-                            ? 'bg-[#0D0E12] border-emerald-500/30'
-                            : worker.workerStatus === 'BUSY'
-                            ? 'bg-[#0D0E12] border-blue-500/30'
-                            : 'bg-[#0D0E12] border-gray-800 opacity-60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-semibold text-gray-200">
-                            {worker.name || worker.username}
-                          </span>
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              worker.workerStatus === 'AVAILABLE'
-                                ? 'bg-emerald-500'
-                                : worker.workerStatus === 'BUSY'
-                                ? 'bg-blue-500'
-                                : 'bg-gray-600'
-                            }`}
-                          />
-                        </div>
-                        <div className="text-[11px] text-gray-500 mb-2">
-                          {worker.phone || 'No phone'}
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] pt-2 border-t border-gray-800">
-                          <span className="text-gray-500">Status:</span>
-                          <span className={
-                            worker.workerStatus === 'AVAILABLE' ? 'text-emerald-400 font-medium' : 'text-gray-400'
-                          }>
-                            {worker.workerStatus}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* 3. Leave View */}
-              {activeSection === 'workforce-leave' && (
-                <div className="bg-[#14161D] rounded-xl border border-gray-800 p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-gray-100">Personnel on Leave</h3>
-                  <div className="space-y-2">
-                    {workers
-                      .filter((w) => w.workerStatus === 'OFF_DUTY')
-                      .map((w) => (
-                        <div
-                          key={w.id}
-                          className="p-3.5 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between text-xs"
-                        >
-                          <div>
-                            <span className="font-medium text-gray-200">{w.name || w.username}</span>
-                            <div className="text-[11px] text-gray-500">Phone: {w.phone || '—'}</div>
-                          </div>
-                          <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-gray-800 text-gray-400 border border-gray-700">
-                            Off Duty
-                          </span>
-                        </div>
-                      ))}
-                    {workers.filter((w) => w.workerStatus === 'OFF_DUTY').length === 0 && (
-                      <div className="p-8 text-center text-gray-500 text-xs italic">
-                        No personnel on leave today.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Section: Reports */}
           {activeSection === 'reports' && (
-            <div className="bg-[#14161D] rounded-xl border border-gray-800 p-6 space-y-6">
+            <div className="bg-white rounded-2xl border border-white/80 p-6 space-y-6 shadow-md">
               <div>
-                <h3 className="text-sm font-semibold text-gray-100">Operations Summary & Reports</h3>
-                <p className="text-xs text-gray-400 mt-0.5">Overview of current period workloads</p>
+                <h3 className="text-sm font-bold text-[#091540]">Operations Summary & Reports</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Overview of current period workloads</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800">
-                  <span className="text-xs text-gray-500 font-medium">Total Work Inflow</span>
-                  <div className="text-2xl font-bold text-gray-100 mt-1">{stats.totalEnquiries}</div>
-                  <span className="text-xs text-gray-500 mt-1 block">All registered jobs</span>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Work Inflow</span>
+                  <div className="text-2xl font-black text-[#091540] mt-1">{stats.totalEnquiries}</div>
+                  <span className="text-xs text-slate-400 mt-1 block">All registered jobs</span>
                 </div>
-                <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800">
-                  <span className="text-xs text-gray-500 font-medium">Completed Jobs</span>
-                  <div className="text-2xl font-bold text-gray-100 mt-1">{stats.completedEnquiries}</div>
-                  <span className="text-xs text-emerald-400 mt-1 block">Successfully closed</span>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Completed Jobs</span>
+                  <div className="text-2xl font-black text-emerald-700 mt-1">{stats.completedEnquiries}</div>
+                  <span className="text-xs text-emerald-600 font-medium mt-1 block">Successfully closed</span>
                 </div>
-                <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800">
-                  <span className="text-xs text-gray-500 font-medium">Worker Utilization</span>
-                  <div className="text-2xl font-bold text-gray-100 mt-1">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Worker Utilization</span>
+                  <div className="text-2xl font-black text-[#1B2CC1] mt-1">
                     {stats.totalWorkers > 0
                       ? Math.round((stats.busyWorkers / stats.totalWorkers) * 100)
                       : 0}%
                   </div>
-                  <span className="text-xs text-blue-400 mt-1 block">Currently on active tasks</span>
+                  <span className="text-xs text-[#1B2CC1] font-medium mt-1 block">Currently on active tasks</span>
                 </div>
               </div>
             </div>
@@ -1432,25 +1405,25 @@ export default function OfficeStaffDashboardPage() {
 
           {/* Section: Notifications */}
           {activeSection === 'notifications' && (
-            <div className="bg-[#14161D] rounded-xl border border-gray-800 p-6 space-y-4">
-              <h3 className="text-sm font-semibold text-gray-100">Notifications</h3>
+            <div className="bg-white rounded-2xl border border-white/80 p-6 space-y-4 shadow-md">
+              <h3 className="text-sm font-bold text-[#091540]">Notifications</h3>
               <div className="space-y-2.5">
                 {enquiries.slice(0, 5).map((enq) => (
                   <div
                     key={enq.id}
-                    className="p-3.5 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-start gap-3"
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-3"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 shrink-0">
+                    <div className="w-7 h-7 rounded-lg bg-[#ABD2FA]/30 text-[#1B2CC1] flex items-center justify-center shrink-0">
                       <FolderKanban className="w-3.5 h-3.5" />
                     </div>
                     <div className="flex-1 text-xs">
-                      <div className="font-medium text-gray-200">
+                      <div className="font-bold text-[#091540]">
                         {enq.serviceName}
                       </div>
-                      <div className="text-gray-400 mt-0.5">
+                      <div className="text-slate-600 mt-0.5">
                         Customer {enq.customerName} requested service at {enq.location || 'Local Site'}.
                       </div>
-                      <span className="text-[11px] text-gray-500 font-mono mt-1 block">
+                      <span className="text-[11px] text-[#1B2CC1] font-mono font-semibold mt-1 block">
                         Tracking ID: {enq.trackingNumber}
                       </span>
                     </div>
@@ -1462,19 +1435,19 @@ export default function OfficeStaffDashboardPage() {
 
           {/* Section: Activity Logs */}
           {activeSection === 'activity-logs' && (
-            <div className="bg-[#14161D] rounded-xl border border-gray-800 p-6 space-y-4">
-              <h3 className="text-sm font-semibold text-gray-100">Activity Logs</h3>
+            <div className="bg-white rounded-2xl border border-white/80 p-6 space-y-4 shadow-md">
+              <h3 className="text-sm font-bold text-[#091540]">Activity Logs</h3>
               <div className="space-y-2 font-mono text-xs">
                 {enquiries.slice(0, 6).map((item) => (
                   <div
                     key={item.id}
-                    className="p-2.5 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between text-gray-300"
+                    className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-slate-700"
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-emerald-400">[DISPATCH]</span>
+                      <span className="text-[#1B2CC1] font-bold">[DISPATCH]</span>
                       <span>Ticket {item.trackingNumber} status is {item.status}</span>
                     </div>
-                    <span className="text-[11px] text-gray-500">
+                    <span className="text-[11px] text-slate-400">
                       {new Date(item.createdAt).toLocaleTimeString()}
                     </span>
                   </div>
@@ -1485,22 +1458,22 @@ export default function OfficeStaffDashboardPage() {
 
           {/* Section: Settings */}
           {activeSection === 'settings' && (
-            <div className="bg-[#14161D] rounded-xl border border-gray-800 p-6 space-y-4">
-              <h3 className="text-sm font-semibold text-gray-100">Desk Settings</h3>
+            <div className="bg-white rounded-2xl border border-white/80 p-6 shadow-md space-y-4">
+              <h3 className="text-sm font-bold text-[#091540]">Desk Settings</h3>
               <div className="space-y-3 text-xs">
-                <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-200">Account Profile & Security</div>
-                    <div className="text-gray-500">Signed in as {user?.name || user?.username} ({user?.role})</div>
+                    <div className="font-bold text-[#091540]">Account Profile & Security</div>
+                    <div className="text-slate-500">Signed in as {user?.name || user?.username} ({user?.role})</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       Active
                     </span>
                     <button
                       type="button"
                       onClick={() => router.push('/office-staff/profile')}
-                      className="px-3 py-1.5 rounded-lg bg-[#2A835F] hover:bg-[#236b4e] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                     >
                       <UserCircle className="w-3.5 h-3.5" />
                       <span>Manage Profile</span>
@@ -1508,15 +1481,15 @@ export default function OfficeStaffDashboardPage() {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-lg bg-[#0D0E12] border border-gray-800 flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-gray-200">Desk Availability</div>
-                    <div className="text-gray-500">Current presence: {isAvailable ? 'Available' : 'Unavailable'}</div>
+                    <div className="font-bold text-[#091540]">Desk Availability</div>
+                    <div className="text-slate-500">Current presence: {isAvailable ? 'Available' : 'Unavailable'}</div>
                   </div>
                   <button
                     type="button"
                     onClick={handleOpenToggleModal}
-                    className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium border border-gray-700/60 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-[#091540] text-xs font-semibold border border-slate-200 transition-colors shadow-xs"
                   >
                     Change Status
                   </button>

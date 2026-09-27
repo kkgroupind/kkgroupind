@@ -208,30 +208,30 @@ export function OfficeStaffFinanceView({
       
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-5 right-5 z-50 bg-[#2A835F] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
+        <div className="fixed top-5 right-5 z-50 bg-[#1B2CC1] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2.5 text-xs font-semibold animate-in fade-in">
           <CheckCircle2 className="w-4 h-4" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Banner Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-[#14161D] border border-gray-800 p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-2xl bg-white border border-white/80 p-5 sm:p-6 shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-bold text-[#2A835F] uppercase tracking-wider bg-[#2A835F]/10 px-2.5 py-0.5 rounded-full border border-[#2A835F]/20 flex items-center gap-1">
+              <span className="text-xs font-bold text-[#1B2CC1] uppercase tracking-wider bg-[#1B2CC1]/10 px-2.5 py-0.5 rounded-full border border-[#1B2CC1]/20 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Office Desk Register
               </span>
-              <span className="text-xs text-gray-500">Daily Cashbook</span>
+              <span className="text-xs text-slate-500">Daily Cashbook</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-100 flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#091540] flex items-center gap-2">
               <span>Finance & Collections</span>
-              <span className="text-sm font-semibold text-gray-400 hidden sm:inline">
+              <span className="text-sm font-semibold text-slate-400 hidden sm:inline">
                 (വരവ് ചെലവ് കണക്കുകൾ)
               </span>
             </h2>
-            <p className="text-xs text-gray-400 mt-1 max-w-xl">
+            <p className="text-xs text-slate-500 mt-1 max-w-xl">
               Record customer advances, milestone collections, JCB diesel receipts, and worker site allowances. All vouchers are securely queued for Super Admin verification.
             </p>
           </div>
@@ -239,34 +239,33 @@ export function OfficeStaffFinanceView({
           <button
             onClick={() => loadFinanceData()}
             disabled={isLoading}
-            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold transition-colors"
+            className="self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#2A835F]' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-[#1B2CC1]' : ''}`} />
             <span>Sync</span>
           </button>
         </div>
       </div>
 
-      {/* Primary Action Buttons (Large, Friendly, Foolproof) */}
+      {/* Primary Action Buttons */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        
         {/* Record Payment Button */}
         <div
           onClick={openIncomeModal}
-          className="p-5 rounded-2xl bg-gradient-to-br from-emerald-950/40 via-[#14161D] to-[#14161D] border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer group shadow-lg"
+          className="p-5 rounded-2xl bg-white border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer group shadow-md"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-[#2A835F] flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center group-hover:scale-105 transition-transform">
               <ArrowDownLeft className="w-6 h-6 stroke-[2.5]" />
             </div>
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+            <span className="text-xs font-bold text-emerald-700 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
               വരുമാനം • Inflow
             </span>
           </div>
-          <h3 className="text-base font-bold text-gray-100 group-hover:text-emerald-400 transition-colors">
+          <h3 className="text-base font-bold text-[#091540] group-hover:text-emerald-700 transition-colors">
             + Record Payment Received
           </h3>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Customer advance, JCB meter payment, or work order balance settlement.
           </p>
         </div>
@@ -274,41 +273,39 @@ export function OfficeStaffFinanceView({
         {/* Record Expense Button */}
         <div
           onClick={openExpenseModal}
-          className="p-5 rounded-2xl bg-gradient-to-br from-rose-950/30 via-[#14161D] to-[#14161D] border border-rose-500/30 hover:border-rose-500/60 transition-all cursor-pointer group shadow-lg"
+          className="p-5 rounded-2xl bg-white border border-rose-500/30 hover:border-rose-500/60 transition-all cursor-pointer group shadow-md"
         >
           <div className="flex items-center justify-between mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-500 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center group-hover:scale-105 transition-transform">
               <ArrowUpRight className="w-6 h-6 stroke-[2.5]" />
             </div>
-            <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
+            <span className="text-xs font-bold text-rose-700 bg-rose-500/10 px-3 py-1 rounded-full border border-rose-500/20">
               ചെലവ് • Outflow
             </span>
           </div>
-          <h3 className="text-base font-bold text-gray-100 group-hover:text-rose-400 transition-colors">
+          <h3 className="text-base font-bold text-[#091540] group-hover:text-rose-700 transition-colors">
             + Record Daily Expense
           </h3>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-slate-500 mt-1">
             Site diesel fuel, worker lunch/tea bata, emergency materials, or office petty cash.
           </p>
         </div>
-
       </div>
 
       {/* Date Selector & Daily Ledger Card */}
-      <div className="rounded-2xl bg-[#14161D] border border-gray-800 p-5 sm:p-6 space-y-6">
-        
+      <div className="rounded-2xl bg-white border border-white/80 p-5 sm:p-6 space-y-6 shadow-md">
         {/* Date Selector Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-800">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#2A835F]" />
-            <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+            <Calendar className="w-4 h-4 text-[#1B2CC1]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Active Register Date:
             </span>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-bold text-gray-200 focus:outline-none focus:border-[#2A835F]"
+              className="bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
             />
           </div>
 
@@ -317,8 +314,8 @@ export function OfficeStaffFinanceView({
               onClick={() => setSelectedDate(todayDateStr)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
                 selectedDate === todayDateStr
-                  ? 'bg-[#2A835F] text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white'
+                  ? 'bg-[#1B2CC1] text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:text-[#091540]'
               }`}
             >
               Today
@@ -330,7 +327,7 @@ export function OfficeStaffFinanceView({
                 const str = d.toISOString().split('T')[0];
                 setSelectedDate(str);
               }}
-              className="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs font-bold transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-colors border border-slate-200"
             >
               Previous Day
             </button>
@@ -339,23 +336,23 @@ export function OfficeStaffFinanceView({
 
         {/* Day Metrics Mini Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
-            <span className="text-[11px] font-bold text-gray-400 uppercase">Day Collections</span>
-            <div className="text-xl font-bold text-emerald-400 mt-1">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Day Collections</span>
+            <div className="text-xl font-bold text-emerald-600 mt-1">
               ₹{dayStats.income.toLocaleString('en-IN')}
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
-            <span className="text-[11px] font-bold text-gray-400 uppercase">Day Expenses</span>
-            <div className="text-xl font-bold text-rose-400 mt-1">
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Day Expenses</span>
+            <div className="text-xl font-bold text-rose-600 mt-1">
               ₹{dayStats.expense.toLocaleString('en-IN')}
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-gray-900/60 border border-gray-800">
-            <span className="text-[11px] font-bold text-gray-400 uppercase">Net Day Balance</span>
-            <div className={`text-xl font-bold mt-1 ${dayStats.net >= 0 ? 'text-[#2A835F]' : 'text-rose-400'}`}>
+          <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Net Day Balance</span>
+            <div className={`text-xl font-bold mt-1 ${dayStats.net >= 0 ? 'text-[#1B2CC1]' : 'text-rose-600'}`}>
               ₹{dayStats.net.toLocaleString('en-IN')}
             </div>
           </div>
@@ -363,13 +360,13 @@ export function OfficeStaffFinanceView({
 
         {/* Day Transactions List */}
         <div>
-          <div className="flex items-center justify-between mb-3 text-xs font-bold text-gray-400 uppercase">
+          <div className="flex items-center justify-between mb-3 text-xs font-bold text-slate-500 uppercase">
             <span>Vouchers for {selectedDate} ({displayedTransactions.length})</span>
             <span>Status</span>
           </div>
 
           {displayedTransactions.length === 0 ? (
-            <div className="p-8 text-center border border-dashed border-gray-800 rounded-xl text-gray-500 text-xs">
+            <div className="p-8 text-center border border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
               No entries logged for {selectedDate}. Use the buttons above to log payments or site expenses.
             </div>
           ) : (
@@ -379,31 +376,31 @@ export function OfficeStaffFinanceView({
                 return (
                   <div
                     key={t.id}
-                    className="p-3.5 rounded-xl bg-gray-900/40 border border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-gray-700 transition-colors"
+                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-colors"
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                        isInc ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                        isInc ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'
                       }`}>
                         {isInc ? <ArrowDownLeft className="w-4 h-4" /> : <ArrowUpRight className="w-4 h-4" />}
                       </div>
 
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-[#2A835F]">
+                          <span className="font-mono text-xs font-bold text-[#1B2CC1]">
                             {t.transactionNumber}
                           </span>
-                          <span className="text-xs text-gray-400 font-medium">
+                          <span className="text-xs text-slate-500 font-medium">
                             • {t.paymentMethod}
                           </span>
                         </div>
 
-                        <div className="text-xs font-bold text-gray-200 mt-0.5">
+                        <div className="text-xs font-bold text-[#091540] mt-0.5">
                           {t.customerName || t.vendorName || t.category.replace(/_/g, ' ')}
                         </div>
 
                         {t.notes && (
-                          <div className="text-[11px] text-gray-500 mt-0.5">
+                          <div className="text-[11px] text-slate-500 mt-0.5">
                             {t.notes}
                           </div>
                         )}
@@ -413,22 +410,22 @@ export function OfficeStaffFinanceView({
                     <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0">
                       <div className="text-right">
                         <div className={`font-black text-sm sm:text-base ${
-                          isInc ? 'text-emerald-400' : 'text-rose-400'
+                          isInc ? 'text-emerald-700' : 'text-rose-700'
                         }`}>
                           {isInc ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
                         </div>
-                        <div className="text-[10px] text-gray-500">
+                        <div className="text-[10px] text-slate-500">
                           {t.category.replace(/_/g, ' ')}
                         </div>
                       </div>
 
                       {t.status === 'VERIFIED' ? (
-                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" />
                           Verified
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                        <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-500/10 text-amber-700 border border-amber-500/20 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
                           Pending Admin
                         </span>
@@ -440,44 +437,42 @@ export function OfficeStaffFinanceView({
             </div>
           )}
         </div>
-
       </div>
 
       {/* CREATE ENTRY MODAL */}
       {isEntryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-lg rounded-2xl bg-[#14161D] border border-gray-800 p-6 shadow-2xl text-gray-200">
-            <div className="flex items-center justify-between pb-3.5 border-b border-gray-800 mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-lg rounded-2xl bg-white border border-[#7692FF]/30 p-6 shadow-2xl text-slate-800">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 mb-5">
               <div className="flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-[#2A835F]" />
-                <h3 className="text-base font-bold text-gray-100">
+                <Receipt className="w-5 h-5 text-[#1B2CC1]" />
+                <h3 className="text-base font-bold text-[#091540]">
                   {entryMode === 'INCOME' ? 'Record Customer Collection' : 'Record Daily Site Expense'}
                 </h3>
               </div>
               <button
                 onClick={() => setIsEntryModalOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"
+                className="p-1 rounded-lg text-slate-400 hover:text-[#091540] hover:bg-slate-100"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {formError && (
-              <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+              <div className="p-3 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 text-xs font-semibold">
                 {formError}
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-              
               {/* Amount & Date */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                     Amount (₹ INR) *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
                     <input
                       type="number"
                       required
@@ -485,13 +480,13 @@ export function OfficeStaffFinanceView({
                       placeholder="0.00"
                       value={amount || ''}
                       onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                      className="w-full pl-7 pr-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-bold text-sm text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full pl-7 pr-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                     Date *
                   </label>
                   <input
@@ -499,7 +494,7 @@ export function OfficeStaffFinanceView({
                     required
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                   />
                 </div>
               </div>
@@ -507,13 +502,13 @@ export function OfficeStaffFinanceView({
               {/* Payment Method & Category */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                     Received / Paid via *
                   </label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                   >
                     <option value="UPI">UPI / GPay / PhonePe</option>
                     <option value="CASH">Cash on Site / Hand</option>
@@ -523,13 +518,13 @@ export function OfficeStaffFinanceView({
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                  <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                     Category *
                   </label>
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                   >
                     {entryMode === 'INCOME' ? (
                       <>
@@ -557,13 +552,13 @@ export function OfficeStaffFinanceView({
               {entryMode === 'INCOME' ? (
                 <>
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                       Link to Customer Ticket (Optional)
                     </label>
                     <select
                       value={selectedEnquiryId}
                       onChange={(e) => handleEnquirySelect(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                     >
                       <option value="">-- Manual Customer Entry --</option>
                       {enquiries.map((enq) => (
@@ -575,7 +570,7 @@ export function OfficeStaffFinanceView({
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                       Customer Name & Location
                     </label>
                     <input
@@ -583,7 +578,7 @@ export function OfficeStaffFinanceView({
                       placeholder="e.g. Ajsal Rahman (Nileshwaram)"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
                 </>
@@ -591,7 +586,7 @@ export function OfficeStaffFinanceView({
                 /* Expense specific */
                 <>
                   <div>
-                    <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                    <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                       Paid To (Petrol Bunk / Worker / Store Name)
                     </label>
                     <input
@@ -599,19 +594,19 @@ export function OfficeStaffFinanceView({
                       placeholder="e.g. Indian Oil Bunk Kanhangad or Squad Lead Ratheesh"
                       value={vendorName}
                       onChange={(e) => setVendorName(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                     />
                   </div>
 
                   {category === 'WORKER_WAGE' || category === 'WORKER_BATA' ? (
                     <div>
-                      <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                      <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                         Select Worker (Optional)
                       </label>
                       <select
                         value={workerId}
                         onChange={(e) => setWorkerId(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                       >
                         <option value="">-- General Squad Payout --</option>
                         {workers.map((w) => (
@@ -627,7 +622,7 @@ export function OfficeStaffFinanceView({
 
               {/* Reference Number */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                   UPI Ref ID / Receipt Bill No. (Optional)
                 </label>
                 <input
@@ -635,13 +630,13 @@ export function OfficeStaffFinanceView({
                   placeholder="e.g. UPI-2948192 or Bill-492"
                   value={referenceNumber}
                   onChange={(e) => setReferenceNumber(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-mono text-xs text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-mono text-xs text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                 />
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-[11px] font-bold text-gray-400 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                   Notes
                 </label>
                 <input
@@ -649,28 +644,27 @@ export function OfficeStaffFinanceView({
                   placeholder="e.g. 40L Diesel for JCB or Advance for plumbing project"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-gray-900 border border-gray-700 font-medium text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 font-medium text-[#091540] focus:outline-none focus:border-[#1B2CC1]"
                 />
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsEntryModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-gray-400 hover:text-white"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold transition-all shadow-md"
+                  className="px-5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white font-bold transition-all shadow-md"
                 >
                   {submitting ? 'Saving...' : 'Save & Submit Voucher'}
                 </button>
               </div>
-
             </form>
           </div>
         </div>

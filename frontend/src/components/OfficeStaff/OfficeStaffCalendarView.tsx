@@ -86,18 +86,18 @@ export function OfficeStaffCalendarView({
       </div>
 
       {/* Scheduled Orders Timeline Container */}
-      <div className="bg-[#12131D] rounded-[32px] p-5 sm:p-7 text-white shadow-2xl border border-slate-800/80">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-800">
+      <div className="bg-[#091540] rounded-[32px] p-5 sm:p-7 text-white shadow-2xl border border-[#7692FF]/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#7692FF]/20">
           <div>
             <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              <CalendarIcon className="w-5 h-5 text-emerald-400" />
+              <CalendarIcon className="w-5 h-5 text-[#ABD2FA]" />
               <span>Upcoming Field Jobs & Dispatches Schedule</span>
             </h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-[#ABD2FA]/80 mt-0.5">
               Chronological schedule of Kerala customer bookings and assigned squad timelines.
             </p>
           </div>
-          <span className="text-xs font-semibold bg-slate-800 text-slate-300 px-3 py-1 rounded-full border border-slate-700 w-fit">
+          <span className="text-xs font-semibold bg-[#1B2CC1]/30 text-[#ABD2FA] px-3 py-1 rounded-full border border-[#7692FF]/30 w-fit">
             {scheduledOrders.length} Total Bookings
           </span>
         </div>
@@ -204,7 +204,7 @@ export function OfficeStaffCalendarView({
                     className={`text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
                       hasWorker
                         ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                        : 'bg-[#2A835F] hover:bg-[#236D4F] text-white shadow-md'
+                        : 'bg-[#1B2CC1] hover:bg-[#15239E] text-white shadow-md shadow-[#1B2CC1]/20'
                     }`}
                   >
                     <UserCheck className="w-3.5 h-3.5" />

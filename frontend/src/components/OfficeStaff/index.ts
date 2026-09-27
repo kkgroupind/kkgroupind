@@ -8,5 +8,4 @@ export * from './CreateWorkModal';
 export * from './OfficeStaffSidebar';
 export * from './StaffAvatarCropModal';
 export * from './OfficeStaffFinanceView';
-
-
+export * from './OfficeStaffLoadingScreen';

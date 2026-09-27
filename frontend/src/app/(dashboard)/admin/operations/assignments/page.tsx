@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import {
@@ -110,16 +111,26 @@ export default function AdminAssignmentsPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => loadData(true)}
-          disabled={isRefreshing || isLoading}
-          className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
-        >
-          <RefreshCw
-            className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
-          />
-          <span>{isRefreshing ? 'Refreshing...' : 'Reload Dispatch Board'}</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Link
+            href="/admin/operations/enquiries"
+            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all cursor-pointer shadow-sm"
+          >
+            <FolderKanban className="w-4 h-4 text-[#7B4DFF]" />
+            <span>Job Orders</span>
+          </Link>
+
+          <button
+            onClick={() => loadData(true)}
+            disabled={isRefreshing || isLoading}
+            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+          >
+            <RefreshCw
+              className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+            />
+            <span>{isRefreshing ? 'Refreshing...' : 'Reload Dispatch Board'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Metrics Row */}

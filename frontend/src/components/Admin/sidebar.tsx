@@ -51,10 +51,8 @@ const menuData = [
       { name: 'Customers', icon: UserCircle, href: '/admin/people/customers' },
     ] },
   { name: 'Operations', icon: ClipboardList, subItems: [
-      { name: 'Enquiries', icon: Inbox, href: '/admin/operations/enquiries' },
-      { name: 'Work Orders', icon: FolderKanban, href: '/admin/operations/work-orders' },
-      { name: 'Assignments', icon: ClipboardCheck, href: '/admin/operations/assignments' },
-      { name: 'Services', icon: Layers, href: '/admin/services' },
+      { name: 'Job Orders', icon: FolderKanban, href: '/admin/operations/enquiries' },
+      { name: 'Workforce Dispatch', icon: HardHat, href: '/admin/operations/assignments' },
     ] },
   { name: 'Attendance & Availability', icon: CalendarCheck, subItems: [
       { name: 'Attendances', icon: CalendarCheck, href: '/admin/attendance' },
@@ -193,7 +191,7 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
 
   return (
     <aside
-      className={`flex-shrink-0 border-r flex flex-col h-full overflow-y-auto custom-scrollbar transition-all duration-300 ${
+      className={`flex-shrink-0 border-r flex flex-col h-full overflow-hidden transition-all duration-300 ${
         isDark ? 'bg-[#0D0E12] border-gray-800' : 'bg-white border-slate-200 shadow-sm'
       } ${isCollapsed ? 'w-20' : 'w-72 lg:w-64'}`}
     >
@@ -254,8 +252,8 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
         </div>
       )}
 
-      {/* Navigation */}
-      <nav className={`flex-1 pb-6 ${isCollapsed ? 'px-1' : 'px-2'}`}>
+      {/* Navigation (Scrollable in middle) */}
+      <nav className={`flex-1 overflow-y-auto custom-scrollbar pb-4 ${isCollapsed ? 'px-1' : 'px-2'}`}>
         <ul>
           {menuData.map((item, idx) => (
             <MenuItem
@@ -270,59 +268,48 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
         </ul>
       </nav>
 
-      {/* User Profile Footer */}
+      {/* Fixed Bottom Profile & Logout Footer */}
       <div
-        className={`p-6 border-t flex flex-col gap-4 ${
-          isDark ? 'border-gray-800' : 'border-slate-200'
-        } ${isCollapsed ? 'items-center px-2' : ''}`}
+        className={`p-3.5 border-t border-gray-800 bg-[#0D0E12] shrink-0 flex flex-col gap-2 ${
+          isCollapsed ? 'items-center px-2' : ''
+        }`}
       >
-        <button
-          onClick={handleLogout}
-          title={isCollapsed ? 'Log out' : undefined}
-          className={`flex items-center gap-3 py-2 rounded-xl transition-colors font-medium text-sm w-full cursor-pointer ${
-            isDark
-              ? 'text-gray-400 hover:text-red-400 hover:bg-[#1A1C23]'
-              : 'text-slate-600 hover:text-red-600 hover:bg-red-50'
-          } ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}
-        >
-          <LogOut className="w-5 h-5 shrink-0" />
-          {!isCollapsed && <span>Log out</span>}
-        </button>
+        {/* 1. Admin Profile Card */}
         <Link
           href="/admin/settings"
           title="Open Admin Profile & Settings"
-          className={`flex items-center p-2 rounded-xl transition-colors ${
-            isDark ? 'hover:bg-[#1A1C23]' : 'hover:bg-slate-100'
-          } ${isCollapsed ? 'justify-center' : 'gap-3'}`}
+          className={`flex items-center p-2 rounded-xl transition-all bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800/80 hover:border-gray-700/80 ${
+            isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5'
+          }`}
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#2A835F] to-emerald-600 p-[2px] shrink-0">
-            <div
-              className={`w-full h-full rounded-full flex items-center justify-center font-bold text-sm ${
-                isDark ? 'bg-[#1A1C23] text-white' : 'bg-white text-[#2A835F]'
-              }`}
-            >
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7B4DFF] to-indigo-600 p-[2px] shrink-0 shadow-inner">
+            <div className="w-full h-full rounded-xl flex items-center justify-center font-bold text-xs bg-[#181920] text-white">
               {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
             </div>
           </div>
           {!isCollapsed && (
-            <div className="overflow-hidden text-left">
-              <p
-                className={`text-sm font-semibold truncate ${
-                  isDark ? 'text-gray-200' : 'text-slate-900'
-                }`}
-              >
+            <div className="overflow-hidden text-left flex-1 min-w-0">
+              <p className="text-xs font-bold truncate text-gray-100">
                 {user?.name || user?.username || 'Super Admin'}
               </p>
-              <p
-                className={`text-xs truncate ${
-                  isDark ? 'text-gray-500' : 'text-slate-500'
-                }`}
-              >
+              <p className="text-[11px] truncate text-gray-400 font-mono">
                 {user?.email || `@${user?.username || 'admin'}`}
               </p>
             </div>
           )}
         </Link>
+
+        {/* 2. Logout Button (Below Profile, in Red) */}
+        <button
+          onClick={handleLogout}
+          title={isCollapsed ? 'Log out' : undefined}
+          className={`flex items-center gap-2.5 py-2 px-3 rounded-xl transition-all font-semibold text-xs w-full cursor-pointer bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 hover:border-rose-500/30 shadow-xs ${
+            isCollapsed ? 'justify-center px-0 py-2' : ''
+          }`}
+        >
+          <LogOut className="w-4 h-4 shrink-0 text-rose-400" />
+          {!isCollapsed && <span>Log out</span>}
+        </button>
       </div>
     </aside>
   );
