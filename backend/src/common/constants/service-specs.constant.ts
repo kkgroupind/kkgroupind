@@ -17,6 +17,7 @@ export interface ServiceSpecificationConfig {
   description: string;
   features: string[];
   icon: string;
+  image?: string;
   wageType: ServiceWageType;
   unitLabel: string;
   baseCustomerRate: number;
@@ -41,6 +42,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Organic plantation waste disposal and mulch spreading',
     ],
     icon: 'Palmtree',
+    image: '/hero-service-card/coco.png',
     wageType: 'PER_TREE',
     unitLabel: 'Tree',
     baseCustomerRate: 120,
@@ -69,6 +71,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Available on hourly, daily, or turnkey project contracts',
     ],
     icon: 'Tractor',
+    image: '/hero-service-card/jcb.png',
     wageType: 'HOURLY',
     unitLabel: 'Hour',
     baseCustomerRate: 1600,
@@ -97,6 +100,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Architectural arches, compound walls & elevation details',
     ],
     icon: 'Layers',
+    image: '/hero-service-card/plastering.png',
     wageType: 'DAILY_WAGE',
     unitLabel: 'Day / Shift',
     baseCustomerRate: 1600,
@@ -124,6 +128,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Authentic Asian Paints, Berger, and Dulux certified materials',
     ],
     icon: 'Paintbrush',
+    image: '/hero-service-card/plastering.png',
     wageType: 'PER_SQFT',
     unitLabel: 'Sq. Ft.',
     baseCustomerRate: 24,
@@ -151,6 +156,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Staircase bullnosing & custom kitchen countertop fabrication',
     ],
     icon: 'Sparkles',
+    image: '/hero-service-card/plastering.png',
     wageType: 'PER_SQFT',
     unitLabel: 'Sq. Ft.',
     baseCustomerRate: 45,
@@ -178,6 +184,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Generator changeover switches, UPS & high-load AC points',
     ],
     icon: 'Zap',
+    image: '/hero-service-card/electrical.png',
     wageType: 'PER_POINT',
     unitLabel: 'Point',
     baseCustomerRate: 450,
@@ -205,6 +212,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Submersible pump wiring & rainwater harvesting connections',
     ],
     icon: 'Wrench',
+    image: '/hero-service-card/borewell.png',
     wageType: 'FIXED_VISIT',
     unitLabel: 'Visit / Inspection',
     baseCustomerRate: 350,
@@ -231,6 +239,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Certified 16-parameter chemical & microbiological water report',
     ],
     icon: 'Droplets',
+    image: '/hero-service-card/borewell.png',
     wageType: 'PER_FOOT',
     unitLabel: 'Foot',
     baseCustomerRate: 115,

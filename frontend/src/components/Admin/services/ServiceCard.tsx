@@ -127,8 +127,16 @@ export function ServiceCard({
             {/* Avatar with Gradient Ring */}
             <div className="relative shrink-0">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-purple-500/20 to-indigo-500/20 p-[2px] shadow-inner">
-                <div className="w-full h-full rounded-2xl bg-[#181920] flex items-center justify-center">
-                  {getCategoryIcon(service.category)}
+                <div className="w-full h-full rounded-2xl bg-[#181920] flex items-center justify-center overflow-hidden">
+                  {service.image ? (
+                    <img
+                      src={service.image}
+                      alt={service.name}
+                      className="w-full h-full object-cover rounded-2xl"
+                    />
+                  ) : (
+                    getCategoryIcon(service.category)
+                  )}
                 </div>
               </div>
               {/* Status Indicator */}

@@ -11,7 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { Roles } from '../../../common';
+import { Public, Roles } from '../../../common';
 import { Role } from '../../../database';
 import { ServicesService } from './services.service';
 import { CreateServiceDto, ListServicesDto, UpdateServiceDto } from './dto';
@@ -20,6 +20,12 @@ import { CreateServiceDto, ListServicesDto, UpdateServiceDto } from './dto';
 @Roles(Role.SUPER_ADMIN)
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
+
+  @Public()
+  @Get('public')
+  async listPublicServices() {
+    return this.servicesService.listActiveServices();
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

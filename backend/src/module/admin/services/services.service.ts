@@ -187,6 +187,13 @@ export class ServicesService implements OnModuleInit {
     };
   }
 
+  async listActiveServices(): Promise<Service[]> {
+    return this.servicesRepo.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
+    });
+  }
+
   async getServiceById(idOrServiceId: string) {
     let service = await this.servicesRepo.findById(idOrServiceId);
     if (!service) {
@@ -362,6 +369,7 @@ export class ServicesService implements OnModuleInit {
           description: def.description,
           features: def.features,
           icon: def.icon,
+          image: def.image || existing.image || null,
           priceRange: def.priceRange,
           duration: def.duration,
           wageType: def.wageType,
@@ -384,6 +392,7 @@ export class ServicesService implements OnModuleInit {
           description: def.description,
           features: def.features,
           icon: def.icon,
+          image: def.image || null,
           priceRange: def.priceRange,
           duration: def.duration,
           wageType: def.wageType,

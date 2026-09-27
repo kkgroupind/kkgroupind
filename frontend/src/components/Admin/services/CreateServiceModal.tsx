@@ -10,6 +10,10 @@ import {
   IndianRupee,
   Clock,
   Layers,
+  Upload,
+  ImageIcon,
+  Trash2,
+  Link2,
 } from 'lucide-react';
 import { adminServicesService, CreateServiceInput, ServiceItem } from '@/services/Admin/services';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
@@ -20,6 +24,14 @@ interface CreateServiceModalProps {
   token: string;
   onSuccess: (newService: ServiceItem) => void;
 }
+
+const DEFAULT_IMAGE_PRESETS = [
+  { label: '🌴 Coconut Plucking', url: '/hero-service-card/coco.png' },
+  { label: '🚜 JCB & Excavator', url: '/hero-service-card/jcb.png' },
+  { label: '🧱 Plastering & Masonry', url: '/hero-service-card/plastering.png' },
+  { label: '⚡ Electrical & MEP', url: '/hero-service-card/electrical.png' },
+  { label: '💧 Borewell Drilling', url: '/hero-service-card/borewell.png' },
+];
 
 const CATEGORY_PRESETS = [
   'Agriculture',
@@ -58,6 +70,9 @@ export function CreateServiceModal({
   const [customServiceId, setCustomServiceId] = useState('');
   const [category, setCategory] = useState(CATEGORY_PRESETS[0]);
   const [customCategory, setCustomCategory] = useState('');
+  const [image, setImage] = useState('');
+  const [imageInputTab, setImageInputTab] = useState<'upload' | 'preset' | 'url'>('upload');
+  const [urlInput, setUrlInput] = useState('');
   const [description, setDescription] = useState('');
   const [featureInput, setFeatureInput] = useState('');
   const [features, setFeatures] = useState<string[]>([]);
@@ -73,6 +88,66 @@ export function CreateServiceModal({
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (PNG, JPG, WebP, etc.)');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Image size exceeds 10MB limit');
+      return;
+    }
+
+    setError(null);
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawDataUrl = event.target?.result as string;
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 800;
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            setImage(rawDataUrl);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const webp = canvas.toDataURL('image/webp', 0.85);
+            if (webp.startsWith('data:image/webp')) {
+              setImage(webp);
+              return;
+            }
+          } catch {}
+          setImage(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => setImage(rawDataUrl);
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      setError('Failed to process image');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -158,6 +233,7 @@ export function CreateServiceModal({
         name: cleanName,
         serviceId: customServiceId.trim() ? customServiceId.trim().toUpperCase() : undefined,
         category: finalCategory,
+        image: image.trim() || undefined,
         description: cleanDesc,
         features: features,
         priceRange: priceRange.trim() || undefined,
@@ -289,6 +365,168 @@ export function CreateServiceModal({
                   className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2A835F]"
                   required
                 />
+              </div>
+            )}
+          </div>
+
+          {/* Service Image / Media */}
+          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-xs font-bold text-gray-200">
+                  Service Image / Thumbnail
+                </label>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Shown in customer booking dropdowns and admin service lists
+                </p>
+              </div>
+
+              {/* Mode Switcher Tabs */}
+              <div className="flex items-center gap-1 bg-[#121317] p-1 rounded-xl border border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setImageInputTab('upload')}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                    imageInputTab === 'upload'
+                      ? 'bg-[#2A835F] text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Upload</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputTab('preset')}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                    imageInputTab === 'preset'
+                      ? 'bg-[#2A835F] text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <ImageIcon className="w-3 h-3" />
+                  <span>Presets</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputTab('url')}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                    imageInputTab === 'url'
+                      ? 'bg-[#2A835F] text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <Link2 className="w-3 h-3" />
+                  <span>URL</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Active Preview if image exists */}
+            {image && (
+              <div className="flex items-center gap-3 p-3 bg-[#121317] border border-gray-800 rounded-xl">
+                <div className="w-14 h-14 rounded-xl bg-gray-900 border border-gray-700/80 overflow-hidden shrink-0 flex items-center justify-center">
+                  <img
+                    src={image}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-gray-200 truncate">
+                    Image Attached
+                  </p>
+                  <p className="text-[11px] text-gray-400 truncate">
+                    {image.startsWith('data:') ? 'Custom uploaded image (Ready)' : image}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImage('');
+                    setUrlInput('');
+                  }}
+                  className="p-2 text-gray-400 hover:text-rose-400 bg-[#1A1C23] hover:bg-rose-500/10 rounded-lg border border-gray-800 hover:border-rose-500/30 transition-colors cursor-pointer"
+                  title="Remove Image"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Upload File Input */}
+            {imageInputTab === 'upload' && (
+              <div>
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 rounded-xl cursor-pointer bg-[#14151A]/60 hover:bg-[#1A1C23] transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-2 pb-2">
+                    <Upload className="w-5 h-5 mb-1.5 text-gray-400" />
+                    <p className="text-xs text-gray-300 font-medium">
+                      <span className="text-emerald-400">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      PNG, JPG, or WebP (max 5MB)
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              </div>
+            )}
+
+            {/* Preset Selection Buttons */}
+            {imageInputTab === 'preset' && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {DEFAULT_IMAGE_PRESETS.map((preset) => (
+                  <button
+                    key={preset.url}
+                    type="button"
+                    onClick={() => setImage(preset.url)}
+                    className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                      image === preset.url
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
+                        : 'border-gray-800 bg-[#14151A] hover:border-gray-700 text-gray-300'
+                    }`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-gray-900 overflow-hidden shrink-0 border border-gray-700/50">
+                      <img
+                        src={preset.url}
+                        alt={preset.label}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-[11px] font-medium truncate">
+                      {preset.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Direct URL Input */}
+            {imageInputTab === 'url' && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://example.com/image.png or /hero-service-card/coco.png"
+                  className="flex-1 bg-[#14151A] border border-gray-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (urlInput.trim()) {
+                      setImage(urlInput.trim());
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-semibold cursor-pointer transition-colors"
+                >
+                  Apply
+                </button>
               </div>
             )}
           </div>

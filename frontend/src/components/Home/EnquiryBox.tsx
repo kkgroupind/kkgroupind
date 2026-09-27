@@ -15,6 +15,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { EnquiryService } from '@/services/enquiry.service';
+import { adminServicesService } from '@/services/Admin/services';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
 import { StylishDropdown } from '@/components/Common/StylishDropdown';
@@ -31,6 +32,24 @@ interface EnquiryBoxProps {
   onEnquirySuccess?: (trackingCode: string) => void;
 }
 
+const DEFAULT_SERVICE_IMAGES: Record<string, string> = {
+  cococare: '/hero-service-card/coco.png',
+  coconut: '/hero-service-card/coco.png',
+  'coconut-plucking': '/hero-service-card/coco.png',
+  jcb: '/hero-service-card/jcb.png',
+  'jcb-excavator': '/hero-service-card/jcb.png',
+  plastering: '/hero-service-card/plastering.png',
+  'plastering-masonry': '/hero-service-card/plastering.png',
+  painting: '/hero-service-card/plastering.png',
+  tile: '/hero-service-card/plastering.png',
+  tiling: '/hero-service-card/plastering.png',
+  trenching: '/hero-service-card/borewell.png',
+  plumbing: '/hero-service-card/borewell.png',
+  electrical: '/hero-service-card/electrical.png',
+  'electrical-mep': '/hero-service-card/electrical.png',
+  borewell: '/hero-service-card/borewell.png',
+};
+
 export function EnquiryBox({
   isOpen,
   onClose,
@@ -42,43 +61,79 @@ export function EnquiryBox({
   const toast = useToast();
   const t = translations[language].enquiry;
 
-  const SERVICE_OPTIONS = [
+  const DEFAULT_SERVICE_OPTIONS = [
     {
       id: 'cococare',
       name: t.servicesList.cococare,
       defaultScale: '1 Squad (4 Climbers)',
+      image: '/hero-service-card/coco.png',
     },
     {
       id: 'jcb',
       name: t.servicesList.jcb,
       defaultScale: '1 Heavy JCB Excavator',
+      image: '/hero-service-card/jcb.png',
     },
     {
       id: 'plastering',
       name: t.servicesList.plastering,
       defaultScale: '6 Craft Operatives',
+      image: '/hero-service-card/plastering.png',
     },
     {
       id: 'painting',
       name: t.servicesList.painting,
       defaultScale: '4 Painters Squad',
+      image: '/hero-service-card/plastering.png',
     },
     {
       id: 'tiling',
       name: t.servicesList.tile,
       defaultScale: '4 Tiling Specialists',
+      image: '/hero-service-card/plastering.png',
     },
     {
       id: 'trenching',
       name: t.servicesList.plumbing,
       defaultScale: '1 Machine + 2 Operators',
+      image: '/hero-service-card/borewell.png',
     },
     {
       id: 'electrical',
       name: t.servicesList.electrical,
       defaultScale: '2 Electricians',
+      image: '/hero-service-card/electrical.png',
     },
   ];
+
+  const [serviceOptions, setServiceOptions] = useState(DEFAULT_SERVICE_OPTIONS);
+
+  useEffect(() => {
+    let isMounted = true;
+    adminServicesService
+      .listPublicServices()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((s) => ({
+            id: s.slug || s.serviceId || s.id,
+            name: s.name,
+            defaultScale: s.duration || s.priceRange || 'Standard Crew Dispatch',
+            image:
+              s.image ||
+              DEFAULT_SERVICE_IMAGES[s.slug || ''] ||
+              DEFAULT_SERVICE_IMAGES[s.id] ||
+              '/hero-service-card/coco.png',
+          }));
+          setServiceOptions(mapped);
+        }
+      })
+      .catch(() => {
+        // Fallback to defaults
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const [selectedServiceId, setSelectedServiceId] = useState('cococare');
   const [customerName, setCustomerName] = useState('');
@@ -94,7 +149,7 @@ export function EnquiryBox({
   useEffect(() => {
     if (initialService) {
       const lower = initialService.toLowerCase();
-      const matched = SERVICE_OPTIONS.find(
+      const matched = serviceOptions.find(
         (s) =>
           s.id.toLowerCase().includes(lower) ||
           s.name.toLowerCase().includes(lower) ||
@@ -104,10 +159,10 @@ export function EnquiryBox({
         setSelectedServiceId(matched.id);
       }
     }
-  }, [initialService]);
+  }, [initialService, serviceOptions]);
 
   const currentService =
-    SERVICE_OPTIONS.find((s) => s.id === selectedServiceId) || SERVICE_OPTIONS[0];
+    serviceOptions.find((s) => s.id === selectedServiceId) || serviceOptions[0] || DEFAULT_SERVICE_OPTIONS[0];
   const [squadScale, setSquadScale] = useState(currentService.defaultScale);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -318,15 +373,16 @@ export function EnquiryBox({
           {/* 1. Service Choosing Dropdown */}
           <div className="flex flex-col w-full">
             <StylishDropdown
-              options={SERVICE_OPTIONS.map((s) => ({
+              options={serviceOptions.map((s) => ({
                 id: s.id,
                 label: s.name,
                 subtitle: s.defaultScale,
+                image: s.image,
               }))}
               value={selectedServiceId}
               onChange={(id) => {
                 setSelectedServiceId(id);
-                const matched = SERVICE_OPTIONS.find((s) => s.id === id);
+                const matched = serviceOptions.find((s) => s.id === id);
                 if (matched) setSquadScale(matched.defaultScale);
               }}
               label={t.chooseService}

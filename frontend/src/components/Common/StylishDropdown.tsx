@@ -7,6 +7,7 @@ export interface DropdownOption {
   id: string;
   label: string;
   icon?: React.ReactNode;
+  image?: string;
   subtitle?: string;
   badge?: string;
 }
@@ -119,21 +120,44 @@ export function StylishDropdown({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          {icon && (
-            <span className="shrink-0 text-[#2A835F] flex items-center justify-center">
-              {icon}
-            </span>
-          )}
-
-          {selectedOption?.icon && (
-            <span className="shrink-0 flex items-center justify-center">
-              {selectedOption.icon}
-            </span>
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          {selectedOption?.image ? (
+            <div
+              className={`w-8 h-8 rounded-lg overflow-hidden shrink-0 flex items-center justify-center shadow-xs border ${
+                variant === 'inline'
+                  ? 'border-emerald-500/30 bg-black/40'
+                  : 'border-slate-300/80 bg-slate-100'
+              }`}
+            >
+              <img
+                src={selectedOption.image}
+                alt={selectedOption.label}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          ) : (
+            <>
+              {icon && (
+                <span className="shrink-0 text-[#2A835F] flex items-center justify-center">
+                  {icon}
+                </span>
+              )}
+              {selectedOption?.icon && (
+                <span className="shrink-0 flex items-center justify-center">
+                  {selectedOption.icon}
+                </span>
+              )}
+            </>
           )}
 
           <div className="flex flex-col text-left min-w-0 flex-1">
-            <span className="text-xs lg:text-sm font-bold text-slate-900 truncate">
+            <span
+              className={`text-xs lg:text-sm font-bold truncate ${
+                variant === 'inline'
+                  ? 'text-slate-100 group-hover:text-white'
+                  : 'text-slate-900'
+              }`}
+            >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             {selectedOption?.subtitle && (
@@ -175,11 +199,19 @@ export function StylishDropdown({
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  {option.icon && (
+                  {option.image ? (
+                    <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100 flex items-center justify-center shadow-xs">
+                      <img
+                        src={option.image}
+                        alt={option.label}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : option.icon ? (
                     <span className="shrink-0 flex items-center justify-center text-sm">
                       {option.icon}
                     </span>
-                  )}
+                  ) : null}
                   <div className="flex flex-col text-left min-w-0 flex-1">
                     <span className="text-xs sm:text-[13px] leading-snug truncate">
                       {option.label}

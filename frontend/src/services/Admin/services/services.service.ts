@@ -140,6 +140,9 @@ export const adminServicesService = {
       token,
     ),
 
+  listPublicServices: () =>
+    request<ServiceItem[]>('/admin/services/public', { method: 'GET' }),
+
   seedServices: (token: string) =>
     request<{ message: string; count: number; services: ServiceItem[] }>(
       '/admin/services/seed',

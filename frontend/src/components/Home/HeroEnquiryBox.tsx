@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ArrowRight,
   CheckCircle2,
@@ -15,6 +15,7 @@ import {
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
 import { EnquiryService } from '@/services/enquiry.service';
+import { adminServicesService } from '@/services/Admin/services';
 import { StylishDropdown, DropdownOption } from '@/components/Common/StylishDropdown';
 import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
 import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
@@ -26,28 +27,75 @@ interface HeroEnquiryBoxProps {
   className?: string;
 }
 
+const DEFAULT_SERVICE_IMAGES: Record<string, string> = {
+  cococare: '/hero-service-card/coco.png',
+  coconut: '/hero-service-card/coco.png',
+  'coconut-plucking': '/hero-service-card/coco.png',
+  jcb: '/hero-service-card/jcb.png',
+  'jcb-excavation': '/hero-service-card/jcb.png',
+  plastering: '/hero-service-card/plastering.png',
+  'plastering-masonry': '/hero-service-card/plastering.png',
+  painting: '/hero-service-card/plastering.png',
+  tile: '/hero-service-card/plastering.png',
+  tiling: '/hero-service-card/plastering.png',
+  electrical: '/hero-service-card/electrical.png',
+  'electrical-mep': '/hero-service-card/electrical.png',
+  plumbing: '/hero-service-card/borewell.png',
+  borewell: '/hero-service-card/borewell.png',
+  'borewell-survey': '/hero-service-card/borewell.png',
+};
+
 export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProps) {
   const { language } = useLanguage();
   const toast = useToast();
   const t = translations[language].enquiry;
 
-  const SERVICES = [
-    { id: 'cococare', name: t.servicesList.cococare },
-    { id: 'jcb', name: t.servicesList.jcb },
-    { id: 'plastering', name: t.servicesList.plastering },
-    { id: 'painting', name: t.servicesList.painting },
-    { id: 'tile', name: t.servicesList.tile },
-    { id: 'electrical', name: t.servicesList.electrical },
-    { id: 'plumbing', name: t.servicesList.plumbing },
-    { id: 'borewell', name: 'Borewell Drilling & Water Survey' },
+  const DEFAULT_SERVICES = [
+    { id: 'cococare', name: t.servicesList.cococare, image: '/hero-service-card/coco.png' },
+    { id: 'jcb', name: t.servicesList.jcb, image: '/hero-service-card/jcb.png' },
+    { id: 'plastering', name: t.servicesList.plastering, image: '/hero-service-card/plastering.png' },
+    { id: 'painting', name: t.servicesList.painting, image: '/hero-service-card/plastering.png' },
+    { id: 'tile', name: t.servicesList.tile, image: '/hero-service-card/plastering.png' },
+    { id: 'electrical', name: t.servicesList.electrical, image: '/hero-service-card/electrical.png' },
+    { id: 'plumbing', name: t.servicesList.plumbing, image: '/hero-service-card/borewell.png' },
+    { id: 'borewell', name: 'Borewell Drilling & Water Survey', image: '/hero-service-card/borewell.png' },
   ];
 
-  const serviceDropdownOptions: DropdownOption[] = SERVICES.map((s) => ({
+  const [servicesList, setServicesList] = useState(DEFAULT_SERVICES);
+
+  useEffect(() => {
+    let isMounted = true;
+    adminServicesService
+      .listPublicServices()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((s) => ({
+            id: s.slug || s.serviceId || s.id,
+            name: s.name,
+            image:
+              s.image ||
+              DEFAULT_SERVICE_IMAGES[s.slug || ''] ||
+              DEFAULT_SERVICE_IMAGES[s.id] ||
+              '/hero-service-card/coco.png',
+          }));
+          setServicesList(mapped);
+        }
+      })
+      .catch(() => {
+        // Silently preserve default services
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const serviceDropdownOptions: DropdownOption[] = servicesList.map((s) => ({
     id: s.id,
     label: s.name,
+    image: s.image,
   }));
 
-  const [selectedServiceId, setSelectedServiceId] = useState(SERVICES[0].id);
+  const [selectedServiceId, setSelectedServiceId] = useState(DEFAULT_SERVICES[0].id);
   const [customerName, setCustomerName] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -59,7 +107,7 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const currentService =
-    SERVICES.find((s) => s.id === selectedServiceId) || SERVICES[0];
+    servicesList.find((s) => s.id === selectedServiceId) || servicesList[0] || DEFAULT_SERVICES[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
