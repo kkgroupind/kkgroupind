@@ -27,9 +27,9 @@ export class CreateServiceDto {
   @IsString()
   category?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty({ message: SERVICE_MESSAGES.DESCRIPTION_REQUIRED })
-  description: string;
+  description?: string;
 
   @IsOptional()
   @IsArray()

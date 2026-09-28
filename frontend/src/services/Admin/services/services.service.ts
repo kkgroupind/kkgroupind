@@ -29,7 +29,7 @@ export interface CreateServiceInput {
   serviceId?: string;
   slug?: string;
   category?: string;
-  description: string;
+  description?: string;
   features?: string[];
   icon?: string;
   image?: string;

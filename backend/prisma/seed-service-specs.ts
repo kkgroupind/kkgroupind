@@ -24,30 +24,34 @@ function generateSlug(name: string): string {
 async function main() {
   console.log('Synchronizing KK Group Service Specifications with Database...');
 
-  let serviceCounter = 1;
-  const existingServices = await prisma.service.findMany();
-  const existingIds = existingServices.map((s) => s.serviceId);
-
   for (const def of KK_STANDARD_SERVICE_SPECS) {
     const slug = generateSlug(def.name);
-    // Find by exact slug, name substring, or category match
-    const existing = existingServices.find(
-      (s) =>
-        s.slug === slug ||
-        s.name.toLowerCase().includes(def.name.split(' ')[0].toLowerCase()) ||
-        (s.category && s.category.toLowerCase() === def.category.toLowerCase()),
-    );
+    const expectedServiceId = `KKS-${String(def.sortOrder).padStart(3, '0')}`;
+
+    // Try finding by serviceId first, then by slug
+    let existing = await prisma.service.findUnique({
+      where: { serviceId: expectedServiceId },
+    });
+
+    if (!existing) {
+      existing = await prisma.service.findUnique({
+        where: { slug },
+      });
+    }
 
     if (existing) {
-      console.log(`Updating existing service: "${existing.name}" -> Wage: ${def.wageType} (${def.unitLabel})`);
+      console.log(`Updating service [${expectedServiceId}]: "${def.name}" (${def.category})`);
       await prisma.service.update({
         where: { id: existing.id },
         data: {
+          serviceId: expectedServiceId,
           name: def.name,
+          slug,
           category: def.category,
           description: def.description,
           features: def.features,
           icon: def.icon,
+          image: def.image,
           priceRange: def.priceRange,
           duration: def.duration,
           wageType: def.wageType,
@@ -61,23 +65,17 @@ async function main() {
         },
       });
     } else {
-      let finalServiceId = `KKS-${String(serviceCounter).padStart(3, '0')}`;
-      while (existingIds.includes(finalServiceId)) {
-        serviceCounter++;
-        finalServiceId = `KKS-${String(serviceCounter).padStart(3, '0')}`;
-      }
-      existingIds.push(finalServiceId);
-
-      console.log(`Creating new service: "${def.name}" -> ${finalServiceId} (${def.wageType})`);
+      console.log(`Creating new service [${expectedServiceId}]: "${def.name}" (${def.category})`);
       await prisma.service.create({
         data: {
-          serviceId: finalServiceId,
+          serviceId: expectedServiceId,
           name: def.name,
           slug,
           category: def.category,
           description: def.description,
           features: def.features,
           icon: def.icon,
+          image: def.image,
           priceRange: def.priceRange,
           duration: def.duration,
           wageType: def.wageType,
@@ -90,7 +88,6 @@ async function main() {
           isActive: true,
         },
       });
-      serviceCounter++;
     }
   }
 

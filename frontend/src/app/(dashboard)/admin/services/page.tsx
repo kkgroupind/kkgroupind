@@ -21,7 +21,6 @@ import { adminServicesService, ServiceItem } from '@/services/Admin/services';
 import { ServiceCard } from '@/components/Admin/services/ServiceCard';
 import { CreateServiceModal } from '@/components/Admin/services/CreateServiceModal';
 import { EditServiceModal } from '@/components/Admin/services/EditServiceModal';
-import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export default function AdminServicesPage() {
@@ -38,8 +37,6 @@ export default function AdminServicesPage() {
   // Modals
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceItem | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   // Status Banner / Feedback
@@ -128,27 +125,6 @@ export default function AdminServicesPage() {
       showFeedback('error', 'Failed to update service status.');
     } finally {
       setTogglingId(null);
-    }
-  };
-
-  const handleDeleteService = (id: string, name: string) => {
-    setDeleteTarget({ id, name });
-  };
-
-  const handleConfirmDeleteService = async () => {
-    if (!token || !deleteTarget) return;
-
-    setIsDeleting(true);
-    try {
-      await adminServicesService.deleteService(deleteTarget.id, token);
-      setServices((prev) => prev.filter((s) => s.id !== deleteTarget.id));
-      showFeedback('success', `Service "${deleteTarget.name}" was successfully removed.`);
-      setDeleteTarget(null);
-    } catch (err: any) {
-      console.error('Delete service error', err);
-      showFeedback('error', err?.message || 'Failed to delete service.');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -415,7 +391,6 @@ export default function AdminServicesPage() {
               key={service.id}
               service={service}
               onEdit={(srv) => setEditingService(srv)}
-              onDelete={handleDeleteService}
               onToggleStatus={handleToggleStatus}
               isToggling={togglingId === service.id}
             />
@@ -443,25 +418,6 @@ export default function AdminServicesPage() {
           setServices((prev) => prev.map((s) => (s.id === updatedSrv.id ? updatedSrv : s)));
           showFeedback('success', `Service "${updatedSrv.name}" updated successfully!`);
         }}
-      />
-
-      <ConfirmationModal
-        isOpen={!!deleteTarget}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleConfirmDeleteService}
-        title="Delete Service Offering"
-        message={`Are you sure you want to permanently remove "${deleteTarget?.name || 'this service'}" from the catalog? Customers will no longer be able to select or request this service.`}
-        confirmText="Delete Service"
-        variant="danger"
-        isLoading={isDeleting}
-        itemDetails={
-          deleteTarget
-            ? [
-                { label: 'Service Name', value: deleteTarget.name },
-                { label: 'Service ID', value: deleteTarget.id },
-              ]
-            : undefined
-        }
       />
     </div>
   );

@@ -296,8 +296,8 @@ export function WorkerNavbar({
               </span>
             </button>
 
-            {/* Profile Avatar Trigger & Dropdown Menu */}
-            <div className="relative" ref={profileMenuRef}>
+            {/* Profile Avatar Trigger & Dropdown Menu (Desktop only - mobile uses bottom navbar) */}
+            <div className="relative hidden md:block" ref={profileMenuRef}>
               <button
                 type="button"
                 onClick={() => setIsProfileMenuOpen((prev) => !prev)}

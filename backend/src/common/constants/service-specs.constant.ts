@@ -32,7 +32,7 @@ export interface ServiceSpecificationConfig {
 export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
   {
     name: 'Coconut Palm Tree Plucking & Crown Cleaning',
-    category: 'Agriculture',
+    category: 'Agriculture & Cococare',
     description:
       'Professional coconut palm tree maintenance, crown cleaning, pest control, and skilled yield harvesting by certified field climbers across Kerala.',
     features: [
@@ -42,7 +42,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Organic plantation waste disposal and mulch spreading',
     ],
     icon: 'Palmtree',
-    image: '/hero-service-card/coco.png',
+    image: '/Banners/coco.png',
     wageType: 'PER_TREE',
     unitLabel: 'Tree',
     baseCustomerRate: 120,
@@ -71,7 +71,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Available on hourly, daily, or turnkey project contracts',
     ],
     icon: 'Tractor',
-    image: '/hero-service-card/jcb.png',
+    image: '/Banners/jcb.png',
     wageType: 'HOURLY',
     unitLabel: 'Hour',
     baseCustomerRate: 1600,
@@ -89,36 +89,36 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
     },
   },
   {
-    name: 'Masonry & Brick Construction',
-    category: 'Civil & Construction',
+    name: 'Exterior & Interior Plastering Squads',
+    category: 'Plastering & Wall Rendering',
     description:
-      'Master masonry crews for residential and commercial brickwork, stone foundation building, exterior plastering, and structural repairs.',
+      'Specialized plastering squads for exterior weather-shield cement plastering, interior smooth finish, gypsum plastering, and crack repair with laser plumb-line leveling.',
     features: [
-      'Traditional Kerala stone masonry & modern cement-block laying',
-      'Precision water-level alignment and plumb-line calibration',
-      'Double-coat waterproof cement plastering with sand grading',
-      'Architectural arches, compound walls & elevation details',
+      'Double-coat waterproof exterior cement plastering with graded sand',
+      'Smooth sponge and putty-finish interior plaster rendering',
+      'Laser-guided wall leveling, corner bead alignment & plumb-line calibration',
+      'Anti-shrinkage fiber reinforced mortar for crack prevention',
     ],
     icon: 'Layers',
-    image: '/hero-service-card/plastering.png',
+    image: '/Banners/plastering.png',
     wageType: 'DAILY_WAGE',
     unitLabel: 'Day / Shift',
-    baseCustomerRate: 1600,
-    baseWorkerWage: 1100,
+    baseCustomerRate: 1500,
+    baseWorkerWage: 1050,
     minUnits: 1,
-    priceRange: '₹1,500 - ₹1,800 / Day',
-    duration: 'Project Milestones',
+    priceRange: '₹1,400 - ₹1,700 / Day',
+    duration: 'Project Basis',
     sortOrder: 3,
     specifications: {
       shiftHoursStandard: 8,
-      dailyBataAllowance: 150,
-      helperWageIncluded: false,
+      spongeFinishIncluded: true,
+      doubleCoatExternal: true,
       overtimeRatePerHour: 200,
     },
   },
   {
     name: 'Commercial & Residential Painting',
-    category: 'Finishing & Renovation',
+    category: 'Surface Finishing & Painting',
     description:
       'Full-scale interior and exterior painting squads with mechanized surface preparation, anti-fungal treatment, and weather-guard coating.',
     features: [
@@ -128,7 +128,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Authentic Asian Paints, Berger, and Dulux certified materials',
     ],
     icon: 'Paintbrush',
-    image: '/hero-service-card/plastering.png',
+    image: '/Banners/painting.png',
     wageType: 'PER_SQFT',
     unitLabel: 'Sq. Ft.',
     baseCustomerRate: 24,
@@ -156,7 +156,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Staircase bullnosing & custom kitchen countertop fabrication',
     ],
     icon: 'Sparkles',
-    image: '/hero-service-card/plastering.png',
+    image: '/Banners/tiling.png',
     wageType: 'PER_SQFT',
     unitLabel: 'Sq. Ft.',
     baseCustomerRate: 45,
@@ -173,18 +173,18 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
     },
   },
   {
-    name: 'Electrical & Wiring Systems',
-    category: 'MEP & Utilities',
+    name: 'Industrial & Domestic Electrical MEP Systems',
+    category: 'Electrical & Power Systems',
     description:
-      'Licensed wiremen and industrial electricians for complete concealed conduit wiring, main DB dressing, solar grid tie-ins, and three-phase balancing.',
+      'Licensed wiremen and MEP electrical teams for concealed conduit wiring, three-phase distribution boards, solar inverter tie-ins, and industrial switchgear.',
     features: [
-      'Kerala State Electricity Board (KSEB) compliant standards',
-      'FR-LSH copper cabling with MCB/ELCB surge protection',
-      'Copper plate earth pit installation with chemical backfill',
-      'Generator changeover switches, UPS & high-load AC points',
+      'Kerala State Electricity Board (KSEB) compliant wiring standards',
+      'FR-LSH copper cabling with MCB, RCCB and surge protection',
+      'Chemical copper plate earth pit installation with low-resistance backfill',
+      'Generator changeover systems, high-load AC & EV charger points',
     ],
     icon: 'Zap',
-    image: '/hero-service-card/electrical.png',
+    image: '/Banners/electrical.png',
     wageType: 'PER_POINT',
     unitLabel: 'Point',
     baseCustomerRate: 450,
@@ -201,18 +201,18 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
     },
   },
   {
-    name: 'Plumbing & High-Pressure Piping',
-    category: 'MEP & Utilities',
+    name: 'Pipeline Trenching & Sanitary Plumbing',
+    category: 'Plumbing & Sanitary Utilities',
     description:
-      'Turnkey plumbing installations, CPVC/UPVC pressurized water lines, underground drainage networks, overhead tank setups, and fixture installations.',
+      'Turnkey plumbing installations, CPVC/UPVC pressurized water lines, underground drainage networks, overhead tank setups, and luxury fixture installations.',
     features: [
-      'Electrofusion & solvent weld joints with hydrostatic testing',
-      'Overhead multi-layer tank installation with automatic float valves',
-      'Concealed diverters, shower columns & sanitary ware fixing',
-      'Submersible pump wiring & rainwater harvesting connections',
+      'Electrofusion & solvent weld joints with hydrostatic pressure testing',
+      'Overhead multi-layer tank installation with automatic float controllers',
+      'Concealed diverters, rain showers & sanitary fixture installation',
+      'Submersible pump plumbing, sump automation & rainwater harvesting',
     ],
     icon: 'Wrench',
-    image: '/hero-service-card/borewell.png',
+    image: '/Banners/plumbing.png',
     wageType: 'FIXED_VISIT',
     unitLabel: 'Visit / Inspection',
     baseCustomerRate: 350,
@@ -228,8 +228,8 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
     },
   },
   {
-    name: 'Borewell Drilling & Water Testing',
-    category: 'Water & Irrigation',
+    name: 'Precision Borewell Drilling & Water Survey',
+    category: 'Water Engineering & Borewells',
     description:
       'Advanced rotary and DTH rig borewell drilling, geophysical water vein surveys, MS/PVC casing pipe insertion, and accredited lab water potability tests.',
     features: [
@@ -239,7 +239,7 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       'Certified 16-parameter chemical & microbiological water report',
     ],
     icon: 'Droplets',
-    image: '/hero-service-card/borewell.png',
+    image: '/Banners/borewell.png',
     wageType: 'PER_FOOT',
     unitLabel: 'Foot',
     baseCustomerRate: 115,
@@ -252,6 +252,34 @@ export const KK_STANDARD_SERVICE_SPECS: ServiceSpecificationConfig[] = [
       depthFootageTracking: true,
       casingPipeRatePerFoot: 240,
       geophysicalSurveyFee: 2500,
+    },
+  },
+  {
+    name: 'Structural Masonry & Brick Construction',
+    category: 'Civil & Masonry Works',
+    description:
+      'Master masonry crews for residential and commercial brickwork, stone foundation building, lintel casting, compound walls, and structural alterations.',
+    features: [
+      'Traditional Kerala laterite stone masonry & modern AAC block laying',
+      'Precision water-level alignment and plumb-line calibration',
+      'Compound wall construction, retaining walls & architectural arches',
+      'Foundation excavation, PCC bed casting & reinforced lintel works',
+    ],
+    icon: 'Layers',
+    image: '/Banners/masonry.png',
+    wageType: 'DAILY_WAGE',
+    unitLabel: 'Day / Shift',
+    baseCustomerRate: 1600,
+    baseWorkerWage: 1100,
+    minUnits: 1,
+    priceRange: '₹1,500 - ₹1,800 / Day',
+    duration: 'Project Milestones',
+    sortOrder: 9,
+    specifications: {
+      shiftHoursStandard: 8,
+      dailyBataAllowance: 150,
+      helperWageIncluded: false,
+      overtimeRatePerHour: 200,
     },
   },
 ];
@@ -350,19 +378,33 @@ export function resolveServiceSpec(
     return KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === 'PER_FOOT')!;
   }
 
-  // 7. Masonry & Construction -> DAILY_WAGE
+  // 7. Plastering & Wall Rendering
+  if (
+    s.includes('plaster') ||
+    s.includes('തേപ്പ്')
+  ) {
+    return (
+      KK_STANDARD_SERVICE_SPECS.find((spec) => spec.name.toLowerCase().includes('plaster')) ||
+      KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === 'DAILY_WAGE')!
+    );
+  }
+
+  // 8. Masonry & Construction -> DAILY_WAGE
   if (
     s.includes('mason') ||
     s.includes('brick') ||
     s.includes('concrete') ||
-    s.includes('plaster') ||
     s.includes('കൊത്തുപണി') ||
-    s.includes('മേസ്തിരി')
+    s.includes('മേസ്തിരി') ||
+    s.includes('കട്ടകെട്ട്')
   ) {
-    return KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === 'DAILY_WAGE')!;
+    return (
+      KK_STANDARD_SERVICE_SPECS.find((spec) => spec.name.toLowerCase().includes('masonry')) ||
+      KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === 'DAILY_WAGE')!
+    );
   }
 
-  // 8. Plumbing & Inspection / Visit -> FIXED_VISIT
+  // 9. Plumbing & Inspection / Visit -> FIXED_VISIT
   if (
     s.includes('plumb') ||
     s.includes('pipe') ||

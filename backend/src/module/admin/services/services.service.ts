@@ -120,7 +120,7 @@ export class ServicesService implements OnModuleInit {
       name,
       slug: finalSlug,
       category: dto.category?.trim() || 'General',
-      description: dto.description.trim(),
+      description: dto.description?.trim() || '',
       features: dto.features || [],
       icon: dto.icon?.trim() || null,
       image: dto.image?.trim() || null,
@@ -252,11 +252,7 @@ export class ServicesService implements OnModuleInit {
     }
 
     if (dto.description !== undefined) {
-      const desc = dto.description.trim();
-      if (!desc) {
-        throw new BadRequestException(SERVICE_MESSAGES.DESCRIPTION_REQUIRED);
-      }
-      data.description = desc;
+      data.description = dto.description ? dto.description.trim() : '';
     }
 
     if (dto.features !== undefined) {
@@ -355,16 +351,21 @@ export class ServicesService implements OnModuleInit {
   async seedDefaultServices() {
     const results: Service[] = [];
     for (const def of KK_STANDARD_SERVICE_SPECS) {
-      const existing =
-        (await this.servicesRepo.findBySlug(this.generateSlug(def.name))) ||
-        (await this.servicesRepo.findMany({
-          where: { name: { contains: def.name.split(' ')[0], mode: 'insensitive' } },
-          take: 1,
-        })).at(0);
+      const slug = this.generateSlug(def.name);
+      const expectedServiceId = `KKS-${String(def.sortOrder).padStart(3, '0')}`;
+
+      // Check by serviceId first, then by slug
+      let existing = await this.servicesRepo.findByServiceId(expectedServiceId);
+      if (!existing) {
+        existing = await this.servicesRepo.findBySlug(slug);
+      }
 
       if (existing) {
         // Upgrade existing service with full unit specifications
         const updated = await this.servicesRepo.update(existing.id, {
+          serviceId: expectedServiceId,
+          name: def.name,
+          slug,
           category: def.category,
           description: def.description,
           features: def.features,
@@ -379,13 +380,12 @@ export class ServicesService implements OnModuleInit {
           minUnits: def.minUnits,
           specifications: def.specifications,
           sortOrder: def.sortOrder,
+          isActive: true,
         });
         results.push(updated);
       } else {
-        const serviceId = await this.generateNextServiceId();
-        const slug = await this.getUniqueSlug(def.name);
         const created = await this.servicesRepo.create({
-          serviceId,
+          serviceId: expectedServiceId,
           name: def.name,
           slug,
           category: def.category,

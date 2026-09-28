@@ -56,6 +56,12 @@ export const CUSTOMER_SERVICES: LocalizedServiceOption[] = [
     nameMl: 'കുഴൽക്കിണർ നിർമ്മാണവും വെള്ളം കണ്ടെത്തലും',
     image: '/Banners/borewell.png',
   },
+  {
+    id: 'masonry',
+    name: 'Structural Masonry & Brick Construction',
+    nameMl: 'കട്ടകെട്ടും മേസൺ പണികളും',
+    image: '/Banners/masonry.png',
+  },
 ];
 
 export const SERVICE_ML_LOOKUP: Record<string, string> = {

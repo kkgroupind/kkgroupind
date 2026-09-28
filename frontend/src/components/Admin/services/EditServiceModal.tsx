@@ -5,12 +5,7 @@ import {
   X,
   Loader2,
   AlertCircle,
-  Plus,
   Pencil,
-  Layers,
-  IndianRupee,
-  Clock,
-  Sparkles,
   Upload,
   ImageIcon,
   Trash2,
@@ -28,38 +23,33 @@ interface EditServiceModalProps {
 }
 
 const DEFAULT_IMAGE_PRESETS = [
-  { label: '🌴 Coconut Plucking', url: '/hero-service-card/coco.png' },
-  { label: '🚜 JCB & Excavator', url: '/hero-service-card/jcb.png' },
-  { label: '🧱 Plastering & Masonry', url: '/hero-service-card/plastering.png' },
-  { label: '⚡ Electrical & MEP', url: '/hero-service-card/electrical.png' },
-  { label: '💧 Borewell Drilling', url: '/hero-service-card/borewell.png' },
+  { label: '🌴 Coconut Plucking', url: '/Banners/coco.png' },
+  { label: '🚜 JCB & Excavator', url: '/Banners/jcb.png' },
+  { label: '🧱 Plastering Squads', url: '/Banners/plastering.png' },
+  { label: '🎨 Painting Squads', url: '/Banners/painting.png' },
+  { label: '✨ Tile & Granite', url: '/Banners/tiling.png' },
+  { label: '⚡ Electrical & MEP', url: '/Banners/electrical.png' },
+  { label: '🔧 Plumbing & Pipeline', url: '/Banners/plumbing.png' },
+  { label: '💧 Borewell Drilling', url: '/Banners/borewell.png' },
+  { label: '🏛️ Masonry & Brickwork', url: '/Banners/masonry.png' },
 ];
 
 const CATEGORY_PRESETS = [
-  'Agriculture',
+  'Agriculture & Cococare',
   'Excavation & Heavy Equipment',
-  'Civil & Construction',
-  'Finishing & Renovation',
+  'Plastering & Wall Rendering',
+  'Surface Finishing & Painting',
   'Flooring & Surfaces',
-  'MEP & Utilities',
-  'Water & Irrigation',
+  'Electrical & Power Systems',
+  'Plumbing & Sanitary Utilities',
+  'Water Engineering & Borewells',
+  'Civil & Masonry Works',
   'Facility Maintenance',
 ];
 
 const CATEGORY_OPTIONS: AdminDropdownOption[] = [
   ...CATEGORY_PRESETS.map((cat) => ({ value: cat, label: cat })),
   { value: 'Other', label: 'Other (Custom Category)' },
-];
-
-const WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
-  { value: 'PER_TREE', label: '🌴 Tree Count (Coconut / Palm Plucking)' },
-  { value: 'HOURLY', label: '⏱️ Hourly Meter (JCB / Excavators)' },
-  { value: 'PER_SQFT', label: '📐 Area / Sq. Ft. (Painting, Tiling)' },
-  { value: 'PER_POINT', label: '⚡ Electrical Points (Wiring, Fixtures)' },
-  { value: 'PER_FOOT', label: '📏 Foot Depth (Borewell Drilling)' },
-  { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry, Carpentry)' },
-  { value: 'FIXED_VISIT', label: '🔧 Fixed Visit / Inspection (Plumbing)' },
-  { value: 'CUSTOM_PROJECT', label: '💼 Custom Lump Sum / Turnkey' },
 ];
 
 export function EditServiceModal({
@@ -77,16 +67,6 @@ export function EditServiceModal({
   const [imageInputTab, setImageInputTab] = useState<'upload' | 'preset' | 'url'>('upload');
   const [urlInput, setUrlInput] = useState('');
   const [description, setDescription] = useState('');
-  const [featureInput, setFeatureInput] = useState('');
-  const [features, setFeatures] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState('');
-  const [duration, setDuration] = useState('');
-  const [wageType, setWageType] = useState('HOURLY');
-  const [unitLabel, setUnitLabel] = useState('Hour');
-  const [baseCustomerRate, setBaseCustomerRate] = useState<string>('');
-  const [baseWorkerWage, setBaseWorkerWage] = useState<string>('');
-  const [minUnits, setMinUnits] = useState<string>('1');
-  const [specificationsNotes, setSpecificationsNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -167,34 +147,12 @@ export function EditServiceModal({
         setCategory('General');
       }
       setDescription(service.description || '');
-      setFeatures(service.features || []);
-      setPriceRange(service.priceRange || '');
-      setDuration(service.duration || '');
-      setWageType(service.wageType || 'HOURLY');
-      setUnitLabel(service.unitLabel || 'Hour');
-      setBaseCustomerRate(service.baseCustomerRate !== null && service.baseCustomerRate !== undefined ? String(service.baseCustomerRate) : '');
-      setBaseWorkerWage(service.baseWorkerWage !== null && service.baseWorkerWage !== undefined ? String(service.baseWorkerWage) : '');
-      setMinUnits(service.minUnits !== null && service.minUnits !== undefined ? String(service.minUnits) : '1');
-      setSpecificationsNotes(service.specifications?.notes || '');
       setIsActive(service.isActive ?? true);
       setError(null);
     }
   }, [service, isOpen]);
 
   if (!isOpen || !service) return null;
-
-  const handleAddFeature = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const clean = featureInput.trim();
-    if (clean && !features.includes(clean)) {
-      setFeatures([...features, clean]);
-      setFeatureInput('');
-    }
-  };
-
-  const handleRemoveFeature = (idx: number) => {
-    setFeatures(features.filter((_, i) => i !== idx));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -203,12 +161,6 @@ export function EditServiceModal({
     const cleanName = name.trim();
     if (!cleanName) {
       setError('Please provide a valid service name');
-      return;
-    }
-
-    const cleanDesc = description.trim();
-    if (!cleanDesc) {
-      setError('Please provide a detailed service description');
       return;
     }
 
@@ -222,16 +174,7 @@ export function EditServiceModal({
         serviceId: serviceId.trim() ? serviceId.trim().toUpperCase() : undefined,
         category: finalCategory,
         image: image.trim() || undefined,
-        description: cleanDesc,
-        features: features,
-        priceRange: priceRange.trim() || undefined,
-        duration: duration.trim() || undefined,
-        wageType,
-        unitLabel: unitLabel.trim() || 'Unit',
-        baseCustomerRate: baseCustomerRate ? Number(baseCustomerRate) : undefined,
-        baseWorkerWage: baseWorkerWage ? Number(baseWorkerWage) : undefined,
-        minUnits: minUnits ? Number(minUnits) : 1,
-        specifications: specificationsNotes.trim() ? { notes: specificationsNotes.trim() } : undefined,
+        description: description.trim() || undefined,
         isActive,
       };
 
@@ -248,8 +191,8 @@ export function EditServiceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Top subtle glow line matching People modal */}
+      <div className="relative w-full max-w-xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        {/* Top subtle glow line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/50 to-transparent" />
 
         {/* Header */}
@@ -298,7 +241,7 @@ export function EditServiceModal({
               type="text"
               value={serviceId}
               onChange={(e) => setServiceId(e.target.value)}
-              className="w-36 bg-[#0E0F12] border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
+              className="w-32 bg-[#0E0F12] border border-gray-700 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-400 focus:outline-none focus:border-emerald-500"
               required
             />
           </div>
@@ -306,7 +249,7 @@ export function EditServiceModal({
           {/* Service Name */}
           <div>
             <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              Service Name <span className="text-rose-400">*</span>
+              Service Name / Title <span className="text-rose-400">*</span>
             </label>
             <input
               type="text"
@@ -321,7 +264,7 @@ export function EditServiceModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                Category
+                Category <span className="text-rose-400">*</span>
               </label>
               <AdminDropdown
                 options={CATEGORY_OPTIONS}
@@ -357,24 +300,12 @@ export function EditServiceModal({
                   Service Image / Thumbnail
                 </label>
                 <p className="text-[11px] text-gray-400 mt-0.5">
-                  Shown in customer booking dropdowns and admin service lists
+                  Select a banner preset, upload an image, or enter a URL
                 </p>
               </div>
 
               {/* Mode Switcher Tabs */}
               <div className="flex items-center gap-1 bg-[#121317] p-1 rounded-xl border border-gray-800">
-                <button
-                  type="button"
-                  onClick={() => setImageInputTab('upload')}
-                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
-                    imageInputTab === 'upload'
-                      ? 'bg-[#2A835F] text-white'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                >
-                  <Upload className="w-3 h-3" />
-                  <span>Upload</span>
-                </button>
                 <button
                   type="button"
                   onClick={() => setImageInputTab('preset')}
@@ -386,6 +317,18 @@ export function EditServiceModal({
                 >
                   <ImageIcon className="w-3 h-3" />
                   <span>Presets</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputTab('upload')}
+                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                    imageInputTab === 'upload'
+                      ? 'bg-[#2A835F] text-white'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Upload</span>
                 </button>
                 <button
                   type="button"
@@ -417,7 +360,7 @@ export function EditServiceModal({
                     Image Attached
                   </p>
                   <p className="text-[11px] text-gray-400 truncate">
-                    {image.startsWith('data:') ? 'Custom uploaded image (Ready)' : image}
+                    {image.startsWith('data:') ? 'Custom uploaded image' : image}
                   </p>
                 </div>
                 <button
@@ -431,29 +374,6 @@ export function EditServiceModal({
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-              </div>
-            )}
-
-            {/* Upload File Input */}
-            {imageInputTab === 'upload' && (
-              <div>
-                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 rounded-xl cursor-pointer bg-[#14151A]/60 hover:bg-[#1A1C23] transition-colors">
-                  <div className="flex flex-col items-center justify-center pt-2 pb-2">
-                    <Upload className="w-5 h-5 mb-1.5 text-gray-400" />
-                    <p className="text-xs text-gray-300 font-medium">
-                      <span className="text-emerald-400">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
-                      PNG, JPG, or WebP (max 5MB)
-                    </p>
-                  </div>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/png,image/jpeg,image/webp,image/jpg"
-                    onChange={handleFileUpload}
-                  />
-                </label>
               </div>
             )}
 
@@ -486,6 +406,29 @@ export function EditServiceModal({
               </div>
             )}
 
+            {/* Upload File Input */}
+            {imageInputTab === 'upload' && (
+              <div>
+                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 rounded-xl cursor-pointer bg-[#14151A]/60 hover:bg-[#1A1C23] transition-colors">
+                  <div className="flex flex-col items-center justify-center pt-2 pb-2">
+                    <Upload className="w-5 h-5 mb-1.5 text-gray-400" />
+                    <p className="text-xs text-gray-300 font-medium">
+                      <span className="text-emerald-400">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      PNG, JPG, or WebP (max 5MB)
+                    </p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept="image/png,image/jpeg,image/webp,image/jpg"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              </div>
+            )}
+
             {/* Direct URL Input */}
             {imageInputTab === 'url' && (
               <div className="flex gap-2">
@@ -493,7 +436,7 @@ export function EditServiceModal({
                   type="text"
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
-                  placeholder="https://example.com/image.png or /hero-service-card/coco.png"
+                  placeholder="https://example.com/image.png or /Banners/coco.png"
                   className="flex-1 bg-[#14151A] border border-gray-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
                 />
                 <button
@@ -511,211 +454,24 @@ export function EditServiceModal({
             )}
           </div>
 
-          {/* Description */}
+          {/* Service Description (Optional) */}
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              Service Description <span className="text-rose-400">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-gray-300">
+                Service Description <span className="text-gray-500 font-normal">(Optional)</span>
+              </label>
+            </div>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description or operational details about this service (optional)..."
               className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] transition-all"
-              required
             />
           </div>
 
-          {/* Features Builder */}
-          <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              Key Features & Deliverables
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={featureInput}
-                onChange={(e) => setFeatureInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleAddFeature();
-                  }
-                }}
-                placeholder="Add feature and press Enter"
-                className="flex-1 bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
-              />
-              <button
-                type="button"
-                onClick={handleAddFeature}
-                className="px-3.5 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-medium flex items-center gap-1 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Add</span>
-              </button>
-            </div>
-
-            {features.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 p-2 bg-[#1A1C23]/60 rounded-xl border border-gray-800">
-                {features.map((feat, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 text-xs text-gray-200 bg-[#252830] border border-gray-700 px-2.5 py-1 rounded-lg"
-                  >
-                    <span>{feat}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFeature(idx)}
-                      className="text-gray-400 hover:text-rose-400 ml-1"
-                    >
-                      &times;
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Price Range & Duration */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                Pricing Range / Rate
-              </label>
-              <div className="relative">
-                <IndianRupee className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={priceRange}
-                  onChange={(e) => setPriceRange(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                Turnaround / Duration
-              </label>
-              <div className="relative">
-                <Clock className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Service Specification & Wage Calculation Model */}
-          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-800 pb-2.5">
-              <div>
-                <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-[#2A835F]" />
-                  <span>Service Unit & Wage Specification Model</span>
-                </h4>
-                <p className="text-[11px] text-gray-400">
-                  Configure whether billing & wages are tree-count, hourly meter, square footage, or point-based
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-medium text-gray-300 mb-1">
-                  Wage & Calculation Basis
-                </label>
-                <AdminDropdown
-                  options={WAGE_TYPE_OPTIONS}
-                  value={wageType}
-                  onChange={(newType) => {
-                    setWageType(newType);
-                    if (newType === 'PER_TREE' && (!unitLabel || unitLabel === 'Hour')) setUnitLabel('Tree');
-                    else if (newType === 'HOURLY') setUnitLabel('Hour');
-                    else if (newType === 'PER_SQFT') setUnitLabel('Sq. Ft.');
-                    else if (newType === 'PER_POINT') setUnitLabel('Point');
-                    else if (newType === 'PER_FOOT') setUnitLabel('Foot');
-                    else if (newType === 'DAILY_WAGE') setUnitLabel('Day / Shift');
-                    else if (newType === 'FIXED_VISIT') setUnitLabel('Visit / Inspection');
-                  }}
-                  variant="emerald"
-                  size="md"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-gray-300 mb-1">
-                  Unit Label Name
-                </label>
-                <input
-                  type="text"
-                  value={unitLabel}
-                  onChange={(e) => setUnitLabel(e.target.value)}
-                  placeholder="e.g. Tree, Hour, Sq. Ft., Point, Foot, Day"
-                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-medium text-gray-300 mb-1">
-                  Customer Rate (₹ / {unitLabel || 'Unit'})
-                </label>
-                <input
-                  type="number"
-                  value={baseCustomerRate}
-                  onChange={(e) => setBaseCustomerRate(e.target.value)}
-                  placeholder="e.g. 120"
-                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#2A835F]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-emerald-400 mb-1">
-                  Worker Wage (₹ / {unitLabel || 'Unit'})
-                </label>
-                <input
-                  type="number"
-                  value={baseWorkerWage}
-                  onChange={(e) => setBaseWorkerWage(e.target.value)}
-                  placeholder="e.g. 80"
-                  className="w-full bg-[#14151A] border border-emerald-500/30 rounded-xl px-3 py-2 text-xs text-emerald-300 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-medium text-amber-300 mb-1">
-                  Min Billable Units
-                </label>
-                <input
-                  type="number"
-                  value={minUnits}
-                  onChange={(e) => setMinUnits(e.target.value)}
-                  placeholder="e.g. 5"
-                  className="w-full bg-[#14151A] border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-200 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-medium text-gray-300 mb-1">
-                Specification Instructions & Requirements (Optional)
-              </label>
-              <input
-                type="text"
-                value={specificationsNotes}
-                onChange={(e) => setSpecificationsNotes(e.target.value)}
-                placeholder="e.g. Includes crown cleaning, safety gear mandatory, diesel bata separate"
-                className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-[#2A835F]"
-              />
-            </div>
-          </div>
-
           {/* Active Status Checkbox */}
-          <div className="flex items-center gap-2.5 pt-2">
+          <div className="flex items-center gap-2.5 pt-1">
             <input
               type="checkbox"
               id="editIsActive"
@@ -729,12 +485,12 @@ export function EditServiceModal({
           </div>
         </form>
 
-        {/* Pinned Footer matching People modal */}
-        <div className="p-6 border-t border-gray-800/80 bg-[#16171D] flex items-center justify-end gap-3">
+        {/* Pinned Footer */}
+        <div className="p-5 border-t border-gray-800/80 bg-[#16171D] flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-gray-800 text-gray-300 hover:bg-[#1A1C23] text-sm font-semibold transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl border border-gray-800 text-gray-300 hover:bg-[#1A1C23] text-xs font-semibold transition-colors cursor-pointer"
           >
             Cancel
           </button>
@@ -745,11 +501,11 @@ export function EditServiceModal({
               if (form) form.requestSubmit();
             }}
             disabled={isLoading}
-            className="px-6 py-2.5 rounded-xl bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white text-sm font-bold shadow-lg shadow-[#7B4DFF]/25 hover:shadow-[#7B4DFF]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white text-xs font-bold shadow-lg shadow-[#7B4DFF]/25 hover:shadow-[#7B4DFF]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 <span>Saving Changes...</span>
               </>
             ) : (
