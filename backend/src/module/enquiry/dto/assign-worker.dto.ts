@@ -1,9 +1,14 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class AssignWorkerDto {
   @IsString()
   @IsNotEmpty({ message: 'Worker ID is required' })
   workerId: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  squadWorkerIds?: string[];
 
   @IsOptional()
   @IsString()

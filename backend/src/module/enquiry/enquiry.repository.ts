@@ -179,6 +179,15 @@ export class EnquiryRepository {
     });
   }
 
+  async findWorkersByIds(workerIds: string[]) {
+    return this.prisma.user.findMany({
+      where: {
+        id: { in: workerIds },
+        role: Role.WORKER,
+      },
+    });
+  }
+
   async assignWorkerTransaction(
     enquiryId: string,
     workerId: string,
@@ -197,6 +206,7 @@ export class EnquiryRepository {
       minUnits?: number;
       specificationDetails?: any;
       deadline?: Date;
+      squadWorkerIds?: string[];
     },
   ) {
     return this.prisma.$transaction(async (tx) => {
@@ -238,9 +248,13 @@ export class EnquiryRepository {
         },
       });
 
-      // 2. Mark worker as BUSY
-      await tx.user.update({
-        where: { id: workerId },
+      // 2. Mark primary worker and all squad workers as BUSY
+      const allWorkerIds = Array.from(
+        new Set([workerId, ...(data?.squadWorkerIds || [])]),
+      ).filter(Boolean);
+
+      await tx.user.updateMany({
+        where: { id: { in: allWorkerIds } },
         data: { workerStatus: WorkerStatus.BUSY },
       });
 
@@ -249,7 +263,17 @@ export class EnquiryRepository {
   }
 
   async findJobsByWorker(workerId: string, status?: ServiceStatus) {
-    const where: any = { workerId };
+    const where: any = {
+      OR: [
+        { workerId },
+        {
+          specificationDetails: {
+            path: ['squadWorkerIds'],
+            array_contains: workerId,
+          },
+        },
+      ],
+    };
     if (status) {
       where.status = status;
     }
@@ -258,7 +282,7 @@ export class EnquiryRepository {
       where,
       orderBy: { createdAt: 'desc' },
       include: {
-        customer: { select: { id: true, name: true, phone: true, email: true, avatar: true } },
+        worker: { select: { id: true, name: true, phone: true } },
         officeStaff: { select: { id: true, name: true, username: true, phone: true, avatar: true } },
         creator: { select: { id: true, name: true, username: true, phone: true, role: true } },
       },
@@ -371,20 +395,35 @@ export class EnquiryRepository {
         },
       });
 
-      // Free worker back to AVAILABLE if no other active jobs
-      const remainingActiveJobs = await tx.serviceEnquiry.count({
-        where: {
-          workerId,
-          id: { not: enquiryId },
-          status: { in: [ServiceStatus.ASSIGNED, ServiceStatus.IN_PROGRESS] },
-        },
-      });
+      // Free primary worker and all squad workers back to AVAILABLE if no other active jobs
+      const squadIds = ((enquiry.specificationDetails as any)?.squadWorkerIds as string[]) || [];
+      const allWorkerIds = Array.from(
+        new Set([workerId, enquiry.workerId, ...squadIds]),
+      ).filter(Boolean) as string[];
 
-      if (remainingActiveJobs === 0) {
-        await tx.user.update({
-          where: { id: workerId },
-          data: { workerStatus: WorkerStatus.AVAILABLE },
+      for (const wId of allWorkerIds) {
+        const remainingActiveJobs = await tx.serviceEnquiry.count({
+          where: {
+            OR: [
+              { workerId: wId },
+              {
+                specificationDetails: {
+                  path: ['squadWorkerIds'],
+                  array_contains: wId,
+                },
+              },
+            ],
+            id: { not: enquiryId },
+            status: { in: [ServiceStatus.ASSIGNED, ServiceStatus.IN_PROGRESS] },
+          },
         });
+
+        if (remainingActiveJobs === 0) {
+          await tx.user.update({
+            where: { id: wId },
+            data: { workerStatus: WorkerStatus.AVAILABLE },
+          });
+        }
       }
 
       return updated;
@@ -445,26 +484,63 @@ export class EnquiryRepository {
         },
       });
 
-      // If finished and has an assigned worker, check if worker has other active jobs
-      if (isFinished && enquiry.workerId) {
-        const remainingActiveJobs = await tx.serviceEnquiry.count({
-          where: {
-            workerId: enquiry.workerId,
-            id: { not: enquiryId },
-            status: { in: [ServiceStatus.ASSIGNED, ServiceStatus.IN_PROGRESS] },
-          },
-        });
+      // If finished and has assigned workers, check if each worker has other active jobs
+      if (isFinished) {
+        const squadIds = ((enquiry.specificationDetails as any)?.squadWorkerIds as string[]) || [];
+        const allWorkerIds = Array.from(
+          new Set([enquiry.workerId, ...squadIds]),
+        ).filter(Boolean) as string[];
 
-        // If no more active jobs, set worker status back to AVAILABLE
-        if (remainingActiveJobs === 0) {
-          await tx.user.update({
-            where: { id: enquiry.workerId },
-            data: { workerStatus: WorkerStatus.AVAILABLE },
+        for (const wId of allWorkerIds) {
+          const remainingActiveJobs = await tx.serviceEnquiry.count({
+            where: {
+              OR: [
+                { workerId: wId },
+                {
+                  specificationDetails: {
+                    path: ['squadWorkerIds'],
+                    array_contains: wId,
+                  },
+                },
+              ],
+              id: { not: enquiryId },
+              status: { in: [ServiceStatus.ASSIGNED, ServiceStatus.IN_PROGRESS] },
+            },
           });
+
+          // If no more active jobs, set worker status back to AVAILABLE
+          if (remainingActiveJobs === 0) {
+            await tx.user.update({
+              where: { id: wId },
+              data: { workerStatus: WorkerStatus.AVAILABLE },
+            });
+          }
         }
       }
 
       return updated;
+    });
+  }
+
+  async saveDraftTransaction(
+    enquiryId: string,
+    data?: {
+      completedUnits?: number;
+      specificationDetails?: any;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        completedUnits: data?.completedUnits !== undefined ? data.completedUnits : undefined,
+        specificationDetails: data?.specificationDetails !== undefined ? data.specificationDetails : undefined,
+        notes: data?.notes !== undefined ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
     });
   }
 

@@ -192,24 +192,26 @@ export function OfficeStaffCalendarView({
                     </div>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onAssignWorker) {
-                        onAssignWorker(order.id);
-                      } else {
-                        onShowToast?.(`Dispatch worker modal opened for ${order.code}`);
-                      }
-                    }}
-                    className={`text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
-                      hasWorker
-                        ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                        : 'bg-[#1B2CC1] hover:bg-[#15239E] text-white shadow-md shadow-[#1B2CC1]/20'
-                    }`}
-                  >
-                    <UserCheck className="w-3.5 h-3.5" />
-                    <span>{hasWorker ? 'Reassign' : 'Dispatch Worker'}</span>
-                  </button>
+                  {(order as any).status !== 'COMPLETED' && (order as any).status !== 'Paid' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onAssignWorker) {
+                          onAssignWorker(order.id);
+                        } else {
+                          onShowToast?.(`Dispatch worker modal opened for ${order.code}`);
+                        }
+                      }}
+                      className={`text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+                        hasWorker
+                          ? 'bg-slate-800 hover:bg-slate-700 text-slate-200'
+                          : 'bg-[#1B2CC1] hover:bg-[#15239E] text-white shadow-md shadow-[#1B2CC1]/20'
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      <span>{hasWorker ? 'Reassign' : 'Dispatch Worker'}</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"

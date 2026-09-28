@@ -20,6 +20,9 @@ import {
   AcceptJobDto,
   StartWorkTimerDto,
   StopWorkTimerDto,
+  PauseWorkTimerDto,
+  ResumeWorkTimerDto,
+  SaveWorkDraftDto,
   ReachedSiteDto,
   UpdateJobPayDto,
 } from './dto';
@@ -122,6 +125,36 @@ export class EnquiryController {
     @CurrentUser('id') workerId: string,
   ) {
     return this.enquiryService.stopWorkTimer(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Post('worker/:id/pause-timer')
+  async pauseWorkTimer(
+    @Param('id') id: string,
+    @Body() dto: PauseWorkTimerDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.pauseWorkTimer(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Post('worker/:id/resume-timer')
+  async resumeWorkTimer(
+    @Param('id') id: string,
+    @Body() dto: ResumeWorkTimerDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.resumeWorkTimer(id, workerId, dto);
+  }
+
+  @Roles(Role.WORKER)
+  @Post('worker/:id/save-draft')
+  async saveWorkDraft(
+    @Param('id') id: string,
+    @Body() dto: SaveWorkDraftDto,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.saveWorkDraft(id, workerId, dto);
   }
 
   @Roles(Role.WORKER)

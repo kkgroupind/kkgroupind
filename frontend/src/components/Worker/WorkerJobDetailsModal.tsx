@@ -29,10 +29,18 @@ import {
   Droplets,
   Tractor,
   Wrench,
+  Users,
+  ShieldCheck,
+  Coffee,
+  Utensils,
+  AlertTriangle,
+  Save,
 } from 'lucide-react';
 import { ServiceEnquiry, EnquiryService } from '@/services';
 import { useAuth } from '@/context/auth-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
+import Image from 'next/image';
+import { getServiceBanner } from '@/utils/service-options';
 
 interface WorkerJobDetailsModalProps {
   job: ServiceEnquiry | null;
@@ -63,11 +71,23 @@ export function WorkerJobDetailsModal({
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Unit specifications logging state (Coconut Tree count, Sq.Ft., Points, Feet, etc.)
+  // Break / Pause State (Lunch, Breakfast/Tea, Emergency, Breakdown)
+  const [activeBreak, setActiveBreak] = useState<{
+    reason: string;
+    startedAt: string;
+    notes?: string;
+  } | null>(null);
+  const [breakTimerSeconds, setBreakTimerSeconds] = useState(0);
+  const [showBreakSelector, setShowBreakSelector] = useState(false);
+  const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Unit specifications & draft progress logging state (Tree count, Sq.Ft., Points, etc.)
   const [unitCount, setUnitCount] = useState<number>(10);
   const [crownCleaningDone, setCrownCleaningDone] = useState(true);
   const [beetleMedicineApplied, setBeetleMedicineApplied] = useState(true);
   const [completionNotes, setCompletionNotes] = useState('');
+  const [lastDraftSavedTime, setLastDraftSavedTime] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   // Sync prop changes
   useEffect(() => {
@@ -76,19 +96,45 @@ export function WorkerJobDetailsModal({
 
     if (job) {
       // Derive initial units from job data
-      const initialUnits = job.completedUnits ?? job.estimatedUnits ?? (
-        job.serviceName?.toLowerCase().includes('coconut') || job.serviceName?.toLowerCase().includes('palm')
+      const spec = (job.specificationDetails as any) || {};
+      const initialUnits =
+        spec.temporaryCount ??
+        job.completedUnits ??
+        job.estimatedUnits ??
+        (job.serviceName?.toLowerCase().includes('coconut') ||
+        job.serviceName?.toLowerCase().includes('palm')
           ? 12
-          : 5
-      );
+          : 5);
       setUnitCount(initialUnits);
+
+      if (spec.lastDraftSavedAt) {
+        setLastDraftSavedTime(
+          new Date(spec.lastDraftSavedAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        );
+      } else {
+        setLastDraftSavedTime(null);
+      }
+
+      // Check active break status
+      if (spec.activeBreak) {
+        setActiveBreak(spec.activeBreak);
+        const breakStartMs = new Date(spec.activeBreak.startedAt).getTime();
+        const breakElapsed = Math.max(0, Math.floor((Date.now() - breakStartMs) / 1000));
+        setBreakTimerSeconds(breakElapsed);
+      } else {
+        setActiveBreak(null);
+        setBreakTimerSeconds(0);
+      }
 
       // Initialize timer if job is in progress with workStartedAt
       if (job.status === 'IN_PROGRESS' && job.workStartedAt) {
         const startMs = new Date(job.workStartedAt).getTime();
         const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
         setTimerSeconds(elapsedSeconds);
-        setIsTimerRunning(true);
+        setIsTimerRunning(!spec.activeBreak);
       } else {
         setTimerSeconds(0);
         setIsTimerRunning(false);
@@ -96,9 +142,9 @@ export function WorkerJobDetailsModal({
     }
   }, [job]);
 
-  // Live timer interval
+  // Live timer interval (runs only when timer is running and not on active break)
   useEffect(() => {
-    if (isTimerRunning) {
+    if (isTimerRunning && !activeBreak) {
       timerIntervalRef.current = setInterval(() => {
         setTimerSeconds((prev) => prev + 1);
       }, 1000);
@@ -112,7 +158,25 @@ export function WorkerJobDetailsModal({
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isTimerRunning]);
+  }, [isTimerRunning, activeBreak]);
+
+  // Live break timer interval (counts duration while on pause)
+  useEffect(() => {
+    if (activeBreak) {
+      breakIntervalRef.current = setInterval(() => {
+        setBreakTimerSeconds((prev) => prev + 1);
+      }, 1000);
+    } else {
+      if (breakIntervalRef.current) {
+        clearInterval(breakIntervalRef.current);
+      }
+    }
+    return () => {
+      if (breakIntervalRef.current) {
+        clearInterval(breakIntervalRef.current);
+      }
+    };
+  }, [activeBreak]);
 
   if (!isOpen || !localJob) return null;
 
@@ -300,7 +364,76 @@ export function WorkerJobDetailsModal({
     }
   };
 
-  // 3. Worker completes work (Unit count or hourly duration logged)
+  // 3. Worker Pauses Timer for Break (Lunch, Breakfast, Emergency)
+  const handlePauseForBreak = async (reason: string, notes?: string) => {
+    if (!token || !localJob) return;
+    setIsSubmittingAction(true);
+    setActionError(null);
+    try {
+      const res = await EnquiryService.pauseWorkTimer(localJob.id, { reason, notes }, token);
+      setLocalJob(res.enquiry);
+      setActiveBreak({ reason, startedAt: new Date().toISOString(), notes });
+      setBreakTimerSeconds(0);
+      setShowBreakSelector(false);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to pause timer for break');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  // 4. Worker Resumes Timer After Break
+  const handleResumeFromBreak = async () => {
+    if (!token || !localJob) return;
+    setIsSubmittingAction(true);
+    setActionError(null);
+    try {
+      const res = await EnquiryService.resumeWorkTimer(localJob.id, {}, token);
+      setLocalJob(res.enquiry);
+      setActiveBreak(null);
+      setBreakTimerSeconds(0);
+      setIsTimerRunning(true);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to resume work timer');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  // 5. Worker Saves Temporary Draft (Count / units progress)
+  const handleSaveDraftProgress = async () => {
+    if (!token || !localJob) return;
+    setIsSavingDraft(true);
+    setActionError(null);
+    try {
+      const res = await EnquiryService.saveWorkDraft(
+        localJob.id,
+        {
+          completedUnits: unitCount,
+          specificationDetails: {
+            crownCleaningDone,
+            beetleMedicineApplied,
+          },
+        },
+        token,
+      );
+      setLocalJob(res.enquiry);
+      const savedTime = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      setLastDraftSavedTime(savedTime);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to save progress draft');
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  // 6. Worker completes work (Unit count or hourly duration logged)
   const handleCompleteWork = async () => {
     if (!token) return;
     setIsSubmittingAction(true);
@@ -308,17 +441,28 @@ export function WorkerJobDetailsModal({
 
     try {
       if (isHourly) {
-        const durationMinutes = Math.max(1, Math.round(timerSeconds / 60));
+        const spec = (localJob.specificationDetails as any) || {};
+        const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+        const totalBreakMinutes = breaks.reduce(
+          (acc: number, b: any) => acc + (b.durationMinutes || 0),
+          0,
+        );
+        const elapsedMinutes = Math.max(1, Math.round(timerSeconds / 60));
+        const netDurationMinutes = Math.max(1, elapsedMinutes - totalBreakMinutes);
+
         const res = await EnquiryService.stopWorkTimer(
           localJob.id,
           {
-            durationMinutes,
-            completedUnits: Math.round((durationMinutes / 60) * 10) / 10,
-            completionNotes: completionNotes.trim() || `Work completed. Recorded ${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m.`,
+            durationMinutes: netDurationMinutes,
+            completedUnits: Math.round((netDurationMinutes / 60) * 10) / 10,
+            completionNotes:
+              completionNotes.trim() ||
+              `Work completed. Net work time: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m (${totalBreakMinutes}m breaks deducted).`,
           },
           token,
         );
         setIsTimerRunning(false);
+        setActiveBreak(null);
         setLocalJob(res.enquiry);
       } else {
         const units = Number(unitCount) || 1;
@@ -370,6 +514,25 @@ export function WorkerJobDetailsModal({
       />
 
       <div className="relative w-full max-w-lg bg-[#111827] rounded-[28px] p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.65)] border border-slate-700/80 flex flex-col gap-4 text-slate-200 z-10 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        {/* Service Banner Image */}
+        <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-slate-700/80 shadow-md">
+          <Image
+            src={getServiceBanner(localJob.serviceName)}
+            alt={localJob.serviceName}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/40 to-transparent" />
+          <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-end justify-between">
+            <span className="font-mono text-xs font-bold text-[#34d399] bg-[#2A835F]/40 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-[#2A835F]/50">
+              {localJob.trackingNumber}
+            </span>
+            <span className="text-[10px] font-bold text-emerald-300 bg-black/50 backdrop-blur-md px-2.5 py-0.5 rounded-full border border-white/20">
+              Kasaragod Squad
+            </span>
+          </div>
+        </div>
+
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-800 pb-3">
           <div className="flex flex-col">
@@ -475,6 +638,85 @@ export function WorkerJobDetailsModal({
           )}
         </div>
 
+        {/* ----------------- OFFICE DESK COORDINATOR CARD ----------------- */}
+        {(() => {
+          const spec = (localJob.specificationDetails as any) || {};
+          const officeName: string = localJob.officeStaff?.name || spec.coordinatorName || '';
+          const officePhone: string = localJob.officeStaff?.phone || spec.coordinatorPhone || '';
+          if (!officeName && !officePhone) return null;
+          return (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-950/60 to-slate-900/80 border border-blue-500/25 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="p-1.5 rounded-xl bg-blue-500/20 text-blue-400 shrink-0">
+                  <ShieldCheck className="w-4 h-4" />
+                </span>
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 block">Office Coordinator</span>
+                  <span className="text-xs font-semibold text-white truncate block">{officeName || 'KK Group Office'}</span>
+                  {officePhone && (
+                    <span className="text-[11px] text-blue-200/70">{officePhone}</span>
+                  )}
+                </div>
+              </div>
+              {officePhone && (
+                <a
+                  href={`tel:${officePhone}`}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all active:scale-95 shadow-sm"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Call Office</span>
+                </a>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* ----------------- CO-WORKING SQUAD MEMBERS CARD ----------------- */}
+        {(() => {
+          const spec = (localJob.specificationDetails as any) || {};
+          const squadMembers: Array<{ id: string; name: string; phone?: string; role?: string }> =
+            Array.isArray(spec.squadMembers) ? spec.squadMembers : [];
+          if (squadMembers.length <= 1) return null;
+          return (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-950/50 to-slate-900/80 border border-violet-500/25 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-xl bg-violet-500/20 text-violet-400">
+                  <Users className="w-4 h-4" />
+                </span>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300 block">Squad Team ({squadMembers.length} Workers)</span>
+                  <span className="text-[11px] text-slate-400">കൂടെ ജോലി ചെയ്യുന്ന ടീം</span>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {squadMembers.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/30 border border-slate-800">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-7 h-7 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5 text-violet-300" />
+                      </span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-semibold text-white block truncate">{member.name}</span>
+                        {member.role && (
+                          <span className="text-[10px] text-violet-300/70">{member.role}</span>
+                        )}
+                      </div>
+                    </div>
+                    {member.phone && (
+                      <a
+                        href={`tel:${member.phone}`}
+                        className="shrink-0 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ----------------- SPECIFICATION SECTION 1: COCONUT TREE PLUCKING COUNTER ----------------- */}
         {isCoconut && (
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#1E293B] via-[#16202E] to-[#121B28] border border-emerald-500/30 space-y-4">
@@ -485,22 +727,24 @@ export function WorkerJobDetailsModal({
                 </span>
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-                    Coconut Palm Harvesting Specification
+                    Coconut Palm Harvesting
                   </h4>
-                  <span className="text-[11px] text-slate-400">
-                    Wage Rate: <strong className="text-emerald-300 font-bold">₹{workerRate}</strong> per tree
-                  </span>
+                  <span className="text-[11px] text-slate-400">ഈന്തപ്പന വിളവെടുക്കൽ</span>
                 </div>
               </div>
 
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Earned Wage Payout
+              {isCompleted ? (
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Wage Payout</span>
+                  <span className="font-mono text-base font-black text-[#34d399]">
+                    ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
+                  Wage after completion
                 </span>
-                <span className="font-mono text-base font-black text-[#34d399]">
-                  ₹{(isCompleted && localJob.totalCalculatedWage ? localJob.totalCalculatedWage : liveCalculatedWage).toLocaleString('en-IN')}
-                </span>
-              </div>
+              )}
             </div>
 
             {/* Tree Count Counter HUD */}
@@ -587,6 +831,28 @@ export function WorkerJobDetailsModal({
                 </span>
               </label>
             </div>
+
+            {/* Save Draft Button for Count Work */}
+            {isInProgress && !isCompleted && (
+              <div className="flex items-center justify-between pt-1 border-t border-slate-700/40">
+                <span className="text-[11px] text-slate-400">
+                  {lastDraftSavedTime ? (
+                    <span className="text-emerald-400">✓ Draft saved at {lastDraftSavedTime}</span>
+                  ) : (
+                    'Save progress to protect count'
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveDraftProgress}
+                  disabled={isSavingDraft || isSubmittingAction}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save Draft</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -599,13 +865,49 @@ export function WorkerJobDetailsModal({
                   <Tractor className="w-4 h-4" />
                 </span>
                 <span className="text-xs font-bold text-white uppercase tracking-wider text-left">
-                  JCB Machinery Chronometer
+                  JCB / Machinery Chronometer
                 </span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">
-                Rate: ₹{workerRate} / Hour
-              </span>
+              {isCompleted ? (
+                <span className="text-xs font-mono text-emerald-400 font-bold">
+                  ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
+                  Wage after completion
+                </span>
+              )}
             </div>
+
+            {/* Active Break Banner */}
+            {activeBreak && (
+              <div className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl bg-orange-900/40 border border-orange-500/40">
+                <div className="flex items-center gap-2">
+                  {activeBreak.reason === 'LUNCH' ? (
+                    <Utensils className="w-4 h-4 text-orange-400" />
+                  ) : activeBreak.reason === 'BREAKFAST' ? (
+                    <Coffee className="w-4 h-4 text-orange-400" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                  )}
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-orange-300 block">
+                      {activeBreak.reason === 'LUNCH' ? '🍱 Lunch Break' : activeBreak.reason === 'BREAKFAST' ? '☕ Tea / Breakfast Break' : '🚨 Emergency / Rain Break'}
+                    </span>
+                    <span className="text-[10px] text-orange-200/60 font-mono">{formatTimer(breakTimerSeconds)} elapsed</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleResumeFromBreak}
+                  disabled={isSubmittingAction}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>Resume Work</span>
+                </button>
+              </div>
+            )}
 
             <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-widest py-1 drop-shadow">
               {formatTimer(timerSeconds)}
@@ -613,24 +915,96 @@ export function WorkerJobDetailsModal({
 
             <div className="flex items-center justify-between text-[11px] bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800">
               <span className="text-slate-400">
-                {isTimerRunning ? (
+                {activeBreak ? (
+                  <span className="inline-flex items-center gap-1.5 text-orange-400 font-bold">
+                    <Pause className="w-3 h-3" />
+                    On Break — Timer Paused
+                  </span>
+                ) : isTimerRunning ? (
                   <span className="inline-flex items-center gap-1.5 text-[#34d399] font-bold">
                     <span className="w-2 h-2 rounded-full bg-[#34d399] animate-ping" />
                     Live Working Meter Active
                   </span>
                 ) : isCompleted ? (
                   <span className="text-[#34d399] font-semibold">
-                    Work Completed: {localJob.workDurationMinutes || Math.round(timerSeconds / 60)} minutes logged
+                    Completed: {localJob.workDurationMinutes || Math.round(timerSeconds / 60)} min logged
                   </span>
                 ) : (
-                  'Timer starts upon arriving at site location'
+                  'Timer starts upon arriving at site'
                 )}
               </span>
-
-              <span className="font-mono text-xs font-bold text-emerald-300">
-                Wage: ₹{(isCompleted && localJob.totalCalculatedWage ? localJob.totalCalculatedWage : liveCalculatedWage).toLocaleString('en-IN')}
+              <span className="text-[10px] text-slate-500 font-mono">
+                {(() => {
+                  const spec = (localJob.specificationDetails as any) || {};
+                  const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+                  const totalBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                  return totalBreakMins > 0 ? `${totalBreakMins}m breaks` : 'No breaks yet';
+                })()}
               </span>
             </div>
+
+            {/* Break Controls — only when timer is running and not on break */}
+            {isInProgress && !isCompleted && isTimerRunning && !activeBreak && !showBreakSelector && (
+              <button
+                type="button"
+                onClick={() => setShowBreakSelector(true)}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+              >
+                <Pause className="w-3.5 h-3.5" />
+                <span>Pause for Break</span>
+              </button>
+            )}
+
+            {/* Break Type Selector */}
+            {showBreakSelector && !activeBreak && (
+              <div className="space-y-2">
+                <span className="text-[10px] text-slate-400 uppercase font-bold block text-left">Select Break Reason:</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { key: 'LUNCH', icon: <Utensils className="w-4 h-4" />, label: 'Lunch', ml: 'ഉച്ചഭക്ഷണം' },
+                    { key: 'BREAKFAST', icon: <Coffee className="w-4 h-4" />, label: 'Tea Break', ml: 'ചായ' },
+                    { key: 'EMERGENCY', icon: <AlertTriangle className="w-4 h-4" />, label: 'Emergency', ml: 'അടിയന്തരം' },
+                  ] as const).map(({ key, icon, label, ml }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => { handlePauseForBreak(key); setShowBreakSelector(false); }}
+                      disabled={isSubmittingAction}
+                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-orange-900/30 hover:bg-orange-900/50 border border-orange-500/30 text-orange-300 hover:text-orange-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-60"
+                    >
+                      {icon}
+                      <span>{label}</span>
+                      <span className="text-[9px] text-orange-400/60">{ml}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowBreakSelector(false)}
+                  className="text-[10px] text-slate-500 hover:text-slate-400 underline cursor-pointer w-full"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* Breaks Log */}
+            {(() => {
+              const spec = (localJob.specificationDetails as any) || {};
+              const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+              if (breaks.length === 0) return null;
+              return (
+                <div className="text-left border-t border-slate-700/40 pt-2 space-y-1">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold">Break Log:</span>
+                  {breaks.map((b: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between text-[11px] text-slate-400">
+                      <span>{b.reason === 'LUNCH' ? '🍱 Lunch' : b.reason === 'BREAKFAST' ? '☕ Tea' : '🚨 Emergency'}</span>
+                      <span className="font-mono text-slate-500">{b.durationMinutes ? `${b.durationMinutes}m` : 'Ongoing'}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -643,38 +1017,55 @@ export function WorkerJobDetailsModal({
                   {isSqFt ? <Layers className="w-4 h-4" /> : isPoint ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                 </span>
                 <span className="text-xs font-bold text-white uppercase tracking-wider">
-                  {unitLabel} Measurement Specification
+                  {unitLabel} Measurement
                 </span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">
-                Rate: ₹{workerRate} / {unitLabel}
-              </span>
+              {isCompleted ? (
+                <span className="text-xs font-mono text-emerald-400 font-bold">
+                  ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
+                  Wage after completion
+                </span>
+              )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 items-center">
-              <div>
-                <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
-                  Completed {unitLabel}s
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={unitCount}
-                  onChange={(e) => setUnitCount(Math.max(1, Number(e.target.value)))}
-                  disabled={isCompleted || isSubmittingAction}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-[#2A835F]"
-                />
-              </div>
-
-              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-right">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider block">
-                  Earned Worker Wage
-                </span>
-                <span className="font-mono text-base font-black text-[#34d399]">
-                  ₹{(isCompleted && localJob.totalCalculatedWage ? localJob.totalCalculatedWage : liveCalculatedWage).toLocaleString('en-IN')}
-                </span>
-              </div>
+            <div className="space-y-2">
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                Completed {unitLabel}s
+              </label>
+              <input
+                type="number"
+                min={1}
+                value={unitCount}
+                onChange={(e) => setUnitCount(Math.max(1, Number(e.target.value)))}
+                disabled={isCompleted || isSubmittingAction}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-[#2A835F]"
+              />
             </div>
+
+            {/* Save Draft Button */}
+            {isInProgress && !isCompleted && (
+              <div className="flex items-center justify-between pt-1 border-t border-slate-700/40">
+                <span className="text-[11px] text-slate-400">
+                  {lastDraftSavedTime ? (
+                    <span className="text-emerald-400">✓ Saved at {lastDraftSavedTime}</span>
+                  ) : (
+                    'Save progress temporarily'
+                  )}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveDraftProgress}
+                  disabled={isSavingDraft || isSubmittingAction}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-60"
+                >
+                  {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>Save Draft</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -703,6 +1094,63 @@ export function WorkerJobDetailsModal({
             </div>
           )}
         </div>
+
+        {/* ----------------- FINALIZED PAYOUT CARD (worker sees after wage is set by admin) ----------------- */}
+        {isCompleted && (() => {
+          const spec = (localJob.specificationDetails as any) || {};
+          const finalWage = localJob.totalCalculatedWage;
+          const finalUnits = localJob.completedUnits;
+          const unitLbl = localJob.unitLabel || unitLabel;
+          const wageSet = finalWage && finalWage > 0;
+
+          if (wageSet) {
+            return (
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900/80 border border-emerald-500/40 space-y-2">
+                <div className="flex items-center gap-2 border-b border-emerald-500/20 pb-2.5">
+                  <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <IndianRupee className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">Your Finalized Payout</span>
+                    <span className="text-[11px] text-emerald-200/60">Confirmed by KK Group Office</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    {finalUnits && (
+                      <span className="text-[11px] text-slate-400 block">
+                        {finalUnits} {unitLbl}(s) completed
+                      </span>
+                    )}
+                    {localJob.workDurationMinutes && (
+                      <span className="text-[11px] text-slate-400 block">
+                        {Math.floor(localJob.workDurationMinutes / 60)}h {localJob.workDurationMinutes % 60}m recorded
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] text-emerald-400/70 uppercase font-bold block">Total Payout</span>
+                    <span className="font-mono text-2xl font-black text-emerald-400">
+                      ₹{finalWage.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center gap-3">
+              <span className="p-1.5 rounded-xl bg-slate-700 text-slate-400 shrink-0">
+                <IndianRupee className="w-4 h-4" />
+              </span>
+              <div>
+                <span className="text-xs font-semibold text-slate-300 block">Payout Pending Confirmation</span>
+                <span className="text-[11px] text-slate-500">Office team will finalize your wage shortly. Check back later.</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Action Controls Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800 mt-1">
@@ -758,7 +1206,32 @@ export function WorkerJobDetailsModal({
               </button>
             )}
 
-            {/* 3. If in progress: "Complete Work & Submit Specifications" */}
+            {/* 3a. If in progress & hourly & timer running: "Pause for Break" */}
+            {isInProgress && isHourly && isTimerRunning && !activeBreak && (
+              <button
+                type="button"
+                onClick={() => setShowBreakSelector(true)}
+                className="bg-orange-800/80 hover:bg-orange-700 text-orange-200 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+              >
+                <Pause className="w-3.5 h-3.5" />
+                <span>Pause</span>
+              </button>
+            )}
+
+            {/* 3b. If on break: "Resume Work" shortcut */}
+            {isInProgress && isHourly && activeBreak && (
+              <button
+                type="button"
+                onClick={handleResumeFromBreak}
+                disabled={isSubmittingAction}
+                className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                <Play className="w-3.5 h-3.5" />
+                <span>Resume</span>
+              </button>
+            )}
+
+            {/* 3c. If in progress: "Complete Work & Submit Specifications" */}
             {isInProgress && (
               <button
                 type="button"

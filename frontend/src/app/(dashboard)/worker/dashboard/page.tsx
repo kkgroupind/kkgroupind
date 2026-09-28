@@ -48,6 +48,8 @@ import { useWorkerLanguage } from '@/context/worker-language-context';
 import { useWorkerMap, TILE_PROVIDERS } from '@/context/worker-map-context';
 import { WorkerShell } from '@/components/Worker';
 import { ServiceEnquiry, EnquiryService } from '@/services';
+import Image from 'next/image';
+import { getServiceBanner } from '@/utils/service-options';
 
 // Dynamic import with SSR disabled for Leaflet Map Core
 const WorkerLeafletMapCore = dynamic(
@@ -631,47 +633,57 @@ export default function WorkerDashboardPage() {
           <div className="w-full flex flex-col gap-4">
             <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-purple-200/80 flex flex-col gap-4 relative overflow-hidden">
               
-              {/* Header: Service Name, Status Badge & Classification Tag */}
-              <div className="flex items-start justify-between gap-2 pb-3 border-b border-slate-100">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
-                    <span
-                      className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
-                        currentWork.status === 'IN_PROGRESS'
-                          ? 'bg-amber-50 text-amber-800 border-amber-300'
-                          : 'bg-blue-50 text-blue-800 border-blue-300'
-                      }`}
-                    >
-                      {currentWork.status === 'IN_PROGRESS'
-                        ? '● ' + (language === 'ml' ? 'നടക്കുന്നു' : 'In Progress')
-                        : '● ' + (language === 'ml' ? 'പുതിയ ജോലി' : 'New Assignment')}
-                    </span>
-
-                    <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                      {currentWork.trackingNumber}
-                    </span>
-
-                    {/* Service Classification Pill */}
-                    <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">
-                      {isHourly
-                        ? 'Hourly / JCB'
-                        : isCoconut
-                        ? 'Per Tree'
-                        : isSqFt
-                        ? 'Sq. Ft.'
-                        : isPoint
-                        ? 'Per Point'
-                        : isFoot
-                        ? 'Per Foot'
-                        : isDaily
-                        ? 'Daily Wage'
-                        : 'Fixed Visit'}
-                    </span>
+              {/* Header: Service Name, Status Badge & Classification Tag with Service Image */}
+              <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-start gap-3.5 min-w-0 flex-1">
+                  <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 shadow-xs bg-slate-100">
+                    <Image
+                      src={getServiceBanner(currentWork.serviceName)}
+                      alt={currentWork.serviceName}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      <span
+                        className={`text-[10px] font-black px-2.5 py-0.5 rounded-full border ${
+                          currentWork.status === 'IN_PROGRESS'
+                            ? 'bg-amber-50 text-amber-800 border-amber-300'
+                            : 'bg-blue-50 text-blue-800 border-blue-300'
+                        }`}
+                      >
+                        {currentWork.status === 'IN_PROGRESS'
+                          ? '● ' + (language === 'ml' ? 'നടക്കുന്നു' : 'In Progress')
+                          : '● ' + (language === 'ml' ? 'പുതിയ ജോലി' : 'New Assignment')}
+                      </span>
 
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
-                    {translateService(currentWork.serviceName)}
-                  </h2>
+                      <span className="font-mono text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                        {currentWork.trackingNumber}
+                      </span>
+
+                      {/* Service Classification Pill */}
+                      <span className="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-md">
+                        {isHourly
+                          ? 'Hourly / JCB'
+                          : isCoconut
+                          ? 'Per Tree'
+                          : isSqFt
+                          ? 'Sq. Ft.'
+                          : isPoint
+                          ? 'Per Point'
+                          : isFoot
+                          ? 'Per Foot'
+                          : isDaily
+                          ? 'Daily Wage'
+                          : 'Fixed Visit'}
+                      </span>
+                    </div>
+
+                    <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight truncate">
+                      {translateService(currentWork.serviceName)}
+                    </h2>
+                  </div>
                 </div>
               </div>
 
@@ -1934,14 +1946,24 @@ export default function WorkerDashboardPage() {
                       onClick={() => openJobModal(job)}
                       className="p-3.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/80 active:scale-99 transition-all cursor-pointer shadow-xs flex flex-col gap-2"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <span className="font-extrabold text-xs sm:text-sm text-slate-900 block truncate">
-                            {translateService(job.serviceName)}
-                          </span>
-                          <span className="text-[11px] text-slate-500 block truncate">
-                            Ref: #{job.trackingNumber} • {job.location || job.district || 'Kerala'}
-                          </span>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-slate-100">
+                            <Image
+                              src={getServiceBanner(job.serviceName)}
+                              alt={job.serviceName}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="font-extrabold text-xs sm:text-sm text-slate-900 block truncate">
+                              {translateService(job.serviceName)}
+                            </span>
+                            <span className="text-[11px] text-slate-500 block truncate">
+                              Ref: #{job.trackingNumber} • {job.location || job.district || 'Kerala'}
+                            </span>
+                          </div>
                         </div>
 
                         <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md shrink-0">

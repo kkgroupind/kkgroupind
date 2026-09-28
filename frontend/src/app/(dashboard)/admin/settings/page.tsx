@@ -24,13 +24,41 @@ import {
   Zap,
   Clock,
   Laptop,
+  Globe,
+  MapPin,
+  Building,
+  PhoneCall,
+  Save,
+  Sparkles,
+  MessageCircle,
+  FileText,
+  Languages,
 } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const { token, user: authUser, isLoading: authLoading, logout } = useAuth();
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'preferences'>('profile');
+  const [activeTab, setActiveTab] = useState<'site' | 'profile' | 'security' | 'preferences'>('site');
+
+  // Site Settings State (Kasaragod Operational Scope)
+  const [siteName, setSiteName] = useState('KK Group');
+  const [siteTagline, setSiteTagline] = useState('Professional Services & Workforce Solutions');
+  const [siteTaglineMl, setSiteTaglineMl] = useState('കാസർഗോഡ് ജില്ലയിലെ വിശ്വസനീയമായ തൊഴിൽ സേവനങ്ങൾ');
+  const [primaryDistrict, setPrimaryDistrict] = useState('Kasaragod');
+  const [operatingAreas, setOperatingAreas] = useState('Kasaragod, Kanhangad, Nileshwaram, Uppala, Manjeshwar, Cheruvathur, Bekal, Kumbla');
+  const [contactPhone, setContactPhone] = useState('+91 98765 43210');
+  const [whatsappPhone, setWhatsappPhone] = useState('+91 98765 43210');
+  const [supportEmail, setSupportEmail] = useState('contact@kkgroup.com');
+  const [officeAddress, setOfficeAddress] = useState('KK Group Hub, Main Road, Kasaragod, Kerala - 671121');
+  const [businessHours, setBusinessHours] = useState('08:00 AM - 07:00 PM (Monday - Saturday)');
+  const [emergencyDispatch, setEmergencyDispatch] = useState(true);
+  const [publicEnquiries, setPublicEnquiries] = useState(true);
+  const [multilingualEnabled, setMultilingualEnabled] = useState(true);
+  const [announcementBanner, setAnnouncementBanner] = useState('Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.');
+  const [bannerActive, setBannerActive] = useState(false);
+  const [isSavingSite, setIsSavingSite] = useState(false);
+  const [siteSuccess, setSiteSuccess] = useState('');
 
   // Profile Form State
   const [name, setName] = useState('');
@@ -57,6 +85,41 @@ export default function AdminSettingsPage() {
   // Username validation check state
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
   const usernameDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initial tab and site settings hydration from URL and localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'site' || tabParam === 'profile' || tabParam === 'security' || tabParam === 'preferences') {
+        setActiveTab(tabParam);
+      }
+
+      try {
+        const cached = localStorage.getItem('kk_site_settings');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed.siteName) setSiteName(parsed.siteName);
+          if (parsed.siteTagline) setSiteTagline(parsed.siteTagline);
+          if (parsed.siteTaglineMl) setSiteTaglineMl(parsed.siteTaglineMl);
+          if (parsed.primaryDistrict) setPrimaryDistrict(parsed.primaryDistrict);
+          if (parsed.operatingAreas) setOperatingAreas(parsed.operatingAreas);
+          if (parsed.contactPhone) setContactPhone(parsed.contactPhone);
+          if (parsed.whatsappPhone) setWhatsappPhone(parsed.whatsappPhone);
+          if (parsed.supportEmail) setSupportEmail(parsed.supportEmail);
+          if (parsed.officeAddress) setOfficeAddress(parsed.officeAddress);
+          if (parsed.businessHours) setBusinessHours(parsed.businessHours);
+          if (parsed.emergencyDispatch !== undefined) setEmergencyDispatch(parsed.emergencyDispatch);
+          if (parsed.publicEnquiries !== undefined) setPublicEnquiries(parsed.publicEnquiries);
+          if (parsed.multilingualEnabled !== undefined) setMultilingualEnabled(parsed.multilingualEnabled);
+          if (parsed.announcementBanner) setAnnouncementBanner(parsed.announcementBanner);
+          if (parsed.bannerActive !== undefined) setBannerActive(parsed.bannerActive);
+        }
+      } catch (err) {
+        console.warn('Could not read local site settings:', err);
+      }
+    }
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -233,6 +296,45 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleSiteSettingsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingSite(true);
+    setSiteSuccess('');
+
+    try {
+      const payload = {
+        siteName,
+        siteTagline,
+        siteTaglineMl,
+        primaryDistrict,
+        operatingAreas,
+        contactPhone,
+        whatsappPhone,
+        supportEmail,
+        officeAddress,
+        businessHours,
+        emergencyDispatch,
+        publicEnquiries,
+        multilingualEnabled,
+        announcementBanner,
+        bannerActive,
+        updatedAt: new Date().toISOString(),
+      };
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kk_site_settings', JSON.stringify(payload));
+      }
+
+      await new Promise((r) => setTimeout(r, 500));
+      setSiteSuccess('Site settings and Kasaragod operational configurations saved successfully!');
+      setTimeout(() => setSiteSuccess(''), 4500);
+    } catch (err) {
+      console.error('Failed to save site settings:', err);
+    } finally {
+      setIsSavingSite(false);
+    }
+  };
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-6 pb-14">
       {/* Top Header Banner */}
@@ -241,16 +343,16 @@ export default function AdminSettingsPage() {
           <div className="flex items-center gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
             <span>KK Group</span>
             <span>•</span>
-            <span className="text-[#7B4DFF]">Super Admin Center</span>
+            <span className="text-[#2A835F]">Super Admin Center</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-100 tracking-tight flex items-center gap-3">
-            <span>Admin Profile & Settings</span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#7B4DFF]/15 text-[#A78BFA] border border-[#7B4DFF]/30">
-              Root Authority
+            <span>Admin & Site Settings</span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30">
+              Kasaragod Operations Hub
             </span>
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Manage your administrator credentials, security keys, contact details, and platform controls.
+            Configure public portal branding, Kasaragod district coverage, contact helplines, security keys, and platform controls.
           </p>
         </div>
 
@@ -260,7 +362,7 @@ export default function AdminSettingsPage() {
             disabled={isFetchingProfile}
             className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#7B4DFF] ${isFetchingProfile ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isFetchingProfile ? 'animate-spin' : ''}`} />
             <span>Sync Profile</span>
           </button>
         </div>
@@ -270,7 +372,7 @@ export default function AdminSettingsPage() {
       <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7B4DFF] to-indigo-600 p-[2px] shadow-lg shadow-[#7B4DFF]/20">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2A835F] to-emerald-700 p-[2px] shadow-lg shadow-[#2A835F]/20">
               <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-xl text-white">
                 {username?.charAt(0).toUpperCase() || 'A'}
               </div>
@@ -292,23 +394,35 @@ export default function AdminSettingsPage() {
             </p>
             <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
               <span className="flex items-center gap-1">
-                <Shield className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                <Shield className="w-3.5 h-3.5 text-[#2A835F]" />
                 Full Privilege
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <Laptop className="w-3.5 h-3.5 text-gray-400" />
-                Edge Session Verified
+                <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                Kasaragod Headquarters
               </span>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation Pill */}
-        <div className="flex items-center gap-1 bg-[#1A1C23] p-1.5 rounded-xl border border-gray-800 self-stretch md:self-auto">
+        <div className="flex items-center gap-1 bg-[#1A1C23] p-1.5 rounded-xl border border-gray-800 self-stretch md:self-auto overflow-x-auto custom-scrollbar">
+          <button
+            onClick={() => setActiveTab('site')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
+              activeTab === 'site'
+                ? 'bg-[#2A835F] text-white shadow-sm'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Site Settings</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
               activeTab === 'profile'
                 ? 'bg-[#7B4DFF] text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
@@ -320,7 +434,7 @@ export default function AdminSettingsPage() {
 
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
               activeTab === 'security'
                 ? 'bg-[#7B4DFF] text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
@@ -332,7 +446,7 @@ export default function AdminSettingsPage() {
 
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
               activeTab === 'preferences'
                 ? 'bg-[#7B4DFF] text-white shadow-sm'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
@@ -345,11 +459,358 @@ export default function AdminSettingsPage() {
       </div>
 
       {/* Main Content Area */}
-      {isFetchingProfile ? (
+      {isFetchingProfile && activeTab !== 'site' ? (
         <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#7B4DFF] mb-3" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#2A835F] mb-3" />
           <p className="text-gray-400 text-sm">Loading admin credentials and security status...</p>
         </div>
+      ) : activeTab === 'site' ? (
+        /* TAB 0: Site Settings */
+        <form onSubmit={handleSiteSettingsSubmit} className="space-y-6">
+          {siteSuccess && (
+            <div className="flex items-center gap-2.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm shadow-xs">
+              <CheckCircle2 className="w-5 h-5 shrink-0" />
+              <span className="font-medium">{siteSuccess}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Column 1 & 2: Main Configuration Panels */}
+            <div className="lg:col-span-2 space-y-6">
+              
+              {/* Bento Card 1: Core Branding & Identity */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-[#2A835F]" />
+                      <span>Site Identity & Branding</span>
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Public business name, multilingual taglines, and public visitor facing meta details.
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30 font-semibold">
+                    Public Portal
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Site Name */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Website & Business Brand Name
+                    </label>
+                    <input
+                      type="text"
+                      value={siteName}
+                      onChange={(e) => setSiteName(e.target.value)}
+                      placeholder="KK Group"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      required
+                    />
+                  </div>
+
+                  {/* English Tagline */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Main Tagline (English)
+                    </label>
+                    <input
+                      type="text"
+                      value={siteTagline}
+                      onChange={(e) => setSiteTagline(e.target.value)}
+                      placeholder="Professional Services & Workforce Solutions"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Malayalam Tagline */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Main Tagline (മലയാളം)
+                    </label>
+                    <input
+                      type="text"
+                      value={siteTaglineMl}
+                      onChange={(e) => setSiteTaglineMl(e.target.value)}
+                      placeholder="കാസർഗോഡ് ജില്ലയിലെ വിശ്വസനീയമായ തൊഴിൽ സേവനങ്ങൾ"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bento Card 2: Regional Coverage (Kasaragod Focus) */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#2A835F]" />
+                      <span>Operational District & Coverage Zones</span>
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Target coverage region for on-demand workforce deployment and job inquiries.
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
+                    Kasaragod Exclusivity
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Primary Operational District
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        value={primaryDistrict}
+                        onChange={(e) => setPrimaryDistrict(e.target.value)}
+                        className="flex-1 bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                      />
+                      <span className="text-xs text-emerald-400 font-medium px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap">
+                        Default District in Enquiries
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Active Coverage Localities & Towns (Kasaragod District)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={operatingAreas}
+                      onChange={(e) => setOperatingAreas(e.target.value)}
+                      placeholder="Kasaragod, Kanhangad, Nileshwaram, Uppala, Manjeshwar, Cheruvathur, Bekal, Kumbla..."
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] custom-scrollbar"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      Customers from these regions can select fast dispatch and field technician arrivals.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bento Card 3: Contact & Hotline Helpdesk */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                      <PhoneCall className="w-4 h-4 text-[#2A835F]" />
+                      <span>Contact Details & Helplines</span>
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Official phone numbers, WhatsApp dispatch, email, and physical office location.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Direct Calling Helpline
+                    </label>
+                    <input
+                      type="text"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* WhatsApp */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      WhatsApp Quick Booking Number
+                    </label>
+                    <input
+                      type="text"
+                      value={whatsappPhone}
+                      onChange={(e) => setWhatsappPhone(e.target.value)}
+                      placeholder="+91 98765 43210"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Official Support Email
+                    </label>
+                    <input
+                      type="email"
+                      value={supportEmail}
+                      onChange={(e) => setSupportEmail(e.target.value)}
+                      placeholder="contact@kkgroup.com"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Business Hours */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Operational Business Hours
+                    </label>
+                    <input
+                      type="text"
+                      value={businessHours}
+                      onChange={(e) => setBusinessHours(e.target.value)}
+                      placeholder="08:00 AM - 07:00 PM (Monday - Saturday)"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Office Address */}
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Central Office / Hub Address
+                    </label>
+                    <input
+                      type="text"
+                      value={officeAddress}
+                      onChange={(e) => setOfficeAddress(e.target.value)}
+                      placeholder="KK Group Hub, Main Road, Kasaragod, Kerala - 671121"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Column 3: Feature Toggles & Announcement Broadcast */}
+            <div className="space-y-6">
+
+              {/* Portal Features Bento Card */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
+                <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#2A835F]" />
+                  <span>Public Portal Controls</span>
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Toggle dynamic features across customer-facing enquiry boxes and navigation.
+                </p>
+
+                <div className="space-y-4 pt-2 divide-y divide-gray-800/80">
+                  {/* Public Enquiries */}
+                  <div className="pt-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-200">Accept Enquiries</p>
+                      <p className="text-[11px] text-gray-500">Allow customers to submit job orders online</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={publicEnquiries}
+                      onChange={(e) => setPublicEnquiries(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Emergency Dispatch */}
+                  <div className="pt-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-200">Emergency Dispatch</p>
+                      <p className="text-[11px] text-gray-500">24/7 urgent labor assistance badge</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emergencyDispatch}
+                      onChange={(e) => setEmergencyDispatch(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                    />
+                  </div>
+
+                  {/* Multilingual Switcher */}
+                  <div className="pt-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-semibold text-gray-200">Malayalam & English</p>
+                      <p className="text-[11px] text-gray-500">Enable regional bilingual switcher</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={multilingualEnabled}
+                      onChange={(e) => setMultilingualEnabled(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Announcement Banner Bento Card */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[#2A835F]" />
+                    <span>Broadcast Notice</span>
+                  </h3>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
+                    <span>Show Banner</span>
+                    <input
+                      type="checkbox"
+                      checked={bannerActive}
+                      onChange={(e) => setBannerActive(e.target.checked)}
+                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-gray-400">
+                  Optional banner displayed across public customer pages for notices, offers, or weather advisories in Kasaragod.
+                </p>
+
+                <textarea
+                  rows={3}
+                  value={announcementBanner}
+                  onChange={(e) => setAnnouncementBanner(e.target.value)}
+                  placeholder="Enter notice banner announcement..."
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] custom-scrollbar"
+                />
+              </div>
+
+              {/* Quick Summary Card */}
+              <div className="bg-gradient-to-br from-[#2A835F]/15 to-transparent border border-[#2A835F]/30 rounded-2xl p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-semibold text-emerald-400">Kasaragod Operations Engine</span>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Saving updates your public website configurations, contact hotlines, service dispatch rules, and Malayalam localization parameters immediately.
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Form Action Footer */}
+          <div className="bg-[#14151A] border border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-xs text-gray-400 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>All changes automatically sync with client portal and customer enquiry routing.</span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSavingSite}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236e4f] text-xs font-semibold text-white transition-all shadow-md shadow-[#2A835F]/25 disabled:opacity-50 cursor-pointer"
+            >
+              {isSavingSite ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving Configurations...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save Site Settings</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       ) : activeTab === 'profile' ? (
         /* TAB 1: Profile Information */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

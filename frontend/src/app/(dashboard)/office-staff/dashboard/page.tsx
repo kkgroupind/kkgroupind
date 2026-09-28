@@ -1202,13 +1202,15 @@ export default function OfficeStaffDashboardPage() {
                                 </button>
                               ) : (
                                 <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenAssignModal(work)}
-                                    className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all shadow-xs cursor-pointer"
-                                  >
-                                    Squad
-                                  </button>
+                                  {work.status !== 'COMPLETED' && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAssignModal(work)}
+                                      className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all shadow-xs cursor-pointer"
+                                    >
+                                      Squad
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
                                     onClick={() => {

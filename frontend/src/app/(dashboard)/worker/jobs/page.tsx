@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import {
   Briefcase,
   Search,
@@ -21,6 +22,7 @@ import { useWorker } from '@/context/worker-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
 import { WorkerShell } from '@/components/Worker';
 import { ServiceEnquiry } from '@/services';
+import { getServiceBanner } from '@/utils/service-options';
 
 export default function WorkerJobsPage() {
   const {
@@ -168,89 +170,99 @@ export default function WorkerJobsPage() {
                   {/* Top Header */}
                   <div>
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
-                            {job.trackingNumber}
-                          </span>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                              isAssigned
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : isInProgress
-                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                            }`}
-                          >
-                            {isAssigned
-                              ? t('assigned')
-                              : isInProgress
-                              ? t('inProgress')
-                              : t('completedBadge')}
-                          </span>
+                      <div className="flex items-start gap-3 min-w-0 flex-1">
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shrink-0 border border-slate-200 shadow-xs bg-slate-100">
+                          <Image
+                            src={getServiceBanner(job.serviceName)}
+                            alt={job.serviceName}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
-                        <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5E42B4] transition-colors mt-2">
-                          {translateService(job.serviceName)}
-                        </h3>
-
-                        {(() => {
-                          const sName = (job.serviceName || '').toLowerCase();
-                          const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
-                          const wageType = job.wageType && (job.wageType !== 'HOURLY' || isMachinery)
-                            ? job.wageType
-                            : sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm')
-                            ? 'PER_TREE'
-                            : isMachinery
-                            ? 'HOURLY'
-                            : sName.includes('paint') || sName.includes('tile')
-                            ? 'PER_SQFT'
-                            : sName.includes('electr') || sName.includes('wir')
-                            ? 'PER_POINT'
-                            : sName.includes('bore') || sName.includes('drill')
-                            ? 'PER_FOOT'
-                            : sName.includes('mason') || sName.includes('brick')
-                            ? 'DAILY_WAGE'
-                            : 'FIXED_VISIT';
-
-                          const unitLabel = job.unitLabel || (wageType === 'PER_TREE' ? 'Tree' : wageType === 'HOURLY' ? 'Hour' : wageType === 'PER_SQFT' ? 'Sq. Ft.' : wageType === 'PER_POINT' ? 'Point' : wageType === 'PER_FOOT' ? 'Foot' : wageType === 'DAILY_WAGE' ? 'Day' : 'Visit');
-                          const rate = job.workerUnitWage || (wageType === 'PER_TREE' ? 80 : wageType === 'HOURLY' ? 900 : wageType === 'PER_SQFT' ? 14 : wageType === 'PER_POINT' ? 260 : wageType === 'PER_FOOT' ? 65 : wageType === 'DAILY_WAGE' ? 1100 : 220);
-
-                          return (
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                                {wageType === 'PER_TREE'
-                                  ? '🌴 Tree Count Basis'
-                                  : wageType === 'HOURLY'
-                                  ? '⏱️ Hourly Chronometer'
-                                  : wageType === 'PER_SQFT'
-                                  ? '📐 Area (Sq. Ft.)'
-                                  : wageType === 'PER_POINT'
-                                  ? '⚡ Point Basis'
-                                  : wageType === 'PER_FOOT'
-                                  ? '📏 Foot Depth'
-                                  : wageType === 'DAILY_WAGE'
-                                  ? '📅 Daily Shift'
-                                  : '🔧 Fixed Visit'}
-                              </span>
-                              {job.totalCalculatedWage ? (
-                                <span className="text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                                  Payout: ₹{job.totalCalculatedWage.toLocaleString()}
-                                </span>
-                              ) : (
-                                <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
-                                  {language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion'}
-                                </span>
-                              )}
-                              {job.completedUnits ? (
-                                <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                                  {job.completedUnits} {unitLabel}s
-                                </span>
-                              ) : null}
-                            </div>
-                          );
-                        })()}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                              {job.trackingNumber}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isAssigned
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : isInProgress
+                                  ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                  : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              }`}
+                            >
+                              {isAssigned
+                                ? t('assigned')
+                                : isInProgress
+                                ? t('inProgress')
+                                : t('completedBadge')}
+                            </span>
+                          </div>
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5E42B4] transition-colors mt-1.5 truncate">
+                            {translateService(job.serviceName)}
+                          </h3>
+                        </div>
                       </div>
                     </div>
+
+                    {(() => {
+                      const sName = (job.serviceName || '').toLowerCase();
+                      const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
+                      const wageType = job.wageType && (job.wageType !== 'HOURLY' || isMachinery)
+                        ? job.wageType
+                        : sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm')
+                        ? 'PER_TREE'
+                        : isMachinery
+                        ? 'HOURLY'
+                        : sName.includes('paint') || sName.includes('tile')
+                        ? 'PER_SQFT'
+                        : sName.includes('electr') || sName.includes('wir')
+                        ? 'PER_POINT'
+                        : sName.includes('bore') || sName.includes('drill')
+                        ? 'PER_FOOT'
+                        : sName.includes('mason') || sName.includes('brick')
+                        ? 'DAILY_WAGE'
+                        : 'FIXED_VISIT';
+
+                      const unitLabel = job.unitLabel || (wageType === 'PER_TREE' ? 'Tree' : wageType === 'HOURLY' ? 'Hour' : wageType === 'PER_SQFT' ? 'Sq. Ft.' : wageType === 'PER_POINT' ? 'Point' : wageType === 'PER_FOOT' ? 'Foot' : wageType === 'DAILY_WAGE' ? 'Day' : 'Visit');
+                      const rate = job.workerUnitWage || (wageType === 'PER_TREE' ? 80 : wageType === 'HOURLY' ? 900 : wageType === 'PER_SQFT' ? 14 : wageType === 'PER_POINT' ? 260 : wageType === 'PER_FOOT' ? 65 : wageType === 'DAILY_WAGE' ? 1100 : 220);
+
+                      return (
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                            {wageType === 'PER_TREE'
+                              ? '🌴 Tree Count Basis'
+                              : wageType === 'HOURLY'
+                              ? '⏱️ Hourly Chronometer'
+                              : wageType === 'PER_SQFT'
+                              ? '📐 Area (Sq. Ft.)'
+                              : wageType === 'PER_POINT'
+                              ? '⚡ Point Basis'
+                              : wageType === 'PER_FOOT'
+                              ? '📏 Foot Depth'
+                              : wageType === 'DAILY_WAGE'
+                              ? '📅 Daily Shift'
+                              : '🔧 Fixed Visit'}
+                          </span>
+                          {job.totalCalculatedWage ? (
+                            <span className="text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                              Payout: ₹{job.totalCalculatedWage.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                              {language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion'}
+                            </span>
+                          )}
+                          {job.completedUnits ? (
+                            <span className="text-[11px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                              {job.completedUnits} {unitLabel}s
+                            </span>
+                          ) : null}
+                        </div>
+                      );
+                    })()}
 
                     <div className="space-y-2 mt-3 text-xs text-slate-600">
                       <div className="flex items-center gap-2">

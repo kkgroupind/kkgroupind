@@ -122,10 +122,14 @@ export const ENQUIRY_MESSAGES = {
   JOB_ACCEPTED_SUCCESS: 'Job assignment accepted successfully',
   WORK_TIMER_STARTED: 'On-site working timer started successfully',
   WORK_TIMER_STOPPED: 'On-site work completed and hours logged successfully',
+  WORK_TIMER_PAUSED: 'Work timer paused for break',
+  WORK_TIMER_RESUMED: 'Work timer resumed from break',
+  WORK_DRAFT_SAVED: 'Work progress draft saved successfully',
   WORKER_ALREADY_BUSY: 'Worker currently has an ongoing assignment',
   CANNOT_ASSIGN_UNAVAILABLE: 'Work can only be assigned to available workers',
   REACHED_SITE_SUCCESS: 'Work site arrival recorded successfully',
   PAY_UPDATED_SUCCESS: 'Worker payout updated successfully',
+  NOT_ASSIGNED_TO_JOB: 'You are not assigned to this work order',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {

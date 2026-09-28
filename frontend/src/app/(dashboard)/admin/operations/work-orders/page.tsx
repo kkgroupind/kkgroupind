@@ -584,16 +584,18 @@ export default function AdminWorkOrdersPage() {
                           </button>
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setIsAssignModalOpen(true);
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-all"
-                            >
-                              Squad
-                            </button>
+                            {order.status !== 'COMPLETED' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setIsAssignModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs font-medium transition-all"
+                              >
+                                Squad
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => {

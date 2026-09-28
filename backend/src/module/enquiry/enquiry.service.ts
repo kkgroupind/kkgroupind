@@ -14,6 +14,9 @@ import {
   AcceptJobDto,
   StartWorkTimerDto,
   StopWorkTimerDto,
+  PauseWorkTimerDto,
+  ResumeWorkTimerDto,
+  SaveWorkDraftDto,
   ReachedSiteDto,
   UpdateJobPayDto,
 } from './dto';
@@ -140,6 +143,15 @@ export class EnquiryService {
     };
   }
 
+  private isWorkerAssignedToJob(enquiry: any, workerId: string): boolean {
+    if (enquiry.workerId === workerId) return true;
+    const squadWorkerIds = (enquiry.specificationDetails as any)?.squadWorkerIds;
+    if (Array.isArray(squadWorkerIds) && squadWorkerIds.includes(workerId)) {
+      return true;
+    }
+    return false;
+  }
+
   async assignWorker(
     enquiryId: string,
     dto: AssignWorkerDto,
@@ -150,14 +162,51 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    const worker = await this.enquiryRepo.findWorkerById(dto.workerId);
-    if (!worker) {
+    const primaryWorker = await this.enquiryRepo.findWorkerById(dto.workerId);
+    if (!primaryWorker) {
       throw new NotFoundException(ENQUIRY_MESSAGES.WORKER_NOT_FOUND);
     }
 
-    // STRICT RULE: Worker must be AVAILABLE to be assigned
-    if (worker.workerStatus !== WorkerStatus.AVAILABLE) {
+    // STRICT RULE: Primary worker must be AVAILABLE
+    if (primaryWorker.workerStatus !== WorkerStatus.AVAILABLE) {
       throw new BadRequestException(ENQUIRY_MESSAGES.CANNOT_ASSIGN_UNAVAILABLE);
+    }
+
+    // Multi-worker Squad handling
+    const allWorkerIds = Array.from(
+      new Set([dto.workerId, ...(dto.squadWorkerIds || [])]),
+    ).filter(Boolean);
+
+    let squadMembers: any[] = [];
+    if (allWorkerIds.length > 1) {
+      const workers = await this.enquiryRepo.findWorkersByIds(allWorkerIds);
+      if (workers.length !== allWorkerIds.length) {
+        throw new NotFoundException(ENQUIRY_MESSAGES.WORKER_NOT_FOUND);
+      }
+      for (const w of workers) {
+        if (w.workerStatus !== WorkerStatus.AVAILABLE && w.id !== dto.workerId) {
+          throw new BadRequestException(
+            `Operative ${w.name || w.username || w.id} is currently unavailable for squad assignment`,
+          );
+        }
+      }
+      squadMembers = workers.map((w) => ({
+        id: w.id,
+        name: w.name || w.username || 'Field Operative',
+        phone: w.phone || '',
+        avatar: w.avatar || null,
+        role: w.id === dto.workerId ? 'Squad Leader' : 'Co-Worker',
+      }));
+    } else {
+      squadMembers = [
+        {
+          id: primaryWorker.id,
+          name: primaryWorker.name || primaryWorker.username || 'Field Operative',
+          phone: primaryWorker.phone || '',
+          avatar: primaryWorker.avatar || null,
+          role: 'Squad Leader',
+        },
+      ];
     }
 
     let parsedDeadline: Date | undefined = undefined;
@@ -179,6 +228,13 @@ export class EnquiryService {
     const minUnits = dto.minUnits !== undefined ? dto.minUnits : spec.minUnits;
     const isHourlyCalculated = wageType === 'HOURLY';
 
+    const mergedSpecificationDetails = {
+      ...(dto.specificationDetails || {}),
+      isSquad: allWorkerIds.length > 1,
+      squadWorkerIds: allWorkerIds,
+      squadMembers,
+    };
+
     const updated = await this.enquiryRepo.assignWorkerTransaction(
       enquiryId,
       dto.workerId,
@@ -195,8 +251,9 @@ export class EnquiryService {
         workerUnitWage,
         estimatedUnits: dto.estimatedUnits || minUnits,
         minUnits,
-        specificationDetails: dto.specificationDetails,
+        specificationDetails: mergedSpecificationDetails,
         deadline: parsedDeadline,
+        squadWorkerIds: allWorkerIds,
       },
     );
 
@@ -223,8 +280,8 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('You are not assigned to this job');
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const updated = await this.enquiryRepo.acceptJobTransaction(
@@ -249,8 +306,8 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('You are not assigned to this job');
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const updated = await this.enquiryRepo.markReachedSiteTransaction(
@@ -292,8 +349,8 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('You are not authorized for this job');
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const updated = await this.enquiryRepo.startWorkTimerTransaction(
@@ -308,6 +365,127 @@ export class EnquiryService {
     };
   }
 
+  async pauseWorkTimer(
+    enquiryId: string,
+    workerId: string,
+    dto: PauseWorkTimerDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    const updatedSpec = {
+      ...currentSpec,
+      activeBreak: {
+        reason: dto.reason,
+        startedAt: new Date().toISOString(),
+        notes: dto.notes || undefined,
+      },
+    };
+
+    const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
+      specificationDetails: updatedSpec,
+      notes: dto.notes,
+    });
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_TIMER_PAUSED,
+      enquiry: updated,
+    };
+  }
+
+  async resumeWorkTimer(
+    enquiryId: string,
+    workerId: string,
+    dto: ResumeWorkTimerDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    const activeBreak = currentSpec.activeBreak;
+    const existingBreaks = Array.isArray(currentSpec.breaks) ? currentSpec.breaks : [];
+
+    let breakDurationMinutes = 0;
+    if (activeBreak?.startedAt) {
+      const diffMs = Date.now() - new Date(activeBreak.startedAt).getTime();
+      breakDurationMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
+    }
+
+    const completedBreak = activeBreak
+      ? {
+          reason: activeBreak.reason,
+          start: activeBreak.startedAt,
+          end: new Date().toISOString(),
+          durationMinutes: breakDurationMinutes,
+          notes: activeBreak.notes,
+        }
+      : null;
+
+    const updatedSpec = {
+      ...currentSpec,
+      activeBreak: null,
+      breaks: completedBreak ? [...existingBreaks, completedBreak] : existingBreaks,
+    };
+
+    const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
+      specificationDetails: updatedSpec,
+      notes: dto.notes,
+    });
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_TIMER_RESUMED,
+      enquiry: updated,
+    };
+  }
+
+  async saveWorkDraft(
+    enquiryId: string,
+    workerId: string,
+    dto: SaveWorkDraftDto,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    const updatedSpec = {
+      ...currentSpec,
+      ...(dto.specificationDetails || {}),
+      temporaryCount:
+        dto.completedUnits !== undefined ? dto.completedUnits : currentSpec.temporaryCount,
+      lastDraftSavedAt: new Date().toISOString(),
+    };
+
+    const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
+      completedUnits: dto.completedUnits,
+      specificationDetails: updatedSpec,
+      notes: dto.notes,
+    });
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_DRAFT_SAVED,
+      enquiry: updated,
+    };
+  }
+
   async stopWorkTimer(
     enquiryId: string,
     workerId: string,
@@ -318,8 +496,8 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('You are not authorized for this job');
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const updated = await this.enquiryRepo.stopWorkTimerTransaction(
@@ -344,8 +522,8 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('You are not authorized to update this job');
+    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const updated = await this.enquiryRepo.updateJobStatusTransaction(

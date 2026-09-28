@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   Bike,
   Footprints,
@@ -12,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { ServiceEnquiry } from '@/services';
+import { getServiceBanner } from '@/utils/service-options';
 
 interface TaskItem {
   id: string;
@@ -105,6 +107,8 @@ export function WorkerTaskCards({
           hardhat: <HardHat className="w-5 h-5 text-white" />,
         }[task.iconType];
 
+        const serviceBanner = task.job?.serviceName ? getServiceBanner(task.job.serviceName) : null;
+
         return (
           <div
             key={task.id}
@@ -112,8 +116,17 @@ export function WorkerTaskCards({
             className="bg-white rounded-[28px] sm:rounded-[32px] p-5 pt-8 shadow-[0_12px_35px_rgba(94,66,180,0.07)] border border-slate-100 flex flex-col justify-between relative hover:shadow-[0_20px_45px_rgba(94,66,180,0.14)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           >
             {/* 1. Centered Floating Squircle Icon on Top */}
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#5E42B4] shadow-[0_8px_20px_rgba(94,66,180,0.35)] flex items-center justify-center text-white group-hover:scale-105 transition-transform">
-              {iconComponent}
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#5E42B4] shadow-[0_8px_20px_rgba(94,66,180,0.35)] flex items-center justify-center text-white group-hover:scale-105 transition-transform overflow-hidden border-2 border-white">
+              {serviceBanner ? (
+                <Image
+                  src={serviceBanner}
+                  alt={task.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                iconComponent
+              )}
             </div>
 
             {/* 2. Top Right 3 Dots Menu */}

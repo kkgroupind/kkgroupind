@@ -44,6 +44,7 @@ const menuData = [
   { name: 'Overview', icon: LayoutDashboard, subItems: [
       { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
       { name: 'Services', icon: Layers, href: '/admin/services' },
+      { name: 'Site Settings', icon: Settings, href: '/admin/settings?tab=site' },
   ] },
   { name: 'People', icon: Users, subItems: [
       { name: 'Workers', icon: HardHat, href: '/admin/people/workers' },
@@ -70,12 +71,12 @@ const menuData = [
     ] },
   { name: 'Finance', icon: IndianRupee, href: '/admin/finance' },
   { name: 'Inventory', icon: Package, href: '/admin/inventory' },
-  { name: 'Website', icon: Globe, href: '/admin/website' },
+  { name: 'Website', icon: Globe, href: '/admin/settings?tab=site' },
   { name: 'Reports', icon: BarChart3, href: '/admin/reports' },
   { type: 'divider' },
   { name: 'Access Control', icon: Lock, href: '/admin/access-control' },
   { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
-  { name: 'Settings', icon: Settings, href: '/admin/settings' },
+  { name: 'System Settings', icon: Settings, href: '/admin/settings?tab=profile' },
 ];
 
 interface SidebarProps {
@@ -96,9 +97,10 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
   }
 
   const hasSubItems = !!item.subItems;
+  const itemBaseHref = item.href ? item.href.split('?')[0] : '';
   const isActive =
-    pathname === item.href ||
-    (hasSubItems && item.subItems.some((sub: any) => pathname.startsWith(sub.href)));
+    (item.href && (pathname === item.href || (item.href.includes('?') && pathname === itemBaseHref))) ||
+    (hasSubItems && item.subItems.some((sub: any) => pathname.startsWith(sub.href.split('?')[0])));
 
   if (hasSubItems) {
     return (
@@ -123,7 +125,8 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
           <ul className="mt-1 space-y-1">
             {item.subItems.map((sub: any) => {
               const SubIcon = sub.icon;
-              const isSubActive = pathname === sub.href;
+              const subBaseHref = sub.href.split('?')[0];
+              const isSubActive = pathname === sub.href || (sub.href.includes('?') && pathname === subBaseHref);
               return (
                 <li key={sub.name}>
                   <Link

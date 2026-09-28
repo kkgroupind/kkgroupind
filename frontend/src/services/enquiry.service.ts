@@ -23,6 +23,7 @@ export interface CreateEnquiryInput {
 
 export interface AssignWorkerInput {
   workerId: string;
+  squadWorkerIds?: string[];
   notes?: string;
   mapUrl?: string;
   locationRemarks?: string;
@@ -226,6 +227,54 @@ export const EnquiryService = {
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
     return request<{ message: string; enquiry: ServiceEnquiry }>(
       `/enquiries/worker/${enquiryId}/stop-timer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
+  // Worker: Pause timer for lunch / breakfast / emergency break
+  async pauseWorkTimer(
+    enquiryId: string,
+    data: { reason: string; notes?: string; specificationDetails?: any },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/pause-timer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
+  // Worker: Resume timer after break
+  async resumeWorkTimer(
+    enquiryId: string,
+    data: { notes?: string; specificationDetails?: any },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/resume-timer`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
+  // Worker: Save draft progress (temporary unit / tree count on site)
+  async saveWorkDraft(
+    enquiryId: string,
+    data: { completedUnits?: number; specificationDetails?: any; notes?: string },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/save-draft`,
       {
         method: 'POST',
         body: JSON.stringify(data),

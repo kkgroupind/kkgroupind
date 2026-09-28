@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import {
   Briefcase,
   X,
@@ -16,6 +17,9 @@ import {
   FileText,
   Clock,
   Navigation,
+  Search,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import {
   EnquiryService,
@@ -34,21 +38,79 @@ export interface CreateWorkModalProps {
   workers?: WorkerWithAvailability[];
 }
 
-const SERVICES_CATALOG = [
-  'Cococare - Palm Tree Harvesting & Maintenance',
-  'JCB Heavy Machinery & Earth Excavation',
-  'Masonry & Brick Construction',
-  'Commercial & Residential Painting',
-  'Tile, Marble & Granite Laying',
-  'Electrical & Wiring Systems',
-  'Plumbing & High-Pressure Piping',
-  'Borewell Drilling & Water Testing',
-];
+export interface ServiceCatalogItem {
+  id: string;
+  title: string;
+  titleMl: string;
+  category: string;
+  image: string;
+}
 
-const SERVICE_OPTIONS: AdminDropdownOption[] = SERVICES_CATALOG.map((s) => ({
-  value: s,
-  label: s,
-}));
+export const SERVICES_CATALOG: ServiceCatalogItem[] = [
+  {
+    id: 'cococare',
+    title: 'Cococare - Palm Tree Harvesting & Maintenance',
+    titleMl: 'തെങ്ങ് കയറ്റവും തെങ്ങ് വൃത്തിയാക്കലും',
+    category: 'Agriculture',
+    image: '/Banners/coco.png',
+  },
+  {
+    id: 'jcb',
+    title: 'JCB Heavy Machinery & Earth Excavation',
+    titleMl: 'ജെസിബി മണ്ണെടുപ്പും നിരപ്പാക്കലും',
+    category: 'Heavy Machinery',
+    image: '/Banners/jcb.png',
+  },
+  {
+    id: 'plastering',
+    title: 'Plastering & Surface Finishing Squad',
+    titleMl: 'തേപ്പ് പണിയും കട്ടകെട്ടും (പ്ലാസ്റ്ററിംഗ്)',
+    category: 'Masonry & Finishing',
+    image: '/Banners/plastering.png',
+  },
+  {
+    id: 'painting',
+    title: 'Commercial & Residential Painting',
+    titleMl: 'വീടും കെട്ടിടങ്ങളും പെയിന്റിംഗ് പണികൾ',
+    category: 'Architectural Coating',
+    image: '/Banners/painting.png',
+  },
+  {
+    id: 'tile',
+    title: 'Tile, Marble & Granite Laying',
+    titleMl: 'ടൈൽ, മാർബിൾ & ഗ്രാനൈറ്റ് ഒട്ടിക്കൽ',
+    category: 'Flooring & Tiling',
+    image: '/Banners/tiling.png',
+  },
+  {
+    id: 'electrical',
+    title: 'Electrical & Wiring Systems',
+    titleMl: 'ഇലക്ട്രിക്കൽ വയറിംഗും ഫിറ്റിംഗും',
+    category: 'MEP Electrical',
+    image: '/Banners/electrical.png',
+  },
+  {
+    id: 'plumbing',
+    title: 'Plumbing & High-Pressure Piping',
+    titleMl: 'പ്ലംബിംഗ് & പൈപ്പ് ലൈൻ പണികൾ',
+    category: 'Sanitary & Piping',
+    image: '/Banners/plumbing.png',
+  },
+  {
+    id: 'borewell',
+    title: 'Borewell Drilling & Water Testing',
+    titleMl: 'കുഴൽക്കിണർ നിർമ്മാണവും വെള്ളം കണ്ടെത്തലും',
+    category: 'Water Drilling',
+    image: '/Banners/borewell.png',
+  },
+  {
+    id: 'masonry',
+    title: 'Structural Masonry & Brick Construction',
+    titleMl: 'കട്ടകെട്ടും മേസൺ പണികളും',
+    category: 'Civil & Masonry',
+    image: '/Banners/masonry.png',
+  },
+];
 
 export function CreateWorkModal({
   isOpen,
@@ -57,7 +119,9 @@ export function CreateWorkModal({
   token,
   workers = [],
 }: CreateWorkModalProps) {
-  const [serviceName, setServiceName] = useState(SERVICES_CATALOG[0]);
+  const [serviceName, setServiceName] = useState(SERVICES_CATALOG[0].title);
+  const [isServicePickerOpen, setIsServicePickerOpen] = useState(false);
+  const [serviceSearch, setServiceSearch] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -72,6 +136,10 @@ export function CreateWorkModal({
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const selectedServiceObj =
+    SERVICES_CATALOG.find((s) => s.title === serviceName || s.id === serviceName) ||
+    SERVICES_CATALOG[0];
 
   if (!isOpen) return null;
 
@@ -195,19 +263,126 @@ export function CreateWorkModal({
             </div>
           )}
 
-          {/* Service */}
-          <div>
-            <label className="block mb-1.5 font-bold text-slate-700">
-              Service Catalog *
-            </label>
-            <AdminDropdown
-              options={SERVICE_OPTIONS}
-              value={serviceName}
-              onChange={(val) => setServiceName(val)}
-              variant="blue"
-              size="md"
-              searchable
-            />
+          {/* Service Selection with Images */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="font-bold text-slate-700">
+                Service Catalog *
+              </label>
+              <span className="text-[11px] text-slate-400 font-medium">
+                Kasaragod operational squads
+              </span>
+            </div>
+
+            {/* Selected Service Card */}
+            <div
+              onClick={() => setIsServicePickerOpen(!isServicePickerOpen)}
+              className="p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 hover:border-[#1B2CC1]/50 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-white shadow-xs">
+                  <Image
+                    src={selectedServiceObj.image}
+                    alt={selectedServiceObj.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#1B2CC1]/10 text-[#1B2CC1] border border-[#1B2CC1]/20">
+                      {selectedServiceObj.category}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-[#091540] truncate mt-1">
+                    {selectedServiceObj.title}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 truncate font-medium">
+                    {selectedServiceObj.titleMl}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs text-[#1B2CC1] font-bold shrink-0 px-2.5 py-1 rounded-lg bg-white border border-slate-200">
+                <span>Change</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                    isServicePickerOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Expanded Service Selection List with Images */}
+            {isServicePickerOpen && (
+              <div className="mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search service by English or Malayalam (e.g. തെങ്ങ്, JCB, Electrical)..."
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                  {SERVICES_CATALOG.filter((s) => {
+                    if (!serviceSearch.trim()) return true;
+                    const q = serviceSearch.toLowerCase();
+                    return (
+                      s.title.toLowerCase().includes(q) ||
+                      s.titleMl.toLowerCase().includes(q) ||
+                      s.category.toLowerCase().includes(q)
+                    );
+                  }).map((service) => {
+                    const isSelected = selectedServiceObj.id === service.id;
+                    return (
+                      <div
+                        key={service.id}
+                        onClick={() => {
+                          setServiceName(service.title);
+                          setIsServicePickerOpen(false);
+                          setServiceSearch('');
+                        }}
+                        className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-2.5 ${
+                          isSelected
+                            ? 'bg-[#1B2CC1]/10 border-[#1B2CC1] shadow-xs'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-white">
+                          <Image
+                            src={service.image}
+                            alt={service.title}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-[9px] font-bold text-[#1B2CC1] uppercase tracking-wider truncate">
+                              {service.category}
+                            </span>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-[#1B2CC1] shrink-0" />
+                            )}
+                          </div>
+                          <h5 className="text-[11px] font-bold text-[#091540] truncate leading-tight">
+                            {service.title}
+                          </h5>
+                          <p className="text-[10px] text-slate-500 truncate">
+                            {service.titleMl}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Customer Details */}
@@ -319,7 +494,7 @@ export function CreateWorkModal({
                 })),
               ]}
               value={selectedWorkerId}
-              onChange={(val) => setSelectedWorkerId(val)}
+              onChange={(val: string) => setSelectedWorkerId(val)}
               variant="blue"
               size="md"
               searchable
