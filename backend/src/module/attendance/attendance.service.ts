@@ -7,15 +7,22 @@ import { AttendanceRepository } from './attendance.repository';
 import { AvailabilityStatusInput, UpdateAttendanceDto } from './dto';
 import {
   AttendanceStatus,
+  NotificationType,
   Role,
   StaffStatus,
   WorkerStatus,
 } from '../../database';
 import { ATTENDANCE_MESSAGES, AUTH_MESSAGES } from '../../common';
+import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private readonly attendanceRepo: AttendanceRepository) {}
+  constructor(
+    private readonly attendanceRepo: AttendanceRepository,
+    private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   private getTodayDateString(): string {
     const now = new Date();
@@ -98,6 +105,27 @@ export class AttendanceService {
         }),
       ]);
 
+      await this.auditService.recordLog({
+        userId,
+        userName: updatedUser.name || updatedUser.username,
+        userRole: Role.OFFICE_STAFF,
+        action: isAvailable ? 'CHECK_IN_AVAILABLE' : 'CHECK_OUT_OFF_DUTY',
+        entityType: 'ATTENDANCE',
+        entityId: attendance.id,
+        details: {
+          date: today,
+          status: targetStaffStatus,
+          notes: dto.notes,
+        },
+      });
+
+      await this.notificationService.notifyAdminsAndStaff({
+        title: `Staff Desk ${isAvailable ? 'Check-in' : 'Signed Off'}`,
+        message: `${updatedUser.name || updatedUser.username} is now marked ${isAvailable ? 'Available' : 'Off Duty'}.`,
+        type: NotificationType.DUTY,
+        link: '/admin/attendance',
+      });
+
       return {
         message: isAvailable
           ? ATTENDANCE_MESSAGES.OFFICE_DUTY_AVAILABLE
@@ -127,6 +155,27 @@ export class AttendanceService {
           notes: dto.notes,
         }),
       ]);
+
+      await this.auditService.recordLog({
+        userId,
+        userName: updatedUser.name || updatedUser.username,
+        userRole: Role.WORKER,
+        action: isAvailable ? 'CHECK_IN_AVAILABLE' : 'CHECK_OUT_OFF_DUTY',
+        entityType: 'ATTENDANCE',
+        entityId: attendance.id,
+        details: {
+          date: today,
+          status: targetWorkerStatus,
+          notes: dto.notes,
+        },
+      });
+
+      await this.notificationService.notifyAdminsAndStaff({
+        title: `Field Worker ${isAvailable ? 'Shift Available' : 'Off Duty'}`,
+        message: `${updatedUser.name || updatedUser.username} is now ${isAvailable ? 'Available for job allocations' : 'Off Duty'}.`,
+        type: NotificationType.DUTY,
+        link: '/admin/attendance',
+      });
 
       return {
         message: isAvailable

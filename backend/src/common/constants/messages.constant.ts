@@ -130,6 +130,7 @@ export const ENQUIRY_MESSAGES = {
   REACHED_SITE_SUCCESS: 'Work site arrival recorded successfully',
   PAY_UPDATED_SUCCESS: 'Worker payout updated successfully',
   NOT_ASSIGNED_TO_JOB: 'You are not assigned to this work order',
+  PAYMENT_ONLY_AFTER_COMPLETION: 'Payment can only be assigned after work is completed by workers',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {
@@ -180,6 +181,14 @@ export const AUDIT_MESSAGES = {
   LOGS_FETCHED_SUCCESS: 'Audit logs retrieved successfully',
   STATS_FETCHED_SUCCESS: 'Audit log statistics retrieved successfully',
   LOG_NOT_FOUND: 'Audit log entry not found',
+} as const;
+
+export const NOTIFICATION_MESSAGES = {
+  NOTIFICATIONS_FETCHED_SUCCESS: 'Notifications retrieved successfully',
+  NOTIFICATION_MARKED_READ: 'Notification marked as read',
+  ALL_NOTIFICATIONS_MARKED_READ: 'All notifications marked as read',
+  NOTIFICATION_DELETED_SUCCESS: 'Notification deleted successfully',
+  NOTIFICATION_NOT_FOUND: 'Notification not found',
 } as const;
 
 

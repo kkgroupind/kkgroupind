@@ -29,4 +29,12 @@ export class UpdateJobPayDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentMode?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentRef?: string;
 }

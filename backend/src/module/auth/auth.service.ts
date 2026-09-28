@@ -18,8 +18,10 @@ import {
   SECURITY_CONSTANTS,
   resolveUniqueUsername,
 } from '../../common';
-import { OtpType, Role } from '../../database';
+import { NotificationType, OtpType, Role } from '../../database';
 import { MailService } from '../mail/mail.service';
+import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notification/notification.service';
 import { AuthRepository } from './auth.repository';
 import {
   AdminLoginDto,
@@ -40,6 +42,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private generate6DigitOtp(): string {
@@ -167,6 +171,17 @@ export class AuthService {
       MAIL_CONSTANTS.PURPOSE_VERIFICATION,
     );
 
+    await this.auditService.recordLog({
+      userId: user.id,
+      userName: user.name || user.email || 'New Customer',
+      userEmail: email,
+      userRole: Role.CUSTOMER,
+      action: 'CUSTOMER_REGISTER',
+      entityType: 'USER',
+      entityId: user.id,
+      details: { email, username: user.username },
+    });
+
     return {
       message: AUTH_MESSAGES.REGISTRATION_INITIATED,
       email,
@@ -220,6 +235,25 @@ export class AuthService {
     });
 
     const token = this.generateToken(updatedUser);
+
+    await this.auditService.recordLog({
+      userId: updatedUser.id,
+      userName: updatedUser.name || updatedUser.email || 'Customer',
+      userEmail: updatedUser.email || undefined,
+      userRole: updatedUser.role,
+      action: 'EMAIL_VERIFIED',
+      entityType: 'USER',
+      entityId: updatedUser.id,
+      details: { email, status: 'VERIFIED' },
+    });
+
+    await this.notificationService.notifyUser({
+      userId: updatedUser.id,
+      title: 'Welcome to KK Group!',
+      message: 'Your account is verified. You can now request field services and track orders in real time.',
+      type: NotificationType.SUCCESS,
+      link: '/dashboard',
+    });
 
     return {
       message: AUTH_MESSAGES.EMAIL_VERIFIED_SUCCESS,
@@ -343,6 +377,21 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+
+    await this.auditService.recordLog({
+      userId: user.id,
+      userName: user.name || user.email || 'Customer',
+      userEmail: user.email || undefined,
+      userRole: user.role,
+      action: 'LOGIN',
+      entityType: 'USER',
+      entityId: user.id,
+      details: {
+        method: 'EMAIL_PASSWORD',
+        clientPortal: 'CUSTOMER',
+      },
+    });
+
     return {
       message: AUTH_MESSAGES.CUSTOMER_SIGNIN_SUCCESS,
       token,
@@ -381,6 +430,22 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+
+    await this.auditService.recordLog({
+      userId: user.id,
+      userName: user.name || user.username || 'Staff Operative',
+      userEmail: user.email || undefined,
+      userRole: user.role,
+      action: 'LOGIN',
+      entityType: 'USER',
+      entityId: user.id,
+      details: {
+        role: user.role,
+        portalRole: dto.portalRole,
+        username: user.username,
+      },
+    });
+
     return {
       message: AUTH_MESSAGES.STAFF_SIGNIN_SUCCESS(user.role),
       token,
@@ -412,6 +477,21 @@ export class AuthService {
     }
 
     const token = this.generateToken(user);
+
+    await this.auditService.recordLog({
+      userId: user.id,
+      userName: user.name || user.username || 'Super Admin',
+      userEmail: user.email || undefined,
+      userRole: user.role,
+      action: 'LOGIN',
+      entityType: 'USER',
+      entityId: user.id,
+      details: {
+        identifier,
+        portal: 'SUPER_ADMIN_PORTAL',
+      },
+    });
+
     return {
       message: AUTH_MESSAGES.ADMIN_SIGNIN_SUCCESS,
       token,

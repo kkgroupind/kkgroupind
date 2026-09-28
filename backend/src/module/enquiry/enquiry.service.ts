@@ -22,11 +22,17 @@ import {
 } from './dto';
 import { ENQUIRY_MESSAGES } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
-import { Role, ServiceStatus, WorkerStatus } from '../../database';
+import { NotificationType, Role, ServiceStatus, WorkerStatus } from '../../database';
+import { AuditService } from '../audit/audit.service';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class EnquiryService {
-  constructor(private readonly enquiryRepo: EnquiryRepository) {}
+  constructor(
+    private readonly enquiryRepo: EnquiryRepository,
+    private readonly auditService: AuditService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async createEnquiry(
     dto: CreateEnquiryDto,
@@ -90,6 +96,40 @@ export class EnquiryService {
       workerUnitWage: spec.baseWorkerWage,
       minUnits: spec.minUnits,
       isHourlyCalculated: spec.wageType === 'HOURLY',
+    });
+
+    await this.auditService.recordLog({
+      userId: currentUser?.id,
+      userName: dto.customerName,
+      userEmail: dto.customerEmail,
+      userRole: createdByRole,
+      action: 'ENQUIRY_CREATED',
+      entityType: 'SERVICE_ENQUIRY',
+      entityId: enquiry.id,
+      details: {
+        trackingNumber,
+        serviceName: dto.serviceName,
+        district: dto.district || 'Kerala',
+        customerPhone: dto.customerPhone,
+        createdByRole,
+      },
+    });
+
+    if (customerId) {
+      await this.notificationService.notifyUser({
+        userId: customerId,
+        title: 'Booking Request Received',
+        message: `Your booking for ${dto.serviceName} has been received (Ref: ${trackingNumber}). Our dispatch desk is assigning specialists.`,
+        type: NotificationType.ENQUIRY,
+        link: '/dashboard',
+      });
+    }
+
+    await this.notificationService.notifyAdminsAndStaff({
+      title: `New Service Enquiry: ${dto.serviceName}`,
+      message: `${dto.customerName} submitted a request in ${dto.district || 'Kerala'}. Tracking #: ${trackingNumber}`,
+      type: NotificationType.ENQUIRY,
+      link: '/admin/operations/enquiries',
     });
 
     return {
@@ -257,6 +297,42 @@ export class EnquiryService {
       },
     );
 
+    await this.auditService.recordLog({
+      userId: officeStaffId,
+      action: 'WORKER_ASSIGNED',
+      entityType: 'SERVICE_ENQUIRY',
+      entityId: enquiryId,
+      details: {
+        trackingNumber: updated.trackingNumber,
+        serviceName: updated.serviceName,
+        workerId: dto.workerId,
+        workerName: primaryWorker.name || primaryWorker.username,
+        squadSize: allWorkerIds.length,
+      },
+    });
+
+    // Notify all assigned workers
+    for (const wId of allWorkerIds) {
+      await this.notificationService.notifyUser({
+        userId: wId,
+        title: `New Job Assigned: ${updated.serviceName}`,
+        message: `You have been allocated work order ${updated.trackingNumber} for ${updated.customerName} at ${updated.location || updated.district || 'Kerala'}.`,
+        type: NotificationType.ASSIGNMENT,
+        link: '/worker/jobs',
+      });
+    }
+
+    // Notify customer if customer account exists
+    if (updated.customerId) {
+      await this.notificationService.notifyUser({
+        userId: updated.customerId,
+        title: 'Specialist Dispatched',
+        message: `Field technician ${primaryWorker.name || 'Specialist'} has been assigned to your service order ${updated.trackingNumber}.`,
+        type: NotificationType.ASSIGNMENT,
+        link: '/dashboard',
+      });
+    }
+
     return {
       message: ENQUIRY_MESSAGES.ENQUIRY_ASSIGNED_SUCCESS,
       enquiry: updated,
@@ -289,6 +365,29 @@ export class EnquiryService {
       workerId,
       dto,
     );
+
+    await this.auditService.recordLog({
+      userId: workerId,
+      userRole: Role.WORKER,
+      action: 'JOB_ACCEPTED',
+      entityType: 'SERVICE_ENQUIRY',
+      entityId: enquiryId,
+      details: {
+        trackingNumber: enquiry.trackingNumber,
+        serviceName: enquiry.serviceName,
+        notes: dto.notes,
+      },
+    });
+
+    if (enquiry.customerId) {
+      await this.notificationService.notifyUser({
+        userId: enquiry.customerId,
+        title: 'Work Order Confirmed',
+        message: `Field technician has confirmed work order ${enquiry.trackingNumber} and is preparing dispatch.`,
+        type: NotificationType.ENQUIRY,
+        link: '/dashboard',
+      });
+    }
 
     return {
       message: ENQUIRY_MESSAGES.JOB_ACCEPTED_SUCCESS,
@@ -328,9 +427,26 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
+    if (enquiry.status !== ServiceStatus.COMPLETED) {
+      throw new BadRequestException(
+        ENQUIRY_MESSAGES.PAYMENT_ONLY_AFTER_COMPLETION,
+      );
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    const updatedSpec = {
+      ...currentSpec,
+      paymentMode: dto.paymentMode || currentSpec.paymentMode,
+      paymentRef: dto.paymentRef || currentSpec.paymentRef,
+      paymentAssignedAt: new Date().toISOString(),
+    };
+
     const updated = await this.enquiryRepo.updateJobPayTransaction(
       enquiryId,
-      dto,
+      {
+        ...dto,
+        specificationDetails: updatedSpec,
+      },
     );
 
     return {
@@ -535,6 +651,49 @@ export class EnquiryService {
         specificationDetails: dto.specificationDetails,
       },
     );
+
+    if (updated) {
+      const isCompleted = dto.status === ServiceStatus.COMPLETED;
+      const actionName = isCompleted ? 'WORK_COMPLETED' : `STATUS_UPDATE_${dto.status}`;
+
+      await this.auditService.recordLog({
+        userId: workerId,
+        userRole: Role.WORKER,
+        action: actionName,
+        entityType: 'SERVICE_ENQUIRY',
+        entityId: enquiryId,
+        details: {
+          trackingNumber: updated.trackingNumber,
+          serviceName: updated.serviceName,
+          status: dto.status,
+          completedUnits: dto.completedUnits,
+          totalCalculatedWage: updated.totalCalculatedWage,
+          totalCalculatedCost: updated.totalCalculatedCost,
+          notes: dto.notes,
+        },
+      });
+
+      if (updated.customerId) {
+        await this.notificationService.notifyUser({
+          userId: updated.customerId,
+          title: isCompleted ? 'Service Completed!' : `Job Status: ${dto.status}`,
+          message: isCompleted
+            ? `Your service ${updated.serviceName} has been completed! Billable total: ₹${updated.totalCalculatedCost || 'N/A'}.`
+            : `Technician updated status to ${dto.status} for order ${updated.trackingNumber}.`,
+          type: isCompleted ? NotificationType.SUCCESS : NotificationType.INFO,
+          link: '/dashboard',
+        });
+      }
+
+      if (isCompleted) {
+        await this.notificationService.notifyAdminsAndStaff({
+          title: `Work Completed: ${updated.serviceName}`,
+          message: `Order ${updated.trackingNumber} completed by field technician. Units: ${dto.completedUnits || '—'}, Wage: ₹${updated.totalCalculatedWage || '—'}`,
+          type: NotificationType.SUCCESS,
+          link: '/admin/operations/enquiries',
+        });
+      }
+    }
 
     return {
       message: ENQUIRY_MESSAGES.STATUS_UPDATED_SUCCESS,

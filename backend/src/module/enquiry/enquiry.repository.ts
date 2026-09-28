@@ -600,6 +600,7 @@ export class EnquiryRepository {
       unitRate?: number;
       completedUnits?: number;
       notes?: string;
+      specificationDetails?: any;
     },
   ) {
     return this.prisma.serviceEnquiry.update({
@@ -610,6 +611,7 @@ export class EnquiryRepository {
         totalCalculatedCost: data.totalCalculatedCost !== undefined ? data.totalCalculatedCost : undefined,
         unitRate: data.unitRate !== undefined ? data.unitRate : undefined,
         completedUnits: data.completedUnits !== undefined ? data.completedUnits : undefined,
+        specificationDetails: data.specificationDetails !== undefined ? data.specificationDetails : undefined,
         notes: data.notes ? data.notes : undefined,
       },
       include: {

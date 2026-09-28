@@ -42,6 +42,9 @@ import {
   CheckCircle,
   Timer,
   AlertCircle,
+  Coffee,
+  DollarSign,
+  CreditCard,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { api, User, AttendanceRecord, ServiceEnquiry } from '@/services';
@@ -674,6 +677,148 @@ export function WorkerDetailView({
                     </div>
                   </div>
 
+                  {/* Live Field Telemetry Metrics Strip */}
+                  {(() => {
+                    const ongoingSpecs = (ongoingJob.specificationDetails as Record<string, any>) || {};
+                    const siteReachedAt = ongoingSpecs.siteReachedAt;
+                    const breakLog = Array.isArray(ongoingSpecs.breakLog) ? ongoingSpecs.breakLog : [];
+                    const activeBreak = breakLog.find((b: any) => !b.endedAt);
+                    const totalBreaksMins = breakLog.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                    const squadMembers = Array.isArray(ongoingSpecs.squadMembers) ? ongoingSpecs.squadMembers : [];
+                    const interimUnits = ongoingSpecs.interimUnits ?? ongoingJob.completedUnits;
+
+                    let liveDurationStr = 'Not Started';
+                    if (ongoingJob.workDurationMinutes) {
+                      const h = Math.floor(ongoingJob.workDurationMinutes / 60);
+                      const m = ongoingJob.workDurationMinutes % 60;
+                      liveDurationStr = `${h > 0 ? `${h}h ` : ''}${m}m`;
+                    } else if (ongoingJob.workStartedAt) {
+                      const start = new Date(ongoingJob.workStartedAt).getTime();
+                      const elapsed = Math.max(0, Math.floor((Date.now() - start) / 60000) - totalBreaksMins);
+                      const h = Math.floor(elapsed / 60);
+                      const m = elapsed % 60;
+                      liveDurationStr = `${h > 0 ? `${h}h ` : ''}${m}m (Active)`;
+                    }
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80">
+                          {/* Site Arrival */}
+                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>Site Arrival</span>
+                            </span>
+                            <div className="text-xs font-bold text-gray-200 mt-1">
+                              {siteReachedAt ? (
+                                <span className="text-emerald-400 font-mono">
+                                  {new Date(siteReachedAt).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">In Transit</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Work Started */}
+                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
+                              <Timer className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Work Started</span>
+                            </span>
+                            <div className="text-xs font-bold text-gray-200 mt-1">
+                              {ongoingJob.workStartedAt ? (
+                                <span className="text-amber-300 font-mono">
+                                  {new Date(ongoingJob.workStartedAt).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">Timer Off</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Break Status */}
+                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
+                              <Coffee className="w-3.5 h-3.5 text-purple-400" />
+                              <span>Break Status</span>
+                            </span>
+                            <div className="text-xs font-bold mt-1">
+                              {activeBreak ? (
+                                <span className="text-purple-300 flex items-center gap-1 animate-pulse">
+                                  <span className="w-2 h-2 rounded-full bg-purple-400" />
+                                  <span>{activeBreak.reason || 'On Break'}</span>
+                                </span>
+                              ) : (
+                                <span className="text-emerald-400 flex items-center gap-1">
+                                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                                  <span>Active on Site</span>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Units Logged */}
+                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
+                              <Activity className="w-3.5 h-3.5 text-sky-400" />
+                              <span>Completed / Draft</span>
+                            </span>
+                            <div className="text-xs font-bold text-gray-200 mt-1">
+                              {interimUnits !== undefined && interimUnits !== null ? (
+                                <span className="text-sky-300 font-mono">
+                                  {interimUnits} {ongoingJob.unitLabel || 'Units'}
+                                </span>
+                              ) : (
+                                <span className="text-gray-500">0 Logged</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Squad Members Assigned */}
+                        {squadMembers.length > 1 && (
+                          <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-2">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-amber-400" />
+                              <span>Squad Teammates ({squadMembers.length} Workers Assigned)</span>
+                            </span>
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {squadMembers.map((m: any) => (
+                                <div
+                                  key={m.id}
+                                  className="px-3 py-1.5 rounded-xl bg-[#14151A] border border-gray-800 text-xs flex items-center gap-2"
+                                >
+                                  <span className="font-bold text-gray-200">{m.name}</span>
+                                  {m.isLeader && (
+                                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400">
+                                      Lead
+                                    </span>
+                                  )}
+                                  {m.phone && <span className="text-gray-500 font-mono text-[11px]">{m.phone}</span>}
+                                  {m.username && m.username !== username && (
+                                    <NextLink
+                                      href={`/admin/people/workers/${m.username}`}
+                                      className="text-[11px] text-[#A78BFA] hover:text-white"
+                                    >
+                                      Profile &rarr;
+                                    </NextLink>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Location & GPS Navigation Banner */}
                   <div className="p-5 rounded-2xl bg-gradient-to-r from-[#1A1C23] via-[#1E202A] to-[#1A1C23] border border-gray-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-start gap-3.5">
@@ -682,7 +827,7 @@ export function WorkerDetailView({
                       </div>
                       <div>
                         <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                          Site Location & Coordinates
+                          Site Location &amp; Coordinates
                         </span>
                         <h4 className="text-sm sm:text-base font-black text-gray-100 mt-0.5">
                           {ongoingJob.location || 'Kerala Operations Sector'}
@@ -770,37 +915,47 @@ export function WorkerDetailView({
                   {ongoingJob.message && (
                     <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-1 text-xs">
                       <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                        Work Order Requirements & Notes
+                        Work Order Requirements &amp; Notes
                       </span>
                       <p className="text-gray-200 mt-1 leading-relaxed">{ongoingJob.message}</p>
                     </div>
                   )}
 
-                  {/* Timestamps Row */}
-                  <div className="pt-3 border-t border-gray-800/60 flex flex-wrap items-center justify-between text-xs text-gray-400 gap-2">
-                    <span>
-                      Order Initiated:{' '}
-                      <strong className="text-gray-200">
-                        {new Date(ongoingJob.createdAt).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </strong>
-                    </span>
-                    {ongoingJob.preferredDate && (
+                  {/* Timestamps & Action Footer */}
+                  <div className="pt-3 border-t border-gray-800/60 flex flex-wrap items-center justify-between text-xs text-gray-400 gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <span>
-                        Preferred Date:{' '}
-                        <strong className="text-emerald-400">
-                          {new Date(ongoingJob.preferredDate).toLocaleDateString('en-US', {
+                        Order Initiated:{' '}
+                        <strong className="text-gray-200">
+                          {new Date(ongoingJob.createdAt).toLocaleString('en-US', {
                             month: 'short',
                             day: 'numeric',
-                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
                           })}
                         </strong>
                       </span>
-                    )}
+                      {ongoingJob.preferredDate && (
+                        <span>
+                          Preferred Date:{' '}
+                          <strong className="text-emerald-400">
+                            {new Date(ongoingJob.preferredDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
+                          </strong>
+                        </span>
+                      )}
+                    </div>
+
+                    <NextLink
+                      href={`/admin/operations/enquiries/${ongoingJob.id}`}
+                      className="px-4 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                    >
+                      <span>Full Work Order Command Center</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </NextLink>
                   </div>
                 </div>
               ) : (
@@ -1080,26 +1235,76 @@ export function WorkerDetailView({
                       </div>
 
                       {selectedJobs.length > 0 ? (
-                        <div className="space-y-2 max-h-[240px] overflow-y-auto scrollbar-none pr-1">
-                          {selectedJobs.map((job) => (
-                            <div
-                              key={job.id}
-                              className="p-3 rounded-2xl bg-[#1A1C23] border border-gray-800/80"
-                            >
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="text-xs font-bold text-gray-200 truncate">
-                                  {job.serviceName}
-                                </span>
-                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-emerald-500/15 text-emerald-400">
-                                  {job.trackingNumber}
-                                </span>
+                        <div className="space-y-2.5 max-h-[320px] overflow-y-auto scrollbar-none pr-1">
+                          {selectedJobs.map((job) => {
+                            const jobSpecs = (job.specificationDetails as Record<string, any>) || {};
+                            const squad = Array.isArray(jobSpecs.squadMembers) ? jobSpecs.squadMembers : [];
+
+                            return (
+                              <div
+                                key={job.id}
+                                className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-emerald-500/30 transition-all space-y-2"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <NextLink
+                                    href={`/admin/operations/enquiries/${job.id}`}
+                                    className="text-xs font-bold text-gray-100 hover:text-emerald-400 transition-colors truncate"
+                                  >
+                                    {job.serviceName}
+                                  </NextLink>
+                                  <NextLink
+                                    href={`/admin/operations/enquiries/${job.id}`}
+                                    className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 hover:underline shrink-0"
+                                  >
+                                    {job.trackingNumber}
+                                  </NextLink>
+                                </div>
+
+                                <div className="text-[11px] text-gray-400 space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <span>{job.location || 'Kerala Site'}</span>
+                                    <span className="text-emerald-400 font-semibold">{job.status}</span>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] text-gray-400">
+                                    {jobSpecs.siteReachedAt && (
+                                      <span className="text-emerald-300 font-mono">
+                                        📍 Reached:{' '}
+                                        {new Date(jobSpecs.siteReachedAt).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
+                                    )}
+                                    {job.workStartedAt && (
+                                      <span className="text-amber-300 font-mono">
+                                        ⏱️ Started:{' '}
+                                        {new Date(job.workStartedAt).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })}
+                                      </span>
+                                    )}
+                                    {job.completedUnits !== null && job.completedUnits !== undefined && (
+                                      <span className="text-sky-300 font-bold">
+                                        🌴 {job.completedUnits} {job.unitLabel || 'Units'}
+                                      </span>
+                                    )}
+                                    {job.totalCalculatedWage && (
+                                      <span className="text-emerald-400 font-bold">
+                                        💰 ₹{job.totalCalculatedWage}
+                                      </span>
+                                    )}
+                                    {squad.length > 1 && (
+                                      <span className="text-amber-300 font-bold">
+                                        👥 Squad ({squad.length})
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="flex items-center justify-between text-[11px] text-gray-400 mt-1">
-                                <span>{job.location || 'Kerala Site'}</span>
-                                <span className="text-emerald-400 font-semibold">{job.status}</span>
-                              </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="py-6 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-2xl border border-gray-800/50">
@@ -1113,7 +1318,7 @@ export function WorkerDetailView({
                   <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-xl space-y-3.5">
                     <h5 className="text-xs font-black text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Shift Timeline</span>
+                      <span>Shift &amp; Operations Timeline</span>
                     </h5>
 
                     <div className="space-y-3 relative pl-4 border-l border-gray-800">
@@ -1130,17 +1335,80 @@ export function WorkerDetailView({
                         </div>
                       ) : null}
 
-                      {selectedJobs.map((job) => (
-                        <div key={job.id} className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#7B4DFF] ring-4 ring-[#14151A]" />
-                          <div className="text-xs font-bold text-gray-200">
-                            Dispatched: {job.serviceName}
-                          </div>
-                          <div className="text-[11px] text-gray-400 mt-0.5">
-                            Site: {job.location || 'Kerala Site'} &bull; Client: {job.customerName}
-                          </div>
-                        </div>
-                      ))}
+                      {selectedJobs.map((job) => {
+                        const jSpecs = (job.specificationDetails as Record<string, any>) || {};
+                        const jBreaks = Array.isArray(jSpecs.breakLog) ? jSpecs.breakLog : [];
+
+                        return (
+                          <React.Fragment key={job.id}>
+                            <div className="relative">
+                              <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#7B4DFF] ring-4 ring-[#14151A]" />
+                              <div className="text-xs font-bold text-gray-200">
+                                Dispatched: {job.serviceName}
+                              </div>
+                              <div className="text-[11px] text-gray-400 mt-0.5">
+                                Site: {job.location || 'Kerala Site'} &bull; Client: {job.customerName}
+                              </div>
+                            </div>
+
+                            {jSpecs.siteReachedAt && (
+                              <div className="relative">
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#14151A]" />
+                                <div className="text-xs font-bold text-emerald-400">Reached Work Site</div>
+                                <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                                  {new Date(jSpecs.siteReachedAt).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {job.workStartedAt && (
+                              <div className="relative">
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-[#14151A]" />
+                                <div className="text-xs font-bold text-amber-300">Started Work Timer</div>
+                                <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                                  {new Date(job.workStartedAt).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {jBreaks.map((b: any, bIdx: number) => (
+                              <div key={bIdx} className="relative">
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-400 ring-4 ring-[#14151A]" />
+                                <div className="text-xs font-bold text-purple-300">
+                                  Break: {b.reason || 'Rest'}
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                                  {new Date(b.startedAt).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}{' '}
+                                  {b.durationMinutes ? `(${b.durationMinutes} mins)` : ''}
+                                </div>
+                              </div>
+                            ))}
+
+                            {(job.completedAt || job.workEndedAt) && (
+                              <div className="relative">
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-[#14151A]" />
+                                <div className="text-xs font-bold text-emerald-400">Completed Work</div>
+                                <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                                  {new Date(job.completedAt || job.workEndedAt!).toLocaleTimeString('en-US', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}{' '}
+                                  &bull; {job.completedUnits || 0} {job.unitLabel || 'Units'}
+                                </div>
+                              </div>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
 
                       {selectedAttendance?.checkOutAt ? (
                         <div className="relative">
@@ -1221,62 +1489,162 @@ export function WorkerDetailView({
                     const isInProgress = job.status === 'IN_PROGRESS';
                     const isAssigned = job.status === 'ASSIGNED';
 
-                    return (
-                      <div
-                        key={job.id}
-                        className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-emerald-500/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                      >
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-gray-100">{job.serviceName}</span>
-                            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                              {job.trackingNumber}
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-400 flex flex-wrap items-center gap-3">
-                            <span>
-                              Client: <strong className="text-gray-200">{job.customerName}</strong> ({job.customerPhone})
-                            </span>
-                            {job.location && (
-                              <span className="flex items-center gap-1 text-emerald-300">
-                                <MapPin className="w-3 h-3 text-emerald-400" />
-                                {job.location}
-                              </span>
-                            )}
-                            <span>&bull; Date: {new Date(job.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                          </div>
-                        </div>
+                    const jobSpecs = (job.specificationDetails as Record<string, any>) || {};
+                    const squad = Array.isArray(jobSpecs.squadMembers) ? jobSpecs.squadMembers : [];
+                    const breaks = Array.isArray(jobSpecs.breakLog) ? jobSpecs.breakLog : [];
 
-                        <div className="flex items-center gap-2.5 shrink-0">
-                          {job.location && (
-                            <a
-                              href={`https://maps.google.com/?q=${encodeURIComponent(job.location + ', Kerala')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-2.5 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 text-xs font-bold transition-colors inline-flex items-center gap-1"
-                            >
-                              <Navigation className="w-3 h-3" />
-                              <span>GPS</span>
-                            </a>
-                          )}
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-black border ${
-                              isCompleted
-                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                                : isInProgress
-                                ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                                : isAssigned
-                                ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
-                                : 'bg-gray-800 text-gray-400 border-gray-700'
-                            }`}
+                    let durationStr = '';
+                    if (job.workDurationMinutes) {
+                      const h = Math.floor(job.workDurationMinutes / 60);
+                      const m = job.workDurationMinutes % 60;
+                      durationStr = `${h > 0 ? `${h}h ` : ''}${m}m`;
+                    }
+
+                    return (
+                          <div
+                            key={job.id}
+                            className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-emerald-500/40 transition-all space-y-3"
                           >
-                            {job.status}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <NextLink
+                                    href={`/admin/operations/enquiries/${job.id}`}
+                                    className="text-sm font-bold text-gray-100 hover:text-emerald-400 transition-colors truncate"
+                                  >
+                                    {job.serviceName}
+                                  </NextLink>
+                                  <NextLink
+                                    href={`/admin/operations/enquiries/${job.id}`}
+                                    className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hover:underline"
+                                  >
+                                    {job.trackingNumber}
+                                  </NextLink>
+                                </div>
+                                <div className="text-xs text-gray-400 flex flex-wrap items-center gap-3">
+                                  <span>
+                                    Client: <strong className="text-gray-200">{job.customerName}</strong> ({job.customerPhone})
+                                  </span>
+                                  {job.location && (
+                                    <span className="flex items-center gap-1 text-emerald-300">
+                                      <MapPin className="w-3 h-3 text-emerald-400" />
+                                      {job.location}
+                                    </span>
+                                  )}
+                                  <span>
+                                    &bull; Logged:{' '}
+                                    {new Date(job.createdAt).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                {job.location && (
+                                  <a
+                                    href={`https://maps.google.com/?q=${encodeURIComponent(job.location + ', Kerala')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 text-xs font-bold transition-colors inline-flex items-center gap-1"
+                                  >
+                                    <Navigation className="w-3 h-3" />
+                                    <span>GPS</span>
+                                  </a>
+                                )}
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-black border ${
+                                    isCompleted
+                                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                      : isInProgress
+                                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                                      : isAssigned
+                                      ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                                      : 'bg-gray-800 text-gray-400 border-gray-700'
+                                  }`}
+                                >
+                                  {job.status.replace('_', ' ')}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Telemetry Strip for Work Order */}
+                            <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60 flex flex-wrap items-center justify-between gap-3 text-[11px]">
+                              <div className="flex flex-wrap items-center gap-3 text-gray-400">
+                                {jobSpecs.siteReachedAt && (
+                                  <span className="flex items-center gap-1 text-emerald-400">
+                                    <MapPin className="w-3 h-3" />
+                                    <span>
+                                      Reached:{' '}
+                                      {new Date(jobSpecs.siteReachedAt).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                  </span>
+                                )}
+
+                                {job.workStartedAt && (
+                                  <span className="flex items-center gap-1 text-amber-300 font-mono">
+                                    <Timer className="w-3 h-3" />
+                                    <span>
+                                      Started:{' '}
+                                      {new Date(job.workStartedAt).toLocaleTimeString('en-US', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                  </span>
+                                )}
+
+                                {durationStr && (
+                                  <span className="flex items-center gap-1 text-gray-300">
+                                    <Clock className="w-3 h-3 text-[#A78BFA]" />
+                                    <span>Duration: {durationStr}</span>
+                                  </span>
+                                )}
+
+                                {job.completedUnits !== null && job.completedUnits !== undefined && (
+                                  <span className="font-bold text-sky-300">
+                                    🌴 Units: {job.completedUnits} {job.unitLabel || 'Units'}
+                                  </span>
+                                )}
+
+                                {job.totalCalculatedWage && (
+                                  <span className="font-bold text-emerald-400">
+                                    💰 Payout: ₹{job.totalCalculatedWage.toLocaleString('en-IN')}
+                                  </span>
+                                )}
+
+                                {breaks.length > 0 && (
+                                  <span className="flex items-center gap-1 text-purple-300">
+                                    <Coffee className="w-3 h-3" />
+                                    <span>{breaks.length} Breaks</span>
+                                  </span>
+                                )}
+
+                                {squad.length > 1 && (
+                                  <span className="flex items-center gap-1 text-amber-300">
+                                    <Users className="w-3 h-3" />
+                                    <span>Squad: {squad.length} Workers</span>
+                                  </span>
+                                )}
+                              </div>
+
+                              <NextLink
+                                href={`/admin/operations/enquiries/${job.id}`}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white font-bold transition-all text-xs ml-auto"
+                              >
+                                <span>Full Order Page</span>
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </NextLink>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
               ) : (
                 <div className="py-12 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-3xl border border-gray-800/50">
                   No work orders found matching the filter.

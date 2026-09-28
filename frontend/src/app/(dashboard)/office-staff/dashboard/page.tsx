@@ -50,9 +50,10 @@ import {
   AssignWorkerModal,
   UpdateJobPayModal,
   CreateWorkModal,
-  OfficeStaffFinanceView,
   OfficeStaffLoadingScreen,
 } from '@/components/OfficeStaff';
+import { ActivityFeed } from '@/components/ActivityFeed';
+import { NotificationFeed } from '@/components/NotificationFeed';
 
 // Services Master Catalog
 const SERVICES_CATALOG = [
@@ -1009,18 +1010,6 @@ export default function OfficeStaffDashboardPage() {
                 >
                   Services ({SERVICES_CATALOG.length})
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveSection('operations-finance')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                    activeSection === 'operations-finance'
-                      ? 'bg-[#1B2CC1] text-white font-bold shadow-xs'
-                      : 'text-slate-600 hover:text-[#091540]'
-                  }`}
-                >
-                  <IndianRupee className="w-3.5 h-3.5" />
-                  <span>Finance & Collections</span>
-                </button>
               </div>
 
               {/* 1. Enquiries View */}
@@ -1202,31 +1191,40 @@ export default function OfficeStaffDashboardPage() {
                                 </button>
                               ) : (
                                 <div className="flex items-center justify-end gap-1.5">
-                                  {work.status !== 'COMPLETED' && (
+                                  {work.status !== 'COMPLETED' ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenAssignModal(work)}
+                                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                                      >
+                                        Squad
+                                      </button>
+                                      <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
+                                        Payout on complete
+                                      </span>
+                                    </>
+                                  ) : (
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenAssignModal(work)}
-                                      className="px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-all shadow-xs cursor-pointer"
+                                      onClick={() => {
+                                        setSelectedEnquiryToPay(work);
+                                        setIsPayModalOpen(true);
+                                      }}
+                                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 ${
+                                        work.totalCalculatedWage
+                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                      }`}
                                     >
-                                      Squad
+                                      <IndianRupee className="w-3.5 h-3.5" />
+                                      <span>
+                                        {work.totalCalculatedWage
+                                          ? `Paid: ₹${work.totalCalculatedWage} (${(work.specificationDetails as any)?.paymentMode || 'CASH'})`
+                                          : 'Assign Payment'}
+                                      </span>
                                     </button>
                                   )}
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedEnquiryToPay(work);
-                                      setIsPayModalOpen(true);
-                                    }}
-                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                                      work.totalCalculatedWage
-                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                        : work.status === 'COMPLETED'
-                                        ? 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
-                                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                    }`}
-                                  >
-                                    {work.totalCalculatedWage ? `₹${work.totalCalculatedWage}` : 'Finalize Pay'}
-                                  </button>
                                 </div>
                               )}
                             </td>
@@ -1388,14 +1386,6 @@ export default function OfficeStaffDashboardPage() {
                   ))}
                 </div>
               )}
-
-              {/* 5. Finance & Daily Collections View */}
-              {activeSection === 'operations-finance' && (
-                <OfficeStaffFinanceView
-                  enquiries={enquiries}
-                  workers={workers}
-                />
-              )}
             </div>
           )}
 
@@ -1434,55 +1424,22 @@ export default function OfficeStaffDashboardPage() {
 
           {/* Section: Notifications */}
           {activeSection === 'notifications' && (
-            <div className="bg-white rounded-2xl border border-white/80 p-6 space-y-4 shadow-md">
-              <h3 className="text-sm font-bold text-[#091540]">Notifications</h3>
-              <div className="space-y-2.5">
-                {enquiries.slice(0, 5).map((enq) => (
-                  <div
-                    key={enq.id}
-                    className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start gap-3"
-                  >
-                    <div className="w-7 h-7 rounded-lg bg-[#ABD2FA]/30 text-[#1B2CC1] flex items-center justify-center shrink-0">
-                      <FolderKanban className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="flex-1 text-xs">
-                      <div className="font-bold text-[#091540]">
-                        {enq.serviceName}
-                      </div>
-                      <div className="text-slate-600 mt-0.5">
-                        Customer {enq.customerName} requested service at {enq.location || 'Local Site'}.
-                      </div>
-                      <span className="text-[11px] text-[#1B2CC1] font-mono font-semibold mt-1 block">
-                        Tracking ID: {enq.trackingNumber}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <NotificationFeed
+              token={token}
+              isDark={false}
+              title="Office Staff Dispatch Alerts &amp; System Notifications"
+            />
           )}
 
           {/* Section: Activity Logs */}
           {activeSection === 'activity-logs' && (
-            <div className="bg-white rounded-2xl border border-white/80 p-6 space-y-4 shadow-md">
-              <h3 className="text-sm font-bold text-[#091540]">Activity Logs</h3>
-              <div className="space-y-2 font-mono text-xs">
-                {enquiries.slice(0, 6).map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between text-slate-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#1B2CC1] font-bold">[DISPATCH]</span>
-                      <span>Ticket {item.trackingNumber} status is {item.status}</span>
-                    </div>
-                    <span className="text-[11px] text-slate-400">
-                      {new Date(item.createdAt).toLocaleTimeString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ActivityFeed
+              token={token}
+              isDark={false}
+              title="My Office Operations &amp; Activity Trail"
+              subtitle="Immutable detailed record of enquiries created, staff check-ins, technician assignments, and cash entries"
+              limit={20}
+            />
           )}
 
           {/* Section: Settings */}

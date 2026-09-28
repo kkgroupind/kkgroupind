@@ -16,13 +16,20 @@ import {
   Trash2,
   Check,
 } from 'lucide-react';
-import { EnquiryService, AttendanceService, ServiceEnquiry } from '@/services';
+import {
+  EnquiryService,
+  AttendanceService,
+  NotificationService,
+  NotificationItem as ApiNotification,
+  ServiceEnquiry,
+} from '@/services';
+import { Send, Plus, Megaphone } from 'lucide-react';
 
 interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  category: 'ENQUIRY' | 'DISPATCH' | 'ATTENDANCE';
+  category: 'ENQUIRY' | 'DISPATCH' | 'ATTENDANCE' | 'SYSTEM';
   time: string;
   isRead: boolean;
   link?: string;
@@ -35,8 +42,15 @@ export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'ENQUIRY' | 'DISPATCH' | 'ATTENDANCE'>('ALL');
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'ENQUIRY' | 'DISPATCH' | 'ATTENDANCE' | 'SYSTEM'>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Broadcast Modal State
+  const [isBroadcastModalOpen, setIsBroadcastModalOpen] = useState(false);
+  const [broadcastRole, setBroadcastRole] = useState<'ALL' | 'WORKER' | 'OFFICE_STAFF' | 'CUSTOMER'>('ALL');
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [isSendingBroadcast, setIsSendingBroadcast] = useState(false);
 
   const loadNotifications = useCallback(
     async (showRefresh = false) => {
@@ -45,51 +59,59 @@ export default function AdminNotificationsPage() {
       else setIsLoading(true);
 
       try {
-        const [enqRes, attRes] = await Promise.allSettled([
+        const [notifRes, enqRes] = await Promise.allSettled([
+          NotificationService.getMyNotifications(token, { limit: 50 }),
           EnquiryService.getAllEnquiries({}, token),
-          AttendanceService.getOverview(token),
         ]);
 
         const items: NotificationItem[] = [];
 
-        if (enqRes.status === 'fulfilled' && enqRes.value.enquiries) {
-          enqRes.value.enquiries.slice(0, 15).forEach((e) => {
-            if (e.status === 'PENDING') {
-              items.push({
-                id: `enq-pending-${e.id}`,
-                title: `New Service Enquiry: ${e.serviceName}`,
-                message: `Customer ${e.customerName} submitted a request at ${e.location || 'site'}. Tracking: ${e.trackingNumber}`,
-                category: 'ENQUIRY',
-                time: e.createdAt,
-                isRead: false,
-                link: '/admin/operations/enquiries',
-              });
-            } else if (e.workerId) {
-              items.push({
-                id: `enq-assign-${e.id}`,
-                title: `Technician Dispatched: ${e.serviceName}`,
-                message: `Assigned to ${e.worker?.name || e.worker?.username || 'technician'} for tracking code ${e.trackingNumber}.`,
-                category: 'DISPATCH',
-                time: e.assignedAt || e.updatedAt,
-                isRead: true,
-                link: '/admin/operations/assignments',
-              });
-            }
+        // 1. Real persistent notifications
+        if (notifRes.status === 'fulfilled' && notifRes.value.items) {
+          notifRes.value.items.forEach((n) => {
+            let cat: 'ENQUIRY' | 'DISPATCH' | 'ATTENDANCE' | 'SYSTEM' = 'SYSTEM';
+            if (n.type === 'ENQUIRY') cat = 'ENQUIRY';
+            else if (n.type === 'ASSIGNMENT') cat = 'DISPATCH';
+            else if (n.type === 'DUTY') cat = 'ATTENDANCE';
+
+            items.push({
+              id: n.id,
+              title: n.title,
+              message: n.message,
+              category: cat,
+              time: n.createdAt,
+              isRead: n.isRead,
+              link: n.link || undefined,
+            });
           });
         }
 
-        if (attRes.status === 'fulfilled' && attRes.value.officeStaff) {
-          attRes.value.officeStaff.forEach((s) => {
-            if (s.todayAttendance) {
-              items.push({
-                id: `att-staff-${s.id}`,
-                title: `Desk Check-in: ${s.name || s.username}`,
-                message: `${s.name || s.username} checked in as ${s.isAvailable ? 'Available' : 'Off Duty'} today.`,
-                category: 'ATTENDANCE',
-                time: s.todayAttendance.checkInAt,
-                isRead: true,
-                link: '/admin/attendance',
-              });
+        // 2. Fallback / Live Operational Events from Enquiries
+        if (enqRes.status === 'fulfilled' && enqRes.value.enquiries) {
+          enqRes.value.enquiries.slice(0, 15).forEach((e) => {
+            const exists = items.some((item) => item.message.includes(e.trackingNumber));
+            if (!exists) {
+              if (e.status === 'PENDING') {
+                items.push({
+                  id: `enq-pending-${e.id}`,
+                  title: `New Service Enquiry: ${e.serviceName}`,
+                  message: `Customer ${e.customerName} submitted a request at ${e.location || 'site'}. Tracking: ${e.trackingNumber}`,
+                  category: 'ENQUIRY',
+                  time: e.createdAt,
+                  isRead: false,
+                  link: '/admin/operations/enquiries',
+                });
+              } else if (e.workerId) {
+                items.push({
+                  id: `enq-assign-${e.id}`,
+                  title: `Technician Dispatched: ${e.serviceName}`,
+                  message: `Assigned to ${e.worker?.name || e.worker?.username || 'technician'} for tracking code ${e.trackingNumber}.`,
+                  category: 'DISPATCH',
+                  time: e.assignedAt || e.updatedAt,
+                  isRead: true,
+                  link: '/admin/operations/assignments',
+                });
+              }
             }
           });
         }
@@ -106,6 +128,27 @@ export default function AdminNotificationsPage() {
     },
     [token],
   );
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !broadcastTitle.trim() || !broadcastMessage.trim()) return;
+    setIsSendingBroadcast(true);
+    try {
+      await NotificationService.adminBroadcast(token, {
+        role: broadcastRole === 'ALL' ? undefined : broadcastRole,
+        title: broadcastTitle.trim(),
+        message: broadcastMessage.trim(),
+      });
+      setIsBroadcastModalOpen(false);
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+      loadNotifications(true);
+    } catch (err) {
+      console.error('Failed to broadcast notification:', err);
+    } finally {
+      setIsSendingBroadcast(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -151,6 +194,14 @@ export default function AdminNotificationsPage() {
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <button
+            onClick={() => setIsBroadcastModalOpen(true)}
+            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6c3df2] px-3.5 py-2 rounded-xl text-sm font-medium text-white transition-all shadow-lg shadow-[#7B4DFF]/20"
+          >
+            <Megaphone className="w-4 h-4" />
+            <span>Broadcast</span>
+          </button>
+
           <button
             onClick={() => loadNotifications(true)}
             disabled={isRefreshing || isLoading}
@@ -276,6 +327,105 @@ export default function AdminNotificationsPage() {
           ))
         )}
       </div>
+
+      {/* Broadcast Announcement Modal */}
+      {isBroadcastModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg bg-[#14151A] border border-gray-800 rounded-2xl p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#7B4DFF]/10 text-[#7B4DFF] border border-[#7B4DFF]/20 rounded-xl">
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-gray-100">Send System Broadcast</h2>
+                  <p className="text-xs text-gray-400">Push real-time alert notifications to users</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsBroadcastModalOpen(false)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSendBroadcast} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Target Audience
+                </label>
+                <select
+                  value={broadcastRole}
+                  onChange={(e) => setBroadcastRole(e.target.value as any)}
+                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                >
+                  <option value="ALL">Everyone (All Registered Users)</option>
+                  <option value="WORKER">Technicians &amp; Labor Workforce Only</option>
+                  <option value="OFFICE_STAFF">Office Staff &amp; Coordinators Only</option>
+                  <option value="CUSTOMER">Customers Only</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Notification Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Schedule Update, Urgent Weather Alert..."
+                  value={broadcastTitle}
+                  onChange={(e) => setBroadcastTitle(e.target.value)}
+                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#7B4DFF]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Message Content
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  placeholder="Type your official announcement here..."
+                  value={broadcastMessage}
+                  onChange={(e) => setBroadcastMessage(e.target.value)}
+                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#7B4DFF] resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
+                <button
+                  type="button"
+                  onClick={() => setIsBroadcastModalOpen(false)}
+                  disabled={isSendingBroadcast}
+                  className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingBroadcast || !broadcastTitle.trim() || !broadcastMessage.trim()}
+                  className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6c3df2] px-4 py-2 rounded-xl text-xs font-semibold text-white transition disabled:opacity-50 shadow-md shadow-[#7B4DFF]/25"
+                >
+                  {isSendingBroadcast ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Send Broadcast</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

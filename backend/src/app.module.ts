@@ -17,6 +17,7 @@ import { OfficeStaffModule } from './module/office-staff/office-staff.module';
 import { WorkerModule } from './module/worker/worker.module';
 import { AuditModule } from './module/audit/audit.module';
 import { FinanceModule } from './module/finance/finance.module';
+import { NotificationModule } from './module/notification/notification.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   CloudinaryModule,
@@ -53,6 +54,7 @@ import {
     WorkerModule,
     AuditModule,
     FinanceModule,
+    NotificationModule,
   ],
   providers: [
     {

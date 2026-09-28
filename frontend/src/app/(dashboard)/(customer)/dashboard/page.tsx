@@ -22,14 +22,29 @@ import {
   RefreshCw,
   Loader2,
   Sparkles,
+  Activity,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry } from '@/services';
+import { ActivityFeed } from '@/components/ActivityFeed';
+import { NotificationFeed } from '@/components/NotificationFeed';
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const { user, token, isLoading } = useAuth();
   const [enquiries, setEnquiries] = useState<ServiceEnquiry[]>([]);
   const [loadingEnquiries, setLoadingEnquiries] = useState(true);
+  const [activeTab, setActiveTab] = useState<'bookings' | 'activities' | 'notifications'>('bookings');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (token) {
+      import('@/services/notification.service').then(({ NotificationService }) => {
+        NotificationService.getMyNotifications(token, { limit: 1 })
+          .then((res) => setUnreadCount(res.unreadCount || 0))
+          .catch(() => {});
+      });
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -166,113 +181,182 @@ export default function CustomerDashboardPage() {
           </div>
         </div>
 
-        {/* Right Column: Customer Enquiries & Bookings */}
+        {/* Right Column: Dynamic Tabs for Bookings, Activities & Notifications */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-base font-bold text-zinc-900 dark:text-white">
-                  My Service Bookings &amp; Enquiries
-                </h2>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Real-time status updates on services you requested
-                </p>
-              </div>
+          {/* Tab Navigation Bar */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+            <button
+              type="button"
+              onClick={() => setActiveTab('bookings')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'bookings'
+                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>Bookings ({enquiries.length})</span>
+            </button>
 
-              <button
-                onClick={loadEnquiries}
-                className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
-                title="Refresh"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('activities')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'activities'
+                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Activity className="w-4 h-4 text-purple-400" />
+              <span>Activity History</span>
+            </button>
 
-            {loadingEnquiries ? (
-              <div className="py-12 flex flex-col items-center justify-center text-zinc-400">
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mb-2" />
-                <span className="text-xs">Loading your enquiries...</span>
-              </div>
-            ) : enquiries.length === 0 ? (
-              <div className="py-12 text-center text-zinc-400 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-6">
-                <ShoppingBag className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-                <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
-                  No service enquiries found
-                </p>
-                <p className="text-[11px] text-zinc-400 mt-1 mb-4">
-                  Browse our 13 home &amp; commercial services and submit an enquiry anytime.
-                </p>
-                <a
-                  href="/#services"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  <span>Explore Services</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {enquiries.map((enq) => {
-                  const isCompleted = enq.status === 'COMPLETED';
-                  const isInProgress = enq.status === 'IN_PROGRESS';
-                  const isAssigned = enq.status === 'ASSIGNED';
-
-                  return (
-                    <div
-                      key={enq.id}
-                      className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                            {enq.trackingNumber}
-                          </span>
-                          <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
-                            {enq.serviceName}
-                          </h4>
-                        </div>
-
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                            isCompleted
-                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                              : isInProgress
-                              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                              : isAssigned
-                              ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400'
-                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                          }`}
-                        >
-                          {enq.status.replace('_', ' ')}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-zinc-600 dark:text-zinc-300">
-                        {enq.message}
-                      </p>
-
-                      {enq.worker && (
-                        <div className="text-[11px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 p-2.5 rounded-lg border border-sky-100 dark:border-sky-900 flex items-center justify-between">
-                          <span>
-                            Assigned Worker: <strong>{enq.worker.name || 'Specialist'}</strong>
-                          </span>
-                          {enq.worker.phone && (
-                            <a
-                              href={`tel:${enq.worker.phone}`}
-                              className="font-semibold underline flex items-center gap-1"
-                            >
-                              <Phone className="w-3 h-3" />
-                              <span>{enq.worker.phone}</span>
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={() => setActiveTab('notifications')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer relative ${
+                activeTab === 'notifications'
+                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Bell className="w-4 h-4 text-amber-400" />
+              <span>Notifications</span>
+              {unreadCount > 0 && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+            </button>
           </div>
+
+          {/* TAB 1: Service Bookings & Enquiries */}
+          {activeTab === 'bookings' && (
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                    My Service Bookings &amp; Enquiries
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Real-time status updates on services you requested
+                  </p>
+                </div>
+
+                <button
+                  onClick={loadEnquiries}
+                  className="p-2 rounded-xl text-zinc-400 hover:text-zinc-600 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+                  title="Refresh"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+
+              {loadingEnquiries ? (
+                <div className="py-12 flex flex-col items-center justify-center text-zinc-400">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mb-2" />
+                  <span className="text-xs">Loading your enquiries...</span>
+                </div>
+              ) : enquiries.length === 0 ? (
+                <div className="py-12 text-center text-zinc-400 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-800 p-6">
+                  <ShoppingBag className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-300">
+                    No service enquiries found
+                  </p>
+                  <p className="text-[11px] text-zinc-400 mt-1 mb-4">
+                    Browse our 13 home &amp; commercial services and submit an enquiry anytime.
+                  </p>
+                  <a
+                    href="/#services"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                  >
+                    <span>Explore Services</span>
+                    <ArrowUpRight className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {enquiries.map((enq) => {
+                    const isCompleted = enq.status === 'COMPLETED';
+                    const isInProgress = enq.status === 'IN_PROGRESS';
+                    const isAssigned = enq.status === 'ASSIGNED';
+
+                    return (
+                      <div
+                        key={enq.id}
+                        className="p-4 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/40 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                              {enq.trackingNumber}
+                            </span>
+                            <h4 className="text-xs font-bold text-zinc-900 dark:text-white">
+                              {enq.serviceName}
+                            </h4>
+                          </div>
+
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                              isCompleted
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : isInProgress
+                                ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                                : isAssigned
+                                ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                            }`}
+                          >
+                            {enq.status.replace('_', ' ')}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-zinc-600 dark:text-zinc-300">
+                          {enq.message}
+                        </p>
+
+                        {enq.worker && (
+                          <div className="text-[11px] text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/30 p-2.5 rounded-lg border border-sky-100 dark:border-sky-900 flex items-center justify-between">
+                            <span>
+                              Assigned Worker: <strong>{enq.worker.name || 'Specialist'}</strong>
+                            </span>
+                            {enq.worker.phone && (
+                              <a
+                                href={`tel:${enq.worker.phone}`}
+                                className="font-semibold underline flex items-center gap-1"
+                              >
+                                <Phone className="w-3 h-3" />
+                                <span>{enq.worker.phone}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: Activity & Audit Ledger */}
+          {activeTab === 'activities' && (
+            <ActivityFeed
+              token={token}
+              isDark={true}
+              title="My Account Activity Trail"
+              subtitle="Full chronological ledger of your logins, service bookings, and verified actions"
+              limit={15}
+            />
+          )}
+
+          {/* TAB 3: Notifications & Real-Time Alerts */}
+          {activeTab === 'notifications' && (
+            <NotificationFeed
+              token={token}
+              isDark={true}
+              title="My Notifications & Dispatch Alerts"
+              onCountChange={setUnreadCount}
+            />
+          )}
         </div>
       </div>
     </div>

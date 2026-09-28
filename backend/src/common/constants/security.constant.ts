@@ -43,4 +43,8 @@ export const RATE_LIMITS = {
     ttl: 60000,
     limit: 60,
   },
+  NOTIFICATION: {
+    ttl: 60000,
+    limit: 60,
+  },
 } as const;

@@ -65,7 +65,7 @@ export class PeopleRepository {
   }
 
   async findByUsername(username: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { username },
       include: {
         attendances: {
@@ -127,7 +127,61 @@ export class PeopleRepository {
           },
         },
       },
-    }) as unknown as Promise<User | null>;
+    });
+
+    if (user && user.role === Role.WORKER) {
+      try {
+        const squadJobs = await this.prisma.serviceEnquiry.findMany({
+          where: {
+            specificationDetails: {
+              path: ['squadWorkerIds'],
+              array_contains: user.id,
+            },
+            workerId: { not: user.id },
+          },
+          take: 50,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            customer: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+            officeStaff: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+                phone: true,
+                avatar: true,
+              },
+            },
+          },
+        });
+
+        if (squadJobs && squadJobs.length > 0) {
+          const existingIds = new Set((user.workerAssignments || []).map((j) => j.id));
+          const uniqueSquadJobs = squadJobs.filter((j) => !existingIds.has(j.id));
+          const merged = [...(user.workerAssignments || []), ...uniqueSquadJobs];
+          merged.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
+          (user as any).workerAssignments = merged;
+          if (user._count) {
+            user._count.workerAssignments = merged.length;
+          }
+        }
+      } catch (err) {
+        // Safe fallback
+      }
+    }
+
+    return user as unknown as Promise<User | null>;
   }
 
   async findByEmail(email: string): Promise<User | null> {

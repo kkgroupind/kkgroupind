@@ -12,7 +12,8 @@ import {
   ChevronRight,
   LogOut,
   X,
-  IndianRupee,
+  Bell,
+  Activity,
 } from 'lucide-react';
 
 export type OfficeStaffSection =
@@ -24,7 +25,6 @@ export type OfficeStaffSection =
   | 'operations-works'
   | 'operations-assignments'
   | 'operations-services'
-  | 'operations-finance'
   | 'workforce-attendance'
   | 'workforce-availability'
   | 'workforce-leave'
@@ -194,19 +194,6 @@ export function OfficeStaffSidebar({
                   <HardHat className={`w-4 h-4 shrink-0 ${isCurrent('operations-assignments') ? 'text-white' : 'text-amber-300'}`} />
                   <span>Workforce Dispatch</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleItemClick('operations-finance')}
-                  className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-left text-sm ${
-                    isCurrent('operations-finance')
-                      ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
-                      : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
-                  }`}
-                >
-                  <IndianRupee className={`w-4 h-4 shrink-0 ${isCurrent('operations-finance') ? 'text-white' : 'text-emerald-300'}`} />
-                  <span>Finance &amp; Collections</span>
-                </button>
               </div>
             )}
           </div>
@@ -243,6 +230,34 @@ export function OfficeStaffSidebar({
               )}
             </button>
           </div>
+
+          {/* Notifications */}
+          <button
+            type="button"
+            onClick={() => handleItemClick('notifications')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left ${
+              isCurrent('notifications')
+                ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Bell className={`w-4 h-4 shrink-0 ${isCurrent('notifications') ? 'text-white' : 'text-[#7692FF]'}`} />
+            <span>Alerts &amp; Notifications</span>
+          </button>
+
+          {/* Activity Logs */}
+          <button
+            type="button"
+            onClick={() => handleItemClick('activity-logs')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left ${
+              isCurrent('activity-logs')
+                ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Activity className={`w-4 h-4 shrink-0 ${isCurrent('activity-logs') ? 'text-white' : 'text-[#7692FF]'}`} />
+            <span>My Activity Trail</span>
+          </button>
 
           {/* Staff Profile */}
           <button

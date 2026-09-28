@@ -185,6 +185,8 @@ export const EnquiryService = {
       unitRate?: number;
       completedUnits?: number;
       notes?: string;
+      paymentMode?: string;
+      paymentRef?: string;
     },
     token: string,
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
@@ -330,6 +332,18 @@ export const EnquiryService = {
   ): Promise<{ enquiries: ServiceEnquiry[] }> {
     return request<{ enquiries: ServiceEnquiry[] }>(
       '/enquiries/customer/my-enquiries',
+      { method: 'GET' },
+      token,
+    );
+  },
+
+  // Get single enquiry by ID
+  async getEnquiryById(
+    id: string,
+    token: string,
+  ): Promise<ServiceEnquiry> {
+    return request<ServiceEnquiry>(
+      `/enquiries/${id}`,
       { method: 'GET' },
       token,
     );

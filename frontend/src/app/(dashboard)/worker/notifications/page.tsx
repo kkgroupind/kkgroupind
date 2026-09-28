@@ -16,9 +16,14 @@ import {
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
+import { useAuth } from '@/context/auth-context';
 import { WorkerShell } from '@/components/Worker';
+import { NotificationFeed } from '@/components/NotificationFeed';
+import { ActivityFeed } from '@/components/ActivityFeed';
+import { Activity } from 'lucide-react';
 
 export default function WorkerNotificationsPage() {
+  const { token } = useAuth();
   const {
     jobs,
     isOnDuty,
@@ -29,6 +34,7 @@ export default function WorkerNotificationsPage() {
 
   const { language, t, translateService } = useWorkerLanguage();
 
+  const [mainTab, setMainTab] = useState<'notifications' | 'activity'>('notifications');
   const [filterType, setFilterType] = useState<'ALL' | 'NEW' | 'DUTY'>('ALL');
 
   const assignedJobs = useMemo(() => jobs.filter((j) => j.status === 'ASSIGNED'), [jobs]);
@@ -37,68 +43,116 @@ export default function WorkerNotificationsPage() {
 
   return (
     <WorkerShell activeTab="notifications">
-      <div className="w-full space-y-6">
-        {/* Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-bold">
-              <Bell className="w-6 h-6 text-[#5E42B4]" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
-                  {t('notificationsTitle')}
-                </h1>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
-                  {assignedJobsCount} {t('newDispatches')}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {t('notificationsSubtitle')}
-              </p>
-            </div>
-          </div>
+      <div className="space-y-6 max-w-4xl mx-auto pb-12">
+        {/* Main Tab Switcher */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setMainTab('notifications')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              mainTab === 'notifications'
+                ? 'bg-[#5E42B4] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            <span>{t('notificationsTitle')}</span>
+          </button>
 
-          {/* Filter Pills */}
-          <div className="flex items-center bg-slate-100/90 p-1.5 rounded-2xl gap-1">
-            <button
-              type="button"
-              onClick={() => setFilterType('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                filterType === 'ALL'
-                  ? 'bg-[#5E42B4] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t('allNotifications')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterType('NEW')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                filterType === 'NEW'
-                  ? 'bg-[#5E42B4] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t('newDispatches')} ({assignedJobsCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterType('DUTY')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                filterType === 'DUTY'
-                  ? 'bg-[#5E42B4] text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              {t('shiftStatus')}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setMainTab('activity')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              mainTab === 'activity'
+                ? 'bg-[#5E42B4] text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span>My Activity &amp; Work History (ഓഡിറ്റ് ഹിസ്റ്ററി)</span>
+          </button>
         </div>
 
-        {/* Notifications Body */}
-        <div className="bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100 space-y-3.5">
+        {mainTab === 'activity' ? (
+          <ActivityFeed
+            token={token}
+            isDark={false}
+            title="My Work Operations &amp; Activity Trail"
+            subtitle="Immutable detailed record of your shift check-ins, accepted work orders, meter logs, and completed tasks"
+            limit={15}
+          />
+        ) : (
+          <>
+            {/* Real-time Persistent Notification Feed */}
+            {token && (
+              <NotificationFeed
+                token={token}
+                isDark={false}
+                title="Technician Alerts &amp; Dispatches"
+              />
+            )}
+
+            {/* Header Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-bold">
+                  <Briefcase className="w-6 h-6 text-[#5E42B4]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+                      Active Job Queue &amp; Duty Status
+                    </h1>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                      {assignedJobsCount} {t('newDispatches')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {t('notificationsSubtitle')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Filter Pills */}
+              <div className="flex items-center bg-slate-100/90 p-1.5 rounded-2xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFilterType('ALL')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    filterType === 'ALL'
+                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t('allNotifications')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('NEW')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    filterType === 'NEW'
+                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t('newDispatches')} ({assignedJobsCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFilterType('DUTY')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    filterType === 'DUTY'
+                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {t('shiftStatus')}
+                </button>
+              </div>
+            </div>
+
+            {/* Notifications Body */}
+            <div className="bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100 space-y-3.5">
           {/* Daily Duty Status Card */}
           {(filterType === 'ALL' || filterType === 'DUTY') && (
             <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -270,6 +324,8 @@ export default function WorkerNotificationsPage() {
             </div>
           )}
         </div>
+      </>
+    )}
       </div>
     </WorkerShell>
   );

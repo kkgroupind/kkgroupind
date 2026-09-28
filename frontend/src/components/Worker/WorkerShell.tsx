@@ -20,6 +20,7 @@ interface WorkerShellProps {
   searchQuery?: string;
   onSearchChange?: (q: string) => void;
   hideSidebar?: boolean;
+  hideHeader?: boolean;
 }
 
 export function WorkerShell({
@@ -28,6 +29,7 @@ export function WorkerShell({
   searchQuery = '',
   onSearchChange,
   hideSidebar = true,
+  hideHeader = false,
 }: WorkerShellProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -84,14 +86,16 @@ export function WorkerShell({
       <div className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto flex items-start gap-4 relative justify-center">
         {/* Main Content Card */}
         <main className="w-full min-w-0 bg-[#ECEFF6] rounded-3xl sm:rounded-[38px] p-3 sm:p-5 lg:p-6 shadow-[0_15px_50px_rgba(0,0,0,0.06)] border border-white/70 flex flex-col gap-4 sm:gap-5 min-h-[auto]">
-          {/* Header with Title, Search, User Avatar */}
-          <WorkerHeader
-            userName={user?.name || user?.username || 'Operative'}
-            userAvatar={user?.avatar || undefined}
-            searchQuery={searchQuery}
-            onSearchChange={onSearchChange}
-            onProfileClick={() => router.push('/worker/profile')}
-          />
+          {/* Header with Title, Search, User Avatar (optional) */}
+          {!hideHeader && (
+            <WorkerHeader
+              userName={user?.name || user?.username || 'Operative'}
+              userAvatar={user?.avatar || undefined}
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
+              onProfileClick={() => router.push('/worker/profile')}
+            />
+          )}
 
           {/* Page Content */}
           <div className="w-full flex-1 flex flex-col gap-4 sm:gap-5">

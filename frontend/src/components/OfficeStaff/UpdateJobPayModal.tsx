@@ -8,10 +8,12 @@ import {
   AlertCircle,
   Loader2,
   HardHat,
-  Calendar,
   Clock,
-  Sparkles,
   Calculator,
+  Banknote,
+  QrCode,
+  Building2,
+  ShieldCheck,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry } from '@/services';
 import { useToast } from '@/context/toast-context';
@@ -23,6 +25,13 @@ interface UpdateJobPayModalProps {
   token?: string | null;
   onPayUpdatedSuccess: () => void;
 }
+
+const PAYMENT_MODES = [
+  { id: 'CASH', label: 'Cash on Site', sub: 'നേരിട്ട് പണം', icon: Banknote },
+  { id: 'UPI', label: 'UPI / GPay', sub: 'യു.പി.ഐ / ഗൂഗിൾ പേ', icon: QrCode },
+  { id: 'BANK_TRANSFER', label: 'Bank Transfer', sub: 'ബാങ്ക് ട്രാൻസ്ഫർ', icon: Building2 },
+  { id: 'COMPANY_PAY', label: 'Company Payroll', sub: 'കമ്പനി പേ ഔട്ട്', icon: ShieldCheck },
+];
 
 export function UpdateJobPayModal({
   isOpen,
@@ -38,6 +47,8 @@ export function UpdateJobPayModal({
   const [workerUnitWage, setWorkerUnitWage] = useState<number | ''>('');
   const [totalCalculatedCost, setTotalCalculatedCost] = useState<number | ''>('');
   const [unitRate, setUnitRate] = useState<number | ''>('');
+  const [paymentMode, setPaymentMode] = useState<string>('CASH');
+  const [paymentRef, setPaymentRef] = useState<string>('');
   const [notes, setNotes] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -50,6 +61,9 @@ export function UpdateJobPayModal({
       setWorkerUnitWage(enquiry.workerUnitWage ?? '');
       setTotalCalculatedCost(enquiry.totalCalculatedCost ?? '');
       setUnitRate(enquiry.unitRate ?? '');
+      const spec = (enquiry.specificationDetails as any) || {};
+      setPaymentMode(spec.paymentMode || 'CASH');
+      setPaymentRef(spec.paymentRef || '');
       setNotes(enquiry.notes || '');
       setError(null);
     }
@@ -58,6 +72,7 @@ export function UpdateJobPayModal({
   if (!isOpen || !enquiry) return null;
 
   const unitLabel = enquiry.unitLabel || 'Unit';
+  const isWorkCompleted = enquiry.status === 'COMPLETED';
 
   // Quick auto-calc worker wage
   const handleAutoCalculateWage = () => {
@@ -71,6 +86,11 @@ export function UpdateJobPayModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
+
+    if (!isWorkCompleted) {
+      setError('Payment can only be assigned after the job has been completed by workers.');
+      return;
+    }
 
     if (totalCalculatedWage === '' && workerUnitWage === '') {
       setError('Please provide at least a Final Worker Payout or Unit Wage Rate.');
@@ -89,14 +109,16 @@ export function UpdateJobPayModal({
           completedUnits: completedUnits === '' ? undefined : Number(completedUnits),
           totalCalculatedCost: totalCalculatedCost === '' ? undefined : Number(totalCalculatedCost),
           unitRate: unitRate === '' ? undefined : Number(unitRate),
+          paymentMode,
+          paymentRef: paymentRef.trim() || undefined,
           notes: notes.trim() || undefined,
         },
         token,
       );
 
       toast.success(
-        'Worker Payout Updated',
-        `Successfully finalized ₹${Number(totalCalculatedWage || 0).toLocaleString()} for ${enquiry.trackingNumber}.`,
+        'Worker Payout Assigned',
+        `Successfully assigned ₹${Number(totalCalculatedWage || 0).toLocaleString()} via ${paymentMode} for ${enquiry.trackingNumber}.`,
       );
       onPayUpdatedSuccess();
       onClose();
@@ -118,13 +140,13 @@ export function UpdateJobPayModal({
             </div>
             <div>
               <h3 className="font-bold text-sm text-gray-100 flex items-center gap-2">
-                <span>Finalize Worker Payout</span>
+                <span>Assign Payment Upon Work Completion</span>
                 <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-[#7B4DFF]/15 text-[#7B4DFF] border border-[#7B4DFF]/30">
                   {enquiry.trackingNumber}
                 </span>
               </h3>
               <p className="text-[11px] text-gray-400">
-                Update finalized wage for completed job execution
+                Assign worker payout &amp; payment method for completed service
               </p>
             </div>
           </div>
@@ -139,11 +161,24 @@ export function UpdateJobPayModal({
         </div>
 
         {/* Content & Form */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
           {error && (
             <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center gap-2 text-rose-300 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
+            </div>
+          )}
+
+          {/* Completion Status Alert */}
+          {!isWorkCompleted && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-amber-300 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
+              <div>
+                <p className="font-bold text-amber-200">Work In Progress / Not Completed</p>
+                <p className="text-[11px] text-amber-300/80 mt-0.5">
+                  Payment can only be assigned after the field worker finishes work and marks it as completed. Current job status: <span className="font-mono font-bold text-white px-1.5 py-0.5 rounded bg-black/40 border border-amber-500/40">{enquiry.status}</span>.
+                </p>
+              </div>
             </div>
           )}
 
@@ -185,13 +220,70 @@ export function UpdateJobPayModal({
             ) : null}
           </div>
 
+          {/* Payment Mode Selection */}
+          <div>
+            <label className="text-[11px] font-bold text-gray-300 uppercase tracking-wider block mb-2">
+              Payment Mode (പെയ്മെന്റ് രീതി) *
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {PAYMENT_MODES.map((mode) => {
+                const IconComponent = mode.icon;
+                const isSelected = paymentMode === mode.id;
+                return (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    disabled={!isWorkCompleted}
+                    onClick={() => setPaymentMode(mode.id)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                      isSelected
+                        ? 'bg-emerald-500/15 border-emerald-500 text-white shadow-xs'
+                        : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-700'
+                    } ${!isWorkCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                        isSelected
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-gray-800 text-gray-400'
+                      }`}
+                    >
+                      <IconComponent className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`text-xs font-bold leading-tight ${isSelected ? 'text-emerald-400' : 'text-gray-200'}`}>
+                        {mode.label}
+                      </p>
+                      <p className="text-[10px] text-gray-400 truncate">{mode.sub}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Payment Reference ID (e.g. UPI Ref / Cash voucher) */}
+          <div>
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+              Payment Ref / Transaction ID (Optional)
+            </label>
+            <input
+              type="text"
+              disabled={!isWorkCompleted}
+              value={paymentRef}
+              onChange={(e) => setPaymentRef(e.target.value)}
+              placeholder="e.g. UPI Ref / UTR / Cash Voucher No."
+              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-emerald-500 disabled:opacity-50"
+            />
+          </div>
+
           {/* Input Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Final Worker Payout */}
             <div className="sm:col-span-2">
               <label className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider block mb-1.5 flex items-center justify-between">
                 <span>Final Worker Payout (₹) *</span>
-                {Number(completedUnits) > 0 && Number(workerUnitWage) > 0 && (
+                {Number(completedUnits) > 0 && Number(workerUnitWage) > 0 && isWorkCompleted && (
                   <button
                     type="button"
                     onClick={handleAutoCalculateWage}
@@ -208,12 +300,13 @@ export function UpdateJobPayModal({
                   type="number"
                   min="0"
                   step="1"
+                  disabled={!isWorkCompleted}
                   value={totalCalculatedWage}
                   onChange={(e) =>
                     setTotalCalculatedWage(e.target.value === '' ? '' : Number(e.target.value))
                   }
                   placeholder="e.g. 1500"
-                  className="w-full bg-[#1A1C23] border border-emerald-500/40 rounded-xl pl-9 pr-3 py-2.5 text-sm font-black text-emerald-400 focus:outline-none focus:border-emerald-400"
+                  className="w-full bg-[#1A1C23] border border-emerald-500/40 rounded-xl pl-9 pr-3 py-2.5 text-sm font-black text-emerald-400 focus:outline-none focus:border-emerald-400 disabled:opacity-50"
                 />
               </div>
             </div>
@@ -227,12 +320,13 @@ export function UpdateJobPayModal({
                 type="number"
                 min="0"
                 step="0.1"
+                disabled={!isWorkCompleted}
                 value={completedUnits}
                 onChange={(e) =>
                   setCompletedUnits(e.target.value === '' ? '' : Number(e.target.value))
                 }
                 placeholder="e.g. 12"
-                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF] disabled:opacity-50"
               />
             </div>
 
@@ -245,12 +339,13 @@ export function UpdateJobPayModal({
                 type="number"
                 min="0"
                 step="1"
+                disabled={!isWorkCompleted}
                 value={workerUnitWage}
                 onChange={(e) =>
                   setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))
                 }
                 placeholder="e.g. 80"
-                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF] disabled:opacity-50"
               />
             </div>
 
@@ -263,12 +358,13 @@ export function UpdateJobPayModal({
                 type="number"
                 min="0"
                 step="1"
+                disabled={!isWorkCompleted}
                 value={totalCalculatedCost}
                 onChange={(e) =>
                   setTotalCalculatedCost(e.target.value === '' ? '' : Number(e.target.value))
                 }
                 placeholder="Optional"
-                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF] disabled:opacity-50"
               />
             </div>
 
@@ -281,10 +377,11 @@ export function UpdateJobPayModal({
                 type="number"
                 min="0"
                 step="1"
+                disabled={!isWorkCompleted}
                 value={unitRate}
                 onChange={(e) => setUnitRate(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder="Optional"
-                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF] disabled:opacity-50"
               />
             </div>
           </div>
@@ -296,10 +393,11 @@ export function UpdateJobPayModal({
             </label>
             <textarea
               rows={2}
+              disabled={!isWorkCompleted}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Verified by site supervisor. Wage approved."
-              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+              placeholder="e.g. Verified work completion. Handed cash on site."
+              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF] disabled:opacity-50"
             />
           </div>
 
@@ -314,15 +412,15 @@ export function UpdateJobPayModal({
             </button>
             <button
               type="submit"
-              disabled={submitting}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+              disabled={submitting || !isWorkCompleted}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white font-bold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5" />
               )}
-              <span>Finalize &amp; Save Payout</span>
+              <span>{isWorkCompleted ? 'Assign & Finalize Payment' : 'Cannot Pay (Work In Progress)'}</span>
             </button>
           </div>
         </form>
@@ -330,3 +428,4 @@ export function UpdateJobPayModal({
     </div>
   );
 }
+

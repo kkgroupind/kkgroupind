@@ -56,6 +56,28 @@ export const AuditService = {
     }>(endpoint, { method: 'GET' }, token);
   },
 
+  async getMyLogs(
+    token?: string | null,
+    params: AuditQueryParams = {},
+  ): Promise<{
+    items: AuditLogItem[];
+    meta: { total: number; page: number; limit: number; totalPages: number };
+  }> {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, val]) => {
+      if (val !== undefined && val !== null && val !== '') {
+        query.set(key, String(val));
+      }
+    });
+
+    const queryString = query.toString();
+    const endpoint = `/audit/my-logs${queryString ? `?${queryString}` : ''}`;
+    return request<{
+      items: AuditLogItem[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(endpoint, { method: 'GET' }, token);
+  },
+
   async getStats(token?: string | null): Promise<AuditStats> {
     return request<AuditStats>('/audit/stats', { method: 'GET' }, token);
   },

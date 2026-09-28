@@ -539,8 +539,17 @@ export default function AdminEnquiriesPage() {
                     className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5 text-gray-400" />
-                    <span>View Ticket</span>
+                    <span>Quick View</span>
                   </button>
+
+                  <Link
+                    href={`/admin/operations/enquiries/${enquiry.id}`}
+                    className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white transition-all"
+                    title="Full Work Order Page"
+                  >
+                    <span>Full Details</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
 
                   {enquiry.status === 'PENDING' ? (
                     <button
@@ -634,14 +643,21 @@ export default function AdminEnquiriesPage() {
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/operations/enquiries/${enquiry.id}`}
+                            className="p-1.5 rounded-lg bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 text-[#A78BFA] hover:text-white border border-[#7B4DFF]/30 transition-colors"
+                            title="Open Full Details Page"
+                          >
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </Link>
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedEnquiry(enquiry);
                               setIsDetailsModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800"
-                            title="View details"
+                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800 transition-colors"
+                            title="Quick View"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -854,26 +870,36 @@ export default function AdminEnquiriesPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 p-5 border-t border-gray-800 bg-[#14151A]">
-              <button
-                type="button"
-                onClick={() => setIsDetailsModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-gray-800 transition-colors cursor-pointer"
+            <div className="flex items-center justify-between gap-3 p-5 border-t border-gray-800 bg-[#14151A]">
+              <Link
+                href={`/admin/operations/enquiries/${selectedEnquiry.id}`}
+                className="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-[#A78BFA] hover:text-white font-bold text-xs border border-purple-500/30 transition-all flex items-center gap-1.5"
               >
-                Close
-              </button>
-              {selectedEnquiry.status === 'PENDING' && (
+                <span>Open Full Command Center</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setIsDetailsModalOpen(false);
-                    setIsAssignModalOpen(true);
-                  }}
-                  className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white font-bold text-xs shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
+                  onClick={() => setIsDetailsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-gray-800 transition-colors cursor-pointer"
                 >
-                  Dispatch to Worker
+                  Close
                 </button>
-              )}
+                {selectedEnquiry.status === 'PENDING' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDetailsModalOpen(false);
+                      setIsAssignModalOpen(true);
+                    }}
+                    className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white font-bold text-xs shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
+                  >
+                    Dispatch to Worker
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

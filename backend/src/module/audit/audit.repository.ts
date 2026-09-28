@@ -7,16 +7,16 @@ export class AuditRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: {
-    userId?: string;
-    userName?: string;
-    userEmail?: string;
-    userRole?: Role;
+    userId?: string | null;
+    userName?: string | null;
+    userEmail?: string | null;
+    userRole?: Role | null;
     action: string;
     entityType: string;
-    entityId?: string;
-    details?: string;
-    ipAddress?: string;
-    userAgent?: string;
+    entityId?: string | null;
+    details?: string | null;
+    ipAddress?: string | null;
+    userAgent?: string | null;
   }) {
     return this.prisma.auditLog.create({
       data: {
