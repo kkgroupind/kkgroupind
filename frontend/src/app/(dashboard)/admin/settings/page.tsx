@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { api, User, UpdateAdminProfileData } from '@/services';
+import { api, User, UpdateAdminProfileData, SettingsService } from '@/services';
 import {
   Shield,
   User as UserIcon,
@@ -121,6 +121,32 @@ export default function AdminSettingsPage() {
     }
   }, []);
 
+  const fetchSiteSettings = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await SettingsService.getAdminSettings(token);
+      if (data) {
+        if (data.siteName) setSiteName(data.siteName);
+        if (data.siteTagline) setSiteTagline(data.siteTagline);
+        if (data.siteTaglineMl) setSiteTaglineMl(data.siteTaglineMl);
+        if (data.primaryDistrict) setPrimaryDistrict(data.primaryDistrict);
+        if (data.operatingAreas) setOperatingAreas(data.operatingAreas);
+        if (data.contactPhone) setContactPhone(data.contactPhone);
+        if (data.whatsappPhone) setWhatsappPhone(data.whatsappPhone);
+        if (data.supportEmail) setSupportEmail(data.supportEmail);
+        if (data.officeAddress) setOfficeAddress(data.officeAddress);
+        if (data.businessHours) setBusinessHours(data.businessHours);
+        if (data.emergencyDispatch !== undefined) setEmergencyDispatch(data.emergencyDispatch);
+        if (data.publicEnquiries !== undefined) setPublicEnquiries(data.publicEnquiries);
+        if (data.multilingualEnabled !== undefined) setMultilingualEnabled(data.multilingualEnabled);
+        if (data.announcementBanner) setAnnouncementBanner(data.announcementBanner);
+        if (data.bannerActive !== undefined) setBannerActive(data.bannerActive);
+      }
+    } catch (err) {
+      console.warn('Could not load site settings from backend:', err);
+    }
+  }, [token]);
+
   // Initial load
   useEffect(() => {
     if (!authLoading) {
@@ -129,8 +155,9 @@ export default function AdminSettingsPage() {
         return;
       }
       fetchAdminProfile();
+      fetchSiteSettings();
     }
-  }, [authLoading, token, authUser, router]);
+  }, [authLoading, token, authUser, router, fetchSiteSettings]);
 
   const fetchAdminProfile = async () => {
     if (!token) return;
@@ -298,6 +325,7 @@ export default function AdminSettingsPage() {
 
   const handleSiteSettingsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!token) return;
     setIsSavingSite(true);
     setSiteSuccess('');
 
@@ -318,18 +346,14 @@ export default function AdminSettingsPage() {
         multilingualEnabled,
         announcementBanner,
         bannerActive,
-        updatedAt: new Date().toISOString(),
       };
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('kk_site_settings', JSON.stringify(payload));
-      }
-
-      await new Promise((r) => setTimeout(r, 500));
-      setSiteSuccess('Site settings and Kasaragod operational configurations saved successfully!');
+      await SettingsService.updateSettings(token, payload);
+      setSiteSuccess('Site settings, WhatsApp number, and Kasaragod contact details saved and published successfully!');
       setTimeout(() => setSiteSuccess(''), 4500);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save site settings:', err);
+      alert(err.message || 'Failed to update site settings');
     } finally {
       setIsSavingSite(false);
     }
@@ -358,12 +382,15 @@ export default function AdminSettingsPage() {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={fetchAdminProfile}
-            disabled={isFetchingProfile}
+            onClick={() => {
+              fetchAdminProfile();
+              fetchSiteSettings();
+            }}
+            disabled={isFetchingProfile || isSavingSite}
             className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isFetchingProfile ? 'animate-spin' : ''}`} />
-            <span>Sync Profile</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isFetchingProfile || isSavingSite ? 'animate-spin' : ''}`} />
+            <span>Sync Settings</span>
           </button>
         </div>
       </div>

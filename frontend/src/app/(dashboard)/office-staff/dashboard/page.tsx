@@ -33,6 +33,7 @@ import {
   ArrowUpRight,
   Search,
   IndianRupee,
+  User as UserIcon,
 } from 'lucide-react';
 import {
   AttendanceService,
@@ -40,7 +41,7 @@ import {
   ServiceEnquiry,
   WorkerWithAvailability,
   WorkerStatus,
-  User,
+  type User,
   peopleService,
 } from '@/services';
 import {
@@ -194,7 +195,7 @@ export default function OfficeStaffDashboardPage() {
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'PENDING_PAYOUT'>('ALL');
 
   // Unified Workers & Workforce Subtabs
   const [workerSubTab, setWorkerSubTab] = useState<'directory' | 'availability' | 'attendance' | 'leave'>('directory');
@@ -324,6 +325,12 @@ export default function OfficeStaffDashboardPage() {
   };
 
   // Computed Metrics
+  const pendingPayoutWorks = useMemo(() => {
+    return enquiries
+      .filter((e) => e.status === 'COMPLETED' && (!e.totalCalculatedWage || Number(e.totalCalculatedWage) === 0))
+      .sort((a, b) => new Date(b.completedAt || b.updatedAt).getTime() - new Date(a.completedAt || a.updatedAt).getTime());
+  }, [enquiries]);
+
   const stats = useMemo(() => {
     const totalEnquiries = enquiries.length;
     const pendingEnquiries = enquiries.filter((e) => e.status === 'PENDING').length;
@@ -340,16 +347,30 @@ export default function OfficeStaffDashboardPage() {
       pendingEnquiries,
       activeWorks: assignedEnquiries + inProgressEnquiries,
       completedEnquiries,
+      pendingPayout: pendingPayoutWorks.length,
       availableWorkers,
       busyWorkers,
       offDutyWorkers,
       totalWorkers: workers.length,
     };
-  }, [enquiries, workers]);
+  }, [enquiries, workers, pendingPayoutWorks]);
+
+  const getWorkPriority = (item: ServiceEnquiry): number => {
+    // 1. PENDING assignment: needs squad allocation
+    if (item.status === 'PENDING') return 1;
+    // 2. PENDING payout: completed job requiring wage settlement
+    if (item.status === 'COMPLETED' && (!item.totalCalculatedWage || Number(item.totalCalculatedWage) === 0)) return 2;
+    // 3. IN_PROGRESS: active field tasks
+    if (item.status === 'IN_PROGRESS') return 3;
+    // 4. ASSIGNED: allocated squad
+    if (item.status === 'ASSIGNED') return 4;
+    // 5. COMPLETED: finalized & settled
+    return 5;
+  };
 
   // Filtered Enquiries / Works
   const filteredEnquiries = useMemo(() => {
-    return enquiries.filter((item) => {
+    const list = enquiries.filter((item) => {
       const matchSearch =
         searchQuery === '' ||
         item.trackingNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -357,9 +378,34 @@ export default function OfficeStaffDashboardPage() {
         item.serviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.customerPhone.includes(searchQuery);
 
-      const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      const matchStatus =
+        statusFilter === 'ALL'
+          ? true
+          : statusFilter === 'PENDING_PAYOUT'
+          ? item.status === 'COMPLETED' && (!item.totalCalculatedWage || Number(item.totalCalculatedWage) === 0)
+          : item.status === statusFilter;
+
       return matchSearch && matchStatus;
     });
+
+    if (statusFilter === 'ALL') {
+      return [...list].sort((a, b) => {
+        const priorityDiff = getWorkPriority(a) - getWorkPriority(b);
+        if (priorityDiff !== 0) return priorityDiff;
+        const timeA = new Date(a.createdAt || a.updatedAt).getTime();
+        const timeB = new Date(b.createdAt || b.updatedAt).getTime();
+        return timeB - timeA;
+      });
+    }
+
+    if (statusFilter === 'PENDING_PAYOUT') {
+      return [...list].sort(
+        (a, b) => new Date(b.completedAt || b.updatedAt).getTime() - new Date(a.completedAt || a.updatedAt).getTime(),
+      );
+    }
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt || b.updatedAt).getTime() - new Date(a.createdAt || a.updatedAt).getTime(),
+    );
   }, [enquiries, searchQuery, statusFilter]);
 
   // People Lists
@@ -483,7 +529,7 @@ export default function OfficeStaffDashboardPage() {
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
               {/* Top Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div
                   onClick={() => setActiveSection('operations-enquiries')}
                   className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
@@ -517,6 +563,36 @@ export default function OfficeStaffDashboardPage() {
                   </div>
                   <span className="text-xs text-slate-500 mt-1 block font-medium">
                     Assigned and in progress
+                  </span>
+                </div>
+
+                {/* Finished Works Awaiting Payout Bento Card */}
+                <div
+                  onClick={() => {
+                    setActiveSection('operations-works');
+                    setStatusFilter('PENDING_PAYOUT');
+                  }}
+                  className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] ${
+                    stats.pendingPayout > 0
+                      ? 'bg-amber-50 border-amber-300 hover:border-amber-400'
+                      : 'bg-white border-white/80 hover:border-[#7692FF]/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-[#091540] mb-3">
+                    <span className="text-xs font-bold">Payout Pending</span>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+                      stats.pendingPayout > 0
+                        ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      <IndianRupee className="w-4 h-4" />
+                    </div>
+                  </div>
+                  <div className={`text-2xl font-black ${stats.pendingPayout > 0 ? 'text-amber-700' : 'text-[#091540]'}`}>
+                    {stats.pendingPayout}
+                  </div>
+                  <span className="text-xs text-slate-500 mt-1 block font-medium">
+                    Finished works awaiting pay
                   </span>
                 </div>
 
@@ -561,6 +637,93 @@ export default function OfficeStaffDashboardPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Finished Works Awaiting Worker Payout Action Section */}
+              {pendingPayoutWorks.length > 0 && (
+                <div className="p-5 rounded-2xl bg-amber-50/90 border-2 border-amber-300 shadow-md flex flex-col gap-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <IndianRupee className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-black text-amber-950">
+                            {pendingPayoutWorks.length} Completed {pendingPayoutWorks.length === 1 ? 'Work' : 'Works'} Awaiting Worker Payout
+                          </h3>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white animate-pulse">
+                            Payment Needed
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-800/80 mt-0.5 font-medium">
+                          These jobs are marked completed by field technicians. Assign final wage &amp; payment method.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveSection('operations-works');
+                        setStatusFilter('PENDING_PAYOUT');
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <span>View All Pending ({pendingPayoutWorks.length})</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Quick Card Row of Latest Finished Works Without Payout */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                    {pendingPayoutWorks.slice(0, 3).map((job) => (
+                      <div
+                        key={job.id}
+                        className="bg-white rounded-xl p-3.5 border border-amber-200 shadow-xs flex flex-col justify-between gap-3 hover:border-amber-400 transition-all"
+                      >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-xs font-bold text-[#1B2CC1]">
+                              {job.trackingNumber}
+                            </span>
+                            <span className="text-[10px] font-semibold text-slate-400">
+                              {new Date(job.completedAt || job.updatedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="text-xs font-bold text-[#091540] truncate">
+                            {job.serviceName}
+                          </div>
+                          <div className="text-[11px] text-slate-600 flex items-center gap-1">
+                            <UserIcon className="w-3 h-3 text-slate-400" />
+                            <span className="truncate">{job.customerName}</span>
+                          </div>
+                          <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
+                            <HardHat className="w-3 h-3" />
+                            <span>{job.worker?.name || job.worker?.username || 'Field Operative'}</span>
+                          </div>
+                          {job.completedUnits ? (
+                            <div className="text-[11px] font-medium text-slate-500">
+                              Logged: <strong className="text-slate-800">{job.completedUnits} {job.unitLabel || 'Units'}</strong>
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedEnquiryToPay(job);
+                            setIsPayModalOpen(true);
+                          }}
+                          className="w-full py-2 px-3 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
+                        >
+                          <IndianRupee className="w-3.5 h-3.5" />
+                          <span>Assign Payment</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action Banner */}
               <div className="p-5 rounded-2xl bg-white border border-white/80 shadow-[0_4px_16px_rgba(9,21,64,0.06)] flex flex-wrap items-center justify-between gap-4">
@@ -666,6 +829,18 @@ export default function OfficeStaffDashboardPage() {
                                 className="px-3 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-semibold transition-colors shadow-xs"
                               >
                                 Assign
+                              </button>
+                            ) : job.status === 'COMPLETED' && (!job.totalCalculatedWage || Number(job.totalCalculatedWage) === 0) ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedEnquiryToPay(job);
+                                  setIsPayModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1 ml-auto"
+                              >
+                                <IndianRupee className="w-3 h-3" />
+                                <span>Assign Pay</span>
                               </button>
                             ) : (
                               <button
@@ -1113,19 +1288,30 @@ export default function OfficeStaffDashboardPage() {
 
                   {/* Status Filters */}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {(['ALL', 'PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'] as const).map(
+                    {(['ALL', 'PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'PENDING_PAYOUT'] as const).map(
                       (st) => (
                         <button
                           key={st}
                           type="button"
                           onClick={() => setStatusFilter(st)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                             statusFilter === st
-                              ? 'bg-[#1B2CC1] text-white shadow-xs'
+                              ? st === 'PENDING_PAYOUT'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : 'bg-[#1B2CC1] text-white shadow-xs'
+                              : st === 'PENDING_PAYOUT'
+                              ? 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-300'
                               : 'bg-slate-100 text-slate-600 hover:text-[#091540] border border-slate-200'
                           }`}
                         >
-                          {st}
+                          {st === 'PENDING_PAYOUT' ? (
+                            <>
+                              <IndianRupee className="w-3.5 h-3.5" />
+                              <span>Payout Pending ({pendingPayoutWorks.length})</span>
+                            </>
+                          ) : (
+                            st
+                          )}
                         </button>
                       ),
                     )}

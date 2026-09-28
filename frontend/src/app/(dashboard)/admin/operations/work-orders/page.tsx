@@ -88,8 +88,36 @@ export default function AdminWorkOrdersPage() {
     }
   }, [authLoading, token, user, router, loadData]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const filter = new URLSearchParams(window.location.search).get('filter');
+      if (filter) {
+        setStatusFilter(filter);
+      }
+    }
+  }, []);
+
+  const pendingPayoutOrders = useMemo(() => {
+    return workOrders
+      .filter((w) => w.status === 'COMPLETED' && (!w.totalCalculatedWage || Number(w.totalCalculatedWage) === 0))
+      .sort((a, b) => new Date(b.completedAt || b.updatedAt).getTime() - new Date(a.completedAt || a.updatedAt).getTime());
+  }, [workOrders]);
+
+  const getOrderPriority = (item: ServiceEnquiry): number => {
+    // 1. PENDING assignment: needs squad allocation
+    if (item.status === 'PENDING') return 1;
+    // 2. PENDING payout: completed job requiring wage settlement
+    if (item.status === 'COMPLETED' && (!item.totalCalculatedWage || Number(item.totalCalculatedWage) === 0)) return 2;
+    // 3. IN_PROGRESS: active field tasks
+    if (item.status === 'IN_PROGRESS') return 3;
+    // 4. ASSIGNED: allocated squad
+    if (item.status === 'ASSIGNED') return 4;
+    // 5. COMPLETED: finalized & settled
+    return 5;
+  };
+
   const filteredOrders = useMemo(() => {
-    return workOrders.filter((item) => {
+    const list = workOrders.filter((item) => {
       const matchSearch =
         searchTerm === '' ||
         item.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,9 +125,34 @@ export default function AdminWorkOrdersPage() {
         item.serviceName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.customerPhone.includes(searchTerm);
 
-      const matchStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      const matchStatus =
+        statusFilter === 'ALL'
+          ? true
+          : statusFilter === 'PENDING_PAYOUT'
+          ? item.status === 'COMPLETED' && (!item.totalCalculatedWage || Number(item.totalCalculatedWage) === 0)
+          : item.status === statusFilter;
+
       return matchSearch && matchStatus;
     });
+
+    if (statusFilter === 'ALL') {
+      return [...list].sort((a, b) => {
+        const priorityDiff = getOrderPriority(a) - getOrderPriority(b);
+        if (priorityDiff !== 0) return priorityDiff;
+        const timeA = new Date(a.createdAt || a.updatedAt).getTime();
+        const timeB = new Date(b.createdAt || b.updatedAt).getTime();
+        return timeB - timeA;
+      });
+    }
+
+    if (statusFilter === 'PENDING_PAYOUT') {
+      return [...list].sort(
+        (a, b) => new Date(b.completedAt || b.updatedAt).getTime() - new Date(a.completedAt || a.updatedAt).getTime(),
+      );
+    }
+    return [...list].sort(
+      (a, b) => new Date(b.createdAt || b.updatedAt).getTime() - new Date(a.createdAt || a.updatedAt).getTime(),
+    );
   }, [workOrders, searchTerm, statusFilter]);
 
   const metrics = useMemo(() => {
@@ -107,11 +160,19 @@ export default function AdminWorkOrdersPage() {
     const assigned = workOrders.filter((w) => w.status === 'ASSIGNED').length;
     const inProgress = workOrders.filter((w) => w.status === 'IN_PROGRESS').length;
     const completed = workOrders.filter((w) => w.status === 'COMPLETED').length;
-    return { total, assigned, inProgress, completed };
-  }, [workOrders]);
+    const pendingPayout = pendingPayoutOrders.length;
+    return { total, assigned, inProgress, completed, pendingPayout };
+  }, [workOrders, pendingPayoutOrders]);
 
   const statusDropdownOptions: AdminDropdownOption[] = [
     { value: 'ALL', label: 'All Work Orders', badge: `${metrics.total}` },
+    {
+      value: 'PENDING_PAYOUT',
+      label: 'Payout Pending',
+      badge: `${metrics.pendingPayout}`,
+      badgeColor: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+      icon: IndianRupee,
+    },
     {
       value: 'PENDING',
       label: 'Pending Assignment',
@@ -219,7 +280,7 @@ export default function AdminWorkOrdersPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-gray-500/60 transition-all duration-300" />
           <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
@@ -255,7 +316,112 @@ export default function AdminWorkOrdersPage() {
           <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.completed}</div>
           <span className="text-[11px] text-emerald-400/70 mt-1 block">Closed &amp; fulfilled</span>
         </div>
+
+        <div
+          onClick={() => setStatusFilter(statusFilter === 'PENDING_PAYOUT' ? 'ALL' : 'PENDING_PAYOUT')}
+          className={`group p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden shadow-sm cursor-pointer ${
+            metrics.pendingPayout > 0
+              ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60'
+              : 'bg-[#14151A] border-gray-800/80 hover:border-gray-700/80'
+          }`}
+        >
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-500/80 transition-all duration-300" />
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+              Payout Pending
+            </span>
+            {metrics.pendingPayout > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            )}
+          </div>
+          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.pendingPayout}</div>
+          <span className="text-[11px] text-amber-400/70 mt-1 block">Awaiting wage finalization</span>
+        </div>
       </div>
+
+      {/* Finished Works Awaiting Payout Section */}
+      {pendingPayoutOrders.length > 0 && (
+        <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 shadow-lg flex flex-col gap-4 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+                <IndianRupee className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-gray-100">
+                    {pendingPayoutOrders.length} Completed {pendingPayoutOrders.length === 1 ? 'Work' : 'Works'} Awaiting Worker Payout
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                    Action Required
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Finished field tasks with unfinalized payouts. Review completed units and assign worker wages directly.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setStatusFilter('PENDING_PAYOUT')}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>View All Pending ({pendingPayoutOrders.length})</span>
+            </button>
+          </div>
+
+          {/* Quick Cards of Latest Finished Works Without Payout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {pendingPayoutOrders.slice(0, 3).map((order) => (
+              <div
+                key={order.id}
+                className="bg-[#14151A] rounded-xl p-4 border border-amber-500/30 hover:border-amber-500/60 shadow-md flex flex-col justify-between gap-3 transition-all"
+              >
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-bold text-[#7B4DFF]">
+                      {order.trackingNumber}
+                    </span>
+                    <span className="text-[10px] text-gray-400">
+                      {new Date(order.completedAt || order.updatedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold text-gray-200 truncate">
+                    {order.serviceName}
+                  </div>
+                  <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                    <User className="w-3 h-3 text-gray-500" />
+                    <span className="truncate">{order.customerName}</span>
+                  </div>
+                  <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                    <HardHat className="w-3 h-3 text-emerald-400" />
+                    <span>{order.worker?.name || order.worker?.username || 'Field Operative'}</span>
+                  </div>
+                  {order.completedUnits ? (
+                    <div className="text-[11px] text-gray-400">
+                      Units Logged: <strong className="text-gray-200">{order.completedUnits} {order.unitLabel || 'Units'}</strong>
+                    </div>
+                  ) : null}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPayOrder(order);
+                    setIsPayModalOpen(true);
+                  }}
+                  className="w-full py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                >
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Finalize Payment</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search and Filters Bar */}
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
@@ -373,11 +539,18 @@ export default function AdminWorkOrdersPage() {
                       </div>
                     </div>
 
-                    <span
-                      className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border ${theme.bg} ${theme.text} ${theme.border} uppercase tracking-wider shrink-0`}
-                    >
-                      {order.status.replace('_', ' ')}
-                    </span>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span
+                        className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg border ${theme.bg} ${theme.text} ${theme.border} uppercase tracking-wider`}
+                      >
+                        {order.status.replace('_', ' ')}
+                      </span>
+                      {order.status === 'COMPLETED' && (!order.totalCalculatedWage || Number(order.totalCalculatedWage) === 0) && (
+                        <span className="px-2 py-0.5 text-[9px] font-extrabold rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase tracking-wider animate-pulse">
+                          PAYOUT NEEDED
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Wage Model Tag */}
@@ -561,11 +734,18 @@ export default function AdminWorkOrdersPage() {
                         )}
                       </td>
                       <td className="py-3 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border uppercase tracking-wider ${theme.bg} ${theme.text} ${theme.border}`}
-                        >
-                          {order.status}
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-bold border uppercase tracking-wider ${theme.bg} ${theme.text} ${theme.border}`}
+                          >
+                            {order.status}
+                          </span>
+                          {order.status === 'COMPLETED' && (!order.totalCalculatedWage || Number(order.totalCalculatedWage) === 0) && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              Payout Due
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-gray-400">
                         {new Date(order.createdAt).toLocaleDateString()}
@@ -602,13 +782,14 @@ export default function AdminWorkOrdersPage() {
                                 setPayOrder(order);
                                 setIsPayModalOpen(true);
                               }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 cursor-pointer ${
                                 order.totalCalculatedWage
                                   ? 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 border border-emerald-500/30'
-                                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40'
+                                  : 'bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/40 animate-pulse'
                               }`}
                             >
-                              {order.totalCalculatedWage ? `₹${order.totalCalculatedWage}` : 'Finalize Pay'}
+                              <IndianRupee className="w-3 h-3" />
+                              <span>{order.totalCalculatedWage ? `₹${order.totalCalculatedWage}` : 'Finalize Pay'}</span>
                             </button>
                           </div>
                         )}

@@ -352,3 +352,27 @@ model Notification {
   @@index([userId, createdAt])
   @@map("notifications")
 }
+
+model SiteSetting {
+  id                  String   @id @default("default")
+  siteName            String   @default("KK Group")
+  siteTagline         String   @default("Professional Services & Workforce Solutions")
+  siteTaglineMl       String?  @default("കാസർഗോഡ് ജില്ലയിലെ വിശ്വസനീയമായ തൊഴിൽ സേവനങ്ങൾ")
+  primaryDistrict     String   @default("Kasaragod")
+  operatingAreas      String   @default("Kasaragod, Kanhangad, Nileshwaram, Uppala, Manjeshwar, Cheruvathur, Bekal, Kumbla")
+  contactPhone        String   @default("+91 94470 12345")
+  whatsappPhone       String   @default("+91 98460 54321")
+  supportEmail        String   @default("contact@kkgroupkerala.com")
+  officeAddress       String   @default("KK Group Hub, Main Road, Kasaragod, Kerala - 671121")
+  businessHours       String   @default("08:00 AM - 07:00 PM (Monday - Saturday)")
+  emergencyDispatch   Boolean  @default(true)
+  publicEnquiries     Boolean  @default(true)
+  multilingualEnabled Boolean  @default(true)
+  announcementBanner  String?  @default("Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.")
+  bannerActive        Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+  updatedBy           String?
+
+  @@map("site_settings")
+}
+

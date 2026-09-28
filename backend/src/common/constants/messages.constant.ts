@@ -191,6 +191,13 @@ export const NOTIFICATION_MESSAGES = {
   NOTIFICATION_NOT_FOUND: 'Notification not found',
 } as const;
 
+export const SETTINGS_MESSAGES = {
+  SETTINGS_FETCHED_SUCCESS: 'Site settings retrieved successfully',
+  SETTINGS_UPDATED_SUCCESS: 'Site settings updated successfully',
+  SETTINGS_NOT_FOUND: 'Site settings not found',
+} as const;
+
+
 
 
 

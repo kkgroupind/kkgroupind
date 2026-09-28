@@ -449,6 +449,43 @@ export class EnquiryService {
       },
     );
 
+    // Non-blocking notification to assigned worker
+    if (updated.workerId) {
+      this.notificationService
+        .notifyUser({
+          userId: updated.workerId,
+          title: `Payout Finalized: ₹${updated.totalCalculatedWage || 0}`,
+          message: `Your payment of ₹${updated.totalCalculatedWage || 0} for work order "${updated.serviceName}" (${updated.trackingNumber}) has been updated. Mode: ${dto.paymentMode || 'CASH'}.`,
+          type: NotificationType.FINANCE,
+          link: '/worker/notifications',
+          metadata: {
+            enquiryId,
+            trackingNumber: updated.trackingNumber,
+            totalCalculatedWage: updated.totalCalculatedWage,
+            paymentMode: dto.paymentMode,
+          },
+        })
+        .catch(() => {});
+    }
+
+    // Non-blocking immutable audit log
+    this.auditService
+      .recordLog({
+        action: 'WORKER_PAYOUT_ASSIGNED',
+        entityType: 'SERVICE_ENQUIRY',
+        entityId: enquiryId,
+        details: JSON.stringify({
+          trackingNumber: updated.trackingNumber,
+          workerId: updated.workerId,
+          totalCalculatedWage: updated.totalCalculatedWage,
+          workerUnitWage: updated.workerUnitWage,
+          completedUnits: updated.completedUnits,
+          paymentMode: dto.paymentMode,
+          notes: dto.notes,
+        }),
+      })
+      .catch(() => {});
+
     return {
       message: ENQUIRY_MESSAGES.PAY_UPDATED_SUCCESS,
       enquiry: updated,

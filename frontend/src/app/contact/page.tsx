@@ -26,6 +26,7 @@ import { CUSTOMER_SERVICES } from '@/utils/service-options';
 import { useToast } from '@/context/toast-context';
 import { sanitizePhoneInput, validateMobileNumber } from '@/validations';
 import { EnquiryService } from '@/services/enquiry.service';
+import { SettingsService, SiteSettings } from '@/services/settings.service';
 
 export default function ContactPage() {
   const { language } = useLanguage();
@@ -47,6 +48,15 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+
+  React.useEffect(() => {
+    SettingsService.getPublicSettings()
+      .then((res) => {
+        if (res) setSiteSettings(res);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleOpenEnquiry = (serviceName?: string) => {
     setSelectedService(serviceName);
@@ -155,7 +165,7 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Phone Card */}
             <a
-              href="tel:+919447012345"
+              href={`tel:${(siteSettings?.contactPhone || '+919447012345').replace(/\s+/g, '')}`}
               className="bg-white border-2 border-slate-200/90 hover:border-[#2A835F] rounded-3xl p-6 flex flex-col justify-between gap-5 shadow-xs hover:shadow-lg transition-all group"
             >
               <div className="flex flex-col gap-3">
@@ -166,7 +176,7 @@ export default function ContactPage() {
                   {t.phoneLabel}
                 </span>
                 <span className="text-base font-black text-slate-900 group-hover:text-[#2A835F] transition-colors">
-                  {t.phoneVal}
+                  {siteSettings?.contactPhone || t.phoneVal}
                 </span>
                 <p className="text-xs text-slate-500">{t.phoneSub}</p>
               </div>
@@ -178,7 +188,7 @@ export default function ContactPage() {
 
             {/* WhatsApp Card */}
             <a
-              href="https://wa.me/919846054321?text=Hello%20KK%20Group,%20I%20would%20like%20to%20enquire%20about%20services."
+              href={`https://wa.me/${(siteSettings?.whatsappPhone || '919846054321').replace(/[^0-9]/g, '')}?text=Hello%20KK%20Group,%20I%20would%20like%20to%20enquire%20about%20services.`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-white border-2 border-slate-200/90 hover:border-[#25D366] rounded-3xl p-6 flex flex-col justify-between gap-5 shadow-xs hover:shadow-lg transition-all group"
@@ -191,7 +201,7 @@ export default function ContactPage() {
                   {t.whatsappLabel}
                 </span>
                 <span className="text-base font-black text-slate-900 group-hover:text-[#25D366] transition-colors">
-                  {t.whatsappVal}
+                  {siteSettings?.whatsappPhone || t.whatsappVal}
                 </span>
                 <p className="text-xs text-slate-500">{t.whatsappSub}</p>
               </div>
@@ -203,7 +213,7 @@ export default function ContactPage() {
 
             {/* Email Card */}
             <a
-              href="mailto:dispatch@kkgroupkerala.com"
+              href={`mailto:${siteSettings?.supportEmail || 'dispatch@kkgroupkerala.com'}`}
               className="bg-white border-2 border-slate-200/90 hover:border-[#2A835F] rounded-3xl p-6 flex flex-col justify-between gap-5 shadow-xs hover:shadow-lg transition-all group"
             >
               <div className="flex flex-col gap-3">
@@ -214,7 +224,7 @@ export default function ContactPage() {
                   {t.emailLabel}
                 </span>
                 <span className="text-base font-black text-slate-900 group-hover:text-[#2A835F] transition-colors truncate">
-                  {t.emailVal}
+                  {siteSettings?.supportEmail || t.emailVal}
                 </span>
                 <p className="text-xs text-slate-500">{t.emailSub}</p>
               </div>
@@ -234,9 +244,9 @@ export default function ContactPage() {
                   {t.deskLabel}
                 </span>
                 <span className="text-2xl font-black text-[#2A835F]">
-                  {t.deskVal}
+                  {siteSettings?.businessHours ? siteSettings.businessHours.split('(')[0].trim() : t.deskVal}
                 </span>
-                <p className="text-xs text-slate-600">{t.deskSub}</p>
+                <p className="text-xs text-slate-600">{siteSettings?.businessHours || t.deskSub}</p>
               </div>
               <div className="flex items-center gap-1.5 text-xs font-bold text-[#2A835F]">
                 <span className="w-2 h-2 rounded-full bg-[#2A835F] animate-ping" />

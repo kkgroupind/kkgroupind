@@ -1,13 +1,31 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, ChevronDown, Sparkles, Settings, Globe, MapPin, Layers } from 'lucide-react';
+import { Calendar, ChevronDown, Sparkles, Settings, Globe, MapPin, Layers, IndianRupee, ArrowRight } from 'lucide-react';
 import { StatCard } from '@/components/Admin/stat-card';
 import { PerformanceChart } from '@/components/Admin/performance-chart';
 import { AttendanceChart } from '@/components/Admin/attendance-chart';
 import { EmployeesTable } from '@/components/Admin/employees-table';
+import { useAuth } from '@/context/auth-context';
+import { EnquiryService, ServiceEnquiry } from '@/services';
 
 export default function AdminDashboardPage() {
+  const { token } = useAuth();
+  const [pendingPayoutCount, setPendingPayoutCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!token) return;
+    EnquiryService.getAllEnquiries({}, token)
+      .then((res) => {
+        const unpaid = (res.enquiries || []).filter(
+          (w) => w.status === 'COMPLETED' && (!w.totalCalculatedWage || Number(w.totalCalculatedWage) === 0),
+        );
+        setPendingPayoutCount(unpaid.length);
+      })
+      .catch((err) => {
+        console.error('Failed to load pending payouts count for admin dashboard', err);
+      });
+  }, [token]);
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-10">
       {/* Header */}
@@ -92,6 +110,39 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Pending Payout Action Alert */}
+      {pendingPayoutCount > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+              <IndianRupee className="w-6 h-6 text-amber-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-gray-100">
+                  {pendingPayoutCount} Completed {pendingPayoutCount === 1 ? 'Work' : 'Works'} Awaiting Worker Payout
+                </h3>
+                <span className="flex items-center gap-1.5 text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold animate-pulse">
+                  Payment Due
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Latest completed jobs without assigned worker payouts. Review completed units and update payments.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/admin/operations/work-orders?filter=PENDING_PAYOUT"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-xs font-bold text-amber-300 transition-all shadow-sm w-full sm:w-auto"
+          >
+            <span>Review &amp; Update Payouts</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -12,10 +12,16 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
+import { SettingsService, SiteSettings } from '@/services/settings.service';
 
 export function Footer() {
   const { language } = useLanguage();
   const t = translations[language].footer;
+  const [siteSettings, setSiteSettings] = React.useState<SiteSettings | null>(null);
+
+  React.useEffect(() => {
+    SettingsService.getPublicSettings().then(setSiteSettings).catch(() => {});
+  }, []);
 
   return (
     <div className="w-full bg-white">
@@ -48,13 +54,18 @@ export function Footer() {
                   <div className="w-7 h-7 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0 border border-[#2A835F]/20">
                     <Phone className="w-3.5 h-3.5" />
                   </div>
-                  <span>{t.operationsDesk}</span>
+                  <a
+                    href={`tel:${(siteSettings?.contactPhone || '+919447012345').replace(/\s+/g, '')}`}
+                    className="hover:text-emerald-400 transition-colors"
+                  >
+                    {siteSettings?.contactPhone || t.operationsDesk}
+                  </a>
                 </div>
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0 border border-[#2A835F]/20">
                     <MapPin className="w-3.5 h-3.5" />
                   </div>
-                  <span>{t.centralHQ}</span>
+                  <span>{siteSettings?.officeAddress || t.centralHQ}</span>
                 </div>
               </div>
             </div>

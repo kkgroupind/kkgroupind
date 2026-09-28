@@ -7,6 +7,7 @@ import { AttendanceService } from './attendance.service';
 import { FinanceService } from './finance.service';
 import { AuditService } from './audit.service';
 import { NotificationService } from './notification.service';
+import { SettingsService } from './settings.service';
 
 export * from './types';
 export * from './api-client';
@@ -19,6 +20,7 @@ export * from './attendance.service';
 export * from './finance.service';
 export * from './audit.service';
 export * from './notification.service';
+export * from './settings.service';
 
 // Combined API object for backward compatibility and centralized access
 export const api = {
@@ -32,6 +34,7 @@ export const api = {
   finance: FinanceService,
   audit: AuditService,
   notification: NotificationService,
+  settings: SettingsService,
   officeStaffProfile: officeStaffProfileService,
   officeStaffPeople: officeStaffPeopleService,
   workerProfile: workerProfileService,

@@ -18,6 +18,7 @@ import { WorkerModule } from './module/worker/worker.module';
 import { AuditModule } from './module/audit/audit.module';
 import { FinanceModule } from './module/finance/finance.module';
 import { NotificationModule } from './module/notification/notification.module';
+import { SettingsModule } from './module/settings/settings.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   CloudinaryModule,
@@ -55,6 +56,7 @@ import {
     AuditModule,
     FinanceModule,
     NotificationModule,
+    SettingsModule,
   ],
   providers: [
     {
