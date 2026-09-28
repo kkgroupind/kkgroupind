@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   Search,
   Globe,
@@ -23,6 +24,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ onOpenEnquiry, onCartClick }: NavbarProps) {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -57,6 +59,19 @@ export function Navbar({ onOpenEnquiry, onCartClick }: NavbarProps) {
     };
   }, [userMenuOpen]);
 
+  const navLinks = [
+    { href: '/', label: t.home, active: pathname === '/' },
+    { href: '/about', label: t.about, active: pathname === '/about' },
+    { href: '/services', label: t.services, active: pathname.startsWith('/services') },
+    { href: '/projects', label: t.projects, active: pathname.startsWith('/projects') },
+    {
+      href: '/businesses',
+      label: t.ourBusinesses,
+      active: pathname.startsWith('/businesses') || pathname.startsWith('/our-businesses'),
+    },
+    { href: '/contact', label: t.contact, active: pathname === '/contact' },
+  ];
+
   return (
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
@@ -67,43 +82,20 @@ export function Navbar({ onOpenEnquiry, onCartClick }: NavbarProps) {
     >
       <div className="w-full max-w-[1440px] mx-auto px-5 sm:px-8 md:px-10 lg:px-12 flex items-center justify-between">
         {/* Left Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-7 text-[13px] font-semibold text-[#0F172A]">
-          <Link
-            href="/"
-            className="hover:text-[#2A835F] transition-colors tracking-tight"
-          >
-            {t.home}
-          </Link>
-          <Link
-            href="#about"
-            className="hover:text-[#2A835F] transition-colors tracking-tight"
-          >
-            {t.about}
-          </Link>
-          <Link
-            href="#services"
-            className="hover:text-[#2A835F] transition-colors tracking-tight"
-          >
-            {t.services}
-          </Link>
-          <Link
-            href="#projects"
-            className="hover:text-[#2A835F] transition-colors tracking-tight"
-          >
-            {t.projects}
-          </Link>
-          <Link
-            href="#businesses"
-            className="hover:text-[#2A835F] transition-colors tracking-tight whitespace-nowrap"
-          >
-            {t.ourBusinesses}
-          </Link>
-          <Link
-            href="#contact"
-            className="hover:text-[#2A835F] transition-colors tracking-tight"
-          >
-            {t.contact}
-          </Link>
+        <nav className="hidden lg:flex items-center gap-6 xl:gap-7 text-[13px] font-semibold">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`transition-colors tracking-tight whitespace-nowrap relative py-1 ${
+                link.active
+                  ? 'text-[#2A835F] font-bold after:content-[\'\'] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-[#2A835F] after:rounded-full'
+                  : 'text-[#0F172A] hover:text-[#2A835F]'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Center Brand Logo: KK Group Named Logo */}
@@ -279,48 +271,22 @@ export function Navbar({ onOpenEnquiry, onCartClick }: NavbarProps) {
             </button>
           </div>
 
-          <Link
-            href="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.home}
-          </Link>
-          <Link
-            href="#about"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.about}
-          </Link>
-          <Link
-            href="#services"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.services}
-          </Link>
-          <Link
-            href="#projects"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.projects}
-          </Link>
-          <Link
-            href="#businesses"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.ourBusinesses}
-          </Link>
-          <Link
-            href="#contact"
-            onClick={() => setMobileMenuOpen(false)}
-            className="text-sm font-semibold text-slate-800 hover:text-[#2A835F] transition-colors py-1"
-          >
-            {t.contact}
-          </Link>
+          <div className="flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`text-sm py-2 px-3 rounded-xl transition-all ${
+                  link.active
+                    ? 'bg-[#EBF6F1] text-[#2A835F] font-bold'
+                    : 'text-slate-800 hover:bg-slate-50 hover:text-[#2A835F] font-semibold'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
 
           <button
             type="button"

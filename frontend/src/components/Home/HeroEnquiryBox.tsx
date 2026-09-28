@@ -7,16 +7,14 @@ import {
   MapPin,
   Phone,
   User,
-  Layers,
-  Calendar,
-  Sparkles,
   Clock,
+  Send,
 } from 'lucide-react';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
 import { EnquiryService } from '@/services/enquiry.service';
 import { adminServicesService } from '@/services/Admin/services';
-import { StylishDropdown, DropdownOption } from '@/components/Common/StylishDropdown';
+import { CustomerDropdown, CustomerDropdownOption } from '@/components/Common/CustomerDropdown';
 import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
 import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
 import { validateMobileNumber, sanitizePhoneInput } from '@/validations';
@@ -27,41 +25,37 @@ interface HeroEnquiryBoxProps {
   className?: string;
 }
 
+import {
+  CUSTOMER_SERVICES,
+  getServiceMalayalamName,
+  getServiceBanner,
+} from '@/utils/service-options';
+
 const DEFAULT_SERVICE_IMAGES: Record<string, string> = {
-  cococare: '/hero-service-card/coco.png',
-  coconut: '/hero-service-card/coco.png',
-  'coconut-plucking': '/hero-service-card/coco.png',
-  jcb: '/hero-service-card/jcb.png',
-  'jcb-excavation': '/hero-service-card/jcb.png',
-  plastering: '/hero-service-card/plastering.png',
-  'plastering-masonry': '/hero-service-card/plastering.png',
-  painting: '/hero-service-card/plastering.png',
-  tile: '/hero-service-card/plastering.png',
-  tiling: '/hero-service-card/plastering.png',
-  electrical: '/hero-service-card/electrical.png',
-  'electrical-mep': '/hero-service-card/electrical.png',
-  plumbing: '/hero-service-card/borewell.png',
-  borewell: '/hero-service-card/borewell.png',
-  'borewell-survey': '/hero-service-card/borewell.png',
+  cococare: '/Banners/coco.png',
+  coconut: '/Banners/coco.png',
+  'coconut-plucking': '/Banners/coco.png',
+  jcb: '/Banners/jcb.png',
+  'jcb-excavation': '/Banners/jcb.png',
+  plastering: '/Banners/plastering.png',
+  'plastering-masonry': '/Banners/plastering.png',
+  masonry: '/Banners/masonry.png',
+  painting: '/Banners/painting.png',
+  tile: '/Banners/tiling.png',
+  tiling: '/Banners/tiling.png',
+  electrical: '/Banners/electrical.png',
+  'electrical-mep': '/Banners/electrical.png',
+  plumbing: '/Banners/plumbing.png',
+  borewell: '/Banners/borewell.png',
+  'borewell-survey': '/Banners/borewell.png',
 };
 
 export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProps) {
   const { language } = useLanguage();
-  const toast = useToast();
+  const { success, error, warning } = useToast();
   const t = translations[language].enquiry;
 
-  const DEFAULT_SERVICES = [
-    { id: 'cococare', name: t.servicesList.cococare, image: '/hero-service-card/coco.png' },
-    { id: 'jcb', name: t.servicesList.jcb, image: '/hero-service-card/jcb.png' },
-    { id: 'plastering', name: t.servicesList.plastering, image: '/hero-service-card/plastering.png' },
-    { id: 'painting', name: t.servicesList.painting, image: '/hero-service-card/plastering.png' },
-    { id: 'tile', name: t.servicesList.tile, image: '/hero-service-card/plastering.png' },
-    { id: 'electrical', name: t.servicesList.electrical, image: '/hero-service-card/electrical.png' },
-    { id: 'plumbing', name: t.servicesList.plumbing, image: '/hero-service-card/borewell.png' },
-    { id: 'borewell', name: 'Borewell Drilling & Water Survey', image: '/hero-service-card/borewell.png' },
-  ];
-
-  const [servicesList, setServicesList] = useState(DEFAULT_SERVICES);
+  const [servicesList, setServicesList] = useState<CustomerDropdownOption[]>(CUSTOMER_SERVICES);
 
   useEffect(() => {
     let isMounted = true;
@@ -69,15 +63,18 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
       .listPublicServices()
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((s) => ({
-            id: s.slug || s.serviceId || s.id,
-            name: s.name,
-            image:
-              s.image ||
-              DEFAULT_SERVICE_IMAGES[s.slug || ''] ||
-              DEFAULT_SERVICE_IMAGES[s.id] ||
-              '/hero-service-card/coco.png',
-          }));
+          const mapped: CustomerDropdownOption[] = data.map((s) => {
+            const serviceKey = s.name || s.slug || s.serviceId || s.id;
+            return {
+              id: s.slug || s.serviceId || s.id,
+              name: s.name,
+              nameMl: getServiceMalayalamName(serviceKey),
+              image:
+                s.image?.startsWith('/Banners/')
+                  ? s.image
+                  : getServiceBanner(serviceKey),
+            };
+          });
           setServicesList(mapped);
         }
       })
@@ -89,13 +86,7 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
     };
   }, []);
 
-  const serviceDropdownOptions: DropdownOption[] = servicesList.map((s) => ({
-    id: s.id,
-    label: s.name,
-    image: s.image,
-  }));
-
-  const [selectedServiceId, setSelectedServiceId] = useState(DEFAULT_SERVICES[0].id);
+  const [selectedServiceId, setSelectedServiceId] = useState(CUSTOMER_SERVICES[0].id);
   const [customerName, setCustomerName] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -104,50 +95,31 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
   const [deadline, setDeadline] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const currentService =
-    servicesList.find((s) => s.id === selectedServiceId) || servicesList[0] || DEFAULT_SERVICES[0];
+    servicesList.find((s) => s.id === selectedServiceId) || servicesList[0] || CUSTOMER_SERVICES[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     if (!customerName.trim()) {
-      const title =
-        language === 'ml' ? 'നിങ്ങളുടെ പേര് നൽകുക' : 'Customer Name Required';
-      const msg =
-        language === 'ml'
-          ? 'സേവനം ബുക്ക് ചെയ്യുന്നതിനായി നിങ്ങളുടെ പൂർണ്ണ നാമം രേഖപ്പെടുത്തുക.'
-          : 'Please enter your full name to proceed with the enquiry.';
-      setErrorMessage(msg);
-      toast.warning(title, msg);
+      const msg = 'Please enter your full name to proceed with the enquiry.';
+      warning(language === 'ml' ? 'നിങ്ങളുടെ പേര് നൽകുക' : 'Customer Name Required', msg);
       return;
     }
 
-    // Phone validation: for +91, validate 10 digits
+    // Phone validation
     if (countryCode === '+91') {
       const phoneValidation = validateMobileNumber(customerPhone, language);
       if (!phoneValidation.isValid) {
-        const title =
-          phoneValidation.title ||
-          (language === 'ml'
-            ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക'
-            : 'Invalid Mobile Number');
-        const msg =
-          phoneValidation.error ||
-          (language === 'ml'
-            ? 'ദയവായി സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക'
-            : 'Please enter a valid 10-digit mobile number');
-        setErrorMessage(msg);
-        toast.warning(title, msg);
+        warning(
+          phoneValidation.title || (language === 'ml' ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക' : 'Invalid Mobile Number'),
+          phoneValidation.error || 'Please enter a valid 10-digit mobile number'
+        );
         return;
       }
     } else if (customerPhone.trim().length < 6) {
-      const title = 'Invalid Mobile Number';
-      const msg = 'Please enter a valid international mobile number.';
-      setErrorMessage(msg);
-      toast.warning(title, msg);
+      warning('Invalid Mobile Number', 'Please enter a valid international mobile number.');
       return;
     }
 
@@ -164,8 +136,8 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
         district,
         city: city.trim() || undefined,
         location: locationString,
-        deadline: deadline || undefined,
-        message: `Direct quick enquiry for ${currentService.name}. Location: ${locationString}${
+        preferredDate: deadline || 'Immediate / Flexible',
+        message: `Quick enquiry for ${currentService.name}. Location: ${locationString}${
           deadline ? `. Target Deadline: ${deadline}` : ''
         }`,
       });
@@ -178,27 +150,19 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
       setSubmittedRef(trackingCode);
       onSuccess?.(trackingCode);
 
-      toast.success(
-        language === 'ml'
-          ? 'അന്വേഷണം വിജയകരമായി അയച്ചു!'
-          : 'Enquiry Dispatched Successfully!',
+      success(
+        language === 'ml' ? 'അന്വേഷണം വിജയകരമായി അയച്ചു!' : 'Enquiry Dispatched Successfully!',
         language === 'ml'
           ? `ട്രാക്കിംഗ് നമ്പർ: ${trackingCode}. ഞങ്ങളുടെ ടീം ഉടൻ നിങ്ങളെ വിളിക്കുന്നതാണ്.`
           : `Tracking ID: ${trackingCode}. Our operations coordinator will call you shortly.`
       );
-    } catch (err: any) {
-      console.error('Backend enquiry error:', err);
-      const title =
+    } catch {
+      error(
+        language === 'ml' ? 'സമർപ്പണത്തിൽ തടസ്സം നേരിട്ടു' : 'Enquiry Dispatch Failed',
         language === 'ml'
-          ? 'സമർപ്പണത്തിൽ തടസ്സം നേരിട്ടു'
-          : 'Enquiry Dispatch Failed';
-      const msg =
-        err?.message ||
-        (language === 'ml'
           ? 'അന്വേഷണം സമർപ്പിക്കുന്നതിൽ തടസ്സം നേരിട്ടു. ദയവായി വീണ്ടും ശ്രമിക്കുക.'
-          : 'Failed to submit enquiry. Please check your connection and try again.');
-      setErrorMessage(msg);
-      toast.error(title, msg);
+          : 'Failed to submit enquiry. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -210,39 +174,39 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
     setCustomerPhone('');
     setCity('');
     setDeadline('');
-    setErrorMessage(null);
   };
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full font-sans antialiased ${className}`}>
       {/* ========================================================
-          1. DESKTOP VIEW: Sleek Bento Multi-Field Hero Container
+          DESKTOP & LARGE SCREENS: Crisp White Bento Container
       ======================================================== */}
       <div className="hidden lg:block w-full">
         {submittedRef ? (
-          <div className="w-full bg-[#0c1310]/95 backdrop-blur-2xl border-2 border-emerald-500/40 rounded-3xl p-6 px-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4 text-white animate-in fade-in zoom-in-95 duration-300">
+          <div className="w-full bg-white border-2 border-[#C3E6D5] rounded-3xl p-6 px-8 shadow-xl flex items-center justify-between gap-6 text-slate-900 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center gap-4 min-w-0">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+              <div className="w-12 h-12 rounded-2xl bg-[#EBF6F1] border border-[#C3E6D5] flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-7 h-7 text-[#2A835F]" />
               </div>
               <div className="min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
                     {language === 'ml' ? 'അന്വേഷണം സ്വീകരിച്ചു' : 'Enquiry Dispatched'}
                   </span>
-                  <span className="font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  <span className="font-mono text-xs font-bold bg-[#EBF6F1] text-[#2A835F] px-2.5 py-0.5 rounded-full border border-[#C3E6D5]">
                     REF: {submittedRef}
                   </span>
                 </div>
-                <p className="text-sm font-bold text-slate-300 truncate">
+                <p className="text-sm font-semibold text-slate-700 truncate">
                   {t.successMsg}
                 </p>
               </div>
             </div>
+
             <button
               type="button"
               onClick={handleReset}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md shrink-0 cursor-pointer"
+              className="bg-[#2A835F] hover:bg-[#236D4F] text-white px-6 py-3 rounded-full font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
             >
               {t.submitAnother}
             </button>
@@ -250,82 +214,61 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="w-full bg-[#0c1310]/90 backdrop-blur-2xl border border-emerald-500/30 rounded-3xl p-5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.6)] flex flex-col gap-3 text-slate-200 transition-all hover:border-emerald-500/50"
+            className="w-full bg-white border-2 border-slate-200/90 rounded-[32px] p-6 shadow-xl flex flex-col gap-4 text-slate-800 transition-all hover:border-[#2A835F]/60"
           >
-            {/* Top Row: Service, Name, Mobile with Searchable Country Code */}
-            <div className="grid grid-cols-12 gap-3 items-center">
-              {/* Service Selection */}
-              <div className="col-span-4 flex items-center gap-2.5 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 border border-emerald-500/20">
-                  <Layers className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="flex flex-col text-left w-full min-w-0">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
-                    {t.chooseService}
-                  </label>
-                  <StylishDropdown
-                    options={serviceDropdownOptions}
-                    value={selectedServiceId}
-                    onChange={setSelectedServiceId}
-                    label={t.chooseService}
-                    variant="inline"
-                  />
-                  <span className="text-[9px] font-mono text-emerald-400/90 font-medium truncate mt-0.5">
-                    {selectedServiceId === 'cococare'
-                      ? '🌴 ₹80 - ₹150 / Tree'
-                      : selectedServiceId === 'jcb'
-                      ? '⏱️ ₹1,400 - ₹1,800 / Hour'
-                      : selectedServiceId === 'painting'
-                      ? '📐 ₹18 - ₹35 / Sq. Ft.'
-                      : selectedServiceId === 'tiling'
-                      ? '📐 ₹28 - ₹65 / Sq. Ft.'
-                      : selectedServiceId === 'electrical'
-                      ? '⚡ ₹350 - ₹550 / Point'
-                      : selectedServiceId === 'borewell'
-                      ? '📏 ₹95 - ₹140 / Foot'
-                      : '🔧 Standard Estimate'}
-                  </span>
-                </div>
+            {/* Top Row: Special Service Dropdown with Big Image & Two-Line Text */}
+            <div className="grid grid-cols-12 gap-4 items-center">
+              {/* Field 1: Service Dropdown (Width: 5 Columns) */}
+              <div className="col-span-5">
+                <CustomerDropdown
+                  options={servicesList}
+                  value={selectedServiceId}
+                  onChange={setSelectedServiceId}
+                  label={t.chooseService}
+                  placeholder="Select required service squad..."
+                  language={language}
+                />
               </div>
 
-              {/* Customer Name */}
-              <div className="col-span-4 flex items-center gap-2.5 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
-                <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5">
-                  <User className="w-4 h-4 text-slate-400" />
-                </div>
-                <div className="flex flex-col text-left w-full min-w-0">
-                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400 mb-0.5">
-                    {t.yourName}
-                  </label>
+              {/* Field 2: Customer Name (Width: 3 Columns) */}
+              <div className="col-span-3 flex flex-col">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 truncate">
+                  {t.yourName}
+                </label>
+                <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:border-[#2A835F] focus-within:ring-2 focus-within:ring-[#2A835F]/15 border border-slate-300/90 rounded-2xl px-3.5 py-3 transition-all">
+                  <User className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type="text"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder={t.namePlaceholder}
-                    className="w-full text-xs font-bold text-white placeholder-slate-500 bg-transparent focus:outline-none"
+                    placeholder="e.g. Ramesh Kumar"
+                    className="w-full text-xs font-semibold text-slate-900 placeholder:text-slate-400 bg-transparent focus:outline-none"
                     required
                   />
                 </div>
               </div>
 
-              {/* Mobile with Searchable Country Code */}
-              <div className="col-span-4 flex items-center gap-2 bg-black/40 border border-white/10 rounded-2xl px-3 py-2">
-                <div className="shrink-0">
-                  <CountryCodeSelect
-                    value={countryCode}
-                    onChange={setCountryCode}
-                  />
+              {/* Field 3: Phone with Searchable Country Code (Width: 4 Columns) */}
+              <div className="col-span-4 flex flex-col">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    {t.phoneNumber}
+                  </label>
+                  {countryCode === '+91' && (
+                    <span className="text-[10px] font-medium text-slate-400">
+                      {customerPhone.length > 0
+                        ? (language === 'ml' ? `${customerPhone.length}/10 അക്കങ്ങൾ` : `${customerPhone.length}/10 Digits`)
+                        : (language === 'ml' ? '10 അക്കങ്ങൾ' : '10 Digits')}
+                    </span>
+                  )}
                 </div>
-                <div className="flex flex-col text-left w-full min-w-0">
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                      {t.phoneNumber}
-                    </label>
-                    {countryCode === '+91' && (
-                      <span className="text-[9px] font-bold text-slate-500">
-                        {customerPhone.length > 0 ? `${customerPhone.length}/10` : '10 Digits'}
-                      </span>
-                    )}
+                <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:border-[#2A835F] focus-within:ring-2 focus-within:ring-[#2A835F]/15 border border-slate-300/90 rounded-2xl px-2.5 py-1.5 transition-all">
+                  <div className="shrink-0">
+                    <CountryCodeSelect
+                      value={countryCode}
+                      onChange={setCountryCode}
+                      theme="light"
+                    />
                   </div>
                   <input
                     type="tel"
@@ -333,49 +276,54 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
                     maxLength={countryCode === '+91' ? 10 : 15}
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                    placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
-                    className="w-full text-xs font-bold text-white placeholder-slate-500 bg-transparent focus:outline-none tracking-wider"
+                    placeholder="98765 43210"
+                    className="w-full text-xs font-bold text-slate-900 placeholder:text-slate-400 bg-transparent focus:outline-none tracking-wider py-1.5"
                     required
                   />
                 </div>
               </div>
             </div>
 
-            {/* Bottom Row: Kerala Location (District & City), Optional Deadline & Enquire Button */}
-            <div className="grid grid-cols-12 gap-3 items-end pt-1 border-t border-white/5">
-              {/* Kerala Location Select (District + City with Custom Typing) */}
+            {/* Bottom Row: Kerala District/City, Optional Target Deadline & Submit CTA */}
+            <div className="grid grid-cols-12 gap-4 items-end pt-2 border-t border-slate-100">
+              {/* Kerala Location Select (District + City) */}
               <div className="col-span-6">
                 <KeralaLocationSelect
                   district={district}
                   city={city}
                   onDistrictChange={setDistrict}
                   onCityChange={setCity}
+                  theme="light"
+                  language={language}
                 />
               </div>
 
-              {/* Optional Deadline */}
-              <div className="col-span-3">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                  Target Deadline <span className="text-slate-500 font-normal">(Optional)</span>
+              {/* Target Date / Deadline */}
+              <div className="col-span-3 flex flex-col">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                  {language === 'ml' ? 'ആവശ്യമുള്ള തീയതി' : 'Target Date'}{' '}
+                  <span className="text-slate-400 font-normal">
+                    ({language === 'ml' ? 'ഓപ്ഷണൽ' : 'Optional'})
+                  </span>
                 </label>
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl">
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-300/90 rounded-xl focus-within:border-[#2A835F] focus-within:ring-1 focus-within:ring-[#2A835F]/20">
                   <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <input
                     type="date"
                     value={deadline}
                     min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => setDeadline(e.target.value)}
-                    className="w-full bg-transparent text-xs text-white focus:outline-none [color-scheme:dark]"
+                    className="w-full bg-transparent text-xs font-medium text-slate-800 focus:outline-none [color-scheme:light]"
                   />
                 </div>
               </div>
 
-              {/* Enquire Now Button */}
+              {/* Submit CTA Button */}
               <div className="col-span-3">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-900/40 transition-all active:scale-95 cursor-pointer disabled:opacity-60"
+                  className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-3 rounded-xl font-bold text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer disabled:opacity-60"
                 >
                   {isSubmitting ? (
                     <>
@@ -393,35 +341,30 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
             </div>
           </form>
         )}
-        {errorMessage && (
-          <p className="text-red-400 text-xs font-medium text-center mt-2 drop-shadow">
-            {errorMessage}
-          </p>
-        )}
       </div>
 
       {/* ========================================================
-          2. MOBILE VIEW: Compact Card with Full Capabilities
+          MOBILE VIEW: Clean White Vertical Card
       ======================================================== */}
       <div className="block lg:hidden w-full max-w-md mx-auto">
         {submittedRef ? (
-          <div className="w-full bg-[#0c1310]/95 backdrop-blur-xl border border-emerald-500/40 rounded-3xl p-5 shadow-2xl text-white text-center animate-in fade-in zoom-in-95 duration-300">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+          <div className="w-full bg-white border-2 border-[#C3E6D5] rounded-3xl p-6 shadow-xl text-slate-900 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-[#EBF6F1] border border-[#C3E6D5] flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-8 h-8 text-[#2A835F]" />
             </div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
               {language === 'ml' ? 'അന്വേഷണം ലഭിച്ചു!' : 'Enquiry Received!'}
             </span>
-            <span className="font-mono text-xs font-bold bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full block w-fit mx-auto mt-1 mb-2 border border-emerald-500/30">
+            <span className="font-mono text-xs font-bold bg-[#EBF6F1] text-[#2A835F] px-3 py-1 rounded-full block w-fit mx-auto mt-1 mb-2 border border-[#C3E6D5]">
               REF: {submittedRef}
             </span>
-            <p className="text-xs font-semibold text-slate-300 leading-relaxed mb-4">
+            <p className="text-xs font-medium text-slate-600 leading-relaxed mb-4">
               {t.successMsg}
             </p>
             <button
               type="button"
               onClick={handleReset}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer"
+              className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-md cursor-pointer"
             >
               {t.submitAnother}
             </button>
@@ -429,56 +372,56 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
         ) : (
           <form
             onSubmit={handleSubmit}
-            className="w-full bg-[#0c1310]/95 backdrop-blur-xl border border-emerald-500/30 rounded-3xl p-4 sm:p-5 shadow-2xl text-white flex flex-col gap-3"
+            className="w-full bg-white border-2 border-slate-200/90 rounded-3xl p-5 shadow-xl text-slate-800 flex flex-col gap-3.5"
           >
             {/* Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-white/10">
-              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{language === 'ml' ? 'ദ്രുത അന്വേഷണം' : 'Quick Enquiry'}</span>
+            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100">
+              <div className="inline-flex items-center gap-1.5 bg-[#EBF6F1] text-[#2A835F] px-3 py-1 rounded-full text-[11px] font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#2A835F]" />
+                <span>{language === 'ml' ? 'ദ്രുത അന്വേഷണം' : 'Quick Service Enquiry'}</span>
               </div>
-              <span className="text-[11px] font-bold text-slate-400">
-                Kerala Operations Only
+              <span className="text-[11px] font-semibold text-slate-400">
+                Kerala Operations
               </span>
             </div>
 
-            {/* Service */}
+            {/* Service Dropdown */}
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                {t.chooseService}
-              </label>
-              <StylishDropdown
-                options={serviceDropdownOptions}
+              <CustomerDropdown
+                options={servicesList}
                 value={selectedServiceId}
                 onChange={setSelectedServiceId}
                 label={t.chooseService}
+                placeholder="Select required service squad..."
+                language={language}
               />
             </div>
 
             {/* Name */}
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
                 {t.yourName}
               </label>
               <input
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder={t.namePlaceholder}
-                className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                placeholder="e.g. Ramesh Kumar"
+                className="w-full px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-300/90 rounded-xl text-slate-900 placeholder-slate-400 text-xs font-semibold focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]/20"
                 required
               />
             </div>
 
             {/* Mobile with Country Code */}
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
                 {t.phoneNumber}
               </label>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <CountryCodeSelect
                   value={countryCode}
                   onChange={setCountryCode}
+                  theme="light"
                 />
                 <input
                   type="tel"
@@ -486,32 +429,37 @@ export function HeroEnquiryBox({ onSuccess, className = '' }: HeroEnquiryBoxProp
                   maxLength={countryCode === '+91' ? 10 : 15}
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                  placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
-                  className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white placeholder-slate-500 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                  placeholder="98765 43210"
+                  className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-300/90 rounded-xl text-slate-900 placeholder-slate-400 text-xs font-bold focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]/20 tracking-wider"
                   required
                 />
               </div>
             </div>
 
-            {/* Kerala Location */}
+            {/* Kerala Location Select */}
             <KeralaLocationSelect
               district={district}
               city={city}
               onDistrictChange={setDistrict}
               onCityChange={setCity}
+              theme="light"
+              language={language}
             />
 
-            {/* Target Deadline */}
+            {/* Target Date */}
             <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                Target Deadline <span className="text-slate-500 font-normal">(Optional)</span>
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+                {language === 'ml' ? 'ആവശ്യമുള്ള തീയതി' : 'Target Date'}{' '}
+                <span className="text-slate-400 font-normal">
+                  ({language === 'ml' ? 'ഓപ്ഷണൽ' : 'Optional'})
+                </span>
               </label>
               <input
                 type="date"
                 value={deadline}
                 min={new Date().toISOString().split('T')[0]}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-white text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50 [color-scheme:dark]"
+                className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-300/90 rounded-xl text-slate-900 text-xs font-medium focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]/20 [color-scheme:light]"
               />
             </div>
 

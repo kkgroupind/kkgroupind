@@ -111,12 +111,12 @@ export function Footer() {
             {/* Column 4: Regional Deployment Hubs */}
             <div className="lg:col-span-3 flex flex-col gap-3">
               <h4 className="text-xs font-black tracking-widest text-[#2A835F] uppercase mb-1">
-                {language === 'ml' ? 'റീജിയണൽ ഹബ്ബുകൾ' : 'Regional Hubs'}
+                {language === 'ml' ? 'കാസർഗോഡ് ഹബ്ബുകൾ' : 'Kasaragod Hubs'}
               </h4>
               <p className="text-xs text-slate-400 leading-relaxed">
                 {language === 'ml'
-                  ? 'പാലക്കാട്, എറണാകുളം, തൃശ്ശൂർ, കോഴിക്കോട് ഡിവിഷനുകളിൽ ഉടനടി ലഭ്യമായ സേവന ശൃംഖല.'
-                  : 'Primary coordination centers operating round the clock across Palakkad, Ernakulam, Thrissur, Calicut, and Southern divisions.'}
+                  ? 'കാസർഗോഡ് ടൗൺ, കാഞ്ഞങ്ങാട്, നീലേശ്വരം, ഉപ്പള, തൃക്കരിപ്പൂർ മേഖലകളിൽ സജീവമായ സേവന ശൃംഖല.'
+                  : 'Dedicated coordination yards operating round the clock across Kasaragod Town, Kanhangad, Nileshwaram, Uppala, and Trikaripur.'}
               </p>
 
               <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl mt-2 flex items-center gap-3">

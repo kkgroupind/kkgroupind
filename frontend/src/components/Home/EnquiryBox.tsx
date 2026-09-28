@@ -7,18 +7,16 @@ import {
   User,
   Phone,
   Mail,
-  MapPin,
   Calendar,
-  ChevronDown,
-  Layers,
   X,
   Clock,
+  Layers,
 } from 'lucide-react';
 import { EnquiryService } from '@/services/enquiry.service';
 import { adminServicesService } from '@/services/Admin/services';
 import { useLanguage } from '@/context/language-context';
 import { translations } from '@/utils/translations';
-import { StylishDropdown } from '@/components/Common/StylishDropdown';
+import { CustomerDropdown, CustomerDropdownOption } from '@/components/Common/CustomerDropdown';
 import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
 import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
 import { validateMobileNumber, sanitizePhoneInput } from '@/validations';
@@ -32,22 +30,30 @@ interface EnquiryBoxProps {
   onEnquirySuccess?: (trackingCode: string) => void;
 }
 
+import {
+  CUSTOMER_SERVICES,
+  getServiceMalayalamName,
+  getServiceBanner,
+} from '@/utils/service-options';
+
 const DEFAULT_SERVICE_IMAGES: Record<string, string> = {
-  cococare: '/hero-service-card/coco.png',
-  coconut: '/hero-service-card/coco.png',
-  'coconut-plucking': '/hero-service-card/coco.png',
-  jcb: '/hero-service-card/jcb.png',
-  'jcb-excavator': '/hero-service-card/jcb.png',
-  plastering: '/hero-service-card/plastering.png',
-  'plastering-masonry': '/hero-service-card/plastering.png',
-  painting: '/hero-service-card/plastering.png',
-  tile: '/hero-service-card/plastering.png',
-  tiling: '/hero-service-card/plastering.png',
-  trenching: '/hero-service-card/borewell.png',
-  plumbing: '/hero-service-card/borewell.png',
-  electrical: '/hero-service-card/electrical.png',
-  'electrical-mep': '/hero-service-card/electrical.png',
-  borewell: '/hero-service-card/borewell.png',
+  cococare: '/Banners/coco.png',
+  coconut: '/Banners/coco.png',
+  'coconut-plucking': '/Banners/coco.png',
+  jcb: '/Banners/jcb.png',
+  'jcb-excavator': '/Banners/jcb.png',
+  'jcb-excavation': '/Banners/jcb.png',
+  plastering: '/Banners/plastering.png',
+  'plastering-masonry': '/Banners/plastering.png',
+  masonry: '/Banners/masonry.png',
+  painting: '/Banners/painting.png',
+  tile: '/Banners/tiling.png',
+  tiling: '/Banners/tiling.png',
+  trenching: '/Banners/plumbing.png',
+  plumbing: '/Banners/plumbing.png',
+  electrical: '/Banners/electrical.png',
+  'electrical-mep': '/Banners/electrical.png',
+  borewell: '/Banners/borewell.png',
 };
 
 export function EnquiryBox({
@@ -58,55 +64,10 @@ export function EnquiryBox({
   onEnquirySuccess,
 }: EnquiryBoxProps) {
   const { language } = useLanguage();
-  const toast = useToast();
+  const { success, error, warning } = useToast();
   const t = translations[language].enquiry;
 
-  const DEFAULT_SERVICE_OPTIONS = [
-    {
-      id: 'cococare',
-      name: t.servicesList.cococare,
-      defaultScale: '1 Squad (4 Climbers)',
-      image: '/hero-service-card/coco.png',
-    },
-    {
-      id: 'jcb',
-      name: t.servicesList.jcb,
-      defaultScale: '1 Heavy JCB Excavator',
-      image: '/hero-service-card/jcb.png',
-    },
-    {
-      id: 'plastering',
-      name: t.servicesList.plastering,
-      defaultScale: '6 Craft Operatives',
-      image: '/hero-service-card/plastering.png',
-    },
-    {
-      id: 'painting',
-      name: t.servicesList.painting,
-      defaultScale: '4 Painters Squad',
-      image: '/hero-service-card/plastering.png',
-    },
-    {
-      id: 'tiling',
-      name: t.servicesList.tile,
-      defaultScale: '4 Tiling Specialists',
-      image: '/hero-service-card/plastering.png',
-    },
-    {
-      id: 'trenching',
-      name: t.servicesList.plumbing,
-      defaultScale: '1 Machine + 2 Operators',
-      image: '/hero-service-card/borewell.png',
-    },
-    {
-      id: 'electrical',
-      name: t.servicesList.electrical,
-      defaultScale: '2 Electricians',
-      image: '/hero-service-card/electrical.png',
-    },
-  ];
-
-  const [serviceOptions, setServiceOptions] = useState(DEFAULT_SERVICE_OPTIONS);
+  const [serviceOptions, setServiceOptions] = useState<CustomerDropdownOption[]>(CUSTOMER_SERVICES);
 
   useEffect(() => {
     let isMounted = true;
@@ -114,16 +75,18 @@ export function EnquiryBox({
       .listPublicServices()
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((s) => ({
-            id: s.slug || s.serviceId || s.id,
-            name: s.name,
-            defaultScale: s.duration || s.priceRange || 'Standard Crew Dispatch',
-            image:
-              s.image ||
-              DEFAULT_SERVICE_IMAGES[s.slug || ''] ||
-              DEFAULT_SERVICE_IMAGES[s.id] ||
-              '/hero-service-card/coco.png',
-          }));
+          const mapped: CustomerDropdownOption[] = data.map((s) => {
+            const serviceKey = s.name || s.slug || s.serviceId || s.id;
+            return {
+              id: s.slug || s.serviceId || s.id,
+              name: s.name,
+              nameMl: getServiceMalayalamName(serviceKey),
+              image:
+                s.image?.startsWith('/Banners/')
+                  ? s.image
+                  : getServiceBanner(serviceKey),
+            };
+          });
           setServiceOptions(mapped);
         }
       })
@@ -145,7 +108,7 @@ export function EnquiryBox({
   const [deadline, setDeadline] = useState('');
   const [messageNotes, setMessageNotes] = useState('');
 
-  // Pre-select service if passed from hero card or other triggers
+  // Pre-select service if passed from triggers
   useEffect(() => {
     if (initialService) {
       const lower = initialService.toLowerCase();
@@ -161,64 +124,34 @@ export function EnquiryBox({
     }
   }, [initialService, serviceOptions]);
 
-  const currentService =
-    serviceOptions.find((s) => s.id === selectedServiceId) || serviceOptions[0] || DEFAULT_SERVICE_OPTIONS[0];
-  const [squadScale, setSquadScale] = useState(currentService.defaultScale);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose?.();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  const currentService =
+    serviceOptions.find((s) => s.id === selectedServiceId) || serviceOptions[0] || CUSTOMER_SERVICES[0];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
 
     if (!customerName.trim()) {
-      const title =
-        language === 'ml' ? 'നിങ്ങളുടെ പേര് നൽകുക' : 'Customer Name Required';
-      const msg =
-        language === 'ml'
-          ? 'സേവനം ബുക്ക് ചെയ്യുന്നതിനായി നിങ്ങളുടെ പേര് രേഖപ്പെടുത്തുക.'
-          : 'Please provide your name to continue.';
-      setErrorMessage(msg);
-      toast.warning(title, msg);
+      warning(
+        language === 'ml' ? 'നിങ്ങളുടെ പേര് നൽകുക' : 'Customer Name Required',
+        'Please enter your full name to proceed with the enquiry.'
+      );
       return;
     }
 
     if (countryCode === '+91') {
       const phoneValidation = validateMobileNumber(customerPhone, language);
       if (!phoneValidation.isValid) {
-        const title =
-          phoneValidation.title ||
-          (language === 'ml'
-            ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക'
-            : 'Invalid Mobile Number');
-        const msg =
-          phoneValidation.error ||
-          (language === 'ml'
-            ? 'ദയവായി സാധുവായ 10 അക്ക മൊബൈൽ നമ്പർ നൽകുക.'
-            : 'Please provide a valid 10-digit mobile number.');
-        setErrorMessage(msg);
-        toast.warning(title, msg);
+        warning(
+          phoneValidation.title || (language === 'ml' ? 'മൊബൈൽ നമ്പർ പരിശോധിക്കുക' : 'Invalid Mobile Number'),
+          phoneValidation.error || 'Please enter a valid 10-digit mobile number'
+        );
         return;
       }
     } else if (customerPhone.trim().length < 6) {
-      const title = 'Invalid Mobile Number';
-      const msg = 'Please enter a valid international mobile number.';
-      setErrorMessage(msg);
-      toast.warning(title, msg);
+      warning('Invalid Mobile Number', 'Please enter a valid international mobile number.');
       return;
     }
 
@@ -236,8 +169,8 @@ export function EnquiryBox({
         district,
         city: city.trim() || undefined,
         location: locationString,
-        deadline: deadline || undefined,
-        message: `Service: ${currentService.name} | Scale: ${squadScale} | Location: ${locationString}${
+        preferredDate: deadline || 'Immediate / Flexible',
+        message: `Service: ${currentService.name} | Location: ${locationString}${
           deadline ? ` | Target Deadline: ${deadline}` : ''
         }${messageNotes.trim() ? ` | Notes: ${messageNotes.trim()}` : ''}`,
       });
@@ -252,27 +185,19 @@ export function EnquiryBox({
         onEnquirySuccess(refCode);
       }
 
-      toast.success(
-        language === 'ml'
-          ? 'അന്വേഷണം വിജയകരമായി അയച്ചു!'
-          : 'Enquiry Dispatched Successfully!',
+      success(
+        language === 'ml' ? 'അന്വേഷണം വിജയകരമായി അയച്ചു!' : 'Enquiry Dispatched Successfully!',
         language === 'ml'
           ? `റഫറൻസ് നമ്പർ: ${refCode}. ഞങ്ങളുടെ ടീം ഉടൻ നിങ്ങളെ വിളിക്കുന്നതാണ്.`
           : `Reference ID: ${refCode}. Operations team will contact you shortly.`
       );
-    } catch (err: any) {
-      console.error('Failed to submit enquiry:', err);
-      const title =
+    } catch {
+      error(
+        language === 'ml' ? 'സമർപ്പണത്തിൽ തടസ്സം നേരിട്ടു' : 'Enquiry Submission Failed',
         language === 'ml'
-          ? 'സമർപ്പണത്തിൽ തടസ്സം നേരിട്ടു'
-          : 'Enquiry Submission Failed';
-      const msg =
-        err?.message ||
-        (language === 'ml'
           ? 'അന്വേഷണം സമർപ്പിക്കുന്നതിൽ പിശക് സംഭവിച്ചു. ദയവായി വീണ്ടും ശ്രമിക്കുക.'
-          : 'Failed to submit enquiry. Please check your connection and try again.');
-      setErrorMessage(msg);
-      toast.error(title, msg);
+          : 'Failed to submit enquiry. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -293,19 +218,19 @@ export function EnquiryBox({
   const cardContent = (
     <div
       id="enquiry-card"
-      className={`w-full max-w-[480px] bg-[#0c1310] rounded-[32px] p-6 sm:p-7 shadow-[0_25px_60px_rgba(42,131,95,0.25)] border border-emerald-500/30 flex flex-col gap-4 text-white relative ${className}`}
+      className={`w-full max-w-[500px] bg-white rounded-3xl sm:rounded-[36px] p-6 sm:p-8 shadow-2xl border-2 border-slate-200/90 flex flex-col gap-4 text-slate-800 relative font-sans antialiased ${className}`}
     >
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
               {t.title}
             </h2>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#2A835F] bg-[#EBF6F1] border border-[#C3E6D5] px-2.5 py-0.5 rounded-full">
               {t.liveDispatch}
             </span>
             {onClose && (
@@ -313,41 +238,41 @@ export function EnquiryBox({
                 type="button"
                 onClick={onClose}
                 aria-label="Close modal"
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
-        <p className="text-xs text-slate-400 mt-1 font-medium">
+        <p className="text-xs text-slate-500 mt-1 font-normal leading-relaxed">
           {t.subtitle}
         </p>
       </div>
 
       {/* Success View */}
       {submittedRef ? (
-        <div className="bg-[#101b15] border border-emerald-500/30 rounded-2xl p-6 text-center space-y-3.5 animate-in fade-in zoom-in duration-300">
-          <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/40">
+        <div className="bg-[#EBF6F1]/50 border-2 border-[#C3E6D5] rounded-2xl p-6 text-center space-y-3.5 animate-in fade-in zoom-in duration-200">
+          <div className="w-12 h-12 rounded-full bg-[#EBF6F1] text-[#2A835F] flex items-center justify-center mx-auto border border-[#C3E6D5]">
             <CheckCircle2 className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">{t.successTitle}</h3>
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+            <h3 className="text-base font-bold text-slate-900">{t.successTitle}</h3>
+            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
               {language === 'ml' ? 'നിങ്ങളുടെ ട്രാക്കിംഗ് നമ്പർ:' : 'Your tracking reference is:'}{' '}
-              <strong className="font-mono text-emerald-400 text-sm block mt-1 tracking-wider">
+              <strong className="font-mono text-[#2A835F] text-sm block mt-1 tracking-wider">
                 {submittedRef}
               </strong>
             </p>
           </div>
-          <p className="text-[11px] text-slate-400 leading-normal">
+          <p className="text-xs text-slate-600 leading-normal">
             {t.successMsg}
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleReset}
-              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+              className="text-xs font-bold text-[#2A835F] hover:underline cursor-pointer"
             >
               {t.submitAnother}
             </button>
@@ -355,7 +280,7 @@ export function EnquiryBox({
               <button
                 type="button"
                 onClick={onClose}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1.5 px-4 rounded-full transition-all cursor-pointer"
+                className="bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold py-2 px-5 rounded-full transition-all cursor-pointer shadow-sm"
               >
                 {language === 'ml' ? 'അടയ്ക്കുക' : 'Close'}
               </button>
@@ -363,68 +288,56 @@ export function EnquiryBox({
           </div>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          {errorMessage && (
-            <div className="text-xs text-rose-300 bg-rose-950/60 border border-rose-500/30 rounded-xl p-2.5 text-center font-medium">
-              {errorMessage}
-            </div>
-          )}
-
-          {/* 1. Service Choosing Dropdown */}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {/* 1. Special Customer Service Dropdown (Big Image & Two Lines) */}
           <div className="flex flex-col w-full">
-            <StylishDropdown
-              options={serviceOptions.map((s) => ({
-                id: s.id,
-                label: s.name,
-                subtitle: s.defaultScale,
-                image: s.image,
-              }))}
+            <CustomerDropdown
+              options={serviceOptions}
               value={selectedServiceId}
-              onChange={(id) => {
-                setSelectedServiceId(id);
-                const matched = serviceOptions.find((s) => s.id === id);
-                if (matched) setSquadScale(matched.defaultScale);
-              }}
+              onChange={setSelectedServiceId}
               label={t.chooseService}
-              variant="boxed"
+              placeholder="Select required service squad..."
+              language={language}
             />
           </div>
 
           {/* 2. Full Name & Phone Number with Country Code */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Name */}
-            <div className="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-2.5 px-3.5 flex flex-col focus-within:border-emerald-500">
-              <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                <User className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{t.yourName}</span>
+            <div className="flex flex-col">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                {t.yourName}
               </label>
-              <input
-                type="text"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder={t.namePlaceholder}
-                required
-                className="bg-transparent text-white text-xs font-bold placeholder:text-slate-500 outline-none w-full mt-0.5"
-              />
+              <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:border-[#2A835F] focus-within:ring-2 focus-within:ring-[#2A835F]/15 border border-slate-300/90 rounded-xl px-3 py-2.5 transition-all">
+                <User className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  placeholder="e.g. Ramesh Kumar"
+                  required
+                  className="bg-transparent text-slate-900 text-xs font-semibold placeholder:text-slate-400 outline-none w-full"
+                />
+              </div>
             </div>
 
             {/* Mobile with Searchable Country Code */}
-            <div className="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-2.5 px-3 flex flex-col focus-within:border-emerald-500">
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{t.phoneNumber}</span>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  {t.phoneNumber}
                 </label>
                 {countryCode === '+91' && (
-                  <span className="text-[9px] font-bold text-slate-500">
+                  <span className="text-[10px] font-medium text-slate-400">
                     {customerPhone.length > 0 ? `${customerPhone.length}/10` : '10 Digits'}
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:border-[#2A835F] focus-within:ring-2 focus-within:ring-[#2A835F]/15 border border-slate-300/90 rounded-xl px-2 py-1 transition-all">
                 <CountryCodeSelect
                   value={countryCode}
                   onChange={setCountryCode}
+                  theme="light"
                 />
                 <input
                   type="tel"
@@ -432,57 +345,66 @@ export function EnquiryBox({
                   maxLength={countryCode === '+91' ? 10 : 15}
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                  placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
+                  placeholder="98765 43210"
                   required
-                  className="bg-transparent text-white text-xs font-bold placeholder:text-slate-500 outline-none w-full tracking-wider"
+                  className="bg-transparent text-slate-900 text-xs font-bold placeholder:text-slate-400 outline-none w-full tracking-wider py-1.5"
                 />
               </div>
             </div>
           </div>
 
-          {/* 3. Kerala Location Select (Kasaragod Default, Search & Select, Custom Typing) */}
+          {/* 3. Kerala Location Select (District + City) */}
           <KeralaLocationSelect
             district={district}
             city={city}
             onDistrictChange={setDistrict}
             onCityChange={setCity}
+            theme="light"
+            language={language}
           />
 
-          {/* 4. Target Deadline (Optional) & Email (Optional) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Target Deadline */}
-            <div className="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-2.5 px-3.5 flex flex-col focus-within:border-emerald-500">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Target Deadline</span>
+          {/* 4. Target Date (Optional) & Email (Optional) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Target Date */}
+            <div className="flex flex-col">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                {language === 'ml' ? 'ആവശ്യമുള്ള തീയതി' : 'Target Date'}{' '}
+                <span className="text-slate-400 font-normal">
+                  ({language === 'ml' ? 'ഓപ്ഷണൽ' : 'Optional'})
+                </span>
               </label>
-              <input
-                type="date"
-                value={deadline}
-                min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setDeadline(e.target.value)}
-                className="bg-transparent text-white text-xs font-medium outline-none w-full mt-0.5 [color-scheme:dark]"
-              />
+              <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 border border-slate-300/90 rounded-xl px-3 py-2.5 focus-within:border-[#2A835F] focus-within:ring-1 focus-within:ring-[#2A835F]/20">
+                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <input
+                  type="date"
+                  value={deadline}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setDeadline(e.target.value)}
+                  className="bg-transparent text-slate-900 text-xs font-medium outline-none w-full [color-scheme:light]"
+                />
+              </div>
             </div>
 
-            {/* Email (Optional) */}
-            <div className="bg-slate-900/60 border border-slate-700/80 rounded-2xl p-2.5 px-3.5 flex flex-col focus-within:border-emerald-500">
-              <div className="flex items-center justify-between mb-0.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Email</span>
+            {/* Email */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  {language === 'ml' ? 'ഇമെയിൽ' : 'Email'}
                 </label>
-                <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider">
-                  Optional
+                <span className="text-[10px] text-slate-400">
+                  {language === 'ml' ? 'ഓപ്ഷണൽ' : 'Optional'}
                 </span>
               </div>
-              <input
-                type="email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="you@domain.com"
-                className="bg-transparent text-white text-xs font-medium placeholder:text-slate-500 outline-none w-full mt-0.5"
-              />
+              <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100/80 focus-within:bg-white focus-within:border-[#2A835F] focus-within:ring-2 focus-within:ring-[#2A835F]/15 border border-slate-300/90 rounded-xl px-3 py-2.5 transition-all">
+                <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <input
+                  type="email"
+                  value={customerEmail}
+                  onChange={(e) => setCustomerEmail(e.target.value)}
+                  placeholder="e.g. client@example.com"
+                  className="bg-transparent text-slate-900 text-xs font-medium placeholder:text-slate-400 outline-none w-full"
+                />
+              </div>
             </div>
           </div>
 
@@ -490,7 +412,7 @@ export function EnquiryBox({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs sm:text-sm py-3.5 rounded-2xl shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 mt-1.5 transition-all cursor-pointer active:scale-95 disabled:opacity-60"
+            className="w-full bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs sm:text-sm py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 mt-1 transition-all cursor-pointer active:scale-95 disabled:opacity-60"
           >
             <span>{isSubmitting ? t.submitting : t.submitBtn}</span>
             <ArrowRight className="w-4 h-4" />
@@ -503,7 +425,7 @@ export function EnquiryBox({
   // If used as modal
   if (isOpen) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
         <div
           className="fixed inset-0"
           onClick={onClose}

@@ -148,7 +148,7 @@ export const DISTRICT_CITIES: Record<string, string[]> = {
   ],
 };
 
-interface KeralaLocationSelectProps {
+export interface KeralaLocationSelectProps {
   district: string;
   city: string;
   onDistrictChange: (district: string) => void;
@@ -156,6 +156,8 @@ interface KeralaLocationSelectProps {
   disabled?: boolean;
   className?: string;
   showStateBadge?: boolean;
+  theme?: 'light' | 'dark';
+  language?: 'en' | 'ml';
 }
 
 export function KeralaLocationSelect({
@@ -166,7 +168,10 @@ export function KeralaLocationSelect({
   disabled = false,
   className = '',
   showStateBadge = true,
+  theme = 'light',
+  language = 'en',
 }: KeralaLocationSelectProps) {
+  const isLight = theme === 'light';
   // District dropdown state
   const [districtOpen, setDistrictOpen] = useState(false);
   const [districtSearch, setDistrictSearch] = useState('');
@@ -218,30 +223,53 @@ export function KeralaLocationSelect({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* State Pill & District Select */}
         <div className="relative" ref={districtRef}>
-          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-            District <span className="text-emerald-400 font-semibold">(Kerala Only)</span>
+          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
+            {language === 'ml' ? 'ജില്ല' : 'District'}{' '}
+            <span className="text-[#2A835F] font-semibold">
+              {language === 'ml' ? '(കാസർഗോഡ് - പ്രധാന കേന്ദ്രം)' : '(Kasaragod - Primary Hub)'}
+            </span>
           </label>
           <button
             type="button"
             disabled={disabled}
             onClick={() => setDistrictOpen(!districtOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-200 text-xs font-medium transition-all focus:outline-none focus:ring-1 focus:ring-emerald-500/50 cursor-pointer disabled:opacity-50"
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all focus:outline-none cursor-pointer disabled:opacity-50 ${
+              isLight
+                ? 'bg-slate-50 hover:bg-slate-100/80 border border-slate-300/90 text-slate-900 focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]/20'
+                : 'bg-slate-900/60 hover:bg-slate-800/80 border border-slate-700/80 text-slate-200 focus:ring-1 focus:ring-emerald-500/50'
+            }`}
           >
             <div className="flex items-center gap-1.5 truncate">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <MapPin className="w-3.5 h-3.5 text-[#2A835F] shrink-0" />
               <span className="truncate">{district || 'Select District'}</span>
             </div>
             <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-400 transition-transform ${
-                districtOpen ? 'rotate-180 text-emerald-400' : ''
+              className={`w-3.5 h-3.5 text-slate-500 transition-transform ${
+                districtOpen ? 'rotate-180 text-[#2A835F]' : ''
               }`}
             />
           </button>
 
           {districtOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 max-h-60 bg-[#0c1310] border border-emerald-500/30 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in-50 zoom-in-95">
-              <div className="p-2 border-b border-white/5 bg-[#101b15]">
-                <div className="flex items-center gap-1.5 px-2 py-1 bg-black/40 border border-white/10 rounded-xl text-xs">
+            <div
+              className={`absolute top-full left-0 right-0 mt-1 max-h-60 rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in-50 zoom-in-95 ${
+                isLight
+                  ? 'bg-white border-2 border-slate-200'
+                  : 'bg-[#0c1310] border border-emerald-500/30'
+              }`}
+            >
+              <div
+                className={`p-2 border-b ${
+                  isLight ? 'bg-slate-50 border-slate-100' : 'bg-[#101b15] border-white/5'
+                }`}
+              >
+                <div
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl text-xs border ${
+                    isLight
+                      ? 'bg-white border-slate-200 text-slate-900'
+                      : 'bg-black/40 border-white/10 text-white'
+                  }`}
+                >
                   <Search className="w-3 h-3 text-slate-400 shrink-0" />
                   <input
                     type="text"
@@ -249,13 +277,14 @@ export function KeralaLocationSelect({
                     placeholder="Search Kerala district..."
                     value={districtSearch}
                     onChange={(e) => setDistrictSearch(e.target.value)}
-                    className="w-full bg-transparent text-white placeholder-slate-500 focus:outline-none text-xs"
+                    className="w-full bg-transparent focus:outline-none text-xs"
                   />
                 </div>
               </div>
-              <div className="overflow-y-auto max-h-48 divide-y divide-white/[0.03]">
+              <div className="overflow-y-auto max-h-48 divide-y divide-slate-100">
                 {filteredDistricts.map((d) => {
                   const isSelected = d === district;
+                  const isKasaragod = d === 'Kasaragod';
                   return (
                     <button
                       key={d}
@@ -264,19 +293,27 @@ export function KeralaLocationSelect({
                         onDistrictChange(d);
                         setDistrictOpen(false);
                         setDistrictSearch('');
-                        // If current city is not in new district, reset city or keep custom
                         if (DISTRICT_CITIES[d] && !DISTRICT_CITIES[d].includes(city)) {
                           onCityChange('');
                         }
                       }}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition-colors hover:bg-emerald-500/10 cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-emerald-500/20 text-emerald-300 font-semibold'
-                          : 'text-slate-300'
+                          ? 'bg-[#EBF6F1] text-[#2A835F] font-bold'
+                          : isLight
+                          ? 'text-slate-800 hover:bg-slate-50'
+                          : 'text-slate-300 hover:bg-emerald-500/10'
                       }`}
                     >
-                      <span>{d}</span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                      <div className="flex items-center gap-1.5">
+                        <span>{d}</span>
+                        {isKasaragod && (
+                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            {language === 'ml' ? 'പ്രധാന കേന്ദ്രം' : 'Primary Hub'}
+                          </span>
+                        )}
+                      </div>
+                      {isSelected && <Check className="w-3.5 h-3.5 text-[#2A835F]" />}
                     </button>
                   );
                 })}
@@ -288,10 +325,12 @@ export function KeralaLocationSelect({
         {/* City / Locality Combobox (Search, Select, OR Custom Type) */}
         <div className="relative" ref={cityRef}>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              City / Locality in {district}
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+              {language === 'ml' ? `നഗരം / പ്രദേശം (${district})` : `City / Locality in ${district}`}
             </label>
-            <span className="text-[10px] text-slate-400">Select or type</span>
+            <span className="text-[10px] text-slate-400">
+              {language === 'ml' ? 'തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ ടൈപ്പ് ചെയ്യുക' : 'Select or type'}
+            </span>
           </div>
 
           <div className="relative flex items-center">
@@ -309,40 +348,57 @@ export function KeralaLocationSelect({
                 setCitySearch(city);
               }}
               placeholder={`e.g. ${availableCities[0] || 'Type city/village...'}`}
-              className="w-full pl-3 pr-8 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-200 placeholder-slate-500 text-xs font-medium focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition-all disabled:opacity-50"
+              className={`w-full pl-3 pr-8 py-2.5 rounded-xl text-xs font-medium focus:outline-none transition-all disabled:opacity-50 ${
+                isLight
+                  ? 'bg-slate-50 hover:bg-slate-100/80 border border-slate-300/90 text-slate-900 placeholder-slate-400 focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F]/20'
+                  : 'bg-slate-900/60 border border-slate-700/80 text-slate-200 placeholder-slate-500 focus:ring-1 focus:ring-emerald-500/50'
+              }`}
             />
             <button
               type="button"
               onClick={() => setCityOpen(!cityOpen)}
-              className="absolute right-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="absolute right-2 text-slate-500 hover:text-slate-700 transition-colors cursor-pointer"
             >
               <ChevronDown
                 className={`w-3.5 h-3.5 transition-transform ${
-                  cityOpen ? 'rotate-180 text-emerald-400' : ''
+                  cityOpen ? 'rotate-180 text-[#2A835F]' : ''
                 }`}
               />
             </button>
           </div>
 
           {cityOpen && (
-            <div className="absolute top-full left-0 right-0 mt-1 max-h-56 bg-[#0c1310] border border-emerald-500/30 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden animate-in fade-in-50 zoom-in-95">
+            <div
+              className={`absolute top-full left-0 right-0 mt-1 max-h-56 rounded-2xl shadow-xl z-50 flex flex-col overflow-hidden animate-in fade-in-50 zoom-in-95 ${
+                isLight
+                  ? 'bg-white border-2 border-slate-200'
+                  : 'bg-[#0c1310] border border-emerald-500/30'
+              }`}
+            >
               {/* Option to use custom typed text if not strictly in suggestions */}
               {city.trim() && !availableCities.includes(city.trim()) && (
-                <div className="p-2 border-b border-white/5 bg-[#14231b]">
+                <div
+                  className={`p-2 border-b ${
+                    isLight ? 'bg-slate-50 border-slate-100' : 'bg-[#14231b] border-white/5'
+                  }`}
+                >
                   <button
                     type="button"
                     onClick={() => {
                       setCityOpen(false);
                     }}
-                    className="w-full flex items-center gap-1.5 text-left text-xs text-emerald-300 font-medium hover:underline cursor-pointer"
+                    className="w-full flex items-center gap-1.5 text-left text-xs text-[#2A835F] font-semibold hover:underline cursor-pointer"
                   >
-                    <Edit3 className="w-3 h-3 text-emerald-400 shrink-0" />
-                    <span>Use custom location: &ldquo;<strong className="text-white">{city}</strong>&rdquo;</span>
+                    <Edit3 className="w-3 h-3 text-[#2A835F] shrink-0" />
+                    <span>
+                      Use custom location: &ldquo;
+                      <strong className="text-slate-900">{city}</strong>&rdquo;
+                    </span>
                   </button>
                 </div>
               )}
 
-              <div className="overflow-y-auto max-h-48 divide-y divide-white/[0.03]">
+              <div className="overflow-y-auto max-h-48 divide-y divide-slate-100">
                 {filteredCities.length === 0 ? (
                   <div className="p-3 text-center text-xs text-slate-400">
                     No matching standard city in {district}. You can keep what you typed!
@@ -358,14 +414,16 @@ export function KeralaLocationSelect({
                           onCityChange(cityName);
                           setCityOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition-colors hover:bg-emerald-500/10 cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2 text-left text-xs transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-emerald-500/20 text-emerald-300 font-semibold'
-                            : 'text-slate-300'
+                            ? 'bg-[#EBF6F1] text-[#2A835F] font-bold'
+                            : isLight
+                            ? 'text-slate-800 hover:bg-slate-50'
+                            : 'text-slate-300 hover:bg-emerald-500/10'
                         }`}
                       >
                         <span>{cityName}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-[#2A835F]" />}
                       </button>
                     );
                   })
