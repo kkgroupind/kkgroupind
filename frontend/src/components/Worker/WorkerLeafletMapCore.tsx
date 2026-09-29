@@ -77,7 +77,7 @@ function createCrewIcon(name: string) {
   return L.divIcon({
     className: 'custom-crew-pin',
     html: `
-      <div style="width: 28px; height: 28px; border-radius: 50%; background: #5E42B4; border: 2.5px solid #ffffff; box-shadow: 0 4px 10px rgba(94, 66, 180, 0.4); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 11px;">
+      <div style="width: 28px; height: 28px; border-radius: 50%; background: #134B4C; border: 2.5px solid #88B793; box-shadow: 0 4px 10px rgba(19, 75, 76, 0.45); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 11px;">
         ${initial}
       </div>
     `,
@@ -235,7 +235,7 @@ export default function WorkerLeafletMapCore({
             <Marker key={crew.id} position={crew.coords} icon={createCrewIcon(crew.name)}>
               <Popup>
                 <div className="p-1 font-sans text-xs">
-                  <div className="font-bold text-[#5E42B4] flex items-center gap-1.5">
+                  <div className="font-bold text-[#2A835F] flex items-center gap-1.5">
                     <HardHat className="w-3.5 h-3.5" />
                     <span>{crew.name}</span>
                   </div>

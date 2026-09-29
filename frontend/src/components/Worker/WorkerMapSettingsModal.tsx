@@ -52,7 +52,7 @@ export function WorkerMapSettingsModal() {
         {/* Header */}
         <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30">
+            <div className="w-9 h-9 rounded-2xl bg-[#2A835F]/15 text-[#88B793] flex items-center justify-center border border-[#2A835F]/30">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
@@ -121,7 +121,7 @@ export function WorkerMapSettingsModal() {
         {/* 2. Base Operating District Hub */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-[#5E42B4]" />
+            <MapPin className="w-3.5 h-3.5 text-[#2A835F]" />
             <span>Base Operating District (പ്രവർത്തന ജില്ല)</span>
           </label>
 
@@ -193,7 +193,7 @@ export function WorkerMapSettingsModal() {
           <div className="space-y-2 text-xs">
             <label className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-slate-800 cursor-pointer">
               <span className="flex items-center gap-2 text-slate-300">
-                <Users className="w-4 h-4 text-purple-400" />
+                <Users className="w-4 h-4 text-[#88B793]" />
                 <span>Show Field Crew & Teammates Pins</span>
               </span>
               <input

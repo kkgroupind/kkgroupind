@@ -81,6 +81,14 @@ export function WorkerJobDetailsModal({
   const [showBreakSelector, setShowBreakSelector] = useState(false);
   const breakIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Dedicated Confirmation Dialog States
+  const [isPauseConfirmOpen, setIsPauseConfirmOpen] = useState(false);
+  const [selectedBreakReason, setSelectedBreakReason] = useState<string>('LUNCH');
+  const [breakNotes, setBreakNotes] = useState<string>('');
+
+  const [isStopTimerConfirmOpen, setIsStopTimerConfirmOpen] = useState(false);
+  const [isCompleteCountConfirmOpen, setIsCompleteCountConfirmOpen] = useState(false);
+
   // Unit specifications & draft progress logging state (Tree count, Sq.Ft., Points, etc.)
   const [unitCount, setUnitCount] = useState<number>(10);
   const [crownCleaningDone, setCrownCleaningDone] = useState(true);
@@ -375,6 +383,8 @@ export function WorkerJobDetailsModal({
       setActiveBreak({ reason, startedAt: new Date().toISOString(), notes });
       setBreakTimerSeconds(0);
       setShowBreakSelector(false);
+      setIsPauseConfirmOpen(false);
+      setBreakNotes('');
       onJobUpdated?.();
     } catch (err: any) {
       setActionError(err?.message || 'Failed to pause timer for break');
@@ -435,7 +445,7 @@ export function WorkerJobDetailsModal({
 
   // 6. Worker completes work (Unit count or hourly duration logged)
   const handleCompleteWork = async () => {
-    if (!token) return;
+    if (!token || !localJob) return;
     setIsSubmittingAction(true);
     setActionError(null);
 
@@ -443,18 +453,22 @@ export function WorkerJobDetailsModal({
       if (isHourly) {
         const spec = (localJob.specificationDetails as any) || {};
         const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
-        const totalBreakMinutes = breaks.reduce(
+        const recordedBreakMins = breaks.reduce(
           (acc: number, b: any) => acc + (b.durationMinutes || 0),
           0,
         );
+        const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
+        const totalBreakMinutes = recordedBreakMins + ongoingBreakMins;
+
         const elapsedMinutes = Math.max(1, Math.round(timerSeconds / 60));
         const netDurationMinutes = Math.max(1, elapsedMinutes - totalBreakMinutes);
+        const netHoursDecimal = Math.round((netDurationMinutes / 60) * 10) / 10;
 
         const res = await EnquiryService.stopWorkTimer(
           localJob.id,
           {
             durationMinutes: netDurationMinutes,
-            completedUnits: Math.round((netDurationMinutes / 60) * 10) / 10,
+            completedUnits: netHoursDecimal,
             completionNotes:
               completionNotes.trim() ||
               `Work completed. Net work time: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m (${totalBreakMinutes}m breaks deducted).`,
@@ -464,6 +478,7 @@ export function WorkerJobDetailsModal({
         setIsTimerRunning(false);
         setActiveBreak(null);
         setLocalJob(res.enquiry);
+        setIsStopTimerConfirmOpen(false);
       } else {
         const units = Number(unitCount) || 1;
         let notesText = completionNotes.trim();
@@ -487,11 +502,14 @@ export function WorkerJobDetailsModal({
           },
         );
         setLocalJob(res.enquiry);
+        setIsCompleteCountConfirmOpen(false);
       }
       onJobUpdated?.();
     } catch (err: any) {
       if (onUpdateStatus) {
         await onUpdateStatus(localJob.id, 'COMPLETED');
+        setIsStopTimerConfirmOpen(false);
+        setIsCompleteCountConfirmOpen(false);
       } else {
         setActionError(err?.message || 'Failed to complete work ticket');
       }
@@ -532,6 +550,69 @@ export function WorkerJobDetailsModal({
             </span>
           </div>
         </div>
+
+        {/* Service Execution Mode Badge Banner */}
+        {isHourly ? (
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/35">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+                <Timer className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-amber-300 block uppercase tracking-wider">
+                  ⏱️ Machinery Timer Mode (JCB / Equipment)
+                </span>
+                <span className="text-[11px] text-amber-200/70 block">
+                  On-site equipment chronometer. Break time excluded from billing.
+                </span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
+              <span className="font-mono text-xs font-black text-amber-300">₹{workerRate}/Hr</span>
+            </div>
+          </div>
+        ) : isCoconut ? (
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent border border-emerald-500/35">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                <TreePalm className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-emerald-300 block uppercase tracking-wider">
+                  🌴 Cococare Tree Count Mode
+                </span>
+                <span className="text-[11px] text-emerald-200/70 block">
+                  തെങ്ങ് കയറ്റം &amp; വിളവെടുപ്പ് • Log harvested palms &amp; plant care.
+                </span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
+              <span className="font-mono text-xs font-black text-emerald-300">₹{workerRate}/Tree</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-sky-500/20 via-sky-500/10 to-transparent border border-sky-500/35">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center shrink-0">
+                <Layers className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-sky-300 block uppercase tracking-wider">
+                  📐 {unitLabel} Measurement Count Mode
+                </span>
+                <span className="text-[11px] text-sky-200/70 block">
+                  Log completed {unitLabel} units for job settlement.
+                </span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
+              <span className="font-mono text-xs font-black text-sky-300">₹{workerRate}/{unitLabel}</span>
+            </div>
+          </div>
+        )}
 
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-800 pb-3">
@@ -943,49 +1024,16 @@ export function WorkerJobDetailsModal({
               </span>
             </div>
 
-            {/* Break Controls — only when timer is running and not on break */}
-            {isInProgress && !isCompleted && isTimerRunning && !activeBreak && !showBreakSelector && (
+            {/* Break Controls — opens dedicated confirmation modal */}
+            {isInProgress && !isCompleted && isTimerRunning && !activeBreak && (
               <button
                 type="button"
-                onClick={() => setShowBreakSelector(true)}
-                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer"
+                onClick={() => setIsPauseConfirmOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-98"
               >
                 <Pause className="w-3.5 h-3.5" />
-                <span>Pause for Break</span>
+                <span>Pause Timer for Break (ബ്രേക്ക് എടുക്കുക)</span>
               </button>
-            )}
-
-            {/* Break Type Selector */}
-            {showBreakSelector && !activeBreak && (
-              <div className="space-y-2">
-                <span className="text-[10px] text-slate-400 uppercase font-bold block text-left">Select Break Reason:</span>
-                <div className="grid grid-cols-3 gap-2">
-                  {([
-                    { key: 'LUNCH', icon: <Utensils className="w-4 h-4" />, label: 'Lunch', ml: 'ഉച്ചഭക്ഷണം' },
-                    { key: 'BREAKFAST', icon: <Coffee className="w-4 h-4" />, label: 'Tea Break', ml: 'ചായ' },
-                    { key: 'EMERGENCY', icon: <AlertTriangle className="w-4 h-4" />, label: 'Emergency', ml: 'അടിയന്തരം' },
-                  ] as const).map(({ key, icon, label, ml }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => { handlePauseForBreak(key); setShowBreakSelector(false); }}
-                      disabled={isSubmittingAction}
-                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-orange-900/30 hover:bg-orange-900/50 border border-orange-500/30 text-orange-300 hover:text-orange-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-60"
-                    >
-                      {icon}
-                      <span>{label}</span>
-                      <span className="text-[9px] text-orange-400/60">{ml}</span>
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowBreakSelector(false)}
-                  className="text-[10px] text-slate-500 hover:text-slate-400 underline cursor-pointer w-full"
-                >
-                  Cancel
-                </button>
-              </div>
             )}
 
             {/* Breaks Log */}
@@ -1162,7 +1210,7 @@ export function WorkerJobDetailsModal({
                   ? 'bg-emerald-500'
                   : isInProgress
                   ? 'bg-amber-500 animate-pulse'
-                  : 'bg-purple-500'
+                  : 'bg-[#2A835F]'
               }`}
             />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -1210,11 +1258,11 @@ export function WorkerJobDetailsModal({
             {isInProgress && isHourly && isTimerRunning && !activeBreak && (
               <button
                 type="button"
-                onClick={() => setShowBreakSelector(true)}
-                className="bg-orange-800/80 hover:bg-orange-700 text-orange-200 px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                onClick={() => setIsPauseConfirmOpen(true)}
+                className="bg-amber-600 hover:bg-amber-500 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
                 <Pause className="w-3.5 h-3.5" />
-                <span>Pause</span>
+                <span>Pause Break</span>
               </button>
             )}
 
@@ -1224,10 +1272,10 @@ export function WorkerJobDetailsModal({
                 type="button"
                 onClick={handleResumeFromBreak}
                 disabled={isSubmittingAction}
-                className="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
               >
                 <Play className="w-3.5 h-3.5" />
-                <span>Resume</span>
+                <span>Resume Work</span>
               </button>
             )}
 
@@ -1235,9 +1283,15 @@ export function WorkerJobDetailsModal({
             {isInProgress && (
               <button
                 type="button"
-                onClick={handleCompleteWork}
+                onClick={() => {
+                  if (isHourly) {
+                    setIsStopTimerConfirmOpen(true);
+                  } else {
+                    setIsCompleteCountConfirmOpen(true);
+                  }
+                }}
                 disabled={isSubmittingAction || isActing}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
               >
                 {isSubmittingAction || isActing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1263,6 +1317,288 @@ export function WorkerJobDetailsModal({
             </button>
           </div>
         </div>
+
+        {/* ----------------- MODAL 1: PAUSE TIMER CONFIRMATION MODAL ----------------- */}
+        {isPauseConfirmOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-amber-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+                  <Pause className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Pause Timer for Break?
+                  </h3>
+                  <p className="text-xs text-amber-300/80">
+                    ബ്രേക്ക് സമയം രേഖപ്പെടുത്തുക
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 flex items-center justify-between text-xs">
+                <span className="text-slate-400">Current Work Meter:</span>
+                <span className="font-mono text-base font-black text-amber-400">{formatTimer(timerSeconds)}</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                  Select Break Reason:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'LUNCH', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
+                    { key: 'BREAKFAST', icon: '☕', label: 'Tea / Snacks', ml: 'ചായ സൽക്കാരം' },
+                    { key: 'MAINTENANCE', icon: '⛽', label: 'Refuel / Machine', ml: 'ഇന്ധനം / മെഷീൻ' },
+                    { key: 'WEATHER', icon: '🌧️', label: 'Rain / Site Delay', ml: 'മഴ / കാലാവസ്ഥ' },
+                  ].map(({ key, icon, label, ml }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedBreakReason(key)}
+                      className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        selectedBreakReason === key
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 shadow-sm'
+                          : 'bg-slate-900/70 border-slate-750 text-slate-300 hover:border-slate-600'
+                      }`}
+                    >
+                      <span className="text-lg">{icon}</span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold block truncate">{label}</span>
+                        <span className="text-[10px] text-slate-400 block">{ml}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-400 block">
+                  Break Notes (Optional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Taking 30m lunch break, machine parked safely"
+                  value={breakNotes}
+                  onChange={(e) => setBreakNotes(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="text-[11px] text-amber-200/70 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                ⚠️ The working timer will freeze. Break time is excluded from customer billing and finalized during payout.
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPauseConfirmOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Keep Working
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePauseForBreak(selectedBreakReason, breakNotes)}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Pause className="w-3.5 h-3.5" />
+                  )}
+                  <span>Confirm Pause</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- MODAL 2: STOP TIMER & COMPLETE CONFIRMATION MODAL ----------------- */}
+        {isStopTimerConfirmOpen && (() => {
+          const spec = (localJob.specificationDetails as any) || {};
+          const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+          const recordedBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+          const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
+          const totalBreakMinutes = recordedBreakMins + ongoingBreakMins;
+
+          const elapsedMinutes = Math.max(1, Math.round(timerSeconds / 60));
+          const netDurationMinutes = Math.max(1, elapsedMinutes - totalBreakMinutes);
+          const netHoursDecimal = Math.round((netDurationMinutes / 60) * 10) / 10;
+          const estimatedWage = Math.round(netHoursDecimal * workerRate);
+
+          return (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+              <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                    <StopCircle className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      Stop Timer &amp; Complete Job?
+                    </h3>
+                    <p className="text-xs text-emerald-300/80">
+                      ജോലി പൂർത്തിയാക്കി സമർപ്പിക്കുക
+                    </p>
+                  </div>
+                </div>
+
+                {/* Machinery Summary Card */}
+                <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-2 text-xs">
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Gross Machine Time Elapsed:</span>
+                    <span className="font-mono font-bold text-white">{Math.floor(elapsedMinutes / 60)}h {elapsedMinutes % 60}m</span>
+                  </div>
+                  <div className="flex items-center justify-between text-amber-400">
+                    <span>Break Deductions ({breaks.length + (activeBreak ? 1 : 0)} breaks):</span>
+                    <span className="font-mono font-bold">-{totalBreakMinutes} mins</span>
+                  </div>
+                  <div className="flex items-center justify-between text-white border-t border-slate-800 pt-2 font-bold">
+                    <span>Net Billable Work Duration:</span>
+                    <span className="font-mono text-emerald-400 text-sm">{netHoursDecimal} Hours ({netDurationMinutes} mins)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-400">
+                    <span>Hourly Unit Rate:</span>
+                    <span className="font-mono">₹{workerRate} / hr</span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-400 border-t border-slate-800 pt-2 font-black text-sm">
+                    <span>Estimated Operator Wage:</span>
+                    <span className="font-mono text-lg text-emerald-400">₹{estimatedWage.toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-slate-400 block">
+                    Work Completion Remarks:
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. Ground leveling and drainage digging completed smoothly."
+                    value={completionNotes}
+                    onChange={(e) => setCompletionNotes(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-750 rounded-xl p-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 resize-none"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsStopTimerConfirmOpen(false)}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                  >
+                    Continue Work
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCompleteWork}
+                    disabled={isSubmittingAction}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                  >
+                    {isSubmittingAction ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-3.5 h-3.5" />
+                    )}
+                    <span>Stop &amp; Complete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ----------------- MODAL 3: SUBMIT COUNT & COMPLETE CONFIRMATION MODAL ----------------- */}
+        {isCompleteCountConfirmOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                  {isCoconut ? <TreePalm className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Confirm &amp; Submit Harvest Count?
+                  </h3>
+                  <p className="text-xs text-emerald-300/80">
+                    വിളവെടുപ്പ് എണ്ണം സ്ഥിരീകരിക്കുക
+                  </p>
+                </div>
+              </div>
+
+              {/* Count Summary Card */}
+              <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between text-white font-bold">
+                  <span>{isCoconut ? 'Total Coconut Trees Plucked' : `Completed ${unitLabel}s`}:</span>
+                  <span className="font-mono text-base text-emerald-400">{unitCount} {isCoconut ? 'Trees' : unitLabel}</span>
+                </div>
+                {isCoconut && (
+                  <div className="py-2 border-y border-slate-800 space-y-1 text-slate-300">
+                    <div className="flex items-center justify-between">
+                      <span>Crown Cleaning &amp; Frond Pruning:</span>
+                      <span className={crownCleaningDone ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                        {crownCleaningDone ? '✓ Completed' : '✕ Skipped'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Rhinoceros Beetle Powder:</span>
+                      <span className={beetleMedicineApplied ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
+                        {beetleMedicineApplied ? '✓ Applied' : '✕ Skipped'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-slate-400">
+                  <span>Wage Rate:</span>
+                  <span className="font-mono">₹{workerRate} / {unitLabel}</span>
+                </div>
+                <div className="flex items-center justify-between text-emerald-400 border-t border-slate-800 pt-2 font-black text-sm">
+                  <span>Estimated Harvest Payout:</span>
+                  <span className="font-mono text-lg text-emerald-400">
+                    ₹{((Number(unitCount) || 0) * workerRate).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-400 block">
+                  Completion Remarks (Optional):
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Good yield, tall palms harvested safely."
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-750 rounded-xl p-2.5 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCompleteCountConfirmOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Edit Count
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCompleteWork}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  <span>Confirm &amp; Complete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

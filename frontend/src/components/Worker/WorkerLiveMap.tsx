@@ -94,7 +94,7 @@ export function WorkerLiveMap({
       {/* Header: Title + Map Settings Button */}
       <div className="flex items-center justify-between mb-2.5">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="w-7 h-7 rounded-xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-black shrink-0">
+          <div className="w-7 h-7 rounded-xl bg-[#EAF4EE] text-[#2A835F] flex items-center justify-center font-black shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
           <div className="min-w-0">
@@ -118,7 +118,7 @@ export function WorkerLiveMap({
             type="button"
             onClick={handleOpenSettings}
             title="Map Settings (ശൈലി / ക്രമീകരണങ്ങൾ)"
-            className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-600 hover:text-[#5E42B4] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#EAF4EE] text-slate-600 hover:text-[#2A835F] transition-colors cursor-pointer"
           >
             <Sliders className="w-3.5 h-3.5" />
           </button>
@@ -195,7 +195,7 @@ export function WorkerLiveMap({
       <button
         type="button"
         onClick={handleOpenGoogleMaps}
-        className="w-full mt-2.5 py-2 px-3 rounded-2xl bg-purple-50 hover:bg-[#5E42B4] text-[#5E42B4] hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+        className="w-full mt-2.5 py-2 px-3 rounded-2xl bg-[#EAF4EE] hover:bg-[#2A835F] text-[#2A835F] hover:text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs border border-[#88B793]/30"
       >
         <Navigation className="w-3.5 h-3.5" />
         <span>Open Navigation Directions</span>

@@ -368,8 +368,8 @@ export default function WorkerProfilePage() {
 
   if (authLoading || isFetchingProfile) {
     return (
-      <div className="min-h-screen bg-[#ECEFF6] flex flex-col items-center justify-center text-slate-500">
-        <Loader2 className="w-9 h-9 animate-spin text-[#5E42B4] mb-3" />
+      <div className="min-h-screen bg-[#EAEFEA] flex flex-col items-center justify-center text-slate-500">
+        <Loader2 className="w-9 h-9 animate-spin text-[#2A835F] mb-3" />
         <p className="text-sm font-semibold tracking-wide">Loading Operative Profile...</p>
         <span className="text-xs text-slate-400 mt-1">തൊഴിലാളി വിവരങ്ങൾ • കേരള ഫീൽഡ് സ്ക്വാഡ്</span>
       </div>
@@ -377,7 +377,7 @@ export default function WorkerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E5E8F2] pt-24 sm:pt-28 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12 flex flex-col items-center gap-6 font-sans antialiased text-slate-800">
+    <div className="min-h-screen bg-[#EAEFEA] pt-24 sm:pt-28 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12 flex flex-col items-center gap-6 font-sans antialiased text-slate-800">
       {/* 1. TOP NAVBAR */}
       <WorkerNavbar
         activeTab="profile"
@@ -417,7 +417,7 @@ export default function WorkerProfilePage() {
                 <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                   Operative Profile & Credentials
                 </h1>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#5E42B4]/15 text-[#5E42B4] border border-[#5E42B4]/30">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40">
                   WORKER
                 </span>
               </div>
@@ -434,7 +434,7 @@ export default function WorkerProfilePage() {
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'profile'
-                  ? 'bg-[#5E42B4] text-white shadow-sm'
+                  ? 'bg-[#134B4C] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -446,7 +446,7 @@ export default function WorkerProfilePage() {
               onClick={() => setActiveTab('security')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'security'
-                  ? 'bg-[#5E42B4] text-white shadow-sm'
+                  ? 'bg-[#134B4C] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -458,7 +458,7 @@ export default function WorkerProfilePage() {
               onClick={() => setActiveTab('shift')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
                 activeTab === 'shift'
-                  ? 'bg-[#5E42B4] text-white shadow-sm'
+                  ? 'bg-[#134B4C] text-white shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -478,19 +478,19 @@ export default function WorkerProfilePage() {
             {activeTab === 'profile' && (
               <form
                 onSubmit={handleSaveProfile}
-                className="bg-[#ECEFF6] rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-white/80 space-y-6"
+                className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6"
               >
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
                   <div>
                     <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                      <HardHat className="w-5 h-5 text-[#5E42B4]" />
+                      <HardHat className="w-5 h-5 text-[#2A835F]" />
                       <span>Field Identity & Contact</span>
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Your identity as presented on job dispatch sheets and customer confirmations
                     </p>
                   </div>
-                  <span className="text-xs font-mono font-bold text-[#5E42B4] bg-[#5E42B4]/10 px-2.5 py-1 rounded-xl">
+                  <span className="text-xs font-mono font-bold text-[#2A835F] bg-[#EAF4EE] border border-[#88B793]/30 px-2.5 py-1 rounded-xl">
                     @{username || 'operative'}
                   </span>
                 </div>
@@ -540,7 +540,7 @@ export default function WorkerProfilePage() {
                       <button
                         type="button"
                         onClick={() => setIsAvatarModalOpen(true)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
                       >
                         <Camera className="w-3.5 h-3.5" />
                         <span>Update Portrait</span>
@@ -569,7 +569,7 @@ export default function WorkerProfilePage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. Karan Kumar"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                     />
                   </div>
 
@@ -601,7 +601,7 @@ export default function WorkerProfilePage() {
                         value={username}
                         onChange={(e) => handleUsernameChange(e.target.value)}
                         placeholder="worker_handle"
-                        className="w-full pl-8 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                        className="w-full pl-8 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                       />
                     </div>
                     {usernameMessage && (
@@ -629,7 +629,7 @@ export default function WorkerProfilePage() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="e.g. 9847123450"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                       />
                     </div>
                   </div>
@@ -646,7 +646,7 @@ export default function WorkerProfilePage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="worker@example.com"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                       />
                     </div>
                   </div>
@@ -719,7 +719,7 @@ export default function WorkerProfilePage() {
                   <button
                     type="submit"
                     disabled={isSavingProfile}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
                   >
                     {isSavingProfile ? (
                       <>
@@ -741,11 +741,11 @@ export default function WorkerProfilePage() {
             {activeTab === 'security' && (
               <form
                 onSubmit={handleSaveSecurity}
-                className="bg-[#ECEFF6] rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-white/80 space-y-6"
+                className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6"
               >
                 <div className="border-b border-slate-200/80 pb-4">
                   <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#5E42B4]" />
+                    <ShieldCheck className="w-5 h-5 text-[#2A835F]" />
                     <span>Password & Account Security</span>
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5">
@@ -778,7 +778,7 @@ export default function WorkerProfilePage() {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter your current password"
-                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                       />
                       <button
                         type="button"
@@ -800,7 +800,7 @@ export default function WorkerProfilePage() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Min 8 chars with uppercase, lowercase, number, special"
-                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                       />
                       <button
                         type="button"
@@ -839,7 +839,7 @@ export default function WorkerProfilePage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter new password"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
                     />
                     {confirmPassword && newPassword !== confirmPassword && (
                       <p className="text-[11px] text-rose-500 font-semibold">
@@ -853,7 +853,7 @@ export default function WorkerProfilePage() {
                   <button
                     type="submit"
                     disabled={isSavingSecurity}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
                   >
                     {isSavingSecurity ? (
                       <>
@@ -873,11 +873,11 @@ export default function WorkerProfilePage() {
 
             {/* TAB 3: SHIFT & FIELD STATUS */}
             {activeTab === 'shift' && (
-              <div className="bg-[#ECEFF6] rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-white/80 space-y-6">
+              <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6">
                 <div className="border-b border-slate-200/80 pb-4 flex items-center justify-between">
                   <div>
                     <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-[#5E42B4]" />
+                      <Clock className="w-5 h-5 text-[#2A835F]" />
                       <span>Shift Attendance & Dispatch Status</span>
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
@@ -895,7 +895,7 @@ export default function WorkerProfilePage() {
                 </div>
 
                 {/* Duty Toggle Hero Card */}
-                <div className="p-6 rounded-3xl bg-white border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-xs">
+                <div className="p-6 rounded-3xl bg-slate-50/80 border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-xs">
                   <div className="flex items-center gap-4">
                     <div
                       className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-inner ${
@@ -928,7 +928,7 @@ export default function WorkerProfilePage() {
                   <button
                     type="button"
                     onClick={() => setIsAvailabilityModalOpen(true)}
-                    className="px-5 py-2.5 rounded-2xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>Change Duty Status</span>
@@ -937,17 +937,17 @@ export default function WorkerProfilePage() {
 
                 {/* Assigned Work Summary */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200">
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
                     <span className="text-[11px] font-bold text-slate-500">ASSIGNED JOBS</span>
                     <div className="text-2xl font-black text-slate-900 mt-1">{assignedJobsCount}</div>
-                    <span className="text-[10px] text-purple-600 font-semibold mt-1 block">Awaiting start</span>
+                    <span className="text-[10px] text-[#2A835F] font-semibold mt-1 block">Awaiting start</span>
                   </div>
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200">
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
                     <span className="text-[11px] font-bold text-slate-500">IN PROGRESS</span>
                     <div className="text-2xl font-black text-amber-600 mt-1">{activeJobsCount}</div>
                     <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Active on site</span>
                   </div>
-                  <div className="p-4 rounded-2xl bg-white border border-slate-200">
+                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
                     <span className="text-[11px] font-bold text-slate-500">COMPLETED JOBS</span>
                     <div className="text-2xl font-black text-emerald-600 mt-1">{completedJobsCount}</div>
                     <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Signed off</span>
@@ -960,7 +960,7 @@ export default function WorkerProfilePage() {
           {/* RIGHT 1 COLUMN: Operative Quick Bento Summary */}
           <div className="space-y-6">
             {/* Field ID Badge Card */}
-            <div className="bg-[#ECEFF6] rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-white/80 space-y-4">
+            <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
                   Field ID Badge
@@ -973,14 +973,14 @@ export default function WorkerProfilePage() {
                   {avatar ? (
                     <img src={avatar} alt={name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#5E42B4] text-white text-xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#134B4C] to-[#2A835F] text-white text-xl font-bold">
                       {name.charAt(0) || 'W'}
                     </div>
                   )}
                 </div>
 
                 <h3 className="text-base font-black text-slate-900">{name || 'Operative'}</h3>
-                <span className="text-xs text-[#5E42B4] font-bold font-mono">@{username}</span>
+                <span className="text-xs text-[#2A835F] font-bold font-mono">@{username}</span>
                 <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200 mt-2 shadow-xs">
                   Kerala Squad Operative
                 </span>
@@ -1013,7 +1013,7 @@ export default function WorkerProfilePage() {
             </div>
 
             {/* Quick Actions Card */}
-            <div className="bg-[#ECEFF6] rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-white/80 space-y-3">
+            <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-3">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
                 Quick Shortcuts
               </span>
@@ -1024,7 +1024,7 @@ export default function WorkerProfilePage() {
                 className="w-full flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 transition-colors border border-slate-200/80 text-xs font-bold cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
-                  <Briefcase className="w-4 h-4 text-[#5E42B4]" />
+                  <Briefcase className="w-4 h-4 text-[#2A835F]" />
                   <span>View All Work Orders</span>
                 </div>
                 <span className="text-[11px] bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">

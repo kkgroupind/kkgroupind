@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Filter,
   CheckCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
@@ -30,6 +31,8 @@ export default function WorkerNotificationsPage() {
     requestToggleDuty,
     openJobModal,
     assignedJobsCount,
+    reloadAll,
+    isReloading,
   } = useWorker();
 
   const { language, t, translateService } = useWorkerLanguage();
@@ -51,7 +54,7 @@ export default function WorkerNotificationsPage() {
             onClick={() => setMainTab('notifications')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               mainTab === 'notifications'
-                ? 'bg-[#5E42B4] text-white shadow-xs'
+                ? 'bg-[#134B4C] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -64,7 +67,7 @@ export default function WorkerNotificationsPage() {
             onClick={() => setMainTab('activity')}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               mainTab === 'activity'
-                ? 'bg-[#5E42B4] text-white shadow-xs'
+                ? 'bg-[#134B4C] text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -95,15 +98,15 @@ export default function WorkerNotificationsPage() {
             {/* Header Bar */}
             <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-bold">
-                  <Briefcase className="w-6 h-6 text-[#5E42B4]" />
+                <div className="w-12 h-12 rounded-2xl bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40 flex items-center justify-center font-bold">
+                  <Briefcase className="w-6 h-6 text-[#2A835F]" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                       Active Job Queue &amp; Duty Status
                     </h1>
-                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40">
                       {assignedJobsCount} {t('newDispatches')}
                     </span>
                   </div>
@@ -120,7 +123,7 @@ export default function WorkerNotificationsPage() {
                   onClick={() => setFilterType('ALL')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     filterType === 'ALL'
-                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      ? 'bg-[#134B4C] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -131,7 +134,7 @@ export default function WorkerNotificationsPage() {
                   onClick={() => setFilterType('NEW')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     filterType === 'NEW'
-                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      ? 'bg-[#134B4C] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -142,11 +145,24 @@ export default function WorkerNotificationsPage() {
                   onClick={() => setFilterType('DUTY')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     filterType === 'DUTY'
-                      ? 'bg-[#5E42B4] text-white shadow-xs'
+                      ? 'bg-[#134B4C] text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {t('shiftStatus')}
+                </button>
+
+                {/* Reload Button */}
+                <button
+                  type="button"
+                  onClick={() => reloadAll()}
+                  disabled={isReloading}
+                  title="Reload Live Alerts & Dispatches"
+                  aria-label="Reload dispatches"
+                  className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 hover:text-[#2A835F] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isReloading ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Reload</span>
                 </button>
               </div>
             </div>
@@ -196,7 +212,7 @@ export default function WorkerNotificationsPage() {
               <button
                 type="button"
                 onClick={requestToggleDuty}
-                className="text-xs font-bold px-4 py-2 rounded-xl bg-white border border-slate-200 text-[#5E42B4] hover:bg-slate-50 transition-colors shadow-xs shrink-0 cursor-pointer"
+                className="text-xs font-bold px-4 py-2 rounded-xl bg-white border border-slate-200 text-[#2A835F] hover:bg-[#EAF4EE] hover:text-[#134B4C] transition-colors shadow-xs shrink-0 cursor-pointer"
               >
                 {t('changeShiftStatus')}
               </button>
@@ -209,18 +225,18 @@ export default function WorkerNotificationsPage() {
               <div
                 key={job.id}
                 onClick={() => openJobModal(job)}
-                className="p-4 sm:p-5 rounded-2xl bg-purple-50/40 hover:bg-purple-50/80 border border-purple-200/80 transition-all cursor-pointer shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
+                className="p-4 sm:p-5 rounded-2xl bg-[#EAF4EE]/60 hover:bg-[#EAF4EE] border border-[#88B793]/40 transition-all cursor-pointer shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
               >
                 <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-[#5E42B4] text-white flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#134B4C] to-[#2A835F] text-white flex items-center justify-center shrink-0 shadow-sm">
                     <Briefcase className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-extrabold text-slate-900 group-hover:text-[#5E42B4] transition-colors">
+                      <span className="text-sm font-extrabold text-slate-900 group-hover:text-[#2A835F] transition-colors">
                         {t('newOrderDispatched')}: {translateService(job.serviceName)}
                       </span>
-                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#5E42B4] text-white">
+                      <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#134B4C] text-white">
                         {job.trackingNumber}
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
@@ -235,7 +251,7 @@ export default function WorkerNotificationsPage() {
                 </div>
 
                 <div className="flex items-center gap-2 sm:self-center shrink-0">
-                  <span className="text-xs font-bold text-[#5E42B4] group-hover:underline flex items-center gap-1">
+                  <span className="text-xs font-bold text-[#2A835F] group-hover:underline flex items-center gap-1">
                     <span>{t('inspectDispatch')}</span>
                     <ChevronRight className="w-4 h-4" />
                   </span>

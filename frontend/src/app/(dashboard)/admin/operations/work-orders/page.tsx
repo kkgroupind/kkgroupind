@@ -28,7 +28,6 @@ import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/servic
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
-import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 export default function AdminWorkOrdersPage() {
   const { token, user, isLoading: authLoading } = useAuth();
@@ -39,7 +38,7 @@ export default function AdminWorkOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [statusFilter, setStatusFilter] = useState<string>('PENDING');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // Modals
@@ -164,42 +163,48 @@ export default function AdminWorkOrdersPage() {
     return { total, assigned, inProgress, completed, pendingPayout };
   }, [workOrders, pendingPayoutOrders]);
 
-  const statusDropdownOptions: AdminDropdownOption[] = [
-    { value: 'ALL', label: 'All Work Orders', badge: `${metrics.total}` },
-    {
-      value: 'PENDING_PAYOUT',
-      label: 'Payout Pending',
-      badge: `${metrics.pendingPayout}`,
-      badgeColor: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
-      icon: IndianRupee,
-    },
+  const statusPills = [
     {
       value: 'PENDING',
       label: 'Pending Assignment',
       badge: `${workOrders.filter((w) => w.status === 'PENDING').length}`,
-      badgeColor: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
       icon: Clock,
+      activeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
     },
     {
-      value: 'ASSIGNED',
-      label: 'Squad Assigned',
-      badge: `${metrics.assigned}`,
-      badgeColor: 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
-      icon: HardHat,
+      value: 'PENDING_PAYOUT',
+      label: 'Payout Pending',
+      badge: `${metrics.pendingPayout}`,
+      icon: IndianRupee,
+      activeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
     },
     {
       value: 'IN_PROGRESS',
       label: 'In Execution',
       badge: `${metrics.inProgress}`,
-      badgeColor: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
       icon: Sparkles,
+      activeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.25)]',
+    },
+    {
+      value: 'ASSIGNED',
+      label: 'Squad Assigned',
+      badge: `${metrics.assigned}`,
+      icon: HardHat,
+      activeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
     },
     {
       value: 'COMPLETED',
       label: 'Completed Works',
       badge: `${metrics.completed}`,
-      badgeColor: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
       icon: CheckCircle2,
+      activeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.25)]',
+    },
+    {
+      value: 'ALL',
+      label: 'All Work Orders',
+      badge: `${metrics.total}`,
+      icon: Briefcase,
+      activeColor: 'bg-[#7B4DFF]/20 text-[#9E7BFF] border-[#7B4DFF]/50 shadow-[0_0_15px_rgba(123,77,255,0.25)]',
     },
   ];
 
@@ -423,31 +428,85 @@ export default function AdminWorkOrdersPage() {
         </div>
       )}
 
-      {/* Search and Filters Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="Search by code, customer, service..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
-          />
+      {/* Pill Navigation & Search Controls */}
+      <div className="flex flex-col gap-3.5 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
+        {/* Top: Status Pill Navs */}
+        <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
+            {statusPills.map((pill) => {
+              const isActive = statusFilter === pill.value;
+              const Icon = pill.icon;
+              return (
+                <button
+                  key={pill.value}
+                  type="button"
+                  onClick={() => setStatusFilter(pill.value)}
+                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer select-none border ${
+                    isActive
+                      ? pill.activeColor
+                      : 'bg-[#1A1C23] text-gray-400 hover:text-gray-200 border-gray-800/80 hover:border-gray-700/80 hover:bg-[#20232C]'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? '' : 'text-gray-500'}`} />
+                  <span>{pill.label}</span>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border transition-colors ${
+                      isActive
+                        ? 'bg-black/30 border-current'
+                        : 'bg-black/20 text-gray-500 border-gray-800'
+                    }`}
+                  >
+                    {pill.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* View Mode Toggle (Desktop) */}
+          <div className="hidden md:flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'grid'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Card Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('table')}
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                viewMode === 'table'
+                  ? 'bg-[#7B4DFF] text-white shadow-sm'
+                  : 'text-gray-400 hover:text-gray-200'
+              }`}
+              title="Table View"
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="w-56">
-            <AdminDropdown
-              options={statusDropdownOptions}
-              value={statusFilter}
-              onChange={(val) => setStatusFilter(val)}
-              variant="purple"
-              size="md"
+        {/* Bottom: Search Input & Mobile View Toggle */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search by code, customer, service, phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
             />
           </div>
 
-          <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+          {/* View Mode Toggle (Mobile) */}
+          <div className="md:hidden flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
             <button
               type="button"
               onClick={() => setViewMode('grid')}

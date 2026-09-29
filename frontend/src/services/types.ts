@@ -157,6 +157,14 @@ export interface ServiceEnquiry {
   specificationDetails?: any | null;
   totalCalculatedWage?: number | null;
   totalCalculatedCost?: number | null;
+  timerStartedAt?: string | null;
+  timerStoppedAt?: string | null;
+  isTimerPaused?: boolean;
+  totalBreakMinutes?: number | null;
+  breakHistory?: any[] | null;
+  timerRemarks?: string | null;
+  countRemarks?: string | null;
+  harvestOptions?: any | null;
   message: string;
   status: ServiceStatus;
   notes?: string | null;

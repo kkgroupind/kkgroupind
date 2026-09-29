@@ -17,6 +17,7 @@ import {
   Calendar,
   Layers,
   Timer,
+  RefreshCw,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
@@ -33,6 +34,8 @@ export default function WorkerJobsPage() {
     acceptJob,
     markReachedSite,
     actionLoadingId,
+    reloadAll,
+    isReloading,
   } = useWorker();
 
   const { language, t, translateService } = useWorkerLanguage();
@@ -83,15 +86,15 @@ export default function WorkerJobsPage() {
         {/* Page Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-white rounded-[28px] sm:rounded-[36px] p-5 sm:p-7 shadow-[0_12px_35px_rgba(0,0,0,0.04)] border border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-bold">
-              <Briefcase className="w-6 h-6 text-[#5E42B4]" />
+            <div className="w-12 h-12 rounded-2xl bg-[#EAF4EE] text-[#2A835F] flex items-center justify-center font-bold">
+              <Briefcase className="w-6 h-6 text-[#2A835F]" />
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
                   {t('workOrdersTitle')}
                 </h1>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40">
                   {jobs.length} Total
                 </span>
               </div>
@@ -108,7 +111,7 @@ export default function WorkerJobsPage() {
               onClick={() => setStatusFilter('ALL')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 statusFilter === 'ALL'
-                  ? 'bg-[#5E42B4] text-white shadow-xs'
+                  ? 'bg-[#134B4C] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -147,6 +150,19 @@ export default function WorkerJobsPage() {
             >
               {t('completedFilterCount')} ({counts.completed})
             </button>
+
+            {/* Reload Button */}
+            <button
+              type="button"
+              onClick={() => reloadAll()}
+              disabled={isReloading || loadingJobs}
+              title="Reload Work Orders / വിവരങ്ങൾ പുതുക്കുക"
+              aria-label="Reload work orders"
+              className="px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 hover:text-[#2A835F] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isReloading || loadingJobs ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Reload</span>
+            </button>
           </div>
         </div>
 
@@ -165,7 +181,7 @@ export default function WorkerJobsPage() {
               return (
                 <div
                   key={job.id}
-                  className="bg-white rounded-[28px] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-200/80 hover:border-purple-300 transition-all flex flex-col justify-between gap-4 group"
+                  className="bg-white rounded-[28px] p-5 sm:p-6 shadow-[0_10px_30px_rgba(0,0,0,0.04)] border border-slate-200/80 hover:border-[#88B793] transition-all flex flex-col justify-between gap-4 group"
                 >
                   {/* Top Header */}
                   <div>
@@ -181,7 +197,7 @@ export default function WorkerJobsPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-50 text-[#5E42B4] border border-purple-200">
+                            <span className="font-mono text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40">
                               {job.trackingNumber}
                             </span>
                             <span
@@ -200,7 +216,7 @@ export default function WorkerJobsPage() {
                                 : t('completedBadge')}
                             </span>
                           </div>
-                          <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#5E42B4] transition-colors mt-1.5 truncate">
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-[#2A835F] transition-colors mt-1.5 truncate">
                             {translateService(job.serviceName)}
                           </h3>
                         </div>
@@ -231,21 +247,35 @@ export default function WorkerJobsPage() {
 
                       return (
                         <div className="flex flex-wrap items-center gap-2 mt-2">
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                            {wageType === 'PER_TREE'
-                              ? '🌴 Tree Count Basis'
-                              : wageType === 'HOURLY'
-                              ? '⏱️ Hourly Chronometer'
-                              : wageType === 'PER_SQFT'
-                              ? '📐 Area (Sq. Ft.)'
-                              : wageType === 'PER_POINT'
-                              ? '⚡ Point Basis'
-                              : wageType === 'PER_FOOT'
-                              ? '📏 Foot Depth'
-                              : wageType === 'DAILY_WAGE'
-                              ? '📅 Daily Shift'
-                              : '🔧 Fixed Visit'}
-                          </span>
+                          {wageType === 'HOURLY' ? (
+                            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-lg border flex items-center gap-1.5 ${
+                              job.timerStartedAt && !job.timerStoppedAt && !job.isTimerPaused
+                                ? 'bg-[#EAF4EE] text-[#134B4C] border-[#88B793]/40 animate-pulse'
+                                : 'bg-emerald-50/80 text-[#2A835F] border border-[#88B793]/30'
+                            }`}>
+                              <Timer className="w-3.5 h-3.5 text-[#2A835F]" />
+                              {job.timerStartedAt && !job.timerStoppedAt && !job.isTimerPaused
+                                ? '⏱️ Live Meter Active'
+                                : '⏱️ Timer Mode (JCB / Machinery)'}
+                            </span>
+                          ) : wageType === 'PER_TREE' ? (
+                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1.5">
+                              <span>🌴</span>
+                              Count Mode (Cococare Tree Count)
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200">
+                              {wageType === 'PER_SQFT'
+                                ? '📐 Area (Sq. Ft.)'
+                                : wageType === 'PER_POINT'
+                                ? '⚡ Point Basis'
+                                : wageType === 'PER_FOOT'
+                                ? '📏 Foot Depth'
+                                : wageType === 'DAILY_WAGE'
+                                ? '📅 Daily Shift'
+                                : '🔧 Fixed Visit'}
+                            </span>
+                          )}
                           {job.totalCalculatedWage ? (
                             <span className="text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
                               Payout: ₹{job.totalCalculatedWage.toLocaleString()}
@@ -318,7 +348,7 @@ export default function WorkerJobsPage() {
                     <button
                       type="button"
                       onClick={() => openJobModal(job)}
-                      className="text-xs font-bold text-[#5E42B4] hover:text-[#462F8B] flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-bold text-[#2A835F] hover:text-[#134B4C] flex items-center gap-1 cursor-pointer"
                     >
                       <span>{t('viewDetails')}</span>
                       <ChevronRight className="w-4 h-4" />
@@ -349,7 +379,7 @@ export default function WorkerJobsPage() {
                             type="button"
                             disabled={actionLoadingId === job.id}
                             onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
-                            className="px-4 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E359B] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+                            className="px-4 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
                           >
                             {actionLoadingId === job.id ? t('starting') : (language === 'ml' ? 'ജോലി ആരംഭിക്കുക' : 'Start Work')}
                           </button>

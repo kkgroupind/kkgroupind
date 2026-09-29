@@ -444,16 +444,16 @@ export function AssignWorkerModal({
               {/* Select Operative Card */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                 {/* Multi-Worker Squad Toggle */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50/90 border border-purple-200/80">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#EAF4EE]/90 border border-[#88B793]/40">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-[#5E42B4]/10 border border-[#5E42B4]/20 flex items-center justify-center text-[#5E42B4]">
+                    <div className="w-8 h-8 rounded-lg bg-[#2A835F]/10 border border-[#2A835F]/20 flex items-center justify-center text-[#2A835F]">
                       <Users className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-[#091540] flex items-center gap-1.5">
                         <span>Needs More Workers (Squad Deployment)</span>
                         {isSquadMode && (
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded-md bg-[#5E42B4] text-white">
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.2 rounded-md bg-[#134B4C] text-white">
                             {selectedSquadWorkerIds.length} Selected
                           </span>
                         )}
@@ -483,7 +483,7 @@ export function AssignWorkerModal({
                       }}
                       className="sr-only peer"
                     />
-                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#5E42B4]" />
+                    <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#2A835F]" />
                   </label>
                 </div>
 
@@ -574,7 +574,7 @@ export function AssignWorkerModal({
                                 type="checkbox"
                                 checked={isSelectedInSquad}
                                 readOnly
-                                className="w-4 h-4 rounded text-[#5E42B4] focus:ring-0"
+                                className="w-4 h-4 rounded text-[#2A835F] focus:ring-0"
                               />
                             )}
                             <div className="w-9 h-9 rounded-xl bg-[#1B2CC1]/10 border border-[#1B2CC1]/20 flex items-center justify-center font-bold text-xs text-[#1B2CC1] shrink-0">
@@ -607,7 +607,7 @@ export function AssignWorkerModal({
                                 }}
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-md cursor-pointer transition-colors ${
                                   isLead
-                                    ? 'bg-[#5E42B4] text-white'
+                                    ? 'bg-[#134B4C] text-white'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                 }`}
                               >
@@ -644,9 +644,9 @@ export function AssignWorkerModal({
 
               {/* Squad Summary Strip — shows selected members when in squad mode */}
               {isSquadMode && selectedSquadWorkerIds.length > 0 && (
-                <div className="p-3 rounded-xl bg-[#5E42B4]/8 border border-[#5E42B4]/20 space-y-2">
+                <div className="p-3 rounded-xl bg-[#EAF4EE]/80 border border-[#88B793]/40 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#5E42B4] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#134B4C] uppercase tracking-wider">
                       Selected Squad ({selectedSquadWorkerIds.length} Operatives)
                     </span>
                     <button
@@ -666,7 +666,7 @@ export function AssignWorkerModal({
                           key={id}
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                             isLdr
-                              ? 'bg-[#5E42B4] text-white border-[#5E42B4]'
+                              ? 'bg-[#134B4C] text-white border-[#134B4C]'
                               : 'bg-white text-[#091540] border-slate-300'
                           }`}
                         >

@@ -34,6 +34,8 @@ interface WorkerContextType {
   assignedJobsCount: number;
   completedJobsCount: number;
   hasNotifications: boolean;
+  isReloading: boolean;
+  reloadAll: () => Promise<void>;
 }
 
 const WorkerContext = createContext<WorkerContextType | undefined>(undefined);
@@ -52,6 +54,7 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
   const [selectedJob, setSelectedJob] = useState<ServiceEnquiry | null>(null);
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isReloading, setIsReloading] = useState(false);
 
   // Load attendance/duty status
   const loadAttendance = useCallback(async () => {
@@ -121,6 +124,25 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
       refreshCrew();
     }
   }, [token, loadAttendance, refreshJobs, refreshCrew]);
+
+  // Synchronize all live data simultaneously with feedback
+  const reloadAll = useCallback(async () => {
+    if (!token) return;
+    setIsReloading(true);
+    try {
+      await Promise.all([
+        loadAttendance(),
+        refreshJobs(),
+        refreshCrew(),
+      ]);
+      toast.success('Live Data Refreshed', 'Work orders, duty status, and crew roster are up to date.');
+    } catch (err: any) {
+      console.error('Failed to reload live worker data:', err);
+      toast.error('Sync Failed', 'Could not refresh all field data.');
+    } finally {
+      setIsReloading(false);
+    }
+  }, [token, loadAttendance, refreshJobs, refreshCrew, toast]);
 
   // Duty Toggle
   const requestToggleDuty = () => {
@@ -289,6 +311,8 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
         assignedJobsCount,
         completedJobsCount,
         hasNotifications,
+        isReloading,
+        reloadAll,
       }}
     >
       {children}

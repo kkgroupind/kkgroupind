@@ -117,7 +117,7 @@ export function WorkerFullMapModal({
               type="button"
               onClick={() => setIsMapSettingsOpen(true)}
               title="Map Settings"
-              className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-purple-400 hover:text-purple-300 border border-slate-700/80 shadow-xl transition-all cursor-pointer"
+              className="p-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-[#88B793] hover:text-[#A3E5C7] border border-slate-700/80 shadow-xl transition-all cursor-pointer"
             >
               <Sliders className="w-4 h-4" />
             </button>

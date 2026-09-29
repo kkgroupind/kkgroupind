@@ -51,6 +51,8 @@ export function WorkerShell({
     activeJob,
     assignedJobsCount,
     hasNotifications,
+    isReloading,
+    reloadAll,
   } = useWorker();
 
   const handleLogout = () => {
@@ -66,7 +68,7 @@ export function WorkerShell({
   };
 
   return (
-    <div className="min-h-screen bg-[#E5E8F2] pt-20 sm:pt-28 px-2 sm:px-4 md:px-6 pb-24 md:pb-12 flex flex-col items-center gap-3 sm:gap-6 font-sans antialiased text-slate-800 selection:bg-[#5E42B4] selection:text-white">
+    <div className="min-h-screen bg-[#EAEFEA] pt-20 sm:pt-28 px-2 sm:px-4 md:px-6 pb-24 md:pb-12 flex flex-col items-center gap-3 sm:gap-6 font-sans antialiased text-slate-800 selection:bg-[#2A835F] selection:text-white">
       {/* 1. TOP NAVBAR */}
       <WorkerNavbar
         activeTab={activeTab}
@@ -94,6 +96,8 @@ export function WorkerShell({
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
               onProfileClick={() => router.push('/worker/profile')}
+              onReload={reloadAll}
+              isReloading={isReloading}
             />
           )}
 

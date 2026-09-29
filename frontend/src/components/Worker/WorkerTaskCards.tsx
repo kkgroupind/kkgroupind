@@ -11,6 +11,10 @@ import {
   PlayCircle,
   HardHat,
   Clock,
+  Timer,
+  TreePalm,
+  Layers,
+  Tractor,
 } from 'lucide-react';
 import { ServiceEnquiry } from '@/services';
 import { getServiceBanner } from '@/utils/service-options';
@@ -113,10 +117,10 @@ export function WorkerTaskCards({
           <div
             key={task.id}
             onClick={() => task.job && onSelectJob?.(task.job)}
-            className="bg-white rounded-[28px] sm:rounded-[32px] p-5 pt-8 shadow-[0_12px_35px_rgba(94,66,180,0.07)] border border-slate-100 flex flex-col justify-between relative hover:shadow-[0_20px_45px_rgba(94,66,180,0.14)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+            className="bg-white rounded-[28px] sm:rounded-[32px] p-5 pt-8 shadow-[0_12px_35px_rgba(11,30,36,0.06)] border border-slate-100 flex flex-col justify-between relative hover:shadow-[0_20px_45px_rgba(42,131,95,0.18)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
           >
             {/* 1. Centered Floating Squircle Icon on Top */}
-            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#5E42B4] shadow-[0_8px_20px_rgba(94,66,180,0.35)] flex items-center justify-center text-white group-hover:scale-105 transition-transform overflow-hidden border-2 border-white">
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#134B4C] to-[#2A835F] shadow-[0_8px_20px_rgba(42,131,95,0.35)] flex items-center justify-center text-white group-hover:scale-105 transition-transform overflow-hidden border-2 border-white">
               {serviceBanner ? (
                 <Image
                   src={serviceBanner}
@@ -141,13 +145,47 @@ export function WorkerTaskCards({
             </div>
 
             {/* 3. Title & Subtitle */}
-            <div className="text-center px-1 mb-4">
+            <div className="text-center px-1 mb-3">
               <h4 className="text-sm sm:text-base font-extrabold text-slate-800 tracking-tight leading-snug line-clamp-1">
                 {task.title}
               </h4>
               <p className="text-[11px] font-semibold text-slate-400 mt-0.5 line-clamp-1">
                 {task.subtitle}
               </p>
+
+              {/* Service Execution Mode Badge */}
+              {task.job && (() => {
+                const sName = (task.job.serviceName || '').toLowerCase();
+                const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
+                const isTimer = isMachinery || task.job.wageType === 'HOURLY';
+                const isCococare = sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || task.job.wageType === 'PER_TREE';
+                const isTimerActive = task.job.timerStartedAt && !task.job.timerStoppedAt && !task.job.isTimerPaused;
+
+                return (
+                  <div className="flex items-center justify-center mt-2">
+                    {isTimer ? (
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                        isTimerActive
+                          ? 'bg-[#EAF4EE] text-[#134B4C] border border-[#88B793]/40 animate-pulse'
+                          : 'bg-emerald-50/80 text-[#2A835F] border border-[#88B793]/30'
+                      }`}>
+                        <Timer className="w-3 h-3 text-[#2A835F]" />
+                        {isTimerActive ? '⏱️ Live Meter Running' : '⏱️ Timer Mode (Hourly)'}
+                      </span>
+                    ) : isCococare ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/30">
+                        <TreePalm className="w-3 h-3 text-[#2A835F]" />
+                        🌴 Count Mode (Per Tree)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                        <Layers className="w-3 h-3 text-slate-500" />
+                        Unit Measurement
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* 4. Progress Section with Green Indicator */}
@@ -159,18 +197,24 @@ export function WorkerTaskCards({
               {/* Progress Bar Track */}
               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-[#10B981] rounded-full transition-all duration-500"
+                  className="h-full bg-[#2A835F] rounded-full transition-all duration-500"
                   style={{ width: `${task.progress}%` }}
                 />
               </div>
             </div>
 
-            {/* 5. Bottom Row: Fraction / Code + Soft Pink Badge */}
+            {/* 5. Bottom Row: Fraction / Code + Status Badge */}
             <div className="flex items-center justify-between pt-2 border-t border-slate-50 text-[11px]">
               <span className="font-bold text-slate-400 tracking-tight truncate max-w-[120px]">
                 {task.progressText}
               </span>
-              <span className="font-bold text-[#E53E6D] bg-[#FCE6EC] px-3 py-1 rounded-full whitespace-nowrap">
+              <span className={`font-bold px-3 py-1 rounded-full whitespace-nowrap ${
+                task.badgeText === 'Completed'
+                  ? 'text-[#2A835F] bg-[#EAF4EE] border border-[#88B793]/30'
+                  : task.badgeText === 'In Progress'
+                  ? 'text-[#134B4C] bg-[#EAF4EE] border border-[#134B4C]/20'
+                  : 'text-[#134B4C] bg-slate-100 border border-slate-200'
+              }`}>
                 {task.badgeText}
               </span>
             </div>
@@ -198,7 +242,7 @@ export function WorkerTaskCards({
                 <button
                   type="button"
                   onClick={() => onSelectJob?.(task.job!)}
-                  className="py-1.5 px-3 rounded-xl bg-[#5E42B4]/10 hover:bg-[#5E42B4] text-[#5E42B4] hover:text-white text-[11px] font-bold transition-all cursor-pointer"
+                  className="py-1.5 px-3 rounded-xl bg-[#2A835F]/10 hover:bg-[#2A835F] text-[#2A835F] hover:text-white text-[11px] font-bold transition-all cursor-pointer"
                 >
                   Manage
                 </button>

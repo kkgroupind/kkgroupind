@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 
 interface WorkerHeaderProps {
   userName?: string;
@@ -9,6 +9,8 @@ interface WorkerHeaderProps {
   searchQuery?: string;
   onSearchChange?: (val: string) => void;
   onProfileClick?: () => void;
+  onReload?: () => void;
+  isReloading?: boolean;
 }
 
 export function WorkerHeader({
@@ -17,6 +19,8 @@ export function WorkerHeader({
   searchQuery = '',
   onSearchChange,
   onProfileClick,
+  onReload,
+  isReloading = false,
 }: WorkerHeaderProps) {
   return (
     <header className="w-full flex items-center justify-between gap-4 select-none">
@@ -30,8 +34,8 @@ export function WorkerHeader({
         </h1>
       </div>
 
-      {/* Right: Search Pill & User Avatar */}
-      <div className="flex items-center gap-3">
+      {/* Right: Search Pill, Reload Button & User Avatar */}
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Search Bar Pill */}
         <div className="relative flex items-center">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
@@ -40,9 +44,23 @@ export function WorkerHeader({
             placeholder="Search"
             value={searchQuery}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            className="w-36 sm:w-56 pl-9 pr-4 py-2 text-xs font-semibold rounded-full bg-white text-slate-800 placeholder-slate-400 border border-slate-200/80 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#5E42B4]/20 focus:border-[#5E42B4] transition-all"
+            className="w-32 sm:w-56 pl-9 pr-4 py-2 text-xs font-semibold rounded-full bg-white text-slate-800 placeholder-slate-400 border border-slate-200/80 shadow-xs focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
           />
         </div>
+
+        {/* Reload Button */}
+        {onReload && (
+          <button
+            type="button"
+            onClick={onReload}
+            disabled={isReloading}
+            title="Reload & Sync Dashboard Data"
+            aria-label="Reload dashboard data"
+            className="w-9 h-9 rounded-full bg-white text-slate-600 hover:text-[#2A835F] border border-slate-200/80 shadow-xs flex items-center justify-center transition-all cursor-pointer hover:border-[#88B793] active:scale-95 disabled:opacity-50 shrink-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${isReloading ? 'animate-spin text-[#2A835F]' : ''}`} />
+          </button>
+        )}
 
         {/* User Avatar */}
         <button
@@ -61,7 +79,7 @@ export function WorkerHeader({
               }}
             />
           ) : (
-            <span className="text-[#5E42B4] font-black text-sm">
+            <span className="text-[#2A835F] font-black text-sm">
               {(userName || 'W').charAt(0).toUpperCase()}
             </span>
           )}

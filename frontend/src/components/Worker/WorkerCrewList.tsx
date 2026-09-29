@@ -31,7 +31,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
       {/* Header: Friends / Squad + Online Count */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-xl bg-purple-50 text-[#5E42B4] flex items-center justify-center font-black">
+          <div className="w-7 h-7 rounded-xl bg-[#EAF4EE] text-[#2A835F] flex items-center justify-center font-black">
             <Users className="w-4 h-4" />
           </div>
           <h3 className="text-base font-extrabold text-slate-800 tracking-tight">
@@ -50,7 +50,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
           onClick={() => setActiveTab('activities')}
           className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'activities'
-              ? 'bg-[#5E42B4] text-white shadow-xs'
+              ? 'bg-[#134B4C] text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -61,7 +61,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
           onClick={() => setActiveTab('online')}
           className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
             activeTab === 'online'
-              ? 'bg-[#5E42B4] text-white shadow-xs'
+              ? 'bg-[#134B4C] text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -83,7 +83,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
             >
               {/* Left: Avatar + Details */}
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-slate-100 shadow-xs bg-purple-50 flex items-center justify-center font-bold text-xs text-[#5E42B4]">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-slate-100 shadow-xs bg-[#EAF4EE] flex items-center justify-center font-bold text-xs text-[#2A835F]">
                   {member.avatar ? (
                     <img
                       src={member.avatar}
@@ -105,7 +105,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
                 </div>
 
               <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-slate-800 truncate leading-tight group-hover:text-[#5E42B4] transition-colors">
+                <span className="text-xs font-bold text-slate-800 truncate leading-tight group-hover:text-[#2A835F] transition-colors">
                   {member.name}
                 </span>
                 <span
@@ -131,7 +131,7 @@ export function WorkerCrewList({ members = [], onMessageCrew }: WorkerCrewListPr
                 type="button"
                 onClick={() => onMessageCrew?.(member)}
                 aria-label={`Message ${member.name}`}
-                className="w-8 h-8 rounded-xl border border-purple-100 bg-purple-50/60 hover:bg-[#5E42B4] hover:text-white text-[#5E42B4] flex items-center justify-center transition-all cursor-pointer shadow-xs"
+                className="w-8 h-8 rounded-xl border border-[#88B793]/30 bg-[#EAF4EE] hover:bg-[#2A835F] hover:text-white text-[#2A835F] flex items-center justify-center transition-all cursor-pointer shadow-xs"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
               </button>

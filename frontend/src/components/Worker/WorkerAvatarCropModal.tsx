@@ -132,7 +132,7 @@ export function WorkerAvatarCropModal({
     ctx.fill();
 
     // Draw circular border
-    ctx.strokeStyle = '#5E42B4';
+    ctx.strokeStyle = '#2A835F';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(size / 2, size / 2, size / 2 - 4, 0, Math.PI * 2);
@@ -285,7 +285,7 @@ export function WorkerAvatarCropModal({
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-[#0D0E12]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-2xl bg-[#5E42B4]/20 border border-[#5E42B4]/40 flex items-center justify-center text-[#9D80F7]">
+            <div className="w-9 h-9 rounded-2xl bg-[#2A835F]/20 border border-[#2A835F]/40 flex items-center justify-center text-[#88B793]">
               <Camera className="w-4 h-4" />
             </div>
             <div>
@@ -317,7 +317,7 @@ export function WorkerAvatarCropModal({
 
           {!selectedImage ? (
             /* Upload Initial Step */
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-700/80 rounded-2xl hover:border-[#5E42B4] transition-colors bg-[#0D0E12]/50 text-center">
+            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-700/80 rounded-2xl hover:border-[#2A835F] transition-colors bg-[#0D0E12]/50 text-center">
               <div className="w-20 h-20 rounded-full bg-gray-800/80 border border-gray-700 flex items-center justify-center mb-4 overflow-hidden shadow-inner">
                 {currentAvatar ? (
                   <img
@@ -340,7 +340,7 @@ export function WorkerAvatarCropModal({
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
               >
                 <UploadCloud className="w-4 h-4" />
                 <span>Upload From Device</span>
@@ -392,7 +392,7 @@ export function WorkerAvatarCropModal({
                     step="0.05"
                     value={zoom}
                     onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="flex-1 accent-[#5E42B4] h-1.5 bg-gray-700 rounded-lg cursor-pointer"
+                    className="flex-1 accent-[#2A835F] h-1.5 bg-gray-700 rounded-lg cursor-pointer"
                   />
                   <button
                     type="button"
@@ -421,7 +421,7 @@ export function WorkerAvatarCropModal({
                       setSelectedImage(null);
                       fileInputRef.current?.click();
                     }}
-                    className="text-[11px] text-purple-400 hover:underline"
+                    className="text-[11px] text-[#88B793] hover:underline font-semibold"
                   >
                     Choose Different Image
                   </button>
@@ -447,7 +447,7 @@ export function WorkerAvatarCropModal({
               type="button"
               onClick={handleUploadAndSave}
               disabled={isUploading}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#5E42B4] hover:bg-[#4E34A0] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
             >
               {isUploading ? (
                 <>

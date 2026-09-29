@@ -21,9 +21,11 @@ import {
   Briefcase,
   Globe,
   Check,
+  RefreshCw,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWorkerLanguage, WORKER_LANGUAGES } from '@/context/worker-language-context';
+import { useWorker } from '@/context/worker-context';
 
 export interface NavItem {
   id: string;
@@ -45,6 +47,8 @@ interface WorkerNavbarProps {
   userAvatar?: string | null;
   userHandle?: string;
   userRole?: string;
+  onReload?: () => void;
+  isReloading?: boolean;
 }
 
 export function WorkerNavbar({
@@ -60,10 +64,16 @@ export function WorkerNavbar({
   userAvatar,
   userHandle,
   userRole = 'WORKER',
+  onReload,
+  isReloading,
 }: WorkerNavbarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { language, setLanguage, t } = useWorkerLanguage();
+  const workerCtx = useWorker();
+
+  const handleReload = onReload || workerCtx?.reloadAll;
+  const isSyncing = isReloading !== undefined ? isReloading : workerCtx?.isReloading;
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -152,27 +162,27 @@ export function WorkerNavbar({
           1. FIXED TOP NAVBAR (Zero Movement on Scroll)
           Pinned permanently at the top of the viewport
       ======================================================== */}
-      <header className="fixed top-0 inset-x-0 z-50 w-full select-none pt-2 sm:pt-3 px-2 sm:px-4 bg-[#E5E8F2]/95 backdrop-blur-xl border-b border-slate-200/60 shadow-xs">
+      <header className="fixed top-0 inset-x-0 z-50 w-full select-none pt-2 sm:pt-3 px-2 sm:px-4 bg-[#EAEFEA]/95 backdrop-blur-xl border-b border-slate-200/60 shadow-xs">
         <div className="w-full max-w-[1480px] mx-auto pb-2 sm:pb-2.5">
           <nav
             aria-label="Worker primary navigation"
-            className="w-full bg-[#5E42B4] border border-white/20 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 px-3 sm:px-5 shadow-[0_15px_35px_rgba(94,66,180,0.3)] text-white flex items-center justify-between gap-3 transition-all"
+            className="w-full bg-gradient-to-r from-[#0B1E24] via-[#134B4C] to-[#0B1E24] border border-[#134B4C]/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 px-3 sm:px-5 shadow-[0_15px_35px_rgba(11,30,36,0.35)] text-white flex items-center justify-between gap-3 transition-all"
           >
           {/* Left: Brand Emblem + Worker Info */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/15 border border-white/25 flex items-center justify-center text-white shadow-inner">
-              <HardHat className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
+              <HardHat className="w-5 h-5 text-[#88B793]" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs sm:text-sm font-black tracking-tight leading-none text-white">
                   KK GROUP
                 </span>
-                <span className="hidden sm:inline text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
+                <span className="hidden sm:inline text-[10px] font-bold bg-[#2A835F] text-white px-2 py-0.5 rounded-full border border-[#88B793]/40">
                   {t('operative')}
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-purple-200 uppercase tracking-wider mt-0.5">
+              <span className="text-[10px] font-semibold text-[#A3E5C7] uppercase tracking-wider mt-0.5">
                 {userName} • {language === 'en' ? 'Kerala' : language === 'ml' ? 'കേരളം' : 'केरल'}
               </span>
             </div>
@@ -208,8 +218,27 @@ export function WorkerNavbar({
             })}
           </div>
 
-          {/* Right: Language Switcher, Quick Duty Toggle, Alerts & Profile */}
+          {/* Right: Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
           <div className="flex items-center gap-2 shrink-0">
+            {/* 0. Live Reload / Sync Button */}
+            <button
+              type="button"
+              onClick={handleReload}
+              disabled={isSyncing}
+              title="Reload Live Orders & Telemetry / വിവരങ്ങൾ പുതുക്കുക"
+              aria-label="Reload field data"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 text-[#88B793] transition-transform ${
+                  isSyncing ? 'animate-spin' : 'hover:rotate-180 duration-500'
+                }`}
+              />
+              <span className="hidden sm:inline text-[11px] font-bold">
+                {isSyncing ? 'Syncing...' : 'Reload'}
+              </span>
+            </button>
+
             {/* 1. Language Switcher Dropdown (EN / ML / HI) */}
             <div className="relative" ref={langMenuRef}>
               <button
@@ -219,12 +248,12 @@ export function WorkerNavbar({
                 title="Switch Language / ഭാഷ മാറ്റുക / भाषा बदलें"
                 aria-expanded={isLangMenuOpen}
               >
-                <Globe className="w-3.5 h-3.5 text-purple-200" />
+                <Globe className="w-3.5 h-3.5 text-[#88B793]" />
                 <span className="uppercase text-[11px] font-black">
                   {language}
                 </span>
                 <ChevronDown
-                  className={`w-3 h-3 text-purple-200 transition-transform duration-200 ${
+                  className={`w-3 h-3 text-[#88B793] transition-transform duration-200 ${
                     isLangMenuOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -247,7 +276,7 @@ export function WorkerNavbar({
                         }}
                         className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
                           language === lang.code
-                            ? 'bg-[#5E42B4] text-white font-bold'
+                            ? 'bg-[#2A835F] text-white font-bold'
                             : 'text-gray-300 hover:text-white hover:bg-white/10'
                         }`}
                       >
@@ -322,7 +351,7 @@ export function WorkerNavbar({
                   {userName}
                 </span>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-purple-200 transition-transform duration-200 ${
+                  className={`w-3.5 h-3.5 text-[#88B793] transition-transform duration-200 ${
                     isProfileMenuOpen ? 'rotate-180' : ''
                   }`}
                 />
@@ -330,10 +359,10 @@ export function WorkerNavbar({
 
               {/* Profile Dropdown Popup Menu */}
               {isProfileMenuOpen && (
-                <div className="absolute right-0 mt-2.5 w-64 bg-[#14161D] rounded-2xl border border-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.6)] py-2 text-gray-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute right-0 mt-2.5 w-64 bg-[#0B1E24] rounded-2xl border border-[#134B4C] shadow-[0_20px_50px_rgba(0,0,0,0.6)] py-2 text-gray-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   {/* Dropdown Header */}
-                  <div className="px-4 py-3 border-b border-gray-800/80 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-[#5E42B4] border border-purple-400/30 flex items-center justify-center text-white font-bold shrink-0">
+                  <div className="px-4 py-3 border-b border-[#134B4C]/80 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-[#134B4C] border border-[#88B793]/40 flex items-center justify-center text-white font-bold shrink-0">
                       {userAvatar ? (
                         <img
                           src={userAvatar}
@@ -348,7 +377,7 @@ export function WorkerNavbar({
                       <span className="text-xs font-bold text-white truncate">
                         {userName}
                       </span>
-                      <span className="text-[11px] text-purple-400 font-mono truncate">
+                      <span className="text-[11px] text-[#88B793] font-mono truncate">
                         {userHandle ? `@${userHandle}` : 'Operative Member'}
                       </span>
                       <span className="text-[10px] text-gray-400 mt-0.5">
@@ -367,7 +396,7 @@ export function WorkerNavbar({
                       }}
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-[#1A1C23] transition-colors text-left cursor-pointer"
                     >
-                      <User className="w-4 h-4 text-purple-400" />
+                      <User className="w-4 h-4 text-[#88B793]" />
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-200">{t('profile')}</span>
                         <span className="text-[10px] text-gray-500">
@@ -439,18 +468,18 @@ export function WorkerNavbar({
               type="button"
               onClick={() => handleNavClick(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition-all relative cursor-pointer min-w-[58px] ${
-                isActive ? 'text-[#5E42B4]' : 'text-slate-400 hover:text-slate-600'
+                isActive ? 'text-[#2A835F]' : 'text-slate-400 hover:text-slate-600'
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                  isActive ? 'bg-[#5E42B4] text-white shadow-md shadow-[#5E42B4]/30' : ''
+                  isActive ? 'bg-[#2A835F] text-white shadow-md shadow-[#2A835F]/30' : ''
                 }`}
               >
                 <Icon className="w-4 h-4" />
               </div>
 
-              <span className={`text-[10px] tracking-tight mt-0.5 ${isActive ? 'font-black text-[#5E42B4]' : 'font-semibold'}`}>
+              <span className={`text-[10px] tracking-tight mt-0.5 ${isActive ? 'font-black text-[#2A835F]' : 'font-semibold'}`}>
                 {item.label}
               </span>
 
