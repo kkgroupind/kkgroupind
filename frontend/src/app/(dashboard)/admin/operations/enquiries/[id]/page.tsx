@@ -78,6 +78,11 @@ export default function AdminEnquiryDetailPage() {
   const [completeNotes, setCompleteNotes] = useState('');
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
+  // Admin Timer Override Modal
+  const [isModifyTimeModalOpen, setIsModifyTimeModalOpen] = useState(false);
+  const [editWorkDurationMinutes, setEditWorkDurationMinutes] = useState<number | ''>('');
+  const [editTotalBreakMinutes, setEditTotalBreakMinutes] = useState<number | ''>('');
+
   const fetchEnquiryDetails = useCallback(async () => {
     if (!token || !params.id) return;
     setIsLoading(true);
@@ -220,6 +225,27 @@ export default function AdminEnquiryDetailPage() {
       await fetchEnquiryDetails();
     } catch (err: any) {
       alert(err?.message || 'Failed to complete work');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleModifyTime = async () => {
+    if (!enquiry || !token) return;
+    setIsSubmittingAction(true);
+    try {
+      await EnquiryService.updateJobPay(
+        enquiry.id,
+        {
+          workDurationMinutes: editWorkDurationMinutes === '' ? undefined : Number(editWorkDurationMinutes),
+          totalBreakMinutes: editTotalBreakMinutes === '' ? undefined : Number(editTotalBreakMinutes),
+        },
+        token
+      );
+      setIsModifyTimeModalOpen(false);
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to modify time details');
     } finally {
       setIsSubmittingAction(false);
     }
@@ -411,6 +437,24 @@ export default function AdminEnquiryDetailPage() {
             >
               <Send className="w-3.5 h-3.5" />
               <span>{isPending ? 'Dispatch Squad' : 'Reassign / Add Workers'}</span>
+            </button>
+          )}
+
+          {/* Modify Time Trigger */}
+          {(isCompleted || isInProgress) && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditWorkDurationMinutes(enquiry.workDurationMinutes ?? '');
+                const spec = (enquiry.specificationDetails as any) || {};
+                const breakMins = spec.totalBreakMinutes ?? (Array.isArray(spec.breaks) ? spec.breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0) : 0);
+                setEditTotalBreakMinutes(breakMins || '');
+                setIsModifyTimeModalOpen(true);
+              }}
+              className="flex items-center gap-2 px-3.5 py-2 bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 text-gray-300 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Modify Time Logs</span>
             </button>
           )}
 
@@ -1483,6 +1527,70 @@ export default function AdminEnquiryDetailPage() {
                 >
                   {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   {isSubmittingAction ? 'Completing...' : 'Confirm Complete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODIFY TIME LOGS MODAL ───────────────────────────────── */}
+      {isModifyTimeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-300">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100">Modify Time Logs</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Adjust recorded duration and breaks</p>
+                </div>
+              </div>
+              <button onClick={() => setIsModifyTimeModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Net Work Duration (Minutes)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editWorkDurationMinutes}
+                  onChange={(e) => setEditWorkDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#7B4DFF]/60 transition-colors"
+                  placeholder="Total effective work minutes"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Total Break Time (Minutes)</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editTotalBreakMinutes}
+                  onChange={(e) => setEditTotalBreakMinutes(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#7B4DFF]/60 transition-colors"
+                  placeholder="Total break minutes"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsModifyTimeModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleModifyTime}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-[#7B4DFF] hover:bg-[#6839EF] text-white transition-all shadow-md shadow-[#7B4DFF]/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  {isSubmittingAction ? 'Saving...' : 'Save Time Logs'}
                 </button>
               </div>
             </div>

@@ -1,46 +1,49 @@
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import { Calendar } from 'lucide-react';
+import { Users } from 'lucide-react';
+import type { RoleBreakdownItem } from '@/services/Admin/dashboard/dashboard.service';
 
 interface AttendanceChartProps {
-  present?: number;
-  onLeave?: number;
-  busy?: number;
-  total?: number;
-  dateStr?: string;
+  roleBreakdown?: RoleBreakdownItem[];
 }
 
-export function AttendanceChart({
-  present = 18,
-  onLeave = 3,
-  busy = 5,
-  total,
-  dateStr,
-}: AttendanceChartProps) {
-  const calculatedTotal = total ?? (present + onLeave + busy);
+export function AttendanceChart({ roleBreakdown }: AttendanceChartProps) {
+  const chartData = useMemo(() => {
+    if (!roleBreakdown || roleBreakdown.length === 0) {
+      return [
+        { name: 'Customers', value: 1, color: '#3B82F6' },
+        { name: 'Workers', value: 1, color: '#2A835F' },
+        { name: 'Office Staff', value: 1, color: '#F59E0B' },
+      ];
+    }
 
-  const chartData = [
-    { name: 'Available / Present', value: present, color: '#2A835F' },
-    { name: 'Busy on Job', value: busy, color: '#3B82F6' },
-    { name: 'On Leave / Off Duty', value: onLeave, color: '#F59E0B' },
-  ];
+    const colorMap: Record<string, string> = {
+      CUSTOMER: '#3B82F6', // Blue
+      WORKER: '#2A835F', // Green
+      OFFICE_STAFF: '#F59E0B', // Amber
+      SUPER_ADMIN: '#7B4DFF', // Purple
+    };
 
-  const displayDate =
-    dateStr ||
-    new Date().toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
+    return roleBreakdown.map((r) => ({
+      name: r.role.replace('_', ' '),
+      value: r.count,
+      color: colorMap[r.role] || '#8884d8',
+    }));
+  }, [roleBreakdown]);
+
+  const totalUsers = useMemo(() => {
+    if (!roleBreakdown || roleBreakdown.length === 0) return 0;
+    return roleBreakdown.reduce((sum, r) => sum + r.count, 0);
+  }, [roleBreakdown]);
 
   return (
     <div className="bg-[#14151A] p-6 rounded-2xl border border-gray-800 flex flex-col h-full">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-semibold text-gray-200">Staff & Crew Attendance</h3>
+        <h3 className="font-semibold text-gray-200">User Roles Distribution</h3>
         <button className="flex items-center gap-2 bg-[#1A1C23] border border-gray-800 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400">
-          <Calendar className="w-3 h-3 text-[#2A835F]" />
-          {displayDate}
+          <Users className="w-3 h-3 text-[#2A835F]" />
+          All Roles
         </button>
       </div>
 
@@ -66,21 +69,21 @@ export function AttendanceChart({
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-2xl font-bold text-gray-100">
-              {calculatedTotal}
+              {totalUsers}
             </span>
-            <span className="text-xs text-gray-500">Total Operatives</span>
+            <span className="text-xs text-gray-500">Total Users</span>
           </div>
         </div>
 
         <div className="grid grid-cols-1 gap-y-4">
           {chartData.map((item) => (
             <div key={item.name} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-gray-400 capitalize">
                 <div
                   className="w-2.5 h-2.5 rounded-sm shrink-0"
                   style={{ backgroundColor: item.color }}
                 />
-                <span>{item.name}</span>
+                <span>{item.name.toLowerCase()}</span>
               </div>
               <div className="font-bold text-gray-200 text-sm">
                 {item.value}
@@ -91,7 +94,7 @@ export function AttendanceChart({
       </div>
 
       <div className="w-full mt-6 py-2.5 rounded-xl border border-gray-800 bg-[#1A1C23] text-gray-400 text-xs font-medium text-center">
-        Live Kerala Operations Status
+        Live Platform Statistics
       </div>
     </div>
   );

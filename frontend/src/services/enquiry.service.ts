@@ -206,6 +206,18 @@ export const EnquiryService = {
     );
   },
 
+  // Worker: Confirm receipt of finalized payment
+  async confirmPaymentReceived(
+    enquiryId: string,
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/confirm-payment`,
+      { method: 'PATCH' },
+      token,
+    );
+  },
+
   // Worker: Start work timer on site
   async startWorkTimer(
     enquiryId: string,

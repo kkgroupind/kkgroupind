@@ -525,6 +525,50 @@ export class EnquiryService {
     };
   }
 
+  async confirmPaymentReceived(enquiryId: string, workerId: string) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+    if (enquiry.workerId !== workerId) {
+      throw new ForbiddenException('Not assigned to this job');
+    }
+    if (!enquiry.totalCalculatedWage) {
+      throw new BadRequestException('Payment has not been finalized by office yet');
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    
+    if (currentSpec.paymentReceivedAt) {
+      throw new BadRequestException('Payment already marked as received');
+    }
+
+    const updatedSpec = {
+      ...currentSpec,
+      paymentReceivedAt: new Date().toISOString(),
+      paymentReceivedBy: workerId,
+    };
+
+    const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
+      specificationDetails: updatedSpec,
+    });
+
+    this.auditService.recordLog({
+      action: 'WORKER_PAYMENT_RECEIVED',
+      entityType: 'SERVICE_ENQUIRY',
+      entityId: enquiryId,
+      details: JSON.stringify({
+        workerId,
+        amount: enquiry.totalCalculatedWage,
+      }),
+    }).catch(() => {});
+
+    return {
+      message: 'Payment receipt confirmed successfully',
+      enquiry: updated,
+    };
+  }
+
   async startWorkTimer(
     enquiryId: string,
     workerId: string,

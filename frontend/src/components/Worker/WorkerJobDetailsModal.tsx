@@ -509,7 +509,21 @@ export function WorkerJobDetailsModal({
     }
   };
 
-
+  // 7. Worker confirms receipt of finalized payout
+  const handleConfirmPayment = async () => {
+    if (!token || !localJob) return;
+    setIsSubmittingAction(true);
+    setActionError(null);
+    try {
+      const res = await EnquiryService.confirmPaymentReceived(localJob.id, token);
+      setLocalJob(res.enquiry);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to confirm payment receipt');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md animate-in fade-in select-none">
@@ -1437,6 +1451,28 @@ export function WorkerJobDetailsModal({
                       ₹{finalWage.toLocaleString('en-IN')}
                     </span>
                   </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                  {spec.paymentReceivedAt ? (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 justify-center">
+                      <CheckCircle2 className="w-4 h-4 shrink-0" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Payment Received</span>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleConfirmPayment}
+                      disabled={isSubmittingAction}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-md disabled:opacity-60"
+                    >
+                      {isSubmittingAction ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                      <span>Confirm Payment Received</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

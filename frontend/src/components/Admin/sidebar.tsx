@@ -65,18 +65,12 @@ const menuData = [
       { name: 'Announcements', icon: Megaphone, href: '/admin/communications/announcements' },
       { name: 'Complaints & Feedback', icon: MessageSquare, href: '/admin/communications/feedback' },
     ] },
-  { name: 'Businesses', icon: Building2, subItems: [
-      { name: 'Business Units', icon: Building, href: '/admin/businesses/units' },
-      { name: 'Departments', icon: Factory, href: '/admin/businesses/departments' },
+  { name: 'Business & Finance', icon: Building2, subItems: [
+      { name: 'Finance', icon: IndianRupee, href: '/admin/finance' },
+      { name: 'Reports', icon: BarChart3, href: '/admin/reports' },
     ] },
-  { name: 'Finance', icon: IndianRupee, href: '/admin/finance' },
-  { name: 'Inventory', icon: Package, href: '/admin/inventory' },
-  { name: 'Website', icon: Globe, href: '/admin/settings?tab=site' },
-  { name: 'Reports', icon: BarChart3, href: '/admin/reports' },
   { type: 'divider' },
-  { name: 'Access Control', icon: Lock, href: '/admin/access-control' },
   { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
-  { name: 'System Settings', icon: Settings, href: '/admin/settings?tab=profile' },
 ];
 
 interface SidebarProps {

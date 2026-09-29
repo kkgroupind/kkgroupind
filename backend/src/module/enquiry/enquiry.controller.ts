@@ -107,6 +107,15 @@ export class EnquiryController {
     return this.enquiryService.updateJobPay(id, dto);
   }
 
+  @Roles(Role.WORKER)
+  @Patch('worker/:id/confirm-payment')
+  async confirmPaymentReceived(
+    @Param('id') id: string,
+    @CurrentUser('id') workerId: string,
+  ) {
+    return this.enquiryService.confirmPaymentReceived(id, workerId);
+  }
+
   @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/start-timer')
   async startWorkTimer(

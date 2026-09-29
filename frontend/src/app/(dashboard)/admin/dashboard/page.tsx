@@ -8,10 +8,13 @@ import { AttendanceChart } from '@/components/Admin/attendance-chart';
 import { EmployeesTable } from '@/components/Admin/employees-table';
 import { useAuth } from '@/context/auth-context';
 import { EnquiryService, ServiceEnquiry } from '@/services';
+import { adminDashboardService, type DashboardOverview } from '@/services/Admin/dashboard/dashboard.service';
 
 export default function AdminDashboardPage() {
   const { token } = useAuth();
   const [pendingPayoutCount, setPendingPayoutCount] = useState<number>(0);
+  const [totalJobOrders, setTotalJobOrders] = useState<number>(0);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
 
   useEffect(() => {
     if (!token) return;
@@ -21,9 +24,18 @@ export default function AdminDashboardPage() {
           (w) => w.status === 'COMPLETED' && (!w.totalCalculatedWage || Number(w.totalCalculatedWage) === 0),
         );
         setPendingPayoutCount(unpaid.length);
+        setTotalJobOrders(res.enquiries ? res.enquiries.length : 0);
       })
       .catch((err) => {
         console.error('Failed to load pending payouts count for admin dashboard', err);
+      });
+
+    adminDashboardService.getOverview(token)
+      .then((data) => {
+        setOverview(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load dashboard stats', err);
       });
   }, [token]);
   return (
@@ -148,39 +160,39 @@ export default function AdminDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Employees"
-          value="12600"
-          trend="+2%"
+          value={overview?.stats ? overview.stats.totalEmployees.toString() : '...'}
+          trend={overview?.stats && overview.stats.employeeGrowthRate > 0 ? `+${overview.stats.employeeGrowthRate.toFixed(1)}%` : '0%'}
         />
         <StatCard
-          title="Job Application"
-          value="1186"
-          trend="+15%"
+          title="Total Job Orders"
+          value={totalJobOrders > 0 ? totalJobOrders.toString() : '...'}
+          trend=""
         />
         <StatCard
-          title="New Employees"
-          value="22"
-          trend="+2%"
+          title="New Employees (This Month)"
+          value={overview?.stats ? overview.stats.newEmployeesThisMonth.toString() : '...'}
+          trend={overview?.stats && overview.stats.employeeGrowthRate > 0 ? `+${overview.stats.employeeGrowthRate.toFixed(1)}%` : '0%'}
         />
         <StatCard
-          title="Satisfaction Rate"
-          value="89.9%"
-          trend="+5%"
+          title="Total Customers"
+          value={overview?.stats ? overview.stats.totalCustomers.toString() : '...'}
+          trend={overview?.stats && overview.stats.userGrowthRate > 0 ? `+${overview.stats.userGrowthRate.toFixed(1)}%` : '0%'}
         />
       </div>
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-          <PerformanceChart />
+          <PerformanceChart trends={overview?.trends} />
         </div>
         <div className="lg:col-span-2">
-          <AttendanceChart />
+          <AttendanceChart roleBreakdown={overview?.roleBreakdown} />
         </div>
       </div>
 
       {/* Employees Table */}
       <div>
-        <EmployeesTable />
+        <EmployeesTable recentActivity={overview?.recentActivity} />
       </div>
     </div>
   );
