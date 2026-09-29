@@ -183,16 +183,16 @@ export default function AdminDashboardPage() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         <div className="lg:col-span-3">
-          <PerformanceChart trends={overview?.trends} />
+          <PerformanceChart />
         </div>
         <div className="lg:col-span-2">
-          <AttendanceChart roleBreakdown={overview?.roleBreakdown} />
+          <AttendanceChart attendance={overview?.attendance} />
         </div>
       </div>
 
       {/* Employees Table */}
       <div>
-        <EmployeesTable recentActivity={overview?.recentActivity} />
+        <EmployeesTable />
       </div>
     </div>
   );

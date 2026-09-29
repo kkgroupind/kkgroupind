@@ -2,7 +2,7 @@ import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { Roles } from '../../../common';
 import { Role } from '../../../database';
 import { DashboardService } from './dashboard.service';
-import { DashboardRecentActivityDto, DashboardTrendsDto } from './dto';
+import { DashboardRecentActivityDto, DashboardTrendsDto, DashboardPerformanceDto } from './dto';
 
 @Controller(['admin/dashboard', 'dashboard/admin'])
 export class DashboardController {
@@ -44,5 +44,12 @@ export class DashboardController {
   @HttpCode(HttpStatus.OK)
   async getRecentActivity(@Query() query: DashboardRecentActivityDto) {
     return this.dashboardService.getRecentActivity(query);
+  }
+
+  @Roles(Role.SUPER_ADMIN)
+  @Get('performance')
+  @HttpCode(HttpStatus.OK)
+  async getPerformance(@Query() query: DashboardPerformanceDto) {
+    return this.dashboardService.getPerformance(query);
   }
 }

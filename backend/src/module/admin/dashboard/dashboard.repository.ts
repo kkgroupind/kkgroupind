@@ -47,6 +47,18 @@ export class DashboardRepository {
     });
   }
 
+  async countWorkersByStatus() {
+    return this.prisma.user.groupBy({
+      by: ['workerStatus'],
+      where: {
+        role: Role.WORKER,
+      },
+      _count: {
+        id: true,
+      },
+    });
+  }
+
   async countUsersByEmailVerification() {
     return this.prisma.user.groupBy({
       by: ['isEmailVerified'],
@@ -90,26 +102,41 @@ export class DashboardRepository {
     });
   }
 
-  async getRecentUsers(limit: number): Promise<RecentUserEntity[]> {
-    return this.prisma.user.findMany({
-      take: limit,
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        username: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        isEmailVerified: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+  async getRecentActivities(limit: number, page: number, role?: string) {
+    const whereClause: any = {};
+    if (role && role !== 'ALL') {
+      whereClause.userRole = role;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [logs, total] = await this.prisma.$transaction([
+      this.prisma.auditLog.findMany({
+        where: whereClause,
+        take: limit,
+        skip,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              username: true,
+              avatar: true,
+            },
+          },
+        },
+      }),
+      this.prisma.auditLog.count({ where: whereClause }),
+    ]);
+
+    return {
+      data: logs,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getOtpMetrics() {
@@ -123,5 +150,23 @@ export class DashboardRepository {
       used,
       unused: total - used,
     };
+  }
+
+  async getEnquiriesInDateRange(startDate: Date, endDate: Date) {
+    return this.prisma.serviceEnquiry.findMany({
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        createdAt: true,
+        status: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      }
+    });
   }
 }

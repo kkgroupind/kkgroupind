@@ -1,5 +1,17 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, Max, Min, IsEnum } from 'class-validator';
+
+export enum PerformanceInterval {
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
+export class DashboardPerformanceDto {
+  @IsOptional()
+  @IsEnum(PerformanceInterval)
+  interval?: PerformanceInterval = PerformanceInterval.WEEKLY;
+}
 
 export class DashboardTrendsDto {
   @IsOptional()
@@ -16,5 +28,14 @@ export class DashboardRecentActivityDto {
   @IsInt()
   @Min(1)
   @Max(50)
-  limit?: number = 10;
+  limit?: number = 20;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  role?: string; // 'ALL' | 'WORKER' | 'CUSTOMER' | 'OFFICE_STAFF'
 }

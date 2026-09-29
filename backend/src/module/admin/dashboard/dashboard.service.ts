@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { DashboardRepository, RecentUserEntity } from './dashboard.repository';
+import { DashboardRepository } from './dashboard.repository';
 import { Role } from '../../../database';
-import { DashboardRecentActivityDto, DashboardTrendsDto } from './dto';
+import { DashboardRecentActivityDto, DashboardTrendsDto, DashboardPerformanceDto, PerformanceInterval } from './dto';
 
 export interface DashboardStats {
   totalUsers: number;
@@ -234,21 +234,44 @@ export class DashboardService {
     });
   }
 
-  async getRecentActivity(
-    dto?: DashboardRecentActivityDto,
-  ): Promise<RecentUserEntity[]> {
-    const limit = dto?.limit ?? 10;
-    return this.dashboardRepo.getRecentUsers(limit);
+  async getRecentActivity(dto?: DashboardRecentActivityDto) {
+    const limit = dto?.limit ?? 20;
+    const page = dto?.page ?? 1;
+    const role = dto?.role;
+    return this.dashboardRepo.getRecentActivities(limit, page, role);
+  }
+
+  async getWorkerAttendance() {
+    const counts = await this.dashboardRepo.countWorkersByStatus();
+    const map = {
+      AVAILABLE: 0,
+      BUSY: 0,
+      OFF_DUTY: 0,
+    };
+    let total = 0;
+    for (const c of counts) {
+      if (c.workerStatus) {
+        map[c.workerStatus as keyof typeof map] = c._count.id;
+        total += c._count.id;
+      }
+    }
+    return {
+      present: map.AVAILABLE,
+      busy: map.BUSY,
+      onLeave: map.OFF_DUTY,
+      total,
+    };
   }
 
   async getOverview(monthsDto?: DashboardTrendsDto, activityDto?: DashboardRecentActivityDto) {
-    const [stats, trends, roleBreakdown, recentActivity, otpMetrics] =
+    const [stats, trends, roleBreakdown, recentActivity, otpMetrics, attendance] =
       await Promise.all([
         this.getStats(),
         this.getTrends(monthsDto),
         this.getRolesBreakdown(),
         this.getRecentActivity(activityDto),
         this.dashboardRepo.getOtpMetrics(),
+        this.getWorkerAttendance(),
       ]);
 
     return {
@@ -257,7 +280,65 @@ export class DashboardService {
       roleBreakdown,
       recentActivity,
       otpMetrics,
+      attendance,
     };
+  }
+
+  async getPerformance(dto: DashboardPerformanceDto) {
+    const interval = dto.interval || PerformanceInterval.WEEKLY;
+    const now = new Date();
+    let startDate: Date;
+    let formatLabel: (d: Date) => string;
+
+    if (interval === PerformanceInterval.WEEKLY) {
+      // last 7 days
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+      formatLabel = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }); // e.g. "1 Jun"
+    } else if (interval === PerformanceInterval.MONTHLY) {
+      // last 30 days
+      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+      startDate.setHours(0, 0, 0, 0);
+      formatLabel = (d: Date) => d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    } else {
+      // YEARLY - last 12 months
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      startDate.setHours(0, 0, 0, 0);
+      formatLabel = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); // e.g. "Jun 2024"
+    }
+
+    const enquiries = await this.dashboardRepo.getEnquiriesInDateRange(startDate, now);
+
+    // Grouping map
+    const grouped = new Map<string, { label: string, total: number, completed: number }>();
+
+    // Pre-fill map to ensure order and zeros
+    const current = new Date(startDate);
+    while (current <= now) {
+      const label = formatLabel(current);
+      if (!grouped.has(label)) {
+        grouped.set(label, { label, total: 0, completed: 0 });
+      }
+      if (interval === PerformanceInterval.YEARLY) {
+        current.setMonth(current.getMonth() + 1);
+      } else {
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
+    // Populate data
+    for (const enq of enquiries) {
+      const label = formatLabel(new Date(enq.createdAt));
+      if (grouped.has(label)) {
+        const item = grouped.get(label)!;
+        item.total++;
+        if (enq.status === 'COMPLETED') {
+          item.completed++;
+        }
+      }
+    }
+
+    return Array.from(grouped.values());
   }
 
   private getMonthDateRanges() {
