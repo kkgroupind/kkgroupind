@@ -6,3 +6,4 @@ export * from './people-table';
 export * from './people-skeleton';
 export * from './stat-card';
 export * from './admin-dropdown';
+export * from './modify-worker-job-modal';

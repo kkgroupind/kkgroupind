@@ -57,18 +57,12 @@ export function AssignWorkerModal({
   const [selectedSquadWorkerIds, setSelectedSquadWorkerIds] = useState<string[]>([]);
   const [leadWorkerId, setLeadWorkerId] = useState<string | null>(null);
 
-  // Wage billing toggle — hidden by default, set after completion
-  const [showWageBilling, setShowWageBilling] = useState(false);
-
   // Dispatch parameters
   const [mapUrl, setMapUrl] = useState('');
   const [locationRemarks, setLocationRemarks] = useState('');
   const [notes, setNotes] = useState('');
   const [wageType, setWageType] = useState('HOURLY');
   const [unitLabel, setUnitLabel] = useState('Hour');
-  const [unitRate, setUnitRate] = useState<number | ''>('');
-  const [workerUnitWage, setWorkerUnitWage] = useState<number | ''>('');
-  const [estimatedUnits, setEstimatedUnits] = useState<number | ''>('');
   const [deadline, setDeadline] = useState('');
 
   const [assigning, setAssigning] = useState(false);
@@ -81,7 +75,6 @@ export function AssignWorkerModal({
       setSelectedSquadWorkerIds([]);
       setLeadWorkerId(null);
       setIsSquadMode(false);
-      setShowWageBilling(false);
       setError(null);
       setWorkerSearch('');
 
@@ -93,9 +86,6 @@ export function AssignWorkerModal({
         const sName = (enquiry.serviceName || '').toLowerCase();
         let detectedType = enquiry.wageType || 'HOURLY';
         let detectedUnit = enquiry.unitLabel || 'Hour';
-        let defaultCustRate: number | '' = enquiry.unitRate ?? enquiry.hourlyRate ?? '';
-        let defaultWageRate: number | '' = enquiry.workerUnitWage ?? '';
-        let defaultEstUnits: number | '' = enquiry.estimatedUnits ?? '';
 
         const isMachinery =
           sName.includes('jcb') ||
@@ -113,46 +103,29 @@ export function AssignWorkerModal({
           if (sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || sName.includes('tree')) {
             detectedType = 'PER_TREE';
             detectedUnit = 'Tree';
-            defaultCustRate = defaultCustRate || 120;
-            defaultEstUnits = defaultEstUnits || 10;
           } else if (isMachinery) {
             detectedType = 'HOURLY';
             detectedUnit = 'Hour';
-            defaultCustRate = defaultCustRate || 1600;
-            defaultEstUnits = defaultEstUnits || 4;
           } else if (sName.includes('paint') || sName.includes('tile') || sName.includes('marble') || sName.includes('granite')) {
             detectedType = 'PER_SQFT';
             detectedUnit = 'Sq. Ft.';
-            defaultCustRate = defaultCustRate || (sName.includes('tile') ? 45 : 24);
-            defaultEstUnits = defaultEstUnits || 300;
           } else if (sName.includes('electr') || sName.includes('wir')) {
             detectedType = 'PER_POINT';
             detectedUnit = 'Point';
-            defaultCustRate = defaultCustRate || 450;
-            defaultEstUnits = defaultEstUnits || 8;
           } else if (sName.includes('bore') || sName.includes('drill')) {
             detectedType = 'PER_FOOT';
             detectedUnit = 'Foot';
-            defaultCustRate = defaultCustRate || 115;
-            defaultEstUnits = defaultEstUnits || 200;
           } else if (sName.includes('mason') || sName.includes('brick')) {
             detectedType = 'DAILY_WAGE';
             detectedUnit = 'Day / Shift';
-            defaultCustRate = defaultCustRate || 1600;
-            defaultEstUnits = defaultEstUnits || 2;
           } else if (sName.includes('plumb')) {
             detectedType = 'FIXED_VISIT';
             detectedUnit = 'Visit / Inspection';
-            defaultCustRate = defaultCustRate || 350;
-            defaultEstUnits = defaultEstUnits || 1;
           }
         }
 
         setWageType(detectedType);
         setUnitLabel(detectedUnit);
-        setUnitRate(defaultCustRate);
-        setWorkerUnitWage(defaultWageRate);
-        setEstimatedUnits(defaultEstUnits);
         setDeadline(enquiry.deadline ? enquiry.deadline.split('T')[0] : '');
       }
     }
@@ -229,12 +202,8 @@ export function AssignWorkerModal({
           mapUrl: mapUrl.trim() || undefined,
           locationRemarks: locationRemarks.trim() || undefined,
           isHourlyCalculated: isHourly,
-          hourlyRate: isHourly && unitRate !== '' ? Number(unitRate) : undefined,
           wageType,
           unitLabel: unitLabel.trim() || 'Unit',
-          unitRate: unitRate === '' ? undefined : Number(unitRate),
-          workerUnitWage: workerUnitWage === '' ? undefined : Number(workerUnitWage),
-          estimatedUnits: estimatedUnits === '' ? undefined : Number(estimatedUnits),
           deadline: deadline || undefined,
         },
         undefined,
@@ -693,52 +662,41 @@ export function AssignWorkerModal({
                 </div>
               )}
 
-              {/* Wage & Billing Parameters */}
-              <div className="rounded-xl border border-slate-200 overflow-hidden">
-                {/* Section Header — always visible with toggle */}
-                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+              {/* Work Execution Tracking Model */}
+              <div className="rounded-xl border border-slate-200 bg-white relative z-20">
+                {/* Section Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200 rounded-t-xl">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#1B2CC1]" />
                     <div>
-                      <h4 className="font-bold text-[#091540] text-xs">Wage &amp; Billing</h4>
-                      <span className="text-[10px] text-slate-400">Set rates now or finalize after completion</span>
+                      <h4 className="font-bold text-[#091540] text-xs">Work Execution Model</h4>
+                      <span className="text-[10px] text-slate-500">Tracking mode &amp; completion timeframe</span>
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 cursor-pointer" title="Enable pre-fill wage & billing">
-                    <span className="text-[10px] font-semibold text-slate-500">
-                      {showWageBilling ? 'Pre-fill enabled' : 'Post-completion'}
-                    </span>
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={showWageBilling}
-                        onChange={(e) => setShowWageBilling(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1B2CC1]" />
-                    </div>
-                  </label>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Pricing Post-Completion
+                  </span>
                 </div>
 
-                {/* Always-visible: Wage Model + Target Date */}
-                <div className="p-4 space-y-3 bg-white">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                {/* Tracking Model + Target Date */}
+                <div className="p-4 space-y-3 bg-white rounded-b-xl relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-30">
+                    <div className="relative z-30">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                        Wage Model (for worker tracking)
+                        Tracking Model (for worker units/timer)
                       </label>
                       <AdminDropdown
                         options={ASSIGN_WAGE_TYPE_OPTIONS}
                         value={wageType}
                         onChange={(newType) => {
                           setWageType(newType);
-                          if (newType === 'PER_TREE') { setUnitLabel('Tree'); setUnitRate(120); setEstimatedUnits(10); }
-                          else if (newType === 'HOURLY') { setUnitLabel('Hour'); setUnitRate(1600); setEstimatedUnits(4); }
-                          else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); setUnitRate(28); setEstimatedUnits(300); }
-                          else if (newType === 'PER_POINT') { setUnitLabel('Point'); setUnitRate(450); setEstimatedUnits(8); }
-                          else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); setUnitRate(115); setEstimatedUnits(200); }
-                          else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); setUnitRate(1600); setEstimatedUnits(2); }
-                          else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); setUnitRate(350); setEstimatedUnits(1); }
+                          if (newType === 'PER_TREE') { setUnitLabel('Tree'); }
+                          else if (newType === 'HOURLY') { setUnitLabel('Hour'); }
+                          else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); }
+                          else if (newType === 'PER_POINT') { setUnitLabel('Point'); }
+                          else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); }
+                          else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); }
+                          else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); }
                         }}
                         variant="blue"
                         size="sm"
@@ -759,86 +717,21 @@ export function AssignWorkerModal({
                     </div>
                   </div>
 
-                  {/* Collapsed state: info message */}
-                  {!showWageBilling && (
-                    <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-800">
-                      <span className="text-base leading-none mt-0.5">💡</span>
+                  {/* Post-completion pricing notice */}
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900">
+                    <span className="text-base leading-none mt-0.5">ℹ️</span>
+                    <div className="space-y-0.5">
+                      <strong className="block font-bold">Rates &amp; Payouts Finalized Post-Completion</strong>
                       <span>
-                        <strong>Rates set after work completion.</strong> Worker wages and client billing will be finalized via{' '}
-                        <span className="font-bold text-amber-900">&quot;Finalize Payout&quot;</span> once the job is marked complete.
-                        Workers only see their task type &amp; location — never client rates.
+                        Pricing and worker wages are not set at dispatch. After the operative completes the job on site, Admin or Office Staff will review the logged units/hours and assign payout via <span className="font-bold text-[#1B2CC1]">&quot;Finalize Pay&quot;</span>. Workers will only see their finalized wage after this approval.
                       </span>
                     </div>
-                  )}
-
-                  {/* Expanded state: full billing fields */}
-                  {showWageBilling && (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                            Est. Units ({unitLabel})
-                          </label>
-                          <input
-                            type="number"
-                            value={estimatedUnits}
-                            onChange={(e) => setEstimatedUnits(e.target.value === '' ? '' : Number(e.target.value))}
-                            placeholder="e.g. 15"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block mb-1">
-                            Worker Pay (₹/{unitLabel})
-                          </label>
-                          <input
-                            type="number"
-                            value={workerUnitWage}
-                            onChange={(e) => setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))}
-                            placeholder="Optional"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-emerald-700 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[10px] font-bold text-[#1B2CC1] uppercase tracking-wider block mb-1">
-                            Client Rate (₹/{unitLabel})
-                          </label>
-                          <input
-                            type="number"
-                            value={unitRate}
-                            onChange={(e) => setUnitRate(e.target.value === '' ? '' : Number(e.target.value))}
-                            placeholder="e.g. 120"
-                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-[#1B2CC1] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Calculation Preview */}
-                      {estimatedUnits !== '' && (workerUnitWage !== '' || unitRate !== '') && (
-                        <div className="p-3 rounded-xl bg-white border border-slate-200 flex items-center justify-between text-xs">
-                          <div className="text-emerald-700 font-semibold">
-                            <span>Worker Wage: </span>
-                            <span className="font-bold">
-                              ₹{Math.round(Number(estimatedUnits) * Number(workerUnitWage || 0)).toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                          <div className="text-[#1B2CC1] font-semibold">
-                            <span>Client Billable: </span>
-                            <span className="font-bold">
-                              ₹{Math.round(Number(estimatedUnits) * Number(unitRate || 0)).toLocaleString('en-IN')}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  </div>
                 </div>
               </div>
 
               {/* Notes for Worker */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 relative z-10">
                 <label className="text-xs font-bold text-slate-700 block">
                   Instructions for Operative (Optional)
                 </label>

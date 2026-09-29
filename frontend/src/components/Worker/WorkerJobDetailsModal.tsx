@@ -35,6 +35,7 @@ import {
   Utensils,
   AlertTriangle,
   Save,
+  ChevronDown,
 } from 'lucide-react';
 import { ServiceEnquiry, EnquiryService } from '@/services';
 import { useAuth } from '@/context/auth-context';
@@ -59,7 +60,7 @@ export function WorkerJobDetailsModal({
   isActing = false,
   onJobUpdated,
 }: WorkerJobDetailsModalProps) {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const { language, t, translateService } = useWorkerLanguage();
 
   const [localJob, setLocalJob] = useState<ServiceEnquiry | null>(job);
@@ -83,11 +84,15 @@ export function WorkerJobDetailsModal({
 
   // Dedicated Confirmation Dialog States
   const [isPauseConfirmOpen, setIsPauseConfirmOpen] = useState(false);
+  const [isResumeConfirmOpen, setIsResumeConfirmOpen] = useState(false);
   const [selectedBreakReason, setSelectedBreakReason] = useState<string>('LUNCH');
   const [breakNotes, setBreakNotes] = useState<string>('');
 
   const [isStopTimerConfirmOpen, setIsStopTimerConfirmOpen] = useState(false);
   const [isCompleteCountConfirmOpen, setIsCompleteCountConfirmOpen] = useState(false);
+
+  // Group Work Co-Workers Dropdown State
+  const [isSquadDropdownOpen, setIsSquadDropdownOpen] = useState(false);
 
   // Unit specifications & draft progress logging state (Tree count, Sq.Ft., Points, etc.)
   const [unitCount, setUnitCount] = useState<number>(10);
@@ -279,23 +284,8 @@ export function WorkerJobDetailsModal({
       ? 'Day / Shift'
       : 'Visit');
 
-  const workerRate =
-    localJob.workerUnitWage ||
-    (isCoconut
-      ? 80
-      : isHourly
-      ? 900
-      : isSqFt
-      ? sName.includes('tile') || sName.includes('marble')
-        ? 28
-        : 14
-      : isPoint
-      ? 260
-      : isFoot
-      ? 65
-      : isDaily
-      ? 1100
-      : 220);
+  // Rate is only populated if officially set post-completion
+  const workerRate = localJob.workerUnitWage || 0;
 
   // Format chronometer seconds into HH:MM:SS
   const formatTimer = (totalSecs: number) => {
@@ -404,6 +394,7 @@ export function WorkerJobDetailsModal({
       setActiveBreak(null);
       setBreakTimerSeconds(0);
       setIsTimerRunning(true);
+      setIsResumeConfirmOpen(false);
       onJobUpdated?.();
     } catch (err: any) {
       setActionError(err?.message || 'Failed to resume work timer');
@@ -518,10 +509,7 @@ export function WorkerJobDetailsModal({
     }
   };
 
-  // Calculated live estimated wage for the operative
-  const liveCalculatedWage = isHourly
-    ? Math.round((Math.max(1, Math.round(timerSeconds / 60)) / 60) * workerRate)
-    : Math.round((Number(unitCount) || 0) * workerRate);
+
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/75 backdrop-blur-md animate-in fade-in select-none">
@@ -531,7 +519,7 @@ export function WorkerJobDetailsModal({
         aria-hidden="true"
       />
 
-      <div className="relative w-full max-w-lg bg-[#111827] rounded-[28px] p-6 sm:p-7 shadow-[0_25px_70px_rgba(0,0,0,0.65)] border border-slate-700/80 flex flex-col gap-4 text-slate-200 z-10 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div className="relative w-full max-w-lg bg-[#111827] rounded-2xl sm:rounded-[28px] p-3.5 sm:p-6 shadow-[0_25px_70px_rgba(0,0,0,0.65)] border border-slate-700/80 flex flex-col gap-3.5 sm:gap-4 text-slate-200 z-10 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto custom-scrollbar min-w-0">
         {/* Service Banner Image */}
         <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-slate-700/80 shadow-md">
           <Image
@@ -568,8 +556,8 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
-              <span className="font-mono text-xs font-black text-amber-300">₹{workerRate}/Hr</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
+              <span className="text-[11px] font-semibold text-amber-300/90">Post-Completion</span>
             </div>
           </div>
         ) : isCoconut ? (
@@ -588,8 +576,8 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
-              <span className="font-mono text-xs font-black text-emerald-300">₹{workerRate}/Tree</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
+              <span className="text-[11px] font-semibold text-emerald-300/90">Post-Completion</span>
             </div>
           </div>
         ) : (
@@ -608,8 +596,8 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rate</span>
-              <span className="font-mono text-xs font-black text-sky-300">₹{workerRate}/{unitLabel}</span>
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
+              <span className="text-[11px] font-semibold text-sky-300/90">Post-Completion</span>
             </div>
           </div>
         )}
@@ -758,42 +746,79 @@ export function WorkerJobDetailsModal({
           const squadMembers: Array<{ id: string; name: string; phone?: string; role?: string }> =
             Array.isArray(spec.squadMembers) ? spec.squadMembers : [];
           if (squadMembers.length <= 1) return null;
+
           return (
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-950/50 to-slate-900/80 border border-violet-500/25 space-y-2.5">
-              <div className="flex items-center gap-2">
-                <span className="p-1.5 rounded-xl bg-violet-500/20 text-violet-400">
-                  <Users className="w-4 h-4" />
-                </span>
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-violet-300 block">Squad Team ({squadMembers.length} Workers)</span>
-                  <span className="text-[11px] text-slate-400">കൂടെ ജോലി ചെയ്യുന്ന ടീം</span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                {squadMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/30 border border-slate-800">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-7 h-7 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
-                        <User className="w-3.5 h-3.5 text-violet-300" />
+            <div className="rounded-2xl bg-gradient-to-br from-violet-950/50 to-slate-900/80 border border-violet-500/25 overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => setIsSquadDropdownOpen((prev) => !prev)}
+                className="w-full p-3.5 flex items-center justify-between gap-2 hover:bg-violet-900/20 text-left transition-colors cursor-pointer"
+                aria-expanded={isSquadDropdownOpen}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="p-1.5 rounded-xl bg-violet-500/20 text-violet-400 shrink-0">
+                    <Users className="w-4 h-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-violet-300">
+                        {language === 'ml' ? 'സഹപ്രവർത്തകർ' : 'Squad Co-Workers'}
                       </span>
-                      <div className="min-w-0">
-                        <span className="text-xs font-semibold text-white block truncate">{member.name}</span>
-                        {member.role && (
-                          <span className="text-[10px] text-violet-300/70">{member.role}</span>
-                        )}
-                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-violet-500/30 text-violet-200 border border-violet-500/40 text-[10px] font-bold">
+                        {squadMembers.length} {language === 'ml' ? 'പേർ' : 'Workers'}
+                      </span>
                     </div>
-                    {member.phone && (
-                      <a
-                        href={`tel:${member.phone}`}
-                        className="shrink-0 p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </a>
-                    )}
+                    <span className="text-[11px] text-slate-400 block truncate">
+                      {language === 'ml' ? 'ഗ്രൂപ്പ് വർക്ക് • സഹപ്രവർത്തകരെ കാണുക' : 'Group Work • Tap to view all co-workers'}
+                    </span>
                   </div>
-                ))}
-              </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-violet-300 shrink-0">
+                  <span>{isSquadDropdownOpen ? (language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ml' ? 'കാണുക' : 'View All')}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSquadDropdownOpen ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+
+              {isSquadDropdownOpen && (
+                <div className="p-3.5 pt-0 space-y-1.5 border-t border-violet-500/20 mt-1">
+                  <div className="space-y-1.5 pt-2">
+                    {squadMembers.map((member) => {
+                      const isCurrentUser = member.id === user?.id;
+                      return (
+                        <div key={member.id} className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-black/30 border border-slate-800">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-7 h-7 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center shrink-0">
+                              <User className="w-3.5 h-3.5 text-violet-300" />
+                            </span>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-semibold text-white block truncate">{member.name}</span>
+                                {isCurrentUser && (
+                                  <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-violet-500/30 text-violet-200 border border-violet-500/40">
+                                    {language === 'ml' ? 'നിങ്ങൾ' : 'You'}
+                                  </span>
+                                )}
+                              </div>
+                              {member.role && (
+                                <span className="text-[10px] text-violet-300/70">{member.role}</span>
+                              )}
+                            </div>
+                          </div>
+                          {member.phone && !isCurrentUser && (
+                            <a
+                              href={`tel:${member.phone}`}
+                              className="shrink-0 p-1.5 px-2.5 rounded-lg bg-violet-600/30 hover:bg-violet-600/50 text-violet-200 hover:text-white transition-colors flex items-center gap-1 text-[11px] font-bold"
+                            >
+                              <Phone className="w-3 h-3 text-violet-300" />
+                              <span>Call</span>
+                            </a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })()}
@@ -814,16 +839,16 @@ export function WorkerJobDetailsModal({
                 </div>
               </div>
 
-              {isCompleted ? (
+              {isCompleted && localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0 ? (
                 <div className="text-right">
                   <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Wage Payout</span>
                   <span className="font-mono text-base font-black text-[#34d399]">
-                    ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                    ₹{localJob.totalCalculatedWage.toLocaleString('en-IN')}
                   </span>
                 </div>
               ) : (
-                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
-                  Wage after completion
+                <span className="text-[10px] text-slate-400 italic bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
+                  {isCompleted ? 'Payout Pending Office Approval' : 'Wage set after completion'}
                 </span>
               )}
             </div>
@@ -949,13 +974,13 @@ export function WorkerJobDetailsModal({
                   JCB / Machinery Chronometer
                 </span>
               </div>
-              {isCompleted ? (
+              {isCompleted && localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0 ? (
                 <span className="text-xs font-mono text-emerald-400 font-bold">
-                  ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                  ₹{localJob.totalCalculatedWage.toLocaleString('en-IN')}
                 </span>
               ) : (
-                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
-                  Wage after completion
+                <span className="text-[10px] text-slate-400 italic bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
+                  {isCompleted ? 'Payout Pending Office Approval' : 'Wage set after completion'}
                 </span>
               )}
             </div>
@@ -994,6 +1019,51 @@ export function WorkerJobDetailsModal({
               {formatTimer(timerSeconds)}
             </div>
 
+            {/* 3-Tier Time Metrics Strip: Net Work • Break Deducted • Gross On-Site */}
+            {(() => {
+              const spec = (localJob.specificationDetails as any) || {};
+              const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+              const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+              const actualWorkMins = spec.actualWorkMinutes ?? localJob.workDurationMinutes ?? Math.round(timerSeconds / 60);
+              const grossMins = spec.grossDurationMinutes ?? (actualWorkMins + totalBreakMins);
+
+              return (
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30">
+                    <span className="text-[10px] text-emerald-400/90 uppercase font-bold block truncate">
+                      Net Labor Time
+                    </span>
+                    <span className="font-mono text-sm sm:text-base font-black text-white">
+                      {isTimerRunning && !activeBreak ? formatTimer(timerSeconds) : `${actualWorkMins}m`}
+                    </span>
+                    <span className="text-[9px] text-emerald-300/60 block mt-0.5">യഥാർത്ഥ ജോലി</span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                    <span className="text-[10px] text-amber-400/90 uppercase font-bold block truncate">
+                      Break Deducted
+                    </span>
+                    <span className="font-mono text-sm sm:text-base font-black text-amber-300">
+                      {activeBreak ? formatTimer(breakTimerSeconds) : `${totalBreakMins}m`}
+                    </span>
+                    <span className="text-[9px] text-amber-300/60 block mt-0.5">
+                      {breaks.length} break{breaks.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block truncate">
+                      Gross On-Site
+                    </span>
+                    <span className="font-mono text-sm sm:text-base font-black text-slate-200">
+                      {grossMins}m
+                    </span>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">ആകെ സമയം</span>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="flex items-center justify-between text-[11px] bg-slate-900/80 px-3 py-2 rounded-xl border border-slate-800">
               <span className="text-slate-400">
                 {activeBreak ? (
@@ -1018,8 +1088,8 @@ export function WorkerJobDetailsModal({
                 {(() => {
                   const spec = (localJob.specificationDetails as any) || {};
                   const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
-                  const totalBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
-                  return totalBreakMins > 0 ? `${totalBreakMins}m breaks` : 'No breaks yet';
+                  const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                  return totalBreakMins > 0 ? `${totalBreakMins}m breaks logged` : 'No breaks yet';
                 })()}
               </span>
             </div>
@@ -1036,20 +1106,81 @@ export function WorkerJobDetailsModal({
               </button>
             )}
 
-            {/* Breaks Log */}
+            {/* Resume Control if active break */}
+            {isInProgress && !isCompleted && activeBreak && (
+              <button
+                type="button"
+                onClick={() => setIsResumeConfirmOpen(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all cursor-pointer shadow-md shadow-blue-600/30 active:scale-98"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                <span>Resume Work Timer (പണി പുനരാരംഭിക്കുക)</span>
+              </button>
+            )}
+
+            {/* Comprehensive Breaks Log Archive */}
             {(() => {
               const spec = (localJob.specificationDetails as any) || {};
               const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
               if (breaks.length === 0) return null;
+
+              const getBreakBadge = (reason: string) => {
+                const r = (reason || '').toUpperCase();
+                if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
+                if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
+                if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
+                if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain / Weather (മഴ തടസ്സം)', icon: '🌧️' };
+                if (r.includes('FUEL') || r.includes('REPAIR') || r.includes('കേടുപാട്')) return { label: 'Refuel / Repair (അറ്റകുറ്റപ്പണി)', icon: '⛽' };
+                return { label: reason || 'Break (ബ്രേക്ക്)', icon: '⏸️' };
+              };
+
               return (
-                <div className="text-left border-t border-slate-700/40 pt-2 space-y-1">
-                  <span className="text-[10px] text-slate-500 uppercase font-bold">Break Log:</span>
-                  {breaks.map((b: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between text-[11px] text-slate-400">
-                      <span>{b.reason === 'LUNCH' ? '🍱 Lunch' : b.reason === 'BREAKFAST' ? '☕ Tea' : '🚨 Emergency'}</span>
-                      <span className="font-mono text-slate-500">{b.durationMinutes ? `${b.durationMinutes}m` : 'Ongoing'}</span>
-                    </div>
-                  ))}
+                <div className="text-left border-t border-slate-700/40 pt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider flex items-center gap-1.5">
+                      <Coffee className="w-3.5 h-3.5" />
+                      <span>Break Records History ({breaks.length})</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">Non-billable time</span>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                    {breaks.map((b: any, i: number) => {
+                      const badge = getBreakBadge(b.reason);
+                      const startStr = b.startedAt ? new Date(b.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const endStr = b.endedAt ? new Date(b.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const dur = b.durationMinutes !== undefined ? `${b.durationMinutes}m` : 'Ongoing';
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm shrink-0">{badge.icon}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-200 block truncate text-[11px]">
+                                {badge.label}
+                              </span>
+                              {(startStr || endStr) && (
+                                <span className="text-[10px] text-slate-500 font-mono block">
+                                  {startStr} {endStr ? `→ ${endStr}` : '(Active)'}
+                                </span>
+                              )}
+                              {b.notes && (
+                                <span className="text-[10px] text-slate-400 italic block truncate">
+                                  &quot;{b.notes}&quot;
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
+                            {dur}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })()}
@@ -1068,13 +1199,13 @@ export function WorkerJobDetailsModal({
                   {unitLabel} Measurement
                 </span>
               </div>
-              {isCompleted ? (
+              {isCompleted && localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0 ? (
                 <span className="text-xs font-mono text-emerald-400 font-bold">
-                  ₹{(localJob.totalCalculatedWage || liveCalculatedWage).toLocaleString('en-IN')}
+                  ₹{localJob.totalCalculatedWage.toLocaleString('en-IN')}
                 </span>
               ) : (
-                <span className="text-[10px] text-slate-500 italic bg-slate-800/60 px-2 py-1 rounded-lg border border-slate-700">
-                  Wage after completion
+                <span className="text-[10px] text-slate-400 italic bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
+                  {isCompleted ? 'Payout Pending Office Approval' : 'Wage set after completion'}
                 </span>
               )}
             </div>
@@ -1116,6 +1247,130 @@ export function WorkerJobDetailsModal({
             )}
           </div>
         )}
+
+        {/* ----------------- UNIVERSAL TIME & BREAK RECORDS CARD (NON-HOURLY JOBS) ----------------- */}
+        {!isHourly && (localJob.workStartedAt || localJob.workDurationMinutes || isCompleted || ((localJob.specificationDetails as any)?.breaks && (localJob.specificationDetails as any).breaks.length > 0)) && (() => {
+          const spec = (localJob.specificationDetails as any) || {};
+          const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+          const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+          const actualWorkMins = spec.actualWorkMinutes ?? localJob.workDurationMinutes ?? 0;
+          const grossMins = spec.grossDurationMinutes ?? (actualWorkMins + totalBreakMins);
+
+          const getBreakBadge = (reason: string) => {
+            const r = (reason || '').toUpperCase();
+            if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
+            if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
+            if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
+            if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain / Weather (മഴ തടസ്സം)', icon: '🌧️' };
+            if (r.includes('FUEL') || r.includes('REPAIR') || r.includes('കേടുപാട്')) return { label: 'Refuel / Repair (അറ്റകുറ്റപ്പണി)', icon: '⛽' };
+            return { label: reason || 'Break (ബ്രേക്ക്)', icon: '⏸️' };
+          };
+
+          return (
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-[#1E293B] to-[#121B28] border border-emerald-500/30 space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-700/60 pb-2">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                    <Clock className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                      Field Time &amp; Break Records
+                    </h4>
+                    <span className="text-[10px] text-slate-400">സമയവും ബ്രേക്ക് രേഖകളും</span>
+                  </div>
+                </div>
+
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800 text-emerald-400 border border-emerald-500/30">
+                  {isCompleted ? '✓ Work Concluded' : 'Active Execution'}
+                </span>
+              </div>
+
+              {/* 3 Metrics Grid */}
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-emerald-500/30">
+                  <span className="text-[10px] text-emerald-400/90 uppercase font-bold block truncate">
+                    Net Labor Time
+                  </span>
+                  <span className="font-mono text-sm sm:text-base font-black text-white">
+                    {actualWorkMins > 0 ? `${actualWorkMins}m` : (timerSeconds > 0 ? formatTimer(timerSeconds) : '—')}
+                  </span>
+                  <span className="text-[9px] text-emerald-300/60 block mt-0.5">യഥാർത്ഥ ജോലി</span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
+                  <span className="text-[10px] text-amber-400/90 uppercase font-bold block truncate">
+                    Break Deducted
+                  </span>
+                  <span className="font-mono text-sm sm:text-base font-black text-amber-300">
+                    {totalBreakMins}m
+                  </span>
+                  <span className="text-[9px] text-amber-300/60 block mt-0.5">
+                    {breaks.length} break{breaks.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+                  <span className="text-[10px] text-slate-400 uppercase font-bold block truncate">
+                    Gross On-Site
+                  </span>
+                  <span className="font-mono text-sm sm:text-base font-black text-slate-200">
+                    {grossMins > 0 ? `${grossMins}m` : '—'}
+                  </span>
+                  <span className="text-[9px] text-slate-500 block mt-0.5">ആകെ സമയം</span>
+                </div>
+              </div>
+
+              {/* Break Log Details (if any breaks exist) */}
+              {breaks.length > 0 && (
+                <div className="text-left border-t border-slate-700/40 pt-2.5 space-y-1.5">
+                  <span className="text-[10px] text-amber-400 uppercase font-bold flex items-center gap-1.5">
+                    <Coffee className="w-3.5 h-3.5" />
+                    <span>Break Records History ({breaks.length})</span>
+                  </span>
+
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                    {breaks.map((b: any, i: number) => {
+                      const badge = getBreakBadge(b.reason);
+                      const startStr = b.startedAt ? new Date(b.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const endStr = b.endedAt ? new Date(b.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const dur = b.durationMinutes !== undefined ? `${b.durationMinutes}m` : 'Ongoing';
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-sm shrink-0">{badge.icon}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-200 block truncate text-[11px]">
+                                {badge.label}
+                              </span>
+                              {(startStr || endStr) && (
+                                <span className="text-[10px] text-slate-500 font-mono block">
+                                  {startStr} {endStr ? `→ ${endStr}` : '(Active)'}
+                                </span>
+                              )}
+                              {b.notes && (
+                                <span className="text-[10px] text-slate-400 italic block truncate">
+                                  &quot;{b.notes}&quot;
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
+                            {dur}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Operational Tasks & Instructions */}
         <div className="space-y-2 text-xs">
@@ -1201,7 +1456,7 @@ export function WorkerJobDetailsModal({
         })()}
 
         {/* Action Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-800 mt-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-800 mt-1 min-w-0">
           {/* Status Badge */}
           <div className="flex items-center gap-2">
             <span
@@ -1219,7 +1474,7 @@ export function WorkerJobDetailsModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto justify-stretch sm:justify-end">
             {/* 1. If assigned and not yet accepted: "Accept Assignment" */}
             {isAssigned && !localJob.workerAcceptance && (
               <button
@@ -1267,14 +1522,14 @@ export function WorkerJobDetailsModal({
             )}
 
             {/* 3b. If on break: "Resume Work" shortcut */}
-            {isInProgress && isHourly && activeBreak && (
+            {isInProgress && activeBreak && (
               <button
                 type="button"
-                onClick={handleResumeFromBreak}
+                onClick={() => setIsResumeConfirmOpen(true)}
                 disabled={isSubmittingAction}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
               >
-                <Play className="w-3.5 h-3.5" />
+                <Play className="w-3.5 h-3.5 fill-white" />
                 <span>Resume Work</span>
               </button>
             )}
@@ -1320,8 +1575,8 @@ export function WorkerJobDetailsModal({
 
         {/* ----------------- MODAL 1: PAUSE TIMER CONFIRMATION MODAL ----------------- */}
         {isPauseConfirmOpen && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-            <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-amber-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-amber-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
                   <Pause className="w-6 h-6" />
@@ -1347,10 +1602,12 @@ export function WorkerJobDetailsModal({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
+                    { key: 'BREAKFAST', icon: '☕', label: 'Breakfast / Tea', ml: 'രാവിലത്തെ ചായ' },
                     { key: 'LUNCH', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
-                    { key: 'BREAKFAST', icon: '☕', label: 'Tea / Snacks', ml: 'ചായ സൽക്കാരം' },
-                    { key: 'MAINTENANCE', icon: '⛽', label: 'Refuel / Machine', ml: 'ഇന്ധനം / മെഷീൻ' },
+                    { key: 'TEA', icon: '🫖', label: 'Evening Tea', ml: 'വൈകുന്നേരത്തെ ചായ' },
+                    { key: 'MAINTENANCE', icon: '⛽', label: 'Refuel / Repair', ml: 'ഇന്ധനം / മെഷീൻ' },
                     { key: 'WEATHER', icon: '🌧️', label: 'Rain / Site Delay', ml: 'മഴ / കാലാവസ്ഥ' },
+                    { key: 'OTHER', icon: '❓', label: 'Other Delay', ml: 'മറ്റ് കാരണങ്ങൾ' },
                   ].map(({ key, icon, label, ml }) => (
                     <button
                       key={key}
@@ -1358,14 +1615,14 @@ export function WorkerJobDetailsModal({
                       onClick={() => setSelectedBreakReason(key)}
                       className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                         selectedBreakReason === key
-                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 shadow-sm'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-200 shadow-sm ring-1 ring-amber-500/50'
                           : 'bg-slate-900/70 border-slate-750 text-slate-300 hover:border-slate-600'
                       }`}
                     >
                       <span className="text-lg">{icon}</span>
                       <div className="min-w-0">
                         <span className="text-xs font-bold block truncate">{label}</span>
-                        <span className="text-[10px] text-slate-400 block">{ml}</span>
+                        <span className="text-[10px] text-slate-400 block truncate">{ml}</span>
                       </div>
                     </button>
                   ))}
@@ -1429,8 +1686,8 @@ export function WorkerJobDetailsModal({
           const estimatedWage = Math.round(netHoursDecimal * workerRate);
 
           return (
-            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-              <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+              <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
                     <StopCircle className="w-6 h-6" />
@@ -1459,13 +1716,8 @@ export function WorkerJobDetailsModal({
                     <span>Net Billable Work Duration:</span>
                     <span className="font-mono text-emerald-400 text-sm">{netHoursDecimal} Hours ({netDurationMinutes} mins)</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Hourly Unit Rate:</span>
-                    <span className="font-mono">₹{workerRate} / hr</span>
-                  </div>
-                  <div className="flex items-center justify-between text-emerald-400 border-t border-slate-800 pt-2 font-black text-sm">
-                    <span>Estimated Operator Wage:</span>
-                    <span className="font-mono text-lg text-emerald-400">₹{estimatedWage.toLocaleString('en-IN')}</span>
+                  <div className="text-[11px] text-emerald-300/80 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl">
+                    ℹ️ Payout will be finalized and assigned by the office desk coordinator after this work ticket is submitted.
                   </div>
                 </div>
 
@@ -1511,8 +1763,8 @@ export function WorkerJobDetailsModal({
 
         {/* ----------------- MODAL 3: SUBMIT COUNT & COMPLETE CONFIRMATION MODAL ----------------- */}
         {isCompleteCountConfirmOpen && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-            <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
                   {isCoconut ? <TreePalm className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
@@ -1549,15 +1801,8 @@ export function WorkerJobDetailsModal({
                     </div>
                   </div>
                 )}
-                <div className="flex items-center justify-between text-slate-400">
-                  <span>Wage Rate:</span>
-                  <span className="font-mono">₹{workerRate} / {unitLabel}</span>
-                </div>
-                <div className="flex items-center justify-between text-emerald-400 border-t border-slate-800 pt-2 font-black text-sm">
-                  <span>Estimated Harvest Payout:</span>
-                  <span className="font-mono text-lg text-emerald-400">
-                    ₹{((Number(unitCount) || 0) * workerRate).toLocaleString('en-IN')}
-                  </span>
+                <div className="text-[11px] text-emerald-300/80 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl">
+                  ℹ️ Payout will be finalized and assigned by the office desk coordinator after this harvest count is submitted.
                 </div>
               </div>
 
@@ -1594,6 +1839,69 @@ export function WorkerJobDetailsModal({
                     <CheckCircle className="w-3.5 h-3.5" />
                   )}
                   <span>Confirm &amp; Complete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- MODAL 4: RESUME TIMER CONFIRMATION MODAL ----------------- */}
+        {isResumeConfirmOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-blue-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
+                  <Play className="w-6 h-6 fill-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    Resume Work Timer?
+                  </h3>
+                  <p className="text-xs text-blue-300/80">
+                    ബ്രേക്ക് അവസാനിപ്പിച്ച് പണി പുനരാരംഭിക്കുക
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Current Break Reason:</span>
+                  <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                    {activeBreak?.reason || 'General Break'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Break Duration:</span>
+                  <span className="font-mono text-base font-black text-blue-400">
+                    {formatTimer(breakTimerSeconds)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-blue-200/80 bg-blue-950/40 border border-blue-500/30 p-2.5 rounded-xl">
+                ℹ️ The live working timer will resume immediately. Break duration is recorded and subtracted from final billable units.
+              </div>
+
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsResumeConfirmOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Stay on Break
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResumeFromBreak}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                  )}
+                  <span>Confirm Resume</span>
                 </button>
               </div>
             </div>

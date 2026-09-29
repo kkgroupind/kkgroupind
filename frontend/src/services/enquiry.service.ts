@@ -175,7 +175,7 @@ export const EnquiryService = {
     );
   },
 
-  // Admin / Office Staff: Update worker pay after completion
+  // Admin / Office Staff: Update worker pay after completion or modify work details
   async updateJobPay(
     enquiryId: string,
     data: {
@@ -184,6 +184,12 @@ export const EnquiryService = {
       totalCalculatedCost?: number;
       unitRate?: number;
       completedUnits?: number;
+      workDurationMinutes?: number;
+      totalBreakMinutes?: number;
+      unitLabel?: string;
+      status?: string;
+      workStartedAt?: string;
+      workEndedAt?: string;
       notes?: string;
       paymentMode?: string;
       paymentRef?: string;

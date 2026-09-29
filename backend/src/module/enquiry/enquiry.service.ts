@@ -92,8 +92,8 @@ export class EnquiryService {
       createdById,
       wageType: spec.wageType,
       unitLabel: spec.unitLabel,
-      unitRate: spec.baseCustomerRate,
-      workerUnitWage: spec.baseWorkerWage,
+      unitRate: undefined, // Prices set only post-completion by admin/office staff
+      workerUnitWage: undefined,
       minUnits: spec.minUnits,
       isHourlyCalculated: spec.wageType === 'HOURLY',
     });
@@ -263,8 +263,8 @@ export class EnquiryService {
     const spec = resolveServiceSpec(enquiry.serviceName, explicitWageType);
     const wageType = explicitWageType || spec.wageType;
     const unitLabel = dto.unitLabel || spec.unitLabel;
-    const unitRate = dto.unitRate !== undefined ? dto.unitRate : (dto.hourlyRate || spec.baseCustomerRate);
-    const workerUnitWage = dto.workerUnitWage !== undefined ? dto.workerUnitWage : spec.baseWorkerWage;
+    const unitRate = dto.unitRate !== undefined ? dto.unitRate : undefined;
+    const workerUnitWage = dto.workerUnitWage !== undefined ? dto.workerUnitWage : undefined;
     const minUnits = dto.minUnits !== undefined ? dto.minUnits : spec.minUnits;
     const isHourlyCalculated = wageType === 'HOURLY';
 
@@ -284,7 +284,7 @@ export class EnquiryService {
         mapUrl: dto.mapUrl,
         locationRemarks: dto.locationRemarks,
         isHourlyCalculated,
-        hourlyRate: isHourlyCalculated ? unitRate : dto.hourlyRate,
+        hourlyRate: isHourlyCalculated ? unitRate : (dto.hourlyRate !== undefined ? dto.hourlyRate : undefined),
         wageType,
         unitLabel,
         unitRate,
@@ -427,18 +427,51 @@ export class EnquiryService {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (enquiry.status !== ServiceStatus.COMPLETED) {
+    const isModifyingWork =
+      dto.completedUnits !== undefined ||
+      dto.workDurationMinutes !== undefined ||
+      dto.status !== undefined ||
+      dto.unitLabel !== undefined ||
+      dto.notes !== undefined ||
+      dto.unitRate !== undefined ||
+      dto.workerUnitWage !== undefined;
+
+    if (!isModifyingWork && enquiry.status !== ServiceStatus.COMPLETED) {
       throw new BadRequestException(
         ENQUIRY_MESSAGES.PAYMENT_ONLY_AFTER_COMPLETION,
       );
     }
 
     const currentSpec = (enquiry.specificationDetails as any) || {};
+    const effectiveBreakMins =
+      dto.totalBreakMinutes !== undefined
+        ? dto.totalBreakMinutes
+        : (currentSpec.totalBreakMinutes || 0);
+    const effectiveWorkMins =
+      dto.workDurationMinutes !== undefined
+        ? dto.workDurationMinutes
+        : (currentSpec.actualWorkMinutes || enquiry.workDurationMinutes || 0);
+    const grossMinutes = effectiveWorkMins + effectiveBreakMins;
+
     const updatedSpec = {
       ...currentSpec,
       paymentMode: dto.paymentMode || currentSpec.paymentMode,
       paymentRef: dto.paymentRef || currentSpec.paymentRef,
       paymentAssignedAt: new Date().toISOString(),
+      ...(dto.totalBreakMinutes !== undefined
+        ? {
+            totalBreakMinutes: dto.totalBreakMinutes,
+            totalBreakSeconds: dto.totalBreakMinutes * 60,
+          }
+        : {}),
+      ...(dto.workDurationMinutes !== undefined
+        ? {
+            actualWorkMinutes: dto.workDurationMinutes,
+            actualWorkSeconds: dto.workDurationMinutes * 60,
+          }
+        : {}),
+      grossDurationMinutes: grossMinutes,
+      grossDurationSeconds: grossMinutes * 60,
     };
 
     const updated = await this.enquiryRepo.updateJobPayTransaction(
@@ -496,19 +529,23 @@ export class EnquiryService {
     enquiryId: string,
     workerId: string,
     dto: StartWorkTimerDto,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
+    const effectiveWorkerId = enquiry.workerId || workerId;
+
     const updated = await this.enquiryRepo.startWorkTimerTransaction(
       enquiryId,
-      workerId,
+      effectiveWorkerId,
       dto,
     );
 
@@ -522,17 +559,32 @@ export class EnquiryService {
     enquiryId: string,
     workerId: string,
     dto: PauseWorkTimerDto,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const currentSpec = (enquiry.specificationDetails as any) || {};
+    const existingBreaks = Array.isArray(currentSpec.breaks) ? currentSpec.breaks : [];
+    const pastBreaksSeconds = existingBreaks.reduce(
+      (acc: number, b: any) =>
+        acc + (b.durationSeconds || (b.durationMinutes || 0) * 60),
+      0,
+    );
+    let accruedWorkSeconds = 0;
+    if (enquiry.workStartedAt) {
+      const diffMs = Date.now() - new Date(enquiry.workStartedAt).getTime();
+      accruedWorkSeconds = Math.max(0, Math.floor(diffMs / 1000) - pastBreaksSeconds);
+    }
+    const accruedWorkMinutes = Math.max(0, Math.round(accruedWorkSeconds / 60));
+
     const updatedSpec = {
       ...currentSpec,
       activeBreak: {
@@ -540,6 +592,9 @@ export class EnquiryService {
         startedAt: new Date().toISOString(),
         notes: dto.notes || undefined,
       },
+      isTimerPaused: true,
+      actualWorkMinutes: accruedWorkMinutes,
+      actualWorkSeconds: accruedWorkSeconds,
     };
 
     const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
@@ -557,13 +612,15 @@ export class EnquiryService {
     enquiryId: string,
     workerId: string,
     dto: ResumeWorkTimerDto,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
@@ -572,8 +629,10 @@ export class EnquiryService {
     const existingBreaks = Array.isArray(currentSpec.breaks) ? currentSpec.breaks : [];
 
     let breakDurationMinutes = 0;
+    let breakDurationSeconds = 0;
     if (activeBreak?.startedAt) {
       const diffMs = Date.now() - new Date(activeBreak.startedAt).getTime();
+      breakDurationSeconds = Math.max(1, Math.floor(diffMs / 1000));
       breakDurationMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
     }
 
@@ -583,14 +642,33 @@ export class EnquiryService {
           start: activeBreak.startedAt,
           end: new Date().toISOString(),
           durationMinutes: breakDurationMinutes,
+          durationSeconds: breakDurationSeconds,
           notes: activeBreak.notes,
         }
       : null;
 
+    const allBreaks = completedBreak ? [...existingBreaks, completedBreak] : existingBreaks;
+    const totalBreakMinutes = allBreaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+    const totalBreakSeconds = allBreaks.reduce((acc: number, b: any) => acc + (b.durationSeconds || (b.durationMinutes || 0) * 60), 0);
+
+    let accruedWorkSeconds = 0;
+    if (enquiry.workStartedAt) {
+      const startMs = new Date(enquiry.workStartedAt).getTime();
+      const breakStartMs = activeBreak?.startedAt ? new Date(activeBreak.startedAt).getTime() : Date.now();
+      accruedWorkSeconds = Math.max(0, Math.floor((breakStartMs - startMs) / 1000) - (totalBreakSeconds - breakDurationSeconds));
+    }
+    const accruedWorkMinutes = Math.max(0, Math.round(accruedWorkSeconds / 60));
+
     const updatedSpec = {
       ...currentSpec,
       activeBreak: null,
-      breaks: completedBreak ? [...existingBreaks, completedBreak] : existingBreaks,
+      isTimerPaused: false,
+      breaks: allBreaks,
+      breakCount: allBreaks.length,
+      totalBreakMinutes,
+      totalBreakSeconds,
+      actualWorkMinutes: accruedWorkMinutes,
+      actualWorkSeconds: accruedWorkSeconds,
     };
 
     const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
@@ -608,13 +686,15 @@ export class EnquiryService {
     enquiryId: string,
     workerId: string,
     dto: SaveWorkDraftDto,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
@@ -643,19 +723,23 @@ export class EnquiryService {
     enquiryId: string,
     workerId: string,
     dto: StopWorkTimerDto,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
+    const effectiveWorkerId = enquiry.workerId || workerId;
+
     const updated = await this.enquiryRepo.stopWorkTimerTransaction(
       enquiryId,
-      workerId,
+      effectiveWorkerId,
       dto,
     );
 
@@ -669,13 +753,15 @@ export class EnquiryService {
     enquiryId: string,
     dto: UpdateEnquiryStatusDto,
     workerId: string,
+    userRole?: Role,
   ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
 
-    if (!this.isWorkerAssignedToJob(enquiry, workerId)) {
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
       throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
@@ -695,7 +781,7 @@ export class EnquiryService {
 
       await this.auditService.recordLog({
         userId: workerId,
-        userRole: Role.WORKER,
+        userRole: userRole || Role.WORKER,
         action: actionName,
         entityType: 'SERVICE_ENQUIRY',
         entityId: enquiryId,

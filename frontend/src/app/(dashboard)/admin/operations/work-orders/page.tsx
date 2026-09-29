@@ -23,6 +23,11 @@ import {
   Sparkles,
   User,
   IndianRupee,
+  Play,
+  Pause,
+  Timer,
+  Loader2,
+  StopCircle,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
@@ -47,6 +52,149 @@ export default function AdminWorkOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<ServiceEnquiry | null>(null);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [payOrder, setPayOrder] = useState<ServiceEnquiry | null>(null);
+
+  // Live Chronometer Ticker for In-Progress Works
+  const [nowTimestamp, setNowTimestamp] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatSecondsToHMS = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const getLiveTimerData = useCallback(
+    (order: ServiceEnquiry) => {
+      if (order.status !== 'IN_PROGRESS' || !order.workStartedAt) {
+        return null;
+      }
+      const spec = (order.specificationDetails as any) || {};
+      const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+      const activeBreak = spec.activeBreak;
+
+      const startMs = new Date(order.workStartedAt).getTime();
+      const nowMs = nowTimestamp;
+      const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+      const pastBreaksSeconds = breaks.reduce(
+        (acc: number, b: any) =>
+          acc + (b.durationSeconds || (b.durationMinutes || 0) * 60),
+        0
+      );
+
+      let workSeconds = 0;
+      let breakSeconds = 0;
+
+      if (isBreakActive && activeBreak?.startedAt) {
+        const breakStartMs = new Date(activeBreak.startedAt).getTime();
+        breakSeconds = Math.max(0, Math.floor((nowMs - breakStartMs) / 1000));
+        workSeconds = Math.max(
+          0,
+          Math.floor((breakStartMs - startMs) / 1000) - pastBreaksSeconds
+        );
+      } else {
+        workSeconds = Math.max(
+          0,
+          Math.floor((nowMs - startMs) / 1000) - pastBreaksSeconds
+        );
+      }
+
+      return {
+        isOnBreak: isBreakActive,
+        activeBreakReason: activeBreak?.reason || 'General Break',
+        workSeconds,
+        breakSeconds,
+        workTimeFormatted: formatSecondsToHMS(workSeconds),
+        breakTimeFormatted: formatSecondsToHMS(breakSeconds),
+      };
+    },
+    [nowTimestamp]
+  );
+
+  // Admin Operational Action Modals
+  const [pauseTargetOrder, setPauseTargetOrder] = useState<ServiceEnquiry | null>(null);
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [adminPauseReason, setAdminPauseReason] = useState('Lunch Break');
+  const [adminPauseNotes, setAdminPauseNotes] = useState('');
+
+  const [resumeTargetOrder, setResumeTargetOrder] = useState<ServiceEnquiry | null>(null);
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+
+  const [completeTargetOrder, setCompleteTargetOrder] = useState<ServiceEnquiry | null>(null);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [completeUnits, setCompleteUnits] = useState<number | ''>('');
+  const [completeNotes, setCompleteNotes] = useState('');
+
+  const [isSubmittingAdminAction, setIsSubmittingAdminAction] = useState(false);
+
+  const handleAdminPauseTimer = async () => {
+    if (!pauseTargetOrder || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      await EnquiryService.pauseWorkTimer(
+        pauseTargetOrder.id,
+        { reason: adminPauseReason, notes: adminPauseNotes.trim() || undefined },
+        token
+      );
+      setIsPauseModalOpen(false);
+      setPauseTargetOrder(null);
+      setAdminPauseNotes('');
+      await loadData(true);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to pause timer');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
+
+  const handleAdminResumeTimer = async () => {
+    if (!resumeTargetOrder || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      await EnquiryService.resumeWorkTimer(resumeTargetOrder.id, {}, token);
+      setIsResumeModalOpen(false);
+      setResumeTargetOrder(null);
+      await loadData(true);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to resume timer');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
+
+  const handleAdminCompleteWork = async () => {
+    if (!completeTargetOrder || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      const timerData = getLiveTimerData(completeTargetOrder);
+      const durationMinutes = timerData
+        ? Math.max(1, Math.round(timerData.workSeconds / 60))
+        : undefined;
+      await EnquiryService.stopWorkTimer(
+        completeTargetOrder.id,
+        {
+          durationMinutes,
+          completedUnits: completeUnits === '' ? undefined : Number(completeUnits),
+          completionNotes: completeNotes.trim() || undefined,
+        },
+        token
+      );
+      setIsCompleteModalOpen(false);
+      setCompleteTargetOrder(null);
+      await loadData(true);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to complete work');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
 
   const loadData = useCallback(
     async (showRefreshIndicator = false) => {
@@ -95,6 +243,17 @@ export default function AdminWorkOrdersPage() {
       }
     }
   }, []);
+
+  // Auto-refresh every 5 seconds when there are IN_PROGRESS orders
+  useEffect(() => {
+    const hasInProgress = workOrders.some((o) => o.status === 'IN_PROGRESS');
+    if (!hasInProgress) return;
+    const refreshInterval = setInterval(() => {
+      loadData(false);
+    }, 5000);
+    return () => clearInterval(refreshInterval);
+  }, [workOrders, loadData]);
+
 
   const pendingPayoutOrders = useMemo(() => {
     return workOrders
@@ -679,6 +838,80 @@ export default function AdminWorkOrdersPage() {
                   </div>
                 </div>
 
+                {/* Live Chronometer Banner for Active Work Orders */}
+                {order.status === 'IN_PROGRESS' && (() => {
+                  const timerData = getLiveTimerData(order);
+                  if (!timerData) return null;
+                  return (
+                    <div
+                      className={`mb-3 p-3 rounded-xl border flex items-center justify-between text-xs transition-all ${
+                        timerData.isOnBreak
+                          ? 'bg-amber-500/10 border-amber-500/40 text-amber-200'
+                          : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2.5 h-2.5 rounded-full ${
+                            timerData.isOnBreak ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-ping'
+                          }`}
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-[11px] leading-tight">
+                            {timerData.isOnBreak
+                              ? `☕ Break: ${timerData.activeBreakReason}`
+                              : '⏱️ Live Working Meter'}
+                          </span>
+                          {timerData.isOnBreak && (
+                            <span className="text-[10px] text-gray-400">
+                              Work Logged: {timerData.workTimeFormatted}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="font-mono font-black text-sm text-white bg-black/40 px-2.5 py-1 rounded-lg border border-white/10">
+                        {timerData.isOnBreak ? timerData.breakTimeFormatted : timerData.workTimeFormatted}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Time & Break Records Strip for Completed Works */}
+                {order.status === 'COMPLETED' && (() => {
+                  const specs = (order.specificationDetails as any) || {};
+                  const breaks = Array.isArray(specs.breaks)
+                    ? specs.breaks
+                    : (Array.isArray(specs.breakLog) ? specs.breakLog : []);
+                  const actualMins = specs.actualWorkMinutes ?? order.workDurationMinutes ?? 0;
+                  const breakMins = specs.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                  const breakCount = specs.breakCount ?? breaks.length;
+                  const grossMins = specs.grossDurationMinutes ?? (actualMins + breakMins);
+
+                  if (actualMins === 0 && breakMins === 0) return null;
+
+                  return (
+                    <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-gray-300 font-medium">
+                          Actual: <strong className="text-emerald-400 font-mono">{actualMins}m</strong>
+                        </span>
+                      </div>
+                      {breakMins > 0 ? (
+                        <span className="text-[10px] text-amber-300 font-mono font-semibold bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                          ☕ {breakMins}m break ({breakCount})
+                        </span>
+                      ) : (
+                        grossMins > 0 && (
+                          <span className="text-[10px] text-gray-500 font-mono">
+                            Gross: {grossMins}m
+                          </span>
+                        )
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Worker Payout Banner */}
                 {order.worker && (
                   <div className="mb-2">
@@ -700,7 +933,7 @@ export default function AdminWorkOrdersPage() {
                 )}
 
                 {/* Footer Buttons */}
-                <div className="flex items-center justify-between pt-2 gap-2">
+                <div className="flex flex-col gap-2 pt-2">
                   {!order.worker ? (
                     <button
                       type="button"
@@ -714,36 +947,91 @@ export default function AdminWorkOrdersPage() {
                       <span>Assign Worker</span>
                     </button>
                   ) : (
-                    <div className="flex items-center gap-2 w-full">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedOrder(order);
-                          setIsAssignModalOpen(true);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
-                      >
-                        <HardHat className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Squad</span>
-                      </button>
+                    <div className="flex flex-col gap-2 w-full">
+                      {/* Operational Timer Controls for In Progress */}
+                      {order.status === 'IN_PROGRESS' && (() => {
+                        const timerData = getLiveTimerData(order);
+                        return (
+                          <div className="grid grid-cols-2 gap-2 w-full">
+                            {timerData?.isOnBreak ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setResumeTargetOrder(order);
+                                  setIsResumeModalOpen(true);
+                                }}
+                                className="py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-white" />
+                                <span>Resume</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPauseTargetOrder(order);
+                                  setAdminPauseReason('Lunch Break');
+                                  setAdminPauseNotes('');
+                                  setIsPauseModalOpen(true);
+                                }}
+                                className="py-2 px-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                              >
+                                <Pause className="w-3.5 h-3.5" />
+                                <span>Pause</span>
+                              </button>
+                            )}
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPayOrder(order);
-                          setIsPayModalOpen(true);
-                        }}
-                        className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                          order.totalCalculatedWage
-                            ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30'
-                            : order.status === 'COMPLETED'
-                            ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 animate-pulse'
-                            : 'bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800'
-                        }`}
-                      >
-                        <IndianRupee className="w-3.5 h-3.5" />
-                        <span>{order.totalCalculatedWage ? 'Update Pay' : 'Finalize Pay'}</span>
-                      </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCompleteTargetOrder(order);
+                                setCompleteUnits(order.completedUnits ?? order.estimatedUnits ?? 1);
+                                setCompleteNotes('');
+                                setIsCompleteModalOpen(true);
+                              }}
+                              className="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Complete</span>
+                            </button>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Secondary Management Row: Squad & Pay */}
+                      <div className="flex items-center gap-2 w-full">
+                        {order.status !== 'IN_PROGRESS' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedOrder(order);
+                              setIsAssignModalOpen(true);
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
+                          >
+                            <HardHat className="w-3.5 h-3.5 text-emerald-400" />
+                            <span>Squad</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPayOrder(order);
+                            setIsPayModalOpen(true);
+                          }}
+                          className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            order.totalCalculatedWage
+                              ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30'
+                              : order.status === 'COMPLETED'
+                              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 animate-pulse'
+                              : 'bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800'
+                          }`}
+                        >
+                          <IndianRupee className="w-3.5 h-3.5" />
+                          <span>{order.totalCalculatedWage ? 'Update Pay' : 'Finalize Pay'}</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -804,6 +1092,39 @@ export default function AdminWorkOrdersPage() {
                               Payout Due
                             </span>
                           )}
+                          {order.status === 'COMPLETED' && (() => {
+                            const specs = (order.specificationDetails as any) || {};
+                            const breaks = Array.isArray(specs.breaks)
+                              ? specs.breaks
+                              : (Array.isArray(specs.breakLog) ? specs.breakLog : []);
+                            const actualMins = specs.actualWorkMinutes ?? order.workDurationMinutes ?? 0;
+                            const breakMins = specs.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+
+                            if (actualMins === 0 && breakMins === 0) return null;
+
+                            return (
+                              <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#14151A] border border-gray-800 text-gray-300">
+                                <span className="text-emerald-400 font-bold">{actualMins}m work</span>
+                                {breakMins > 0 && (
+                                  <span className="text-amber-300">• ☕ {breakMins}m</span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                          {order.status === 'IN_PROGRESS' && (() => {
+                            const timerData = getLiveTimerData(order);
+                            if (!timerData) return null;
+                            return (
+                              <div className={`mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                                timerData.isOnBreak
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${timerData.isOnBreak ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-ping'}`} />
+                                <span>{timerData.isOnBreak ? `Break: ${timerData.breakTimeFormatted}` : timerData.workTimeFormatted}</span>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-400">
@@ -823,7 +1144,54 @@ export default function AdminWorkOrdersPage() {
                           </button>
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
-                            {order.status !== 'COMPLETED' && (
+                            {order.status === 'IN_PROGRESS' && (() => {
+                              const timerData = getLiveTimerData(order);
+                              return (
+                                <>
+                                  {timerData?.isOnBreak ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setResumeTargetOrder(order);
+                                        setIsResumeModalOpen(true);
+                                      }}
+                                      className="px-2 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-[11px] font-bold cursor-pointer"
+                                      title="Resume Timer"
+                                    >
+                                      Resume
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setPauseTargetOrder(order);
+                                        setAdminPauseReason('Lunch Break');
+                                        setAdminPauseNotes('');
+                                        setIsPauseModalOpen(true);
+                                      }}
+                                      className="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold cursor-pointer"
+                                      title="Pause for Break"
+                                    >
+                                      Pause
+                                    </button>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCompleteTargetOrder(order);
+                                      setCompleteUnits(order.completedUnits ?? order.estimatedUnits ?? 1);
+                                      setCompleteNotes('');
+                                      setIsCompleteModalOpen(true);
+                                    }}
+                                    className="px-2 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold cursor-pointer"
+                                    title="Complete Work"
+                                  >
+                                    Complete
+                                  </button>
+                                </>
+                              );
+                            })()}
+                            {order.status !== 'COMPLETED' && order.status !== 'IN_PROGRESS' && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -905,6 +1273,280 @@ export default function AdminWorkOrdersPage() {
         token={token}
         workers={workers}
       />
+
+      {/* ========================================================
+          ADMIN MODAL 1: PAUSE TIMER FOR OPERATIVE
+      ======================================================== */}
+      {isPauseModalOpen && pauseTargetOrder && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+          <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-5 sm:p-6 border-2 border-amber-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+                <Pause className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Pause Work Timer</h3>
+                <p className="text-xs text-amber-300/80">
+                  {pauseTargetOrder.trackingNumber} • {pauseTargetOrder.worker?.name || 'Operative'}
+                </p>
+              </div>
+            </div>
+
+            {/* Active Time */}
+            {(() => {
+              const td = getLiveTimerData(pauseTargetOrder);
+              return (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Recorded Working Time:</span>
+                  <span className="font-mono text-base font-black text-amber-300">
+                    {td ? td.workTimeFormatted : '00:00:00'}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Reason Selection */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                Select Break Reason:
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { key: 'Breakfast / Morning Tea', icon: '☕', label: 'Breakfast / Tea' },
+                  { key: 'Lunch Break', icon: '🍱', label: 'Lunch Break' },
+                  { key: 'Evening Tea / Snacks', icon: '🫖', label: 'Evening Tea' },
+                  { key: 'Machine / Fuel Refuel', icon: '⛽', label: 'Refuel / Repair' },
+                  { key: 'Rain / Weather Delay', icon: '🌧️', label: 'Rain Delay' },
+                  { key: 'Other Delay / Obstruction', icon: '❓', label: 'Other Delay' },
+                ].map(({ key, icon, label }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setAdminPauseReason(key)}
+                    className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      adminPauseReason === key
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-200 ring-1 ring-amber-500/50'
+                        : 'bg-slate-900/70 border-slate-750 text-slate-300 hover:border-slate-600'
+                    }`}
+                  >
+                    <span className="text-base">{icon}</span>
+                    <span className="text-xs font-bold truncate">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-400 block">
+                Administrative Notes (Optional):
+              </label>
+              <input
+                type="text"
+                value={adminPauseNotes}
+                onChange={(e) => setAdminPauseNotes(e.target.value)}
+                placeholder="e.g. Authorized 30m lunch break on site"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <div className="text-[11px] text-amber-200/80 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+              ⚠️ The live working meter will freeze immediately. Break minutes are non-billable to the customer.
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsPauseModalOpen(false);
+                  setPauseTargetOrder(null);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingAdminAction}
+                onClick={handleAdminPauseTimer}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                {isSubmittingAdminAction ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Pause className="w-3.5 h-3.5" />
+                )}
+                <span>Confirm Pause</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          ADMIN MODAL 2: RESUME TIMER FOR OPERATIVE
+      ======================================================== */}
+      {isResumeModalOpen && resumeTargetOrder && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+          <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-5 sm:p-6 border-2 border-blue-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
+                <Play className="w-6 h-6 fill-blue-400" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Resume Work Timer?</h3>
+                <p className="text-xs text-blue-300/80">
+                  {resumeTargetOrder.trackingNumber} • {resumeTargetOrder.worker?.name || 'Operative'}
+                </p>
+              </div>
+            </div>
+
+            {/* Break Duration Strip */}
+            {(() => {
+              const td = getLiveTimerData(resumeTargetOrder);
+              return (
+                <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-300">Break Reason:</span>
+                    <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                      {td ? td.activeBreakReason : 'General Break'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-300">Break Duration:</span>
+                    <span className="font-mono text-base font-black text-blue-400">
+                      {td ? td.breakTimeFormatted : '00:00:00'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="text-[11px] text-blue-200/80 bg-blue-950/40 border border-blue-500/30 p-2.5 rounded-xl">
+              ℹ️ Live working chronometer will restart immediately. This break will be archived in the work audit trail.
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsResumeModalOpen(false);
+                  setResumeTargetOrder(null);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                Keep on Break
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingAdminAction}
+                onClick={handleAdminResumeTimer}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                {isSubmittingAdminAction ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                )}
+                <span>Confirm Resume</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          ADMIN MODAL 3: COMPLETE WORK ORDER
+      ======================================================== */}
+      {isCompleteModalOpen && completeTargetOrder && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+          <div className="relative w-full max-w-md bg-[#16202E] rounded-3xl p-5 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Complete Work Order</h3>
+                <p className="text-xs text-emerald-300/80">
+                  {completeTargetOrder.trackingNumber} • {completeTargetOrder.serviceName}
+                </p>
+              </div>
+            </div>
+
+            {/* Time Stats */}
+            {(() => {
+              const td = getLiveTimerData(completeTargetOrder);
+              return (
+                <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Total Active Working Time:</span>
+                  <span className="font-mono text-base font-black text-emerald-400">
+                    {td ? td.workTimeFormatted : '00:00:00'}
+                  </span>
+                </div>
+              );
+            })()}
+
+            {/* Completed Units */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                Completed Units ({completeTargetOrder.unitLabel || 'Units'}):
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                value={completeUnits}
+                onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-slate-400 block">
+                Completion Remarks (Optional):
+              </label>
+              <textarea
+                rows={2}
+                value={completeNotes}
+                onChange={(e) => setCompleteNotes(e.target.value)}
+                placeholder="e.g. Work inspected and verified complete by supervisor"
+                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500 resize-none"
+              />
+            </div>
+
+            <div className="text-[11px] text-emerald-200/80 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl">
+              ✓ Upon completion, status changes to COMPLETED. Wage settlement can be finalized immediately after.
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCompleteModalOpen(false);
+                  setCompleteTargetOrder(null);
+                }}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingAdminAction}
+                onClick={handleAdminCompleteWork}
+                className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                {isSubmittingAdminAction ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                )}
+                <span>Finish Work</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -107,64 +107,64 @@ export class EnquiryController {
     return this.enquiryService.updateJobPay(id, dto);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/start-timer')
   async startWorkTimer(
     @Param('id') id: string,
     @Body() dto: StartWorkTimerDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.startWorkTimer(id, workerId, dto);
+    return this.enquiryService.startWorkTimer(id, user.id, dto, user.role);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/stop-timer')
   async stopWorkTimer(
     @Param('id') id: string,
     @Body() dto: StopWorkTimerDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.stopWorkTimer(id, workerId, dto);
+    return this.enquiryService.stopWorkTimer(id, user.id, dto, user.role);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/pause-timer')
   async pauseWorkTimer(
     @Param('id') id: string,
     @Body() dto: PauseWorkTimerDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.pauseWorkTimer(id, workerId, dto);
+    return this.enquiryService.pauseWorkTimer(id, user.id, dto, user.role);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/resume-timer')
   async resumeWorkTimer(
     @Param('id') id: string,
     @Body() dto: ResumeWorkTimerDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.resumeWorkTimer(id, workerId, dto);
+    return this.enquiryService.resumeWorkTimer(id, user.id, dto, user.role);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Post('worker/:id/save-draft')
   async saveWorkDraft(
     @Param('id') id: string,
     @Body() dto: SaveWorkDraftDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.saveWorkDraft(id, workerId, dto);
+    return this.enquiryService.saveWorkDraft(id, user.id, dto, user.role);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Patch('worker/:id/status')
   async updateWorkerJobStatus(
     @Param('id') id: string,
     @Body() dto: UpdateEnquiryStatusDto,
-    @CurrentUser('id') workerId: string,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.updateWorkerJobStatus(id, dto, workerId);
+    return this.enquiryService.updateWorkerJobStatus(id, dto, user.id, user.role);
   }
 
   @Roles(Role.WORKER)

@@ -26,6 +26,7 @@ export interface AdminDropdownProps {
   size?: 'sm' | 'md' | 'lg';
   variant?: 'purple' | 'emerald' | 'default' | 'blue';
   theme?: 'dark' | 'light';
+  direction?: 'down' | 'up' | 'auto';
 }
 
 export function AdminDropdown({
@@ -42,11 +43,33 @@ export function AdminDropdown({
   size = 'md',
   variant = 'purple',
   theme,
+  direction = 'auto',
 }: AdminDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Calculate open direction dynamically based on viewport boundary
+  useEffect(() => {
+    if (isOpen && dropdownRef.current) {
+      if (direction === 'up') {
+        setOpenUpward(true);
+      } else if (direction === 'down') {
+        setOpenUpward(false);
+      } else {
+        const rect = dropdownRef.current.getBoundingClientRect();
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        if (spaceBelow < 250 && spaceAbove > spaceBelow) {
+          setOpenUpward(true);
+        } else {
+          setOpenUpward(false);
+        }
+      }
+    }
+  }, [isOpen, direction]);
 
   const isLight = theme === 'light' || variant === 'blue';
   const selectedOption = options.find((opt) => opt.value === value);
@@ -129,7 +152,7 @@ export function AdminDropdown({
       : 'bg-[#1A1C23] hover:bg-[#20232c] border-gray-800/80 hover:border-gray-700 text-gray-200';
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${isOpen ? 'z-50' : 'z-auto'} ${className}`} ref={dropdownRef}>
       {label && (
         <label
           className={`block text-[11px] font-semibold uppercase tracking-wider mb-1.5 ${
@@ -194,10 +217,12 @@ export function AdminDropdown({
       {/* Dropdown Floating Menu */}
       {isOpen && (
         <div
-          className={`absolute left-0 right-0 z-50 mt-1.5 min-w-[200px] rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150 overflow-hidden ${
+          className={`absolute left-0 z-50 ${
+            openUpward ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+          } min-w-full sm:min-w-[280px] max-w-[95vw] rounded-2xl p-1.5 animate-in fade-in zoom-in-95 duration-150 overflow-hidden ${
             isLight
-              ? 'bg-white/98 backdrop-blur-xl border border-[#7692FF]/30 shadow-[0_16px_40px_rgba(9,21,64,0.12)]'
-              : 'bg-[#14151A]/95 backdrop-blur-xl border border-gray-800/90 shadow-[0_12px_40px_rgba(0,0,0,0.7)]'
+              ? 'bg-white border border-[#7692FF]/30 shadow-[0_20px_45px_rgba(9,21,64,0.18)] ring-1 ring-black/5'
+              : 'bg-[#14151A] border border-gray-800/90 shadow-[0_20px_50px_rgba(0,0,0,0.85)] ring-1 ring-white/10'
           } ${menuClassName}`}
         >
           {/* Subtle top ambient glow */}

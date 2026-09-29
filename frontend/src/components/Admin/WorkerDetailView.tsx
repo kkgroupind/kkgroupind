@@ -45,10 +45,16 @@ import {
   Coffee,
   DollarSign,
   CreditCard,
+  Play,
+  Pause,
+  Loader2,
+  StopCircle,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { api, User, AttendanceRecord, ServiceEnquiry } from '@/services';
+import { api, User, AttendanceRecord, ServiceEnquiry, EnquiryService } from '@/services';
 import { EditPersonModal } from './edit-person-modal';
+import { ModifyWorkerJobModal } from './modify-worker-job-modal';
 
 interface WorkerDetailViewProps {
   username: string;
@@ -73,6 +79,13 @@ export function WorkerDetailView({
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedJobToModify, setSelectedJobToModify] = useState<ServiceEnquiry | null>(null);
+  const [isModifyJobModalOpen, setIsModifyJobModalOpen] = useState(false);
+
+  const handleOpenModifyJob = (job: ServiceEnquiry) => {
+    setSelectedJobToModify(job);
+    setIsModifyJobModalOpen(true);
+  };
 
   // Active Pill Tab (Default to 'current-work' for instant visibility into ongoing jobs!)
   const [activeTab, setActiveTab] = useState<WorkerTabType>('current-work');
@@ -158,6 +171,143 @@ export function WorkerDetailView({
       null
     );
   }, [person?.workerAssignments]);
+
+  // Live Chronometer Ticker for Ongoing Work Orders
+  const [nowTimestamp, setNowTimestamp] = useState(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNowTimestamp(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatSecondsToHMS = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const getLiveTimerData = useCallback(
+    (order: ServiceEnquiry | null) => {
+      if (!order || order.status !== 'IN_PROGRESS' || !order.workStartedAt) {
+        return null;
+      }
+      const spec = (order.specificationDetails as any) || {};
+      const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+      const activeBreak = spec.activeBreak;
+
+      const startMs = new Date(order.workStartedAt).getTime();
+      const nowMs = nowTimestamp;
+      const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+      const pastBreaksSeconds = breaks.reduce(
+        (acc: number, b: any) =>
+          acc + (b.durationSeconds || (b.durationMinutes || 0) * 60),
+        0
+      );
+
+      let workSeconds = 0;
+      let breakSeconds = 0;
+
+      if (isBreakActive && activeBreak?.startedAt) {
+        const breakStartMs = new Date(activeBreak.startedAt).getTime();
+        breakSeconds = Math.max(0, Math.floor((nowMs - breakStartMs) / 1000));
+        workSeconds = Math.max(
+          0,
+          Math.floor((breakStartMs - startMs) / 1000) - pastBreaksSeconds
+        );
+      } else {
+        workSeconds = Math.max(
+          0,
+          Math.floor((nowMs - startMs) / 1000) - pastBreaksSeconds
+        );
+      }
+
+      return {
+        isOnBreak: isBreakActive,
+        activeBreakReason: activeBreak?.reason || 'Break',
+        workSeconds,
+        breakSeconds,
+        workTimeFormatted: formatSecondsToHMS(workSeconds),
+        breakTimeFormatted: formatSecondsToHMS(breakSeconds),
+      };
+    },
+    [nowTimestamp]
+  );
+
+  // Admin Operational Action Modals (Pause, Resume, Complete)
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [adminPauseReason, setAdminPauseReason] = useState('Lunch Break');
+  const [adminPauseNotes, setAdminPauseNotes] = useState('');
+
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [completeUnits, setCompleteUnits] = useState<number | ''>('');
+  const [completeNotes, setCompleteNotes] = useState('');
+
+  const [isSubmittingAdminAction, setIsSubmittingAdminAction] = useState(false);
+
+  const handleAdminPauseTimer = async () => {
+    if (!ongoingJob || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      await EnquiryService.pauseWorkTimer(
+        ongoingJob.id,
+        { reason: adminPauseReason, notes: adminPauseNotes.trim() || undefined },
+        token
+      );
+      setIsPauseModalOpen(false);
+      setAdminPauseNotes('');
+      await fetchWorkerDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to pause timer');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
+
+  const handleAdminResumeTimer = async () => {
+    if (!ongoingJob || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      await EnquiryService.resumeWorkTimer(ongoingJob.id, {}, token);
+      setIsResumeModalOpen(false);
+      await fetchWorkerDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to resume timer');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
+
+  const handleAdminCompleteWork = async () => {
+    if (!ongoingJob || !token) return;
+    setIsSubmittingAdminAction(true);
+    try {
+      const timerData = getLiveTimerData(ongoingJob);
+      const durationMinutes = timerData
+        ? Math.max(1, Math.round(timerData.workSeconds / 60))
+        : undefined;
+      await EnquiryService.stopWorkTimer(
+        ongoingJob.id,
+        {
+          durationMinutes,
+          completedUnits: completeUnits === '' ? undefined : Number(completeUnits),
+          completionNotes: completeNotes.trim() || undefined,
+        },
+        token
+      );
+      setIsCompleteModalOpen(false);
+      await fetchWorkerDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to complete work');
+    } finally {
+      setIsSubmittingAdminAction(false);
+    }
+  };
 
   // Calendar calculations
   const year = currentMonthDate.getFullYear();
@@ -661,7 +811,7 @@ export function WorkerDetailView({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono text-xs font-bold px-3 py-1 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
                         {ongoingJob.trackingNumber}
                       </span>
@@ -674,6 +824,61 @@ export function WorkerDetailView({
                       >
                         {ongoingJob.status === 'IN_PROGRESS' ? 'In Progress On Site' : 'Assigned & Dispatched'}
                       </span>
+
+                      {/* Admin Live Operational Action Buttons */}
+                      {ongoingJob.status === 'IN_PROGRESS' && (() => {
+                        const timerData = getLiveTimerData(ongoingJob);
+                        const isOnBreak = timerData?.isOnBreak;
+
+                        return (
+                          <>
+                            {isOnBreak ? (
+                              <button
+                                type="button"
+                                onClick={() => setIsResumeModalOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition-all shadow-xs cursor-pointer animate-pulse"
+                                title="Resume timer after worker break"
+                              >
+                                <Play className="w-3.5 h-3.5 fill-emerald-300" />
+                                <span>Resume Timer</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setIsPauseModalOpen(true)}
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                                title="Pause timer for break (Breakfast, Lunch, etc.)"
+                              >
+                                <Pause className="w-3.5 h-3.5" />
+                                <span>Pause Timer</span>
+                              </button>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCompleteUnits(ongoingJob.completedUnits ?? '');
+                                setIsCompleteModalOpen(true);
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/40 text-purple-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                              title="Finish and finalize this job"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Complete Work</span>
+                            </button>
+                          </>
+                        );
+                      })()}
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenModifyJob(ongoingJob)}
+                        className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        title="Modify worked hours, tree counts, wages, or status"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Modify Work Log</span>
+                      </button>
                     </div>
                   </div>
 
@@ -681,27 +886,86 @@ export function WorkerDetailView({
                   {(() => {
                     const ongoingSpecs = (ongoingJob.specificationDetails as Record<string, any>) || {};
                     const siteReachedAt = ongoingSpecs.siteReachedAt;
-                    const breakLog = Array.isArray(ongoingSpecs.breakLog) ? ongoingSpecs.breakLog : [];
-                    const activeBreak = breakLog.find((b: any) => !b.endedAt);
-                    const totalBreaksMins = breakLog.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
                     const squadMembers = Array.isArray(ongoingSpecs.squadMembers) ? ongoingSpecs.squadMembers : [];
                     const interimUnits = ongoingSpecs.interimUnits ?? ongoingJob.completedUnits;
-
-                    let liveDurationStr = 'Not Started';
-                    if (ongoingJob.workDurationMinutes) {
-                      const h = Math.floor(ongoingJob.workDurationMinutes / 60);
-                      const m = ongoingJob.workDurationMinutes % 60;
-                      liveDurationStr = `${h > 0 ? `${h}h ` : ''}${m}m`;
-                    } else if (ongoingJob.workStartedAt) {
-                      const start = new Date(ongoingJob.workStartedAt).getTime();
-                      const elapsed = Math.max(0, Math.floor((Date.now() - start) / 60000) - totalBreaksMins);
-                      const h = Math.floor(elapsed / 60);
-                      const m = elapsed % 60;
-                      liveDurationStr = `${h > 0 ? `${h}h ` : ''}${m}m (Active)`;
-                    }
+                    const timerData = getLiveTimerData(ongoingJob);
 
                     return (
                       <div className="space-y-4">
+                        {/* Live Counting Chronometer Hero Banner */}
+                        {ongoingJob.status === 'IN_PROGRESS' && timerData && (
+                          <div
+                            className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-lg ${
+                              timerData.isOnBreak
+                                ? 'bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-purple-950/40 border-amber-500/30'
+                                : 'bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-teal-950/40 border-emerald-500/30'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3.5">
+                              <div
+                                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                                  timerData.isOnBreak
+                                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                                    : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+                                }`}
+                              >
+                                {timerData.isOnBreak ? (
+                                  <Coffee className="w-5 h-5 animate-pulse" />
+                                ) : (
+                                  <Timer className="w-5 h-5 animate-spin" style={{ animationDuration: '6s' }} />
+                                )}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`w-2 h-2 rounded-full ${
+                                      timerData.isOnBreak ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-ping'
+                                    }`}
+                                  />
+                                  <span
+                                    className={`text-[11px] font-black uppercase tracking-wider ${
+                                      timerData.isOnBreak ? 'text-amber-400' : 'text-emerald-400'
+                                    }`}
+                                  >
+                                    {timerData.isOnBreak
+                                      ? `Break in Progress: ${timerData.activeBreakReason}`
+                                      : 'Live On-Site Work Chronometer'}
+                                  </span>
+                                </div>
+                                <div className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white mt-0.5">
+                                  {timerData.isOnBreak
+                                    ? timerData.breakTimeFormatted
+                                    : timerData.workTimeFormatted}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                              {timerData.isOnBreak ? (
+                                <div className="text-right">
+                                  <div className="text-[10px] uppercase font-bold text-gray-400">Accrued Work Time</div>
+                                  <div className="text-sm font-black font-mono text-emerald-400">
+                                    {timerData.workTimeFormatted}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="text-right">
+                                  <div className="text-[10px] uppercase font-bold text-gray-400">Started At</div>
+                                  <div className="text-xs font-bold font-mono text-gray-300">
+                                    {ongoingJob.workStartedAt
+                                      ? new Date(ongoingJob.workStartedAt).toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                        })
+                                      : 'In Progress'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80">
                           {/* Site Arrival */}
                           <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
@@ -750,10 +1014,10 @@ export function WorkerDetailView({
                               <span>Break Status</span>
                             </span>
                             <div className="text-xs font-bold mt-1">
-                              {activeBreak ? (
+                              {timerData?.isOnBreak ? (
                                 <span className="text-purple-300 flex items-center gap-1 animate-pulse">
                                   <span className="w-2 h-2 rounded-full bg-purple-400" />
-                                  <span>{activeBreak.reason || 'On Break'}</span>
+                                  <span>{timerData.activeBreakReason} ({timerData.breakTimeFormatted})</span>
                                 </span>
                               ) : (
                                 <span className="text-emerald-400 flex items-center gap-1">
@@ -815,6 +1079,79 @@ export function WorkerDetailView({
                             </div>
                           </div>
                         )}
+
+                        {/* Break Records & Time Audit Log */}
+                        {(() => {
+                          const breaks = Array.isArray(ongoingSpecs.breaks)
+                            ? ongoingSpecs.breaks
+                            : (Array.isArray(ongoingSpecs.breakLog) ? ongoingSpecs.breakLog : []);
+                          const totalBreakMins = ongoingSpecs.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                          const actualMins = ongoingSpecs.actualWorkMinutes ?? ongoingJob.workDurationMinutes ?? 0;
+                          const grossMins = ongoingSpecs.grossDurationMinutes ?? (actualMins + totalBreakMins);
+
+                          if (breaks.length === 0 && !timerData?.isOnBreak && totalBreakMins === 0) return null;
+
+                          return (
+                            <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
+                                  <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Time Audit &amp; Break Records ({breaks.length} Logged)</span>
+                                </span>
+                                <div className="flex items-center gap-2 text-[10px] font-mono">
+                                  <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                                    Net: {timerData ? timerData.workTimeFormatted : `${actualMins}m`}
+                                  </span>
+                                  <span className="text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                    Breaks: {totalBreakMins}m
+                                  </span>
+                                  {grossMins > 0 && (
+                                    <span className="text-gray-400 bg-gray-800 px-2 py-0.5 rounded">
+                                      Gross: {grossMins}m
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                                {breaks.map((b: any, bIdx: number) => {
+                                  const startStr = b.startedAt ? new Date(b.startedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+                                  const endStr = b.endedAt ? new Date(b.endedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+                                  const dur = b.durationMinutes !== undefined ? `${b.durationMinutes}m` : 'Ongoing';
+
+                                  return (
+                                    <div
+                                      key={bIdx}
+                                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#14151A] border border-gray-800/80 text-xs"
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                                        <div className="min-w-0">
+                                          <span className="font-bold text-gray-200 block truncate">
+                                            {b.reason || 'Rest Break'}
+                                          </span>
+                                          {(startStr || endStr) && (
+                                            <span className="text-[10px] text-gray-500 font-mono block">
+                                              {startStr} {endStr ? `→ ${endStr}` : '(In Progress)'}
+                                            </span>
+                                          )}
+                                          {b.notes && (
+                                            <span className="text-[10px] text-gray-400 italic block truncate">
+                                              &quot;{b.notes}&quot;
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <span className="font-mono text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
+                                        {dur}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })()}
@@ -949,13 +1286,24 @@ export function WorkerDetailView({
                       )}
                     </div>
 
-                    <NextLink
-                      href={`/admin/operations/enquiries/${ongoingJob.id}`}
-                      className="px-4 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>Full Work Order Command Center</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </NextLink>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenModifyJob(ongoingJob)}
+                        className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-white text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Modify Log & Metrics</span>
+                      </button>
+
+                      <NextLink
+                        href={`/admin/operations/enquiries/${ongoingJob.id}`}
+                        className="px-4 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                      >
+                        <span>Full Work Order Command Center</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </NextLink>
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1252,12 +1600,23 @@ export function WorkerDetailView({
                                   >
                                     {job.serviceName}
                                   </NextLink>
-                                  <NextLink
-                                    href={`/admin/operations/enquiries/${job.id}`}
-                                    className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 hover:underline shrink-0"
-                                  >
-                                    {job.trackingNumber}
-                                  </NextLink>
+                                  <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenModifyJob(job)}
+                                      className="px-2 py-0.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 font-bold text-[10px] transition-all flex items-center gap-1 cursor-pointer"
+                                      title="Modify work time, tree count, or wages"
+                                    >
+                                      <Pencil className="w-2.5 h-2.5" />
+                                      <span>Modify</span>
+                                    </button>
+                                    <NextLink
+                                      href={`/admin/operations/enquiries/${job.id}`}
+                                      className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 hover:underline"
+                                    >
+                                      {job.trackingNumber}
+                                    </NextLink>
+                                  </div>
                                 </div>
 
                                 <div className="text-[11px] text-gray-400 space-y-1">
@@ -1337,7 +1696,9 @@ export function WorkerDetailView({
 
                       {selectedJobs.map((job) => {
                         const jSpecs = (job.specificationDetails as Record<string, any>) || {};
-                        const jBreaks = Array.isArray(jSpecs.breakLog) ? jSpecs.breakLog : [];
+                        const jBreaks = Array.isArray(jSpecs.breaks)
+                          ? jSpecs.breaks
+                          : (Array.isArray(jSpecs.breakLog) ? jSpecs.breakLog : []);
 
                         return (
                           <React.Fragment key={job.id}>
@@ -1491,12 +1852,17 @@ export function WorkerDetailView({
 
                     const jobSpecs = (job.specificationDetails as Record<string, any>) || {};
                     const squad = Array.isArray(jobSpecs.squadMembers) ? jobSpecs.squadMembers : [];
-                    const breaks = Array.isArray(jobSpecs.breakLog) ? jobSpecs.breakLog : [];
+                    const breaks = Array.isArray(jobSpecs.breaks)
+                      ? jobSpecs.breaks
+                      : (Array.isArray(jobSpecs.breakLog) ? jobSpecs.breakLog : []);
+                    const totalBreakMins = jobSpecs.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                    const actualMins = jobSpecs.actualWorkMinutes ?? job.workDurationMinutes ?? 0;
+                    const grossMins = jobSpecs.grossDurationMinutes ?? (actualMins + totalBreakMins);
 
                     let durationStr = '';
-                    if (job.workDurationMinutes) {
-                      const h = Math.floor(job.workDurationMinutes / 60);
-                      const m = job.workDurationMinutes % 60;
+                    if (actualMins > 0) {
+                      const h = Math.floor(actualMins / 60);
+                      const m = actualMins % 60;
                       durationStr = `${h > 0 ? `${h}h ` : ''}${m}m`;
                     }
 
@@ -1600,9 +1966,22 @@ export function WorkerDetailView({
                                 )}
 
                                 {durationStr && (
-                                  <span className="flex items-center gap-1 text-gray-300">
-                                    <Clock className="w-3 h-3 text-[#A78BFA]" />
-                                    <span>Duration: {durationStr}</span>
+                                  <span className="flex items-center gap-1 text-emerald-400 font-bold font-mono">
+                                    <Clock className="w-3 h-3 text-emerald-400" />
+                                    <span>Net Work: {durationStr}</span>
+                                  </span>
+                                )}
+
+                                {totalBreakMins > 0 && (
+                                  <span className="flex items-center gap-1 text-amber-300 font-mono font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                    <Coffee className="w-3 h-3" />
+                                    <span>Break: {totalBreakMins}m ({breaks.length})</span>
+                                  </span>
+                                )}
+
+                                {grossMins > actualMins && grossMins > 0 && (
+                                  <span className="text-gray-400 font-mono text-[10px]">
+                                    Gross: {grossMins}m
                                   </span>
                                 )}
 
@@ -1618,13 +1997,6 @@ export function WorkerDetailView({
                                   </span>
                                 )}
 
-                                {breaks.length > 0 && (
-                                  <span className="flex items-center gap-1 text-purple-300">
-                                    <Coffee className="w-3 h-3" />
-                                    <span>{breaks.length} Breaks</span>
-                                  </span>
-                                )}
-
                                 {squad.length > 1 && (
                                   <span className="flex items-center gap-1 text-amber-300">
                                     <Users className="w-3 h-3" />
@@ -1633,13 +2005,24 @@ export function WorkerDetailView({
                                 )}
                               </div>
 
-                              <NextLink
-                                href={`/admin/operations/enquiries/${job.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white font-bold transition-all text-xs ml-auto"
-                              >
-                                <span>Full Order Page</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </NextLink>
+                              <div className="flex flex-wrap items-center gap-2 ml-auto">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenModifyJob(job)}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 font-bold transition-all text-xs cursor-pointer shadow-xs"
+                                  title="Modify time, counts, wages, or status"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                  <span>Modify Log</span>
+                                </button>
+                                <NextLink
+                                  href={`/admin/operations/enquiries/${job.id}`}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white font-bold transition-all text-xs"
+                                >
+                                  <span>Full Order Page</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </NextLink>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1851,6 +2234,297 @@ export function WorkerDetailView({
           }
         }}
       />
+
+      {/* Modify Worker Job Order Modal (Time, Tree Count, Wages, Status) */}
+      <ModifyWorkerJobModal
+        isOpen={isModifyJobModalOpen}
+        onClose={() => {
+          setIsModifyJobModalOpen(false);
+          setSelectedJobToModify(null);
+        }}
+        job={selectedJobToModify}
+        token={token || ''}
+        workerName={person?.name || person?.username || undefined}
+        onSuccess={() => {
+          handleRefresh();
+        }}
+      />
+
+      {/* ========================================================
+          ADMIN ACTION MODALS: PAUSE, RESUME, COMPLETE
+      ======================================================== */}
+      {/* 1. Admin Pause Timer Modal */}
+      {isPauseModalOpen && ongoingJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Pause className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Pause Work Timer</h3>
+                  <p className="text-xs text-gray-400">Select reason for pausing the field timer</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPauseModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-xs">
+                <div className="text-gray-400">Work Order:</div>
+                <div className="font-bold text-gray-100 text-sm mt-0.5">{ongoingJob.serviceName}</div>
+                <div className="text-[11px] font-mono text-purple-300 mt-0.5">{ongoingJob.trackingNumber}</div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-2">
+                  Select Break Reason <span className="text-rose-400">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'Breakfast', label: 'Breakfast Break', icon: '🍳' },
+                    { id: 'Lunch Break', label: 'Lunch Break', icon: '🍱' },
+                    { id: 'Evening Tea', label: 'Evening Tea Break', icon: '☕' },
+                    { id: 'Equipment Refuel', label: 'Equipment / Fuel', icon: '⛽' },
+                    { id: 'Rain Delay', label: 'Rain / Weather Delay', icon: '🌧️' },
+                    { id: 'Other Break', label: 'Other Operational Break', icon: '🏷️' },
+                  ].map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => setAdminPauseReason(r.label)}
+                      className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
+                        adminPauseReason === r.label
+                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-200 shadow-sm'
+                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-700'
+                      }`}
+                    >
+                      <span className="text-lg">{r.icon}</span>
+                      <span className="text-xs font-bold">{r.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  Additional Notes (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={adminPauseNotes}
+                  onChange={(e) => setAdminPauseNotes(e.target.value)}
+                  placeholder="e.g. Workers stepped out for noon meal at local mess..."
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-amber-500/50 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+              <button
+                type="button"
+                onClick={() => setIsPauseModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminPauseTimer}
+                disabled={isSubmittingAdminAction}
+                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-black text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-amber-600/30 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingAdminAction ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Pausing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Pause className="w-3.5 h-3.5" />
+                    <span>Confirm Pause</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Admin Resume Timer Modal */}
+      {isResumeModalOpen && ongoingJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Play className="w-5 h-5 fill-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Resume Work Timer</h3>
+                  <p className="text-xs text-gray-400">Restart live timer for this work order</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsResumeModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800 space-y-2">
+                <div className="text-xs text-gray-400">Active Break Reason:</div>
+                <div className="text-sm font-black text-amber-300">
+                  {getLiveTimerData(ongoingJob)?.activeBreakReason || 'Break in Progress'}
+                </div>
+                {getLiveTimerData(ongoingJob)?.breakTimeFormatted && (
+                  <div className="text-xs font-mono text-gray-300">
+                    Duration: <span className="text-amber-400 font-bold">{getLiveTimerData(ongoingJob)?.breakTimeFormatted}</span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Resuming will conclude the current break log and resume counting on-site labor minutes toward the final ledger.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+              <button
+                type="button"
+                onClick={() => setIsResumeModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminResumeTimer}
+                disabled={isSubmittingAdminAction}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingAdminAction ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Resuming...</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                    <span>Confirm Resume</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Admin Complete Work Order Modal */}
+      {isCompleteModalOpen && ongoingJob && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
+            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Complete Work Order</h3>
+                  <p className="text-xs text-gray-400">Finalize on-site execution and record hours</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCompleteModalOpen(false)}
+                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Job:</span>
+                  <span className="font-bold text-gray-200">{ongoingJob.serviceName}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-gray-400">Total Work Duration:</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {getLiveTimerData(ongoingJob)?.workTimeFormatted || 'Calculating...'}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  Completed Units ({ongoingJob.unitLabel || 'Trees / Units'})
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={completeUnits}
+                  onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder={`e.g. ${ongoingJob.estimatedUnits || 10}`}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-purple-500/50"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  Completion Remarks (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={completeNotes}
+                  onChange={(e) => setCompleteNotes(e.target.value)}
+                  placeholder="e.g. Work completed satisfactorily, customer signed off..."
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-purple-500/50 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+              <button
+                type="button"
+                onClick={() => setIsCompleteModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleAdminCompleteWork}
+                disabled={isSubmittingAdminAction}
+                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingAdminAction ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Completing...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Confirm Completion</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -77,20 +77,20 @@ export function ActivityFeed({
 
   return (
     <div
-      className={`rounded-3xl border shadow-xl p-5 sm:p-7 transition-all ${
+      className={`rounded-2xl sm:rounded-3xl border shadow-xl p-4 sm:p-7 transition-all ${
         isDark ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
       }`}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 sm:mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <div className="w-8 h-8 rounded-xl bg-[#2A835F]/15 text-[#2A835F] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-xl bg-[#2A835F]/15 text-[#2A835F] flex items-center justify-center font-bold shrink-0">
               <Activity className="w-4 h-4" />
             </div>
             <h2 className="text-base sm:text-lg font-bold tracking-tight">{title}</h2>
           </div>
-          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`text-[11px] sm:text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             {subtitle}
           </p>
         </div>
@@ -127,13 +127,13 @@ export function ActivityFeed({
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
           {['ALL', 'LOGIN', 'ENQUIRY', 'DUTY'].map((act) => (
             <button
               key={act}
               type="button"
               onClick={() => setActionFilter(act)}
-              className={`flex-1 px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+              className={`flex-1 shrink-0 px-2.5 py-2 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
                 actionFilter === act
                   ? 'bg-[#2A835F] text-white border-[#2A835F]'
                   : isDark

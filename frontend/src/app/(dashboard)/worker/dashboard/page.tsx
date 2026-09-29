@@ -30,6 +30,7 @@ import {
   ShieldCheck,
   Check,
   X,
+  ChevronDown,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useAuth } from '@/context/auth-context';
@@ -79,52 +80,96 @@ export default function WorkerDashboardPage() {
     [completedJobs]
   );
 
-  // Live Stopwatch Chronometer State
+  // Live Stopwatch Chronometer & Break States
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const [breakTimerSeconds, setBreakTimerSeconds] = useState(0);
   const [isOnBreak, setIsOnBreak] = useState(false);
+  const [activeBreakReason, setActiveBreakReason] = useState<string | null>(null);
   const [submittingAction, setSubmittingAction] = useState(false);
+
+  // Pause Modal State
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [selectedPauseReason, setSelectedPauseReason] = useState('Lunch Break (ഉച്ചഭക്ഷണം)');
+  const [pauseNotes, setPauseNotes] = useState('');
+
+  // Resume Modal State
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
 
   // Completion Modal State
   const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [completionUnits, setCompletionUnits] = useState<number | ''>('');
   const [completionNotes, setCompletionNotes] = useState('');
 
+  // Group Work Co-Workers Dropdown State
+  const [isCoworkersOpen, setIsCoworkersOpen] = useState(false);
+
   // Sync timer when in-progress job changes
   useEffect(() => {
     if (currentWork && currentWork.status === 'IN_PROGRESS') {
       const spec = (currentWork.specificationDetails as any) || {};
-      const breakLogs = spec.breakLogs || [];
-      const lastBreak = breakLogs[breakLogs.length - 1];
-      const currentlyOnBreak = lastBreak && !lastBreak.resumedAt;
-      setIsOnBreak(Boolean(currentlyOnBreak));
+      const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+      setIsOnBreak(isBreakActive);
+      setActiveBreakReason(spec.activeBreak?.reason || null);
 
-      // Calculate elapsed seconds from workStartedAt
+      const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+      const pastBreaksSeconds = breaks.reduce(
+        (acc: number, b: any) =>
+          acc + (b.durationSeconds || (b.durationMinutes || 0) * 60),
+        0
+      );
+
       if (currentWork.workStartedAt) {
         const startMs = new Date(currentWork.workStartedAt).getTime();
         const nowMs = Date.now();
-        const totalElapsedSec = Math.max(0, Math.floor((nowMs - startMs) / 1000));
-        setTimerSeconds(totalElapsedSec);
+
+        if (isBreakActive && spec.activeBreak?.startedAt) {
+          const breakStartMs = new Date(spec.activeBreak.startedAt).getTime();
+          const breakElapsed = Math.max(0, Math.floor((nowMs - breakStartMs) / 1000));
+          setBreakTimerSeconds(breakElapsed);
+
+          const workUpToBreak = Math.max(
+            0,
+            Math.floor((breakStartMs - startMs) / 1000) - pastBreaksSeconds
+          );
+          setTimerSeconds(workUpToBreak);
+        } else {
+          const activeWorkSec = Math.max(
+            0,
+            Math.floor((nowMs - startMs) / 1000) - pastBreaksSeconds
+          );
+          setTimerSeconds(activeWorkSec);
+          setBreakTimerSeconds(0);
+        }
       } else {
         setTimerSeconds((currentWork.workDurationMinutes || 0) * 60);
+        setBreakTimerSeconds(0);
       }
 
       setCompletionUnits(currentWork.completedUnits ?? currentWork.estimatedUnits ?? 1);
     } else if (currentWork && currentWork.status === 'ASSIGNED') {
       setTimerSeconds(0);
+      setBreakTimerSeconds(0);
       setIsOnBreak(false);
+      setActiveBreakReason(null);
       setCompletionUnits(currentWork.completedUnits ?? currentWork.estimatedUnits ?? 1);
     }
   }, [currentWork]);
 
-  // Live timer interval
+  // Live timer intervals
   useEffect(() => {
-    if (!currentWork || currentWork.status !== 'IN_PROGRESS' || isOnBreak) return;
+    if (!currentWork || currentWork.status !== 'IN_PROGRESS') return;
 
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval);
+    if (!isOnBreak) {
+      const interval = setInterval(() => {
+        setTimerSeconds((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      const interval = setInterval(() => {
+        setBreakTimerSeconds((prev) => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
   }, [currentWork, isOnBreak]);
 
   // Format seconds into HH:MM:SS
@@ -167,17 +212,20 @@ export default function WorkerDashboardPage() {
     }
   };
 
-  // Pause / Break
-  const handlePauseWork = async (job: ServiceEnquiry) => {
-    if (!token) return;
+  // Confirm Pause Handler
+  const handleConfirmPause = async () => {
+    if (!currentWork || !token) return;
     setSubmittingAction(true);
     try {
       await EnquiryService.pauseWorkTimer(
-        job.id,
-        { reason: 'Lunch / Tea Break' },
+        currentWork.id,
+        { reason: selectedPauseReason, notes: pauseNotes.trim() || undefined },
         token
       );
       setIsOnBreak(true);
+      setActiveBreakReason(selectedPauseReason);
+      setIsPauseModalOpen(false);
+      setPauseNotes('');
       toast.info(
         language === 'ml' ? 'ബ്രേക്ക് എടുത്തു' : 'On Break',
         language === 'ml' ? 'ടൈമർ താൽക്കാലികമായി നിർത്തി.' : 'Timer paused for break.'
@@ -190,13 +238,16 @@ export default function WorkerDashboardPage() {
     }
   };
 
-  // Resume Work
-  const handleResumeWork = async (job: ServiceEnquiry) => {
-    if (!token) return;
+  // Confirm Resume Handler
+  const handleConfirmResume = async () => {
+    if (!currentWork || !token) return;
     setSubmittingAction(true);
     try {
-      await EnquiryService.resumeWorkTimer(job.id, {}, token);
+      await EnquiryService.resumeWorkTimer(currentWork.id, {}, token);
       setIsOnBreak(false);
+      setActiveBreakReason(null);
+      setIsResumeModalOpen(false);
+      setBreakTimerSeconds(0);
       toast.success(
         language === 'ml' ? 'പണി തുടരുന്നു' : 'Work Resumed',
         language === 'ml' ? 'ബ്രേക്ക് കഴിഞ്ഞ് പണി പുനരാരംഭിച്ചു.' : 'Timer resumed.'
@@ -242,11 +293,14 @@ export default function WorkerDashboardPage() {
   };
 
   const unitLabel = currentWork?.unitLabel || 'Units';
-  const squadMembers = (currentWork?.specificationDetails as any)?.squadMembers || [];
+  const squadMembers: any[] = Array.isArray((currentWork?.specificationDetails as any)?.squadMembers)
+    ? (currentWork?.specificationDetails as any).squadMembers
+    : [];
+  const isGroupWork = squadMembers.length > 1;
 
   return (
     <WorkerShell activeTab="home" hideHeader={true}>
-      <div className="w-full space-y-4 max-w-xl mx-auto">
+      <div className="w-full space-y-4 sm:space-y-6 max-w-4xl mx-auto min-w-0">
         {/* ========================================================
             1. SIMPLE WORKER STATUS & DUTY HEADER
         ======================================================== */}
@@ -510,36 +564,79 @@ export default function WorkerDashboardPage() {
                   </div>
                 </div>
 
-                {/* Squad Members (If multiple workers) */}
-                {squadMembers.length > 0 && (
-                  <div className="p-3 rounded-2xl bg-[#EAF4EE]/80 border border-[#88B793]/40 space-y-2">
-                    <span className="text-[10px] font-bold text-[#134B4C] uppercase tracking-wider flex items-center gap-1">
-                      <Users className="w-3 h-3 text-[#2A835F]" />
-                      <span>
-                        {language === 'ml' ? 'സഹപ്രവർത്തകർ (Squad)' : 'Co-Workers On This Job'}
-                      </span>
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
-                      {squadMembers.map((m: any, idx: number) => (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-[#88B793]/30"
-                        >
-                          <span className="font-semibold text-slate-700">
-                            {m.name || 'Operative'}
-                          </span>
-                          {m.phone && (
-                            <a
-                              href={`tel:${m.phone}`}
-                              className="text-emerald-600 hover:underline font-bold text-[11px] flex items-center gap-1"
-                            >
-                              <Phone className="w-3 h-3" />
-                              <span>Call</span>
-                            </a>
-                          )}
+                {/* Group Work: Co-Workers Dropdown (Only for group work with > 1 workers) */}
+                {isGroupWork && (
+                  <div className="rounded-2xl border border-[#88B793]/40 overflow-hidden bg-[#EAF4EE]/70 transition-all shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() => setIsCoworkersOpen((prev) => !prev)}
+                      className="w-full p-3 flex items-center justify-between gap-2 hover:bg-[#EAF4EE] text-left transition-colors cursor-pointer"
+                      aria-expanded={isCoworkersOpen}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-[#2A835F]/15 flex items-center justify-center text-[#2A835F] shrink-0">
+                          <Users className="w-4 h-4" />
                         </div>
-                      ))}
-                    </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-xs font-black text-[#134B4C]">
+                              {language === 'ml' ? 'സഹപ്രവർത്തകർ' : 'Co-Workers'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full bg-[#2A835F] text-white text-[10px] font-bold">
+                              {squadMembers.length} {language === 'ml' ? 'പേർ' : 'Workers'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-slate-500 font-medium truncate">
+                            {language === 'ml' ? 'ഗ്രൂപ്പ് വർക്ക് • സഹപ്രവർത്തകരെ കാണാൻ ക്ലിക്ക് ചെയ്യുക' : 'Group Work • Tap to view all co-workers'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs font-bold text-[#2A835F] shrink-0">
+                        <span>{isCoworkersOpen ? (language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ml' ? 'കാണുക' : 'View All')}</span>
+                        <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCoworkersOpen ? 'rotate-180' : ''}`} />
+                      </div>
+                    </button>
+
+                    {isCoworkersOpen && (
+                      <div className="p-3 pt-0 space-y-2 border-t border-[#88B793]/20 mt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 text-xs">
+                          {squadMembers.map((m: any, idx: number) => {
+                            const isCurrentUser = m.id === user?.id || (m.username && m.username === user?.username);
+                            return (
+                              <div
+                                key={idx}
+                                className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-[#88B793]/30 shadow-xs"
+                              >
+                                <div className="min-w-0 pr-2">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-bold text-slate-800 text-xs truncate">
+                                      {m.name || 'Operative'}
+                                    </span>
+                                    {isCurrentUser && (
+                                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700">
+                                        {language === 'ml' ? 'നിങ്ങൾ' : 'You'}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] text-slate-500 block truncate">
+                                    {m.role || (idx === 0 ? 'Squad Leader' : 'Co-Worker')}
+                                  </span>
+                                </div>
+                                {m.phone && !isCurrentUser && (
+                                  <a
+                                    href={`tel:${m.phone}`}
+                                    className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-[11px] flex items-center gap-1 shrink-0 transition-colors"
+                                  >
+                                    <Phone className="w-3 h-3 text-emerald-600" />
+                                    <span>Call</span>
+                                  </a>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -547,24 +644,48 @@ export default function WorkerDashboardPage() {
                     LIVE STOPWATCH CHRONOMETER (If IN_PROGRESS)
                 ======================================================== */}
                 {currentWork.status === 'IN_PROGRESS' && (
-                  <div className="p-4 rounded-2xl bg-[#091540] text-white text-center space-y-2 shadow-inner">
-                    <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400">
-                      {isOnBreak
-                        ? language === 'ml'
-                          ? '☕ ഭക്ഷണ / ചായ ബ്രേക്കിലാണ്'
-                          : '☕ ON BREAK (PAUSED)'
-                        : language === 'ml'
-                        ? '⏱️ ജോലി സമയം (LIVE RUNTIME)'
-                        : '⏱️ LIVE ON-SITE STOPWATCH'}
-                    </span>
-                    <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-wider">
-                      {formatTimer(timerSeconds)}
-                    </div>
-                    <p className="text-[11px] text-slate-300">
-                      {language === 'ml'
-                        ? 'പണി പൂർത്തിയാകുമ്പോൾ താഴെയുള്ള ബട്ടൺ അമർത്തുക'
-                        : 'Tap Complete Work below once the task is finished.'}
-                    </p>
+                  <div className={`p-4 rounded-2xl text-center space-y-2 shadow-inner border transition-all ${
+                    isOnBreak
+                      ? 'bg-[#1C160C] border-amber-500/40 text-amber-200'
+                      : 'bg-[#091540] border-emerald-500/40 text-white'
+                  }`}>
+                    {isOnBreak ? (
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-amber-400">
+                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                          <span>{language === 'ml' ? '☕ ബ്രേക്കിലാണ് (ടൈമർ നിർത്തി)' : '☕ ON BREAK (TIMER PAUSED)'}</span>
+                          {activeBreakReason && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                              {activeBreakReason}
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-mono text-3xl sm:text-4xl font-black text-amber-300 tracking-wider">
+                          {formatTimer(breakTimerSeconds)}
+                        </div>
+                        <div className="text-[11px] text-amber-200/80 flex items-center justify-center gap-2 pt-0.5">
+                          <span>{language === 'ml' ? 'ആകെ ചെയ്ത ജോലി സമയം:' : 'Active Work Completed:'}</span>
+                          <span className="font-mono font-bold text-white bg-black/40 px-2 py-0.5 rounded-md border border-white/10">
+                            {formatTimer(timerSeconds)}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400 flex items-center justify-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                          <span>{language === 'ml' ? '⏱️ ലൈവ് ജോലി സമയം' : '⏱️ LIVE ON-SITE STOPWATCH'}</span>
+                        </span>
+                        <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-wider">
+                          {formatTimer(timerSeconds)}
+                        </div>
+                        <p className="text-[11px] text-slate-300">
+                          {language === 'ml'
+                            ? 'പണി പൂർത്തിയാകുമ്പോൾ താഴെയുള്ള ബട്ടൺ അമർത്തുക'
+                            : 'Tap Complete Work below once the task is finished.'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -600,24 +721,24 @@ export default function WorkerDashboardPage() {
                         disabled={submittingAction}
                         onClick={() =>
                           isOnBreak
-                            ? handleResumeWork(currentWork)
-                            : handlePauseWork(currentWork)
+                            ? setIsResumeModalOpen(true)
+                            : setIsPauseModalOpen(true)
                         }
                         className={`py-3 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                           isOnBreak
-                            ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700'
-                            : 'bg-amber-500/10 text-amber-700 border-amber-400 hover:bg-amber-500/20'
+                            ? 'bg-blue-600 text-white border-blue-500 hover:bg-blue-700 shadow-md shadow-blue-600/30'
+                            : 'bg-amber-500/10 text-amber-800 border-amber-400 hover:bg-amber-500/20'
                         }`}
                       >
                         {isOnBreak ? (
                           <>
                             <Play className="w-4 h-4 fill-white" />
-                            <span>{language === 'ml' ? 'പണി തുടരുക (Resume)' : 'Resume Work'}</span>
+                            <span>{language === 'ml' ? 'പണി തുടരുക (Resume Work)' : 'Resume Work'}</span>
                           </>
                         ) : (
                           <>
                             <Pause className="w-4 h-4" />
-                            <span>{language === 'ml' ? 'ബ്രേക്ക് എടുക്കുക' : 'Take Break'}</span>
+                            <span>{language === 'ml' ? 'ബ്രേക്ക് എടുക്കുക (Take Break)' : 'Take Break'}</span>
                           </>
                         )}
                       </button>
@@ -679,7 +800,7 @@ export default function WorkerDashboardPage() {
               <div className="space-y-3">
                 {completedJobs.map((job) => {
                   const spec = (job.specificationDetails as any) || {};
-                  const isPaid = Boolean(job.totalCalculatedWage);
+                  const isPaid = Boolean(job.totalCalculatedWage && Number(job.totalCalculatedWage) > 0);
                   const payMode = spec.paymentMode || 'CASH';
 
                   return (
@@ -946,6 +1067,193 @@ export default function WorkerDashboardPage() {
                     </span>
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            MODAL 2: PAUSE WORK CONFIRMATION & REASON MODAL
+        ======================================================== */}
+        {isPauseModalOpen && currentWork && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-amber-300 text-slate-800 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
+                  <Pause className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                    {language === 'ml' ? 'ബ്രേക്ക് സ്ഥിരീകരിക്കുക' : 'Pause Timer for Break'}
+                  </h3>
+                  <p className="text-xs text-amber-700 font-medium">
+                    {language === 'ml' ? 'ബ്രേക്ക് കാരണം തിരഞ്ഞെടുക്കുക' : 'Select break reason to pause live work meter'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Current Working Time */}
+              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                <span className="text-slate-500 font-medium">
+                  {language === 'ml' ? 'നിലവിൽ ചെയ്ത സമയം:' : 'Active Meter So Far:'}
+                </span>
+                <span className="font-mono text-base font-black text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+                  {formatTimer(timerSeconds)}
+                </span>
+              </div>
+
+              {/* Reason Selection Grid */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
+                  {language === 'ml' ? 'ബ്രേക്ക് കാരണം:' : 'Select Break Reason:'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { key: 'Breakfast / Morning Tea', icon: '☕', label: 'Breakfast / Tea', ml: 'രാവിലത്തെ ചായ / ഭക്ഷണം' },
+                    { key: 'Lunch Break', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
+                    { key: 'Evening Tea / Snacks', icon: '🫖', label: 'Evening Tea', ml: 'വൈകുന്നേരത്തെ ചായ' },
+                    { key: 'Machine / Fuel Refuel', icon: '⛽', label: 'Refuel / Repair', ml: 'ഇന്ധനം / മെഷീൻ' },
+                    { key: 'Rain / Weather Delay', icon: '🌧️', label: 'Rain Delay', ml: 'മഴ / കാലാവസ്ഥ' },
+                    { key: 'Other Delay / Obstruction', icon: '❓', label: 'Other Reason', ml: 'മറ്റ് കാരണങ്ങൾ' },
+                  ].map(({ key, icon, label, ml }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedPauseReason(key)}
+                      className={`flex items-start gap-2 p-2.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                        selectedPauseReason === key
+                          ? 'bg-amber-50 border-amber-500 text-amber-900 shadow-sm ring-1 ring-amber-500'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span className="text-xl shrink-0 mt-0.5">{icon}</span>
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold block truncate">{label}</span>
+                        <span className="text-[10px] text-slate-500 block truncate">{ml}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Optional Notes */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                  {language === 'ml' ? 'കുറിപ്പ് (ഓപ്ഷണൽ)' : 'Notes / Remarks (Optional)'}
+                </label>
+                <input
+                  type="text"
+                  value={pauseNotes}
+                  onChange={(e) => setPauseNotes(e.target.value)}
+                  placeholder={language === 'ml' ? 'e.g. 30 മിനിറ്റ് ഉച്ചഭക്ഷണം' : 'e.g. 30 min lunch, equipment parked safely'}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 p-2.5 rounded-xl flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  {language === 'ml'
+                    ? 'ബ്രേക്ക് സമയം വേതനത്തിൽ ഉൾപ്പെടില്ല. ടൈമർ താൽക്കാലികമായി നിർത്തും.'
+                    : 'Working meter will freeze. Break duration is non-billable to the client.'}
+                </span>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPauseModalOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                >
+                  {language === 'ml' ? 'പണി തുടരുക' : 'Keep Working'}
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingAction}
+                  onClick={handleConfirmPause}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {submittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Pause className="w-3.5 h-3.5" />
+                  )}
+                  <span>{language === 'ml' ? 'ബ്രേക്ക് എടുക്കുക' : 'Confirm Pause'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            MODAL 3: RESUME WORK CONFIRMATION MODAL
+        ======================================================== */}
+        {isResumeModalOpen && currentWork && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-blue-300 text-slate-800 space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-300 text-blue-700 flex items-center justify-center shrink-0">
+                  <Play className="w-6 h-6 fill-blue-700" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                    {language === 'ml' ? 'പണി പുനരാരംഭിക്കുക' : 'Resume Work Order?'}
+                  </h3>
+                  <p className="text-xs text-blue-700 font-medium">
+                    {language === 'ml' ? 'ബ്രേക്ക് അവസാനിപ്പിച്ച് ടൈമർ ഓൺ ചെയ്യുക' : 'Conclude current break and resume live on-site timer'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Ongoing Break Info */}
+              <div className="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-700 font-medium">
+                    {language === 'ml' ? 'ബ്രേക്ക് കാരണം:' : 'Current Break:'}
+                  </span>
+                  <span className="font-bold text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-blue-200">
+                    {activeBreakReason || 'General Break'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-700 font-medium">
+                    {language === 'ml' ? 'ബ്രേക്ക് ദൈർഘ്യം:' : 'Break Duration:'}
+                  </span>
+                  <span className="font-mono text-base font-black text-blue-800">
+                    {formatTimer(breakTimerSeconds)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
+                ℹ️ {language === 'ml'
+                  ? 'സ്ഥിരീകരിച്ച ശേഷം ലൈവ് സ്റ്റോപ്പ് വാച്ച് വീണ്ടും റൺ ചെയ്യും.'
+                  : 'Live working chronometer will immediately resume recording working hours.'}
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsResumeModalOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
+                >
+                  {language === 'ml' ? 'ബ്രേക്ക് തുടരുക' : 'Stay on Break'}
+                </button>
+                <button
+                  type="button"
+                  disabled={submittingAction}
+                  onClick={handleConfirmResume}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {submittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                  )}
+                  <span>{language === 'ml' ? 'പണി തുടരുക (Resume)' : 'Confirm Resume'}</span>
+                </button>
               </div>
             </div>
           </div>

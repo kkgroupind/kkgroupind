@@ -268,3 +268,13 @@ html.admin-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: #94A3B8 !important;
 }
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

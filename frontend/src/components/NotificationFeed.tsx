@@ -130,14 +130,14 @@ export function NotificationFeed({
 
   return (
     <div
-      className={`rounded-3xl border shadow-xl p-5 sm:p-7 transition-all ${
+      className={`rounded-2xl sm:rounded-3xl border shadow-xl p-4 sm:p-7 transition-all ${
         isDark ? 'bg-slate-900/90 border-slate-800 text-slate-100' : 'bg-white border-slate-200 text-slate-900'
       }`}
     >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-5 sm:mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#2A835F]/15 text-[#2A835F] flex items-center justify-center font-bold">
+          <div className="w-10 h-10 rounded-2xl bg-[#2A835F]/15 text-[#2A835F] flex items-center justify-center font-bold shrink-0">
             <Bell className="w-5 h-5" />
           </div>
           <div>
@@ -149,13 +149,13 @@ export function NotificationFeed({
                 </span>
               )}
             </div>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p className={`text-[11px] sm:text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Real-time dispatch updates, service assignments, and system notices
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {unreadCount > 0 && (
             <button
               type="button"
@@ -278,7 +278,7 @@ export function NotificationFeed({
                       {item.message}
                     </p>
 
-                    <div className="flex items-center gap-3 mt-2 text-[10px] text-slate-400">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-[10px] text-slate-400">
                       <span className="flex items-center gap-1 font-mono">
                         <Clock className="w-3 h-3 text-slate-500" />
                         <span>
@@ -300,7 +300,7 @@ export function NotificationFeed({
                   <button
                     type="button"
                     onClick={(e) => handleDelete(item.id, e)}
-                    className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg opacity-80 sm:opacity-0 group-hover:opacity-100 hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-all cursor-pointer"
                     title="Delete"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

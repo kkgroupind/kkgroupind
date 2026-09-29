@@ -68,7 +68,7 @@ export function WorkerShell({
   };
 
   return (
-    <div className="min-h-screen bg-[#EAEFEA] pt-20 sm:pt-28 px-2 sm:px-4 md:px-6 pb-24 md:pb-12 flex flex-col items-center gap-3 sm:gap-6 font-sans antialiased text-slate-800 selection:bg-[#2A835F] selection:text-white">
+    <div className="min-h-screen bg-[#EAEFEA] pt-18 sm:pt-28 px-2 sm:px-4 md:px-6 pb-24 md:pb-12 flex flex-col items-center gap-3 sm:gap-6 font-sans antialiased text-slate-800 selection:bg-[#2A835F] selection:text-white w-full overflow-x-hidden">
       {/* 1. TOP NAVBAR */}
       <WorkerNavbar
         activeTab={activeTab}
@@ -85,9 +85,9 @@ export function WorkerShell({
       />
 
       {/* 2. BODY CONTAINER: MOBILE-FIRST FOCUSED WORKSPACE */}
-      <div className="w-full max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto flex items-start gap-4 relative justify-center">
+      <div className="w-full max-w-5xl mx-auto flex items-start gap-4 relative justify-center min-w-0">
         {/* Main Content Card */}
-        <main className="w-full min-w-0 bg-[#ECEFF6] rounded-3xl sm:rounded-[38px] p-3 sm:p-5 lg:p-6 shadow-[0_15px_50px_rgba(0,0,0,0.06)] border border-white/70 flex flex-col gap-4 sm:gap-5 min-h-[auto]">
+        <main className="w-full min-w-0 bg-[#ECEFF6] rounded-2xl sm:rounded-[38px] p-2 sm:p-5 lg:p-6 shadow-[0_15px_50px_rgba(0,0,0,0.06)] border border-white/70 flex flex-col gap-3.5 sm:gap-5 min-h-[auto]">
           {/* Header with Title, Search, User Avatar (optional) */}
           {!hideHeader && (
             <WorkerHeader

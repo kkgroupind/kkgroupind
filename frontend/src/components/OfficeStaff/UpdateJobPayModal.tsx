@@ -14,6 +14,7 @@ import {
   QrCode,
   Building2,
   ShieldCheck,
+  Coffee,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry } from '@/services';
 import { useToast } from '@/context/toast-context';
@@ -199,17 +200,50 @@ export function UpdateJobPayModal({
                 {enquiry.worker?.name || enquiry.worker?.username || 'Field Operative'}
               </span>
             </div>
-            {enquiry.workDurationMinutes ? (
-              <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-gray-800 text-amber-300">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  Recorded Runtime:
-                </span>
-                <span className="font-mono font-bold">
-                  {Math.floor(enquiry.workDurationMinutes / 60)}h {enquiry.workDurationMinutes % 60}m
-                </span>
-              </div>
-            ) : null}
+            {(() => {
+              const spec = (enquiry.specificationDetails as any) || {};
+              const breaks = Array.isArray(spec.breaks)
+                ? spec.breaks
+                : (Array.isArray(spec.breakLog) ? spec.breakLog : []);
+              const actualMins = spec.actualWorkMinutes ?? enquiry.workDurationMinutes ?? 0;
+              const breakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+              const grossMins = spec.grossDurationMinutes ?? (actualMins + breakMins);
+
+              if (actualMins === 0 && breakMins === 0) return null;
+
+              return (
+                <div className="pt-2 border-t border-gray-800 space-y-1 text-[11px]">
+                  <div className="flex items-center justify-between text-emerald-400">
+                    <span className="flex items-center gap-1 font-semibold">
+                      <Clock className="w-3 h-3 text-emerald-400" />
+                      Net Labor Time:
+                    </span>
+                    <span className="font-mono font-bold">
+                      {Math.floor(actualMins / 60) > 0 ? `${Math.floor(actualMins / 60)}h ` : ''}{actualMins % 60}m ({actualMins} mins)
+                    </span>
+                  </div>
+
+                  {breakMins > 0 && (
+                    <div className="flex items-center justify-between text-amber-300">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <Coffee className="w-3 h-3 text-amber-400" />
+                        Break Time Deducted:
+                      </span>
+                      <span className="font-mono font-bold">
+                        {breakMins}m ({breaks.length} breaks)
+                      </span>
+                    </div>
+                  )}
+
+                  {grossMins > actualMins && (
+                    <div className="flex items-center justify-between text-gray-400 text-[10px]">
+                      <span>Gross Elapsed On-Site:</span>
+                      <span className="font-mono">{grossMins} mins</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {enquiry.completedUnits ? (
               <div className="flex items-center justify-between text-[11px] text-purple-300">
                 <span>Reported Units:</span>

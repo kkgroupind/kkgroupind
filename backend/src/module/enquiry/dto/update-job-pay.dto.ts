@@ -1,4 +1,5 @@
-import { IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { ServiceStatus } from '../../../database';
 
 export class UpdateJobPayDto {
   @IsOptional()
@@ -25,6 +26,32 @@ export class UpdateJobPayDto {
   @IsNumber()
   @Min(0)
   completedUnits?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  workDurationMinutes?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  totalBreakMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  unitLabel?: string;
+
+  @IsOptional()
+  @IsEnum(ServiceStatus)
+  status?: ServiceStatus;
+
+  @IsOptional()
+  @IsString()
+  workStartedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  workEndedAt?: string;
 
   @IsOptional()
   @IsString()

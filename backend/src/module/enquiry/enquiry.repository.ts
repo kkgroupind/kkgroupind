@@ -313,18 +313,36 @@ export class EnquiryRepository {
     workerId: string,
     data?: { notes?: string },
   ) {
-    return this.prisma.serviceEnquiry.update({
-      where: { id: enquiryId },
-      data: {
-        status: ServiceStatus.IN_PROGRESS,
-        workStartedAt: new Date(),
-        notes: data?.notes ? data.notes : undefined,
-      },
-      include: {
-        worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
-        customer: { select: { id: true, name: true, phone: true, email: true } },
-        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
-      },
+    const now = new Date();
+    return this.prisma.$transaction(async (tx) => {
+      const enquiry = await tx.serviceEnquiry.findUnique({ where: { id: enquiryId } });
+      const currentSpec = (enquiry?.specificationDetails as any) || {};
+      const updatedSpec = {
+        ...currentSpec,
+        workStartedAt: now.toISOString(),
+        actualWorkMinutes: 0,
+        actualWorkSeconds: 0,
+        totalBreakMinutes: 0,
+        totalBreakSeconds: 0,
+        breaks: Array.isArray(currentSpec.breaks) ? currentSpec.breaks : [],
+        activeBreak: null,
+        isTimerPaused: false,
+      };
+
+      return tx.serviceEnquiry.update({
+        where: { id: enquiryId },
+        data: {
+          status: ServiceStatus.IN_PROGRESS,
+          workStartedAt: now,
+          specificationDetails: updatedSpec,
+          notes: data?.notes ? data.notes : undefined,
+        },
+        include: {
+          worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true } },
+          officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+        },
+      });
     });
   }
 
@@ -350,30 +368,75 @@ export class EnquiryRepository {
       const now = new Date();
       let calculatedMinutes = data?.durationMinutes;
 
-      if (calculatedMinutes === undefined && enquiry.workStartedAt) {
-        const diffMs = now.getTime() - new Date(enquiry.workStartedAt).getTime();
-        calculatedMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
+      const spec = (data?.specificationDetails ?? enquiry.specificationDetails) as any || {};
+      const breaks = Array.isArray(spec.breaks) ? [...spec.breaks] : [];
+      let totalBreakMinutes = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+      let totalBreakSeconds = breaks.reduce((acc: number, b: any) => acc + (b.durationSeconds || (b.durationMinutes || 0) * 60), 0);
+
+      // Finalize active break if still ongoing when completing
+      if (spec.activeBreak?.startedAt) {
+        const breakStartMs = new Date(spec.activeBreak.startedAt).getTime();
+        const breakSec = Math.max(1, Math.floor((now.getTime() - breakStartMs) / 1000));
+        const breakMin = Math.max(1, Math.round(breakSec / 60));
+        breaks.push({
+          reason: spec.activeBreak.reason || 'General Break',
+          start: spec.activeBreak.startedAt,
+          end: now.toISOString(),
+          durationMinutes: breakMin,
+          durationSeconds: breakSec,
+          notes: spec.activeBreak.notes,
+        });
+        totalBreakMinutes += breakMin;
+        totalBreakSeconds += breakSec;
       }
+
+      let grossMinutes = 0;
+      let grossSeconds = 0;
+      if (enquiry.workStartedAt) {
+        const diffMs = now.getTime() - new Date(enquiry.workStartedAt).getTime();
+        grossMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
+        grossSeconds = Math.max(1, Math.floor(diffMs / 1000));
+      }
+
+      if (calculatedMinutes === undefined && enquiry.workStartedAt) {
+        calculatedMinutes = Math.max(1, grossMinutes - totalBreakMinutes);
+      }
+
+      const actualWorkMinutes = calculatedMinutes ?? Math.max(1, grossMinutes - totalBreakMinutes);
+      const actualWorkSeconds = Math.max(0, grossSeconds - totalBreakSeconds);
+
+      // Permanent and comprehensive time tracking specification details
+      const updatedSpec = {
+        ...spec,
+        workStartedAt: enquiry.workStartedAt ? enquiry.workStartedAt.toISOString() : undefined,
+        workEndedAt: now.toISOString(),
+        grossDurationMinutes: grossMinutes,
+        grossDurationSeconds: grossSeconds,
+        actualWorkMinutes,
+        actualWorkSeconds,
+        totalBreakMinutes,
+        totalBreakSeconds,
+        breaks,
+        breakCount: breaks.length,
+        activeBreak: null,
+        isTimerPaused: false,
+      };
 
       // Compute completed units & wage/cost totals
       let finalCompletedUnits = data?.completedUnits;
       if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
         if (enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated) {
-          finalCompletedUnits = calculatedMinutes
-            ? Math.round((calculatedMinutes / 60) * 10) / 10
+          finalCompletedUnits = actualWorkMinutes
+            ? Math.round((actualWorkMinutes / 60) * 10) / 10
             : enquiry.completedUnits ?? 0;
         } else {
           finalCompletedUnits = enquiry.estimatedUnits ?? 1;
         }
       }
 
-      const minThreshold = enquiry.minUnits ?? 1;
-      const billableUnits = Math.max(finalCompletedUnits ?? 0, minThreshold);
-      const computedWage = enquiry.workerUnitWage
-        ? Math.round(billableUnits * enquiry.workerUnitWage)
-        : null;
-      const effectiveRate = enquiry.unitRate || enquiry.hourlyRate;
-      const computedCost = effectiveRate ? Math.round(billableUnits * effectiveRate) : null;
+      // Prices and wages are set exclusively by Admin / Office Staff after work is finished
+      const computedWage = enquiry.totalCalculatedWage ?? null;
+      const computedCost = enquiry.totalCalculatedCost ?? null;
 
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
@@ -381,11 +444,11 @@ export class EnquiryRepository {
           status: ServiceStatus.COMPLETED,
           workEndedAt: now,
           completedAt: now,
-          workDurationMinutes: calculatedMinutes,
+          workDurationMinutes: actualWorkMinutes,
           completedUnits: finalCompletedUnits,
           totalCalculatedWage: computedWage,
           totalCalculatedCost: computedCost,
-          specificationDetails: data?.specificationDetails ?? enquiry.specificationDetails ?? undefined,
+          specificationDetails: updatedSpec,
           notes: data?.completionNotes ? data.completionNotes : enquiry.notes,
         },
         include: {
@@ -460,15 +523,9 @@ export class EnquiryRepository {
         if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
           finalCompletedUnits = enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1;
         }
-        const minThreshold = enquiry.minUnits ?? 1;
-        const billableUnits = Math.max(finalCompletedUnits, minThreshold);
-        computedWage = enquiry.workerUnitWage
-          ? Math.round(billableUnits * enquiry.workerUnitWage)
-          : (enquiry.totalCalculatedWage ?? null);
-        const effectiveRate = enquiry.unitRate || enquiry.hourlyRate;
-        computedCost = effectiveRate
-          ? Math.round(billableUnits * effectiveRate)
-          : (enquiry.totalCalculatedCost ?? null);
+        // Price and payout will be set on admin side or office staff side only after the work is finished
+        computedWage = enquiry.totalCalculatedWage ?? null;
+        computedCost = enquiry.totalCalculatedCost ?? null;
       }
 
       const updated = await tx.serviceEnquiry.update({
@@ -599,6 +656,11 @@ export class EnquiryRepository {
       totalCalculatedCost?: number;
       unitRate?: number;
       completedUnits?: number;
+      workDurationMinutes?: number;
+      unitLabel?: string;
+      status?: ServiceStatus;
+      workStartedAt?: Date | string | null;
+      workEndedAt?: Date | string | null;
       notes?: string;
       specificationDetails?: any;
     },
@@ -611,6 +673,11 @@ export class EnquiryRepository {
         totalCalculatedCost: data.totalCalculatedCost !== undefined ? data.totalCalculatedCost : undefined,
         unitRate: data.unitRate !== undefined ? data.unitRate : undefined,
         completedUnits: data.completedUnits !== undefined ? data.completedUnits : undefined,
+        workDurationMinutes: data.workDurationMinutes !== undefined ? data.workDurationMinutes : undefined,
+        unitLabel: data.unitLabel !== undefined ? data.unitLabel : undefined,
+        status: data.status !== undefined ? data.status : undefined,
+        workStartedAt: data.workStartedAt !== undefined ? (data.workStartedAt ? new Date(data.workStartedAt) : null) : undefined,
+        workEndedAt: data.workEndedAt !== undefined ? (data.workEndedAt ? new Date(data.workEndedAt) : null) : undefined,
         specificationDetails: data.specificationDetails !== undefined ? data.specificationDetails : undefined,
         notes: data.notes ? data.notes : undefined,
       },

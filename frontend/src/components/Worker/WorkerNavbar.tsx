@@ -169,20 +169,20 @@ export function WorkerNavbar({
             className="w-full bg-gradient-to-r from-[#0B1E24] via-[#134B4C] to-[#0B1E24] border border-[#134B4C]/80 rounded-2xl sm:rounded-3xl p-2 sm:p-2.5 px-3 sm:px-5 shadow-[0_15px_35px_rgba(11,30,36,0.35)] text-white flex items-center justify-between gap-3 transition-all"
           >
           {/* Left: Brand Emblem + Worker Info */}
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner">
-              <HardHat className="w-5 h-5 text-[#88B793]" />
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white shadow-inner shrink-0">
+              <HardHat className="w-4 h-4 sm:w-5 sm:h-5 text-[#88B793]" />
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-xs sm:text-sm font-black tracking-tight leading-none text-white">
+                <span className="text-xs sm:text-sm font-black tracking-tight leading-none text-white whitespace-nowrap">
                   KK GROUP
                 </span>
                 <span className="hidden sm:inline text-[10px] font-bold bg-[#2A835F] text-white px-2 py-0.5 rounded-full border border-[#88B793]/40">
                   {t('operative')}
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-[#A3E5C7] uppercase tracking-wider mt-0.5">
+              <span className="text-[10px] font-semibold text-[#A3E5C7] tracking-wider mt-0.5 truncate max-w-[110px] sm:max-w-none">
                 {userName} • {language === 'en' ? 'Kerala' : language === 'ml' ? 'കേരളം' : 'केरल'}
               </span>
             </div>
@@ -219,7 +219,7 @@ export function WorkerNavbar({
           </div>
 
           {/* Right: Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* 0. Live Reload / Sync Button */}
             <button
               type="button"
@@ -227,7 +227,7 @@ export function WorkerNavbar({
               disabled={isSyncing}
               title="Reload Live Orders & Telemetry / വിവരങ്ങൾ പുതുക്കുക"
               aria-label="Reload field data"
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none disabled:opacity-50"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none disabled:opacity-50"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 text-[#88B793] transition-transform ${
@@ -244,7 +244,7 @@ export function WorkerNavbar({
               <button
                 type="button"
                 onClick={() => setIsLangMenuOpen((prev) => !prev)}
-                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none"
+                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none"
                 title="Switch Language / ഭാഷ മാറ്റുക / भाषा बदलें"
                 aria-expanded={isLangMenuOpen}
               >

@@ -34,6 +34,12 @@ import {
   Copy,
   ChevronRight,
   TrendingUp,
+  Play,
+  Pause,
+  Loader2,
+  StopCircle,
+  Timer,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { EnquiryService, ServiceEnquiry } from '@/services';
@@ -54,6 +60,23 @@ export default function AdminEnquiryDetailPage() {
   // Modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+
+  // Live timer ticker
+  const [nowTimestamp, setNowTimestamp] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTimestamp(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Admin timer action modals
+  const [isPauseModalOpen, setIsPauseModalOpen] = useState(false);
+  const [adminPauseReason, setAdminPauseReason] = useState('Lunch Break');
+  const [adminPauseNotes, setAdminPauseNotes] = useState('');
+  const [isResumeModalOpen, setIsResumeModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [completeUnits, setCompleteUnits] = useState<number | ''>('');
+  const [completeNotes, setCompleteNotes] = useState('');
+  const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
   const fetchEnquiryDetails = useCallback(async () => {
     if (!token || !params.id) return;
@@ -84,6 +107,15 @@ export default function AdminEnquiryDetailPage() {
     }
   }, [authLoading, token, fetchEnquiryDetails, router]);
 
+  // Auto-refresh every 5 seconds when the enquiry is IN_PROGRESS
+  useEffect(() => {
+    if (enquiry?.status !== 'IN_PROGRESS') return;
+    const interval = setInterval(() => {
+      fetchEnquiryDetails();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [enquiry?.status, fetchEnquiryDetails]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await fetchEnquiryDetails();
@@ -95,6 +127,104 @@ export default function AdminEnquiryDetailPage() {
     setTimeout(() => setCopiedTracking(false), 2000);
   };
 
+  // Helper: format seconds to HH:MM:SS
+  const formatSecondsToHMS = (totalSeconds: number) => {
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Compute live timer data for this enquiry
+  const liveTimerData = useMemo(() => {
+    if (!enquiry || enquiry.status !== 'IN_PROGRESS' || !enquiry.workStartedAt) return null;
+    const spec = (enquiry.specificationDetails as any) || {};
+    const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+    const activeBreak = spec.activeBreak;
+    const startMs = new Date(enquiry.workStartedAt).getTime();
+    const pastBreaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+    const pastBreaksSeconds = pastBreaks.reduce(
+      (acc: number, b: any) => acc + (b.durationSeconds || (b.durationMinutes || 0) * 60),
+      0
+    );
+    let workSeconds = 0;
+    let breakSeconds = 0;
+    if (isBreakActive && activeBreak?.startedAt) {
+      const breakStartMs = new Date(activeBreak.startedAt).getTime();
+      breakSeconds = Math.max(0, Math.floor((nowTimestamp - breakStartMs) / 1000));
+      workSeconds = Math.max(0, Math.floor((breakStartMs - startMs) / 1000) - pastBreaksSeconds);
+    } else {
+      workSeconds = Math.max(0, Math.floor((nowTimestamp - startMs) / 1000) - pastBreaksSeconds);
+    }
+    return {
+      isOnBreak: isBreakActive,
+      activeBreakReason: activeBreak?.reason || 'General Break',
+      workSeconds,
+      breakSeconds,
+      workTimeFormatted: formatSecondsToHMS(workSeconds),
+      breakTimeFormatted: formatSecondsToHMS(breakSeconds),
+    };
+  }, [enquiry, nowTimestamp]);
+
+  // Admin timer handlers
+  const handleAdminPause = async () => {
+    if (!enquiry || !token) return;
+    setIsSubmittingAction(true);
+    try {
+      await EnquiryService.pauseWorkTimer(
+        enquiry.id,
+        { reason: adminPauseReason, notes: adminPauseNotes.trim() || undefined },
+        token
+      );
+      setIsPauseModalOpen(false);
+      setAdminPauseNotes('');
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to pause timer');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleAdminResume = async () => {
+    if (!enquiry || !token) return;
+    setIsSubmittingAction(true);
+    try {
+      await EnquiryService.resumeWorkTimer(enquiry.id, {}, token);
+      setIsResumeModalOpen(false);
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to resume timer');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
+  const handleAdminComplete = async () => {
+    if (!enquiry || !token) return;
+    setIsSubmittingAction(true);
+    try {
+      const durationMinutes = liveTimerData
+        ? Math.max(1, Math.round(liveTimerData.workSeconds / 60))
+        : undefined;
+      await EnquiryService.stopWorkTimer(
+        enquiry.id,
+        {
+          durationMinutes,
+          completedUnits: completeUnits === '' ? undefined : Number(completeUnits),
+          completionNotes: completeNotes.trim() || undefined,
+        },
+        token
+      );
+      setIsCompleteModalOpen(false);
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      alert(err?.message || 'Failed to complete work');
+    } finally {
+      setIsSubmittingAction(false);
+    }
+  };
+
   // Parsing Telemetry & Specification details
   const specs = useMemo(() => {
     if (!enquiry?.specificationDetails) return {};
@@ -103,7 +233,7 @@ export default function AdminEnquiryDetailPage() {
       : {};
   }, [enquiry?.specificationDetails]);
 
-  // Break logs
+  // Break logs – check both canonical keys ('breaks' and legacy 'breakLog')
   const breakLog: Array<{
     reason: string;
     startedAt: string;
@@ -111,6 +241,9 @@ export default function AdminEnquiryDetailPage() {
     durationMinutes?: number;
     notes?: string;
   }> = useMemo(() => {
+    if (Array.isArray(specs.breaks)) {
+      return specs.breaks;
+    }
     if (Array.isArray(specs.breakLog)) {
       return specs.breakLog;
     }
@@ -268,16 +401,59 @@ export default function AdminEnquiryDetailPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
-          {/* Dispatch or Re-assign Modal Trigger */}
-          <button
-            type="button"
-            onClick={() => setIsAssignModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF] hover:bg-[#6839EF] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#7B4DFF]/25 cursor-pointer"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>{isPending ? 'Dispatch Squad' : 'Reassign / Add Workers'}</span>
-          </button>
+        <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+          {/* Dispatch or Re-assign Modal Trigger — hidden for IN_PROGRESS */}
+          {!isInProgress && (
+            <button
+              type="button"
+              onClick={() => setIsAssignModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF] hover:bg-[#6839EF] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#7B4DFF]/25 cursor-pointer"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{isPending ? 'Dispatch Squad' : 'Reassign / Add Workers'}</span>
+            </button>
+          )}
+
+          {/* Live Timer Controls — only for IN_PROGRESS */}
+          {isInProgress && (
+            <>
+              {liveTimerData?.isOnBreak ? (
+                <button
+                  type="button"
+                  onClick={() => setIsResumeModalOpen(true)}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/25 cursor-pointer"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>Resume Work</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminPauseReason('Lunch Break');
+                    setAdminPauseNotes('');
+                    setIsPauseModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  <span>Pause Work</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setCompleteUnits(enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1);
+                  setCompleteNotes('');
+                  setIsCompleteModalOpen(true);
+                }}
+                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Complete Work</span>
+              </button>
+            </>
+          )}
 
           {/* Settle Wage / Billing */}
           <button
@@ -300,6 +476,122 @@ export default function AdminEnquiryDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* ========================================================
+          LIVE CHRONOMETER BANNER (shown only when IN_PROGRESS)
+      ======================================================== */}
+      {isInProgress && liveTimerData && (
+        <div
+          className={`relative overflow-hidden rounded-2xl border p-5 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all ${
+            liveTimerData.isOnBreak
+              ? 'bg-amber-500/10 border-amber-500/40'
+              : 'bg-emerald-500/10 border-emerald-500/40'
+          }`}
+        >
+          {/* Animated top bar */}
+          <div
+            className={`absolute top-0 left-0 right-0 h-[2px] ${
+              liveTimerData.isOnBreak
+                ? 'bg-gradient-to-r from-transparent via-amber-400 to-transparent'
+                : 'bg-gradient-to-r from-transparent via-emerald-400 to-transparent'
+            }`}
+          />
+
+          {/* Left: status label */}
+          <div className="flex items-center gap-3">
+            <span
+              className={`relative flex h-3.5 w-3.5`}
+            >
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  liveTimerData.isOnBreak ? 'bg-amber-400' : 'bg-emerald-400'
+                }`}
+              />
+              <span
+                className={`relative inline-flex rounded-full h-3.5 w-3.5 ${
+                  liveTimerData.isOnBreak ? 'bg-amber-400' : 'bg-emerald-400'
+                }`}
+              />
+            </span>
+            <div>
+              <div className={`text-sm font-black ${
+                liveTimerData.isOnBreak ? 'text-amber-300' : 'text-emerald-300'
+              }`}>
+                {liveTimerData.isOnBreak
+                  ? `☕ On Break — ${liveTimerData.activeBreakReason}`
+                  : '⏱️ Work Timer Running'}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-0.5">
+                {liveTimerData.isOnBreak
+                  ? `Work logged before break: ${liveTimerData.workTimeFormatted}`
+                  : `Started at ${enquiry.workStartedAt ? new Date(enquiry.workStartedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '—'}`}
+              </div>
+            </div>
+          </div>
+
+          {/* Centre: counters */}
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <div className={`font-mono font-black text-2xl tracking-widest ${
+                liveTimerData.isOnBreak ? 'text-amber-100/60' : 'text-emerald-100'
+              }`}>
+                {liveTimerData.workTimeFormatted}
+              </div>
+              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Net Work Time</div>
+            </div>
+            {liveTimerData.isOnBreak && (
+              <>
+                <div className="w-px h-10 bg-gray-700" />
+                <div className="text-center">
+                  <div className="font-mono font-black text-2xl tracking-widest text-amber-300">
+                    {liveTimerData.breakTimeFormatted}
+                  </div>
+                  <div className="text-[10px] text-gray-500 uppercase tracking-wider font-bold">Break Time</div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Right: quick controls */}
+          <div className="flex items-center gap-2 shrink-0">
+            {liveTimerData.isOnBreak ? (
+              <button
+                type="button"
+                onClick={() => setIsResumeModalOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black transition-all shadow-md cursor-pointer"
+              >
+                <Play className="w-3.5 h-3.5 fill-white" />
+                Resume
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminPauseReason('Lunch Break');
+                  setAdminPauseNotes('');
+                  setIsPauseModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-amber-500/30 hover:bg-amber-500/50 border border-amber-500/40 text-amber-200 rounded-xl text-xs font-black transition-all cursor-pointer"
+              >
+                <Pause className="w-3.5 h-3.5" />
+                Pause
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setCompleteUnits(enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1);
+                setCompleteNotes('');
+                setIsCompleteModalOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black transition-all shadow-md cursor-pointer"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Complete
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================
           2. KEY METRIC KPI BENTO CARDS
@@ -683,6 +975,102 @@ export default function AdminEnquiryDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Time & Break Audit Section */}
+          {(() => {
+            const actualMins: number = (specs.actualWorkMinutes ?? enquiry.workDurationMinutes ?? 0) as number;
+            const breakMins: number = (specs.totalBreakMinutes ??
+              breakLog.reduce((acc, b) => acc + (b.durationMinutes || 0), 0)) as number;
+            const grossMins: number = (specs.grossDurationMinutes ?? (actualMins + breakMins)) as number;
+            const hasData = actualMins > 0 || breakMins > 0 || breakLog.length > 0;
+            if (!hasData) return null;
+            return (
+              <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-gray-800/80">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-gray-100 tracking-tight leading-tight">
+                      Time & Break Audit
+                    </h3>
+                    <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                      Comprehensive labor vs. downtime breakdown
+                    </p>
+                  </div>
+                </div>
+
+                {/* Three-column metrics */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider mb-1">Net Labor</div>
+                    <div className="text-xl font-black text-emerald-400 font-mono">{actualMins}<span className="text-xs font-bold text-emerald-600 ml-0.5">m</span></div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Productive time</div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                    <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider mb-1">Break Deducted</div>
+                    <div className="text-xl font-black text-amber-400 font-mono">{breakMins}<span className="text-xs font-bold text-amber-600 ml-0.5">m</span></div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">{breakLog.length} pause session{breakLog.length !== 1 ? 's' : ''}</div>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-center">
+                    <div className="text-[10px] uppercase font-bold text-purple-400 tracking-wider mb-1">Gross On-Site</div>
+                    <div className="text-xl font-black text-purple-400 font-mono">{grossMins}<span className="text-xs font-bold text-purple-600 ml-0.5">m</span></div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Total site duration</div>
+                  </div>
+                </div>
+
+                {/* Break log table */}
+                {breakLog.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Break Archive</div>
+                    <div className="overflow-x-auto rounded-2xl border border-gray-800/60">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-[#0D0E12] text-gray-400 font-semibold">
+                          <tr>
+                            <th className="py-2.5 px-3">#</th>
+                            <th className="py-2.5 px-3">Reason</th>
+                            <th className="py-2.5 px-3">Started</th>
+                            <th className="py-2.5 px-3">Resumed</th>
+                            <th className="py-2.5 px-3 text-right">Duration</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-800/60 text-gray-300">
+                          {breakLog.map((b, i) => (
+                            <tr key={i} className="hover:bg-[#1A1C23]/40">
+                              <td className="py-2.5 px-3 text-gray-500 font-bold">{i + 1}</td>
+                              <td className="py-2.5 px-3 font-semibold text-gray-200">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <span>☕</span>
+                                  <span>{b.reason || 'Rest Break'}</span>
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-[11px] text-gray-400">
+                                {new Date(b.startedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-[11px]">
+                                {b.endedAt
+                                  ? <span className="text-emerald-400">{new Date(b.endedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                                  : <span className="text-amber-400 font-semibold animate-pulse">Ongoing</span>}
+                              </td>
+                              <td className="py-2.5 px-3 text-right font-bold text-purple-300">
+                                {b.durationMinutes ? `${b.durationMinutes} min` : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="bg-[#0D0E12] border-t border-gray-800">
+                          <tr>
+                            <td colSpan={4} className="py-2 px-3 text-[11px] text-gray-500 font-semibold">Total Break Time</td>
+                            <td className="py-2 px-3 text-right text-[11px] font-black text-amber-400">{breakMins} min</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* ========================================================
@@ -908,6 +1296,199 @@ export default function AdminEnquiryDetailPage() {
           fetchEnquiryDetails();
         }}
       />
+
+      {/* ── PAUSE CONFIRMATION MODAL ───────────────────────────── */}
+      {isPauseModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Pause className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100">Pause Work Timer</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Select the reason for this break</p>
+                </div>
+              </div>
+              <button onClick={() => setIsPauseModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {/* Quick-select reason pills */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Break Reason</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Lunch Break', 'Breakfast', 'Tea / Snack', 'Prayer Break', 'Rest Break', 'Other'].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setAdminPauseReason(r)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        adminPauseReason === r
+                          ? 'bg-amber-500/25 border-amber-500/60 text-amber-300'
+                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-700'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Optional notes */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Additional Notes <span className="text-gray-600 normal-case font-medium">(optional)</span></label>
+                <textarea
+                  rows={2}
+                  value={adminPauseNotes}
+                  onChange={(e) => setAdminPauseNotes(e.target.value)}
+                  placeholder="e.g. Customer requested a short wait..."
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPauseModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdminPause}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-500 hover:bg-amber-400 text-black transition-all shadow-md shadow-amber-500/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Pause className="w-3.5 h-3.5" />}
+                  {isSubmittingAction ? 'Pausing...' : 'Confirm Pause'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESUME CONFIRMATION MODAL ──────────────────────────── */}
+      {isResumeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-sm">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Play className="w-5 h-5 fill-blue-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100">Resume Work Timer</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Confirm the squad is back on-site</p>
+                </div>
+              </div>
+              <button onClick={() => setIsResumeModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-gray-300 mb-5">
+                This will end the current break and resume the work timer for{' '}
+                <strong className="text-white">{enquiry.serviceName}</strong>.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsResumeModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdminResume}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-md shadow-blue-600/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5 fill-white" />}
+                  {isSubmittingAction ? 'Resuming...' : 'Resume Work'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── COMPLETE WORK CONFIRMATION MODAL ───────────────────── */}
+      {isCompleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100">Mark Work as Complete</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Finalise the on-site execution record</p>
+                </div>
+              </div>
+              <button onClick={() => setIsCompleteModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {/* Timer summary */}
+              {liveTimerData && (
+                <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between text-xs">
+                  <span className="text-gray-400 font-semibold">Net Work Time</span>
+                  <span className="font-mono font-black text-emerald-400 text-base">{liveTimerData.workTimeFormatted}</span>
+                </div>
+              )}
+              {/* Units field */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                  Units Completed <span className="text-gray-600 normal-case font-medium">({enquiry.unitLabel || 'Units'})</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={completeUnits}
+                  onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
+                  placeholder={`e.g. ${enquiry.estimatedUnits || 1}`}
+                />
+              </div>
+              {/* Completion notes */}
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Completion Notes <span className="text-gray-600 normal-case font-medium">(optional)</span></label>
+                <textarea
+                  rows={2}
+                  value={completeNotes}
+                  onChange={(e) => setCompleteNotes(e.target.value)}
+                  placeholder="e.g. All palm trees cleared, site cleaned up..."
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCompleteModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAdminComplete}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md shadow-emerald-600/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                  {isSubmittingAction ? 'Completing...' : 'Confirm Complete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
