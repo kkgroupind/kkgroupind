@@ -491,7 +491,7 @@ export default function AdminFinancePage() {
   }, [summary]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className={`min-h-screen transition-colors duration-200 p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-[#0D0E12] text-gray-200' : 'bg-[#0D0E12] text-gray-200'}`}>
       
       {/* Toast Alert */}
       {successToast && (
@@ -503,7 +503,7 @@ export default function AdminFinancePage() {
 
       {/* Header Bento Banner */}
       <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8 border shadow-xl ${
-        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200/80'
+        isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
       }`}>
         <div className="absolute top-0 right-0 w-96 h-96 bg-radial from-[#2A835F]/20 to-transparent pointer-events-none rounded-full blur-3xl -mr-20 -mt-20" />
         
@@ -514,7 +514,7 @@ export default function AdminFinancePage() {
                 <Sparkles className="w-3.5 h-3.5" />
                 KK Group Command Center
               </span>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isDark ? 'bg-slate-800 text-gray-300' : 'bg-slate-100 text-gray-400'}`}>
                 Kerala Operations
               </span>
             </div>
@@ -524,7 +524,7 @@ export default function AdminFinancePage() {
                 ധനകാര്യ മാനേജ്‌മെന്റ്
               </span>
             </h1>
-            <p className={`mt-2 text-sm max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+            <p className={`mt-2 text-sm max-w-2xl ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
               Daily calendar transaction feeding, fleet & equipment meter billing, wage disbursements, and verified voucher audits across Kasaragod & Kerala operational districts.
             </p>
           </div>
@@ -543,7 +543,7 @@ export default function AdminFinancePage() {
               onClick={() => fetchData()}
               disabled={isLoading}
               className={`p-3 rounded-2xl border transition-all ${
-                isDark ? 'border-slate-800 bg-slate-800/80 hover:bg-slate-800 text-slate-300' : 'border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700'
+                isDark ? 'border-gray-800 bg-slate-800/80 hover:bg-slate-800 text-gray-300' : 'border-gray-800 bg-slate-100 hover:bg-slate-200 text-gray-300'
               }`}
               title="Refresh Data"
             >
@@ -558,10 +558,10 @@ export default function AdminFinancePage() {
         
         {/* Total Inflow */}
         <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200/90'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
               Total Inflows (വരുമാനം)
             </span>
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-[#2A835F]">
@@ -572,7 +572,7 @@ export default function AdminFinancePage() {
             ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
           </div>
           <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{monthLabel}</span>
+            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>{monthLabel}</span>
             <span className="font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
               Today: ₹{(summary?.todayIncome || 0).toLocaleString('en-IN')}
             </span>
@@ -581,10 +581,10 @@ export default function AdminFinancePage() {
 
         {/* Total Outflow */}
         <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200/90'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
               Total Outflows (ചെലവ്)
             </span>
             <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500">
@@ -595,7 +595,7 @@ export default function AdminFinancePage() {
             ₹{(summary?.totalExpense || 0).toLocaleString('en-IN')}
           </div>
           <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{monthLabel}</span>
+            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>{monthLabel}</span>
             <span className="font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full">
               Today: ₹{(summary?.todayExpense || 0).toLocaleString('en-IN')}
             </span>
@@ -604,10 +604,10 @@ export default function AdminFinancePage() {
 
         {/* Net Cash Flow / Profit */}
         <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200/90'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
               Net Margin (ലാഭം)
             </span>
             <div className="w-10 h-10 rounded-2xl bg-[#EBF6F1] flex items-center justify-center text-[#2A835F]">
@@ -620,7 +620,7 @@ export default function AdminFinancePage() {
             ₹{(summary?.netProfit || 0).toLocaleString('en-IN')}
           </div>
           <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>
               Margin: <strong className="text-emerald-500">{summary?.profitMargin || 0}%</strong>
             </span>
             <span className={`font-semibold px-2 py-0.5 rounded-full ${
@@ -638,11 +638,11 @@ export default function AdminFinancePage() {
             setFilterStatus('PENDING');
           }}
           className={`p-6 rounded-3xl border transition-all hover:shadow-lg cursor-pointer ${
-            isDark ? 'bg-slate-900/80 border-slate-800 hover:border-amber-500/40' : 'bg-white border-slate-200/90 hover:border-amber-400'
+            isDark ? 'bg-[#14151A] border-gray-800 hover:border-amber-500/40' : 'bg-[#14151A] border-gray-800 hover:border-amber-400'
           }`}
         >
           <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
               Pending Approvals (സ്റ്റാഫ്)
             </span>
             <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
@@ -650,9 +650,9 @@ export default function AdminFinancePage() {
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-amber-500">
-            {summary?.pendingVerificationCount || 0} <span className="text-base font-normal text-slate-400">Entries</span>
+            {summary?.pendingVerificationCount || 0} <span className="text-base font-normal text-gray-400">Entries</span>
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
             <span>Awaiting Super Admin</span>
             <span className="font-semibold text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
               ₹{(summary?.pendingVerificationAmount || 0).toLocaleString('en-IN')}
@@ -664,14 +664,14 @@ export default function AdminFinancePage() {
       {/* Main View Mode Selector Tabs */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         <div className={`p-1.5 rounded-2xl border flex items-center gap-1 w-full sm:w-auto ${
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-200/60 border-slate-200'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-slate-200/60 border-gray-800'
         }`}>
           <button
             onClick={() => setActiveTab('calendar')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'calendar'
                 ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             <CalendarIcon className="w-4 h-4" />
@@ -683,7 +683,7 @@ export default function AdminFinancePage() {
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'ledger'
                 ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             <FileSpreadsheet className="w-4 h-4" />
@@ -695,7 +695,7 @@ export default function AdminFinancePage() {
             className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
               activeTab === 'analytics'
                 ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
             }`}
           >
             <TrendingUp className="w-4 h-4" />
@@ -705,12 +705,12 @@ export default function AdminFinancePage() {
 
         {/* Month Navigator Controls */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${
-          isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           <button
             onClick={handlePrevMonth}
             className={`p-2 rounded-xl transition-colors ${
-              isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-gray-300'
             }`}
             title="Previous Month"
           >
@@ -724,7 +724,7 @@ export default function AdminFinancePage() {
           <button
             onClick={handleNextMonth}
             className={`p-2 rounded-xl transition-colors ${
-              isDark ? 'hover:bg-slate-800 text-slate-300' : 'hover:bg-slate-100 text-slate-700'
+              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-gray-300'
             }`}
             title="Next Month"
           >
@@ -736,7 +736,7 @@ export default function AdminFinancePage() {
       {/* VIEW 1: INTERACTIVE CALENDAR */}
       {activeTab === 'calendar' && (
         <div className={`rounded-3xl border shadow-xl overflow-hidden p-6 ${
-          isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -747,7 +747,7 @@ export default function AdminFinancePage() {
                   Click date to view / feed
                 </span>
               </h2>
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
                 Showing daily collections, field expenditure, and net balance for each day in Kerala time.
               </p>
             </div>
@@ -769,7 +769,7 @@ export default function AdminFinancePage() {
           </div>
 
           {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold uppercase tracking-wider text-gray-400">
             <div>Sun</div>
             <div>Mon</div>
             <div>Tue</div>
@@ -786,8 +786,8 @@ export default function AdminFinancePage() {
                 return (
                   <div
                     key={`blank-${idx}`}
-                    className={`min-h-[90px] sm:min-h-[120px] rounded-2xl border border-dashed opacity-20 ${
-                      isDark ? 'border-slate-800' : 'border-slate-200'
+                    className={`min-h-[50px] sm:min-h-[60px] rounded-2xl border border-dashed opacity-20 ${
+                      isDark ? 'border-gray-800' : 'border-gray-800'
                     }`}
                   />
                 );
@@ -801,12 +801,12 @@ export default function AdminFinancePage() {
                 <div
                   key={cell.dateString}
                   onClick={() => handleSelectDay(cell.dateString)}
-                  className={`min-h-[95px] sm:min-h-[125px] p-2.5 sm:p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group ${
+                  className={`min-h-[55px] sm:min-h-[65px] p-2.5 sm:p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group ${
                     isSelected
                       ? 'border-[#2A835F] ring-2 ring-[#2A835F]/30 bg-[#2A835F]/5 shadow-md'
                       : isDark
-                      ? 'border-slate-800/80 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
-                      : 'border-slate-200/90 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100/60'
+                      ? 'border-gray-800/80 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
+                      : 'border-gray-800 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100/60'
                   }`}
                 >
                   {/* Top Bar of cell */}
@@ -816,7 +816,7 @@ export default function AdminFinancePage() {
                         ? 'bg-[#2A835F] text-white shadow-xs'
                         : isSelected
                         ? 'text-[#2A835F]'
-                        : isDark ? 'text-slate-300' : 'text-slate-700'
+                        : isDark ? 'text-gray-300' : 'text-gray-300'
                     }`}>
                       {cell.dayNumber}
                     </span>
@@ -841,10 +841,10 @@ export default function AdminFinancePage() {
                   </div>
 
                   {/* Bottom: Net movement or count */}
-                  <div className="text-[9px] sm:text-[10px] flex items-center justify-between text-slate-400">
+                  <div className="text-[9px] sm:text-[10px] flex items-center justify-between text-gray-400">
                     {hasActivity ? (
                       <>
-                        <span className="font-semibold text-slate-500">{cell.feed.count} txn</span>
+                        <span className="font-semibold text-gray-400">{cell.feed.count} txn</span>
                         <span className={`font-bold ${
                           cell.feed.netAmount >= 0 ? 'text-emerald-500' : 'text-rose-500'
                         }`}>
@@ -868,37 +868,37 @@ export default function AdminFinancePage() {
       {/* VIEW 2: COMPREHENSIVE LEDGER TABLE */}
       {activeTab === 'ledger' && (
         <div className={`rounded-3xl border shadow-xl overflow-hidden ${
-          isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
         }`}>
           {/* Filter Toolbar */}
-          <div className="p-6 border-b border-slate-200 dark:border-slate-800 space-y-4">
+          <div className="p-6 border-b border-gray-800 dark:border-gray-800 space-y-4">
             
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
               
               {/* Search input */}
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search by Txn Number, Customer, Vendor, Notes or Ref..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className={`w-full pl-11 pr-4 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                    isDark ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    isDark ? 'bg-slate-950 border-gray-800 text-white placeholder-slate-500' : 'bg-slate-50 border-gray-800 text-gray-200 placeholder-slate-400'
                   }`}
                 />
               </div>
 
               {/* Date Scope Filter */}
               <div className={`p-1 rounded-2xl border flex items-center ${
-                isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
+                isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-100 border-gray-800'
               }`}>
                 <button
                   onClick={() => setDateFilterMode('selected')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     dateFilterMode === 'selected'
                       ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-slate-400' : 'text-slate-600'
+                      : isDark ? 'text-gray-400' : 'text-gray-400'
                   }`}
                 >
                   Selected Day ({selectedDateStr || 'Today'})
@@ -908,7 +908,7 @@ export default function AdminFinancePage() {
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     dateFilterMode === 'month'
                       ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-slate-400' : 'text-slate-600'
+                      : isDark ? 'text-gray-400' : 'text-gray-400'
                   }`}
                 >
                   This Month ({monthLabel})
@@ -918,7 +918,7 @@ export default function AdminFinancePage() {
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     dateFilterMode === 'all'
                       ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-slate-400' : 'text-slate-600'
+                      : isDark ? 'text-gray-400' : 'text-gray-400'
                   }`}
                 >
                   All Dates
@@ -977,8 +977,8 @@ export default function AdminFinancePage() {
             </div>
 
             {/* View Mode Toggle Header */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800">
-              <span className="text-xs font-semibold text-slate-400">
+            <div className="flex items-center justify-between pt-2 border-t border-gray-800 dark:border-gray-800">
+              <span className="text-xs font-semibold text-gray-400">
                 Found {transactions.length} transactions
               </span>
 
@@ -1016,7 +1016,7 @@ export default function AdminFinancePage() {
           {txnViewMode === 'grid' ? (
             <div className="p-4 sm:p-6">
               {transactions.length === 0 ? (
-                <div className="p-16 text-center text-slate-400 flex flex-col items-center justify-center">
+                <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center">
                   <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-3">
                     <FileSpreadsheet className="w-7 h-7 text-gray-500" />
                   </div>
@@ -1185,7 +1185,7 @@ export default function AdminFinancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead className={`border-b text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+                  isDark ? 'bg-slate-950/80 border-gray-800 text-gray-400' : 'bg-slate-50 border-gray-800 text-gray-400'
                 }`}>
                   <tr>
                     <th className="py-4 px-4 sm:px-6">Transaction</th>
@@ -1200,7 +1200,7 @@ export default function AdminFinancePage() {
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-slate-400">
+                      <td colSpan={7} className="py-12 text-center text-gray-400">
                         No financial records matching your filters.
                       </td>
                     </tr>
@@ -1221,20 +1221,20 @@ export default function AdminFinancePage() {
                                 {txn.transactionNumber}
                               </span>
                             </div>
-                            <div className="text-[11px] font-normal text-slate-400 mt-0.5">
+                            <div className="text-[11px] font-normal text-gray-400 mt-0.5">
                               {txn.category.replace(/_/g, ' ')}
                             </div>
                           </td>
 
                           <td className="py-4 px-4">
                             <div className="font-semibold">{txn.dateString}</div>
-                            <div className="text-xs text-slate-500 truncate max-w-[180px]">
+                            <div className="text-xs text-gray-400 truncate max-w-[180px]">
                               {txn.serviceType || 'General Overhead'}
                             </div>
                           </td>
 
                           <td className="py-4 px-4">
-                            <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            <div className="font-semibold text-gray-200 dark:text-slate-200">
                               {txn.customerName || txn.vendorName || 'Direct Cash Transaction'}
                             </div>
                             {txn.enquiry && (
@@ -1247,7 +1247,7 @@ export default function AdminFinancePage() {
                           <td className="py-4 px-4">
                             <span className="font-semibold">{txn.paymentMethod}</span>
                             {txn.referenceNumber && (
-                              <div className="text-[11px] font-mono text-slate-400 truncate max-w-[120px]">
+                              <div className="text-[11px] font-mono text-gray-400 truncate max-w-[120px]">
                                 {txn.referenceNumber}
                               </div>
                             )}
@@ -1295,14 +1295,14 @@ export default function AdminFinancePage() {
                               )}
                               <button
                                 onClick={() => setInspectTxn(txn)}
-                                className="p-1.5 rounded-lg hover:bg-slate-500/10 text-slate-400 hover:text-slate-200 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-slate-500/10 text-gray-400 hover:text-slate-200 transition-colors"
                                 title="View Details"
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
                               <button
                                 onClick={() => handleDelete(txn.id)}
-                                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-slate-400 hover:text-rose-500 transition-colors"
+                                className="p-1.5 rounded-lg hover:bg-rose-500/10 text-gray-400 hover:text-rose-500 transition-colors"
                                 title="Delete Record"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1328,13 +1328,13 @@ export default function AdminFinancePage() {
             
             {/* Service Unit Revenue Breakdown */}
             <div className={`p-6 rounded-3xl border shadow-xl ${
-              isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+              isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
             }`}>
               <h3 className="text-base font-bold mb-1 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#2A835F]" />
                 <span>Revenue by Service Squad (വരുമാന സ്രോതസ്സുകൾ)</span>
               </h3>
-              <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mb-6 ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
                 Comparative inflow generated by JCB, Cococare, Tiling, and Electrical units.
               </p>
 
@@ -1353,13 +1353,13 @@ export default function AdminFinancePage() {
 
             {/* Expense Distribution by Category */}
             <div className={`p-6 rounded-3xl border shadow-xl ${
-              isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
+              isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
             }`}>
               <h3 className="text-base font-bold mb-1 flex items-center gap-2">
                 <Fuel className="w-4 h-4 text-rose-500" />
                 <span>Expense Breakdown by Category (ചെലവ് വിതരണം)</span>
               </h3>
-              <p className={`text-xs mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mb-6 ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
                 Operational outflows: Diesel fuel, worker daily wages, site bata, and building materials.
               </p>
 
@@ -1395,11 +1395,11 @@ export default function AdminFinancePage() {
       {isDayDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in">
           <div className={`w-full max-w-lg h-full overflow-y-auto p-6 sm:p-8 flex flex-col justify-between shadow-2xl ${
-            isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'
+            isDark ? 'bg-[#14151A] text-slate-100' : 'bg-[#14151A] text-gray-200'
           }`}>
             <div>
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
+              <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
                     Kerala Daily Feed
@@ -1410,7 +1410,7 @@ export default function AdminFinancePage() {
                 </div>
                 <button
                   onClick={() => setIsDayDrawerOpen(false)}
-                  className="p-2 rounded-xl hover:bg-slate-500/10 text-slate-400 hover:text-slate-200"
+                  className="p-2 rounded-xl hover:bg-slate-500/10 text-gray-400 hover:text-slate-200"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1431,7 +1431,7 @@ export default function AdminFinancePage() {
                   </div>
                 </div>
                 <div className="p-3 rounded-2xl bg-slate-500/10 border border-slate-500/20">
-                  <div className="text-[10px] font-bold uppercase text-slate-400">Net Day</div>
+                  <div className="text-[10px] font-bold uppercase text-gray-400">Net Day</div>
                   <div className={`text-sm sm:text-base font-black mt-1 ${
                     dayTotals.net >= 0 ? 'text-[#2A835F]' : 'text-rose-500'
                   }`}>
@@ -1442,13 +1442,13 @@ export default function AdminFinancePage() {
 
               {/* Day Line Items List */}
               <div className="space-y-3 mb-6">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase">
+                <div className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase">
                   <span>Transactions ({dayTransactions.length})</span>
                   <span>Amount</span>
                 </div>
 
                 {dayTransactions.length === 0 ? (
-                  <div className="py-10 text-center text-slate-400 text-sm">
+                  <div className="py-10 text-center text-gray-400 text-sm">
                     No transactions recorded on this date yet.
                   </div>
                 ) : (
@@ -1459,7 +1459,7 @@ export default function AdminFinancePage() {
                         key={txn.id}
                         onClick={() => setInspectTxn(txn)}
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${
-                          isDark ? 'bg-slate-950/60 border-slate-800' : 'bg-slate-50 border-slate-200'
+                          isDark ? 'bg-slate-950/60 border-gray-800' : 'bg-slate-50 border-gray-800'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1472,10 +1472,10 @@ export default function AdminFinancePage() {
                             {isIncome ? '+' : '-'}₹{txn.amount.toLocaleString('en-IN')}
                           </span>
                         </div>
-                        <div className="text-xs font-bold mt-1 text-slate-700 dark:text-slate-200 truncate">
+                        <div className="text-xs font-bold mt-1 text-gray-300 dark:text-slate-200 truncate">
                           {txn.customerName || txn.vendorName || txn.category.replace(/_/g, ' ')}
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                        <div className="flex items-center justify-between text-[11px] text-gray-400 mt-1">
                           <span>{txn.paymentMethod}</span>
                           <span className={`font-semibold ${
                             txn.status === 'VERIFIED' ? 'text-emerald-500' : 'text-amber-500'
@@ -1506,9 +1506,9 @@ export default function AdminFinancePage() {
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className={`w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 shadow-2xl border ${
-            isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+            isDark ? 'bg-[#14151A] border-gray-800 text-white' : 'bg-[#14151A] border-gray-800 text-gray-200'
           }`}>
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
                   Financial Entry
@@ -1519,7 +1519,7 @@ export default function AdminFinancePage() {
               </div>
               <button
                 onClick={() => setIsCreateModalOpen(false)}
-                className="p-2 rounded-xl hover:bg-slate-500/10 text-slate-400 hover:text-slate-200"
+                className="p-2 rounded-xl hover:bg-slate-500/10 text-gray-400 hover:text-slate-200"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1535,7 +1535,7 @@ export default function AdminFinancePage() {
               
               {/* Type Switcher */}
               <div className={`p-1.5 rounded-2xl border flex items-center gap-1 ${
-                isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
+                isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-100 border-gray-800'
               }`}>
                 <button
                   type="button"
@@ -1543,7 +1543,7 @@ export default function AdminFinancePage() {
                   className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
                     formData.type === 'INCOME'
                       ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      : 'text-gray-400 hover:text-slate-200'
                   }`}
                 >
                   🟢 Inflow / Income (വരുമാനം)
@@ -1554,7 +1554,7 @@ export default function AdminFinancePage() {
                   className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
                     formData.type === 'EXPENSE'
                       ? 'bg-rose-600 text-white shadow-md'
-                      : 'text-slate-400 hover:text-slate-200'
+                      : 'text-gray-400 hover:text-slate-200'
                   }`}
                 >
                   🔴 Outflow / Expense (ചെലവ്)
@@ -1564,11 +1564,11 @@ export default function AdminFinancePage() {
               {/* Amount & Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Amount (₹ INR) *
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
                     <input
                       type="number"
                       required
@@ -1578,14 +1578,14 @@ export default function AdminFinancePage() {
                       value={formData.amount || ''}
                       onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
                       className={`w-full pl-8 pr-4 py-2.5 rounded-xl border font-bold text-base focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                       }`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Transaction Date *
                   </label>
                   <input
@@ -1594,7 +1594,7 @@ export default function AdminFinancePage() {
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                     className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                     }`}
                   />
                 </div>
@@ -1603,7 +1603,7 @@ export default function AdminFinancePage() {
               {/* Category & Payment Method using AdminDropdown */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Category *
                   </label>
                   <AdminDropdown
@@ -1617,7 +1617,7 @@ export default function AdminFinancePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Payment Method *
                   </label>
                   <AdminDropdown
@@ -1633,7 +1633,7 @@ export default function AdminFinancePage() {
               {/* Service Unit & Reference */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Service Squad / Unit
                   </label>
                   <AdminDropdown
@@ -1647,7 +1647,7 @@ export default function AdminFinancePage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Reference / UPI Ref No.
                   </label>
                   <input
@@ -1656,7 +1656,7 @@ export default function AdminFinancePage() {
                     value={formData.referenceNumber || ''}
                     onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })}
                     className={`w-full px-3.5 py-2.5 rounded-xl border font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                     }`}
                   />
                 </div>
@@ -1666,7 +1666,7 @@ export default function AdminFinancePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {formData.type === 'INCOME' ? (
                   <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                    <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                       Customer Name & Place
                     </label>
                     <input
@@ -1675,13 +1675,13 @@ export default function AdminFinancePage() {
                       value={formData.customerName || ''}
                       onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                       className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                       }`}
                     />
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                    <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                       Vendor / Payee / Bunk
                     </label>
                     <input
@@ -1690,7 +1690,7 @@ export default function AdminFinancePage() {
                       value={formData.vendorName || ''}
                       onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
                       className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                       }`}
                     />
                   </div>
@@ -1698,7 +1698,7 @@ export default function AdminFinancePage() {
 
                 {/* Optional Link to Service Enquiry */}
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                     Link to Enquiry Ticket (Optional)
                   </label>
                   <AdminDropdown
@@ -1714,7 +1714,7 @@ export default function AdminFinancePage() {
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-bold uppercase mb-1.5 text-slate-400">
+                <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
                   Notes & Operational Description
                 </label>
                 <textarea
@@ -1723,17 +1723,17 @@ export default function AdminFinancePage() {
                   value={formData.notes || ''}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                    isDark ? 'bg-slate-950 border-slate-800' : 'bg-slate-50 border-slate-200'
+                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
                   }`}
                 />
               </div>
 
               {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800 dark:border-gray-800">
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200"
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:text-slate-200"
                 >
                   Cancel
                 </button>
@@ -1755,9 +1755,9 @@ export default function AdminFinancePage() {
       {inspectTxn && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className={`w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border ${
-            isDark ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900'
+            isDark ? 'bg-[#14151A] border-gray-800 text-white' : 'bg-[#14151A] border-gray-800 text-gray-200'
           }`}>
-            <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
               <div>
                 <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
                   Transaction Voucher
@@ -1768,7 +1768,7 @@ export default function AdminFinancePage() {
               </div>
               <button
                 onClick={() => setInspectTxn(null)}
-                className="p-2 rounded-xl hover:bg-slate-500/10 text-slate-400 hover:text-slate-200"
+                className="p-2 rounded-xl hover:bg-slate-500/10 text-gray-400 hover:text-slate-200"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1777,7 +1777,7 @@ export default function AdminFinancePage() {
             <div className="space-y-4 text-xs sm:text-sm">
               <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-500/10">
                 <div>
-                  <div className="text-xs text-slate-400 uppercase font-bold">Amount</div>
+                  <div className="text-xs text-gray-400 uppercase font-bold">Amount</div>
                   <div className={`text-2xl font-black mt-0.5 ${
                     inspectTxn.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500'
                   }`}>
@@ -1785,46 +1785,46 @@ export default function AdminFinancePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-slate-400 uppercase font-bold">Status</div>
+                  <div className="text-xs text-gray-400 uppercase font-bold">Status</div>
                   <div className="font-bold text-sm mt-0.5">{inspectTxn.status}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Type & Category</div>
+                  <div className="text-gray-400 uppercase text-[11px] font-bold">Type & Category</div>
                   <div className="font-semibold mt-0.5">{inspectTxn.type} • {inspectTxn.category.replace(/_/g, ' ')}</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Date</div>
+                  <div className="text-gray-400 uppercase text-[11px] font-bold">Date</div>
                   <div className="font-semibold mt-0.5">{inspectTxn.dateString}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Party / Payee</div>
+                  <div className="text-gray-400 uppercase text-[11px] font-bold">Party / Payee</div>
                   <div className="font-semibold mt-0.5">{inspectTxn.customerName || inspectTxn.vendorName || 'Direct'}</div>
                 </div>
                 <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Payment Method</div>
+                  <div className="text-gray-400 uppercase text-[11px] font-bold">Payment Method</div>
                   <div className="font-semibold mt-0.5">{inspectTxn.paymentMethod} {inspectTxn.referenceNumber ? `(${inspectTxn.referenceNumber})` : ''}</div>
                 </div>
               </div>
 
               <div>
-                <div className="text-slate-400 uppercase text-[11px] font-bold">Service Squad</div>
+                <div className="text-gray-400 uppercase text-[11px] font-bold">Service Squad</div>
                 <div className="font-semibold mt-0.5">{inspectTxn.serviceType || 'General Operations'}</div>
               </div>
 
               {inspectTxn.notes && (
-                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-slate-200 dark:border-slate-800">
-                  <div className="text-slate-400 uppercase text-[10px] font-bold">Notes</div>
-                  <div className="mt-1 text-slate-700 dark:text-slate-300">{inspectTxn.notes}</div>
+                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-gray-800 dark:border-gray-800">
+                  <div className="text-gray-400 uppercase text-[10px] font-bold">Notes</div>
+                  <div className="mt-1 text-gray-300 dark:text-gray-300">{inspectTxn.notes}</div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-800 dark:border-gray-800">
                 <span>Recorded by: <strong>{inspectTxn.recordedBy?.name || inspectTxn.recordedBy?.username || 'Staff'}</strong></span>
                 <span>Role: <strong>{inspectTxn.recordedBy?.role}</strong></span>
               </div>

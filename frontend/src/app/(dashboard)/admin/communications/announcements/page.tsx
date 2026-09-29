@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import {
@@ -15,9 +15,12 @@ import {
   Send,
   Trash2,
   Tag,
+  Loader2,
 } from 'lucide-react';
 import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+import { announcementService, type Announcement } from '@/services/announcement.service';
+import { useToast } from '@/context/toast-context';
 
 const AUDIENCE_OPTIONS: AdminDropdownOption[] = [
   { value: 'ALL', label: 'All Personnel', badge: 'Company-wide' },
@@ -33,120 +36,92 @@ const AUDIENCE_OPTIONS: AdminDropdownOption[] = [
     badge: 'HQ / Desk',
     badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
   },
+  {
+    value: 'CUSTOMERS',
+    label: 'Customers Only',
+    badge: 'Clients',
+    badgeColor: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+  },
 ];
 
 const PRIORITY_OPTIONS: AdminDropdownOption[] = [
-  { value: 'LOW', label: 'Low Priority', badge: 'Informational' },
-  { value: 'NORMAL', label: 'Normal Priority', badge: 'Standard' },
+  { value: 'Low', label: 'Low Priority', badge: 'Informational' },
+  { value: 'Normal', label: 'Normal Priority', badge: 'Standard' },
   {
-    value: 'URGENT',
+    value: 'High',
     label: 'Urgent Alert',
     badge: 'Critical',
     badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
   },
 ];
 
-interface Announcement {
-  id: string;
-  title: string;
-  content: string;
-  audience: 'ALL' | 'OFFICE_STAFF' | 'WORKERS';
-  priority: 'LOW' | 'NORMAL' | 'URGENT';
-  author: string;
-  createdAt: string;
-}
-
-const DEFAULT_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'ann-1',
-    title: 'Monsoon Heavy Equipment & Tree Trimming Safety Protocol',
-    content:
-      'All field operatives deploying for high-voltage power line clearances and coconut palm tree harvesting during active rainfall must wear certified non-conductive harness kits. Ensure emergency contact lines are open.',
-    audience: 'WORKERS',
-    priority: 'URGENT',
-    author: 'Super Admin Operations',
-    createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-  },
-  {
-    id: 'ann-2',
-    title: 'Kochi & Kottayam Regional Holiday Desk Schedule',
-    content:
-      'The office staff desk will operate on standby shifts during upcoming regional festivals. Ensure all pending customer enquiries are reviewed and work orders are pre-scheduled 48 hours prior.',
-    audience: 'OFFICE_STAFF',
-    priority: 'NORMAL',
-    author: 'Super Admin Operations',
-    createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-  },
-  {
-    id: 'ann-3',
-    title: 'New JCB Hydraulic Machinery Added to Central Depot',
-    content:
-      'Two new hydraulic earth excavation units have arrived at the Central Depot. Operators must complete the pre-dispatch equipment safety inspection checklist before site departure.',
-    audience: 'ALL',
-    priority: 'NORMAL',
-    author: 'Fleet Management',
-    createdAt: new Date(Date.now() - 3600000 * 24 * 8).toISOString(),
-  },
-];
-
 export default function AdminAnnouncementsPage() {
   const { token, user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+  const toast = useToast();
 
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [audienceFilter, setAudienceFilter] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKERS'>('ALL');
+  const [audienceFilter, setAudienceFilter] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKERS' | 'CUSTOMERS'>('ALL');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   // New Announcement Form State
   const [newTitle, setNewTitle] = useState('');
   const [newContent, setNewContent] = useState('');
-  const [newAudience, setNewAudience] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKERS'>('ALL');
-  const [newPriority, setNewPriority] = useState<'LOW' | 'NORMAL' | 'URGENT'>('NORMAL');
+  const [newAudience, setNewAudience] = useState<'ALL' | 'OFFICE_STAFF' | 'WORKERS' | 'CUSTOMERS'>('ALL');
+  const [newPriority, setNewPriority] = useState<'Low' | 'Normal' | 'High'>('Normal');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const fetchAnnouncements = async () => {
+    if (!token) return;
+    setIsLoadingData(true);
+    try {
+      const data = await announcementService.getAllForAdmin(token);
+      setAnnouncements(data);
+    } catch (err: any) {
+      toast.error('Failed to load announcements');
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading) {
       if (!token || user?.role !== 'SUPER_ADMIN') {
         router.push('/admin/login');
       } else {
-        const saved = localStorage.getItem('kk_admin_announcements');
-        if (saved) {
-          try {
-            setAnnouncements(JSON.parse(saved));
-          } catch {
-            setAnnouncements(DEFAULT_ANNOUNCEMENTS);
-          }
-        } else {
-          setAnnouncements(DEFAULT_ANNOUNCEMENTS);
-        }
+        fetchAnnouncements();
       }
     }
   }, [authLoading, token, user, router]);
 
-  const saveAnnouncements = (list: Announcement[]) => {
-    setAnnouncements(list);
-    localStorage.setItem('kk_admin_announcements', JSON.stringify(list));
-  };
-
-  const handleCreateAnnouncement = (e: React.FormEvent) => {
+  const handleCreateAnnouncement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
+    if (!newTitle.trim() || !newContent.trim() || !token) return;
+    setIsCreating(true);
 
-    const created: Announcement = {
-      id: `ann-${Date.now()}`,
-      title: newTitle.trim(),
-      content: newContent.trim(),
-      audience: newAudience,
-      priority: newPriority,
-      author: user?.name || user?.username || 'Super Admin',
-      createdAt: new Date().toISOString(),
-    };
-
-    saveAnnouncements([created, ...announcements]);
-    setIsModalOpen(false);
-    setNewTitle('');
-    setNewContent('');
+    try {
+      const created = await announcementService.create(token, {
+        title: newTitle.trim(),
+        content: newContent.trim(),
+        target: newAudience,
+        priority: newPriority,
+        isPublished: true,
+      });
+      
+      setAnnouncements([created, ...announcements]);
+      setIsModalOpen(false);
+      setNewTitle('');
+      setNewContent('');
+      toast.success('Announcement broadcasted successfully');
+      fetchAnnouncements(); // Refresh to get relations properly
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create announcement');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -156,16 +131,23 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return;
-    const updated = announcements.filter((a) => a.id !== deleteTarget.id);
-    saveAnnouncements(updated);
-    setDeleteTarget(null);
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || !token) return;
+    try {
+      await announcementService.delete(token, deleteTarget.id);
+      const updated = announcements.filter((a) => a.id !== deleteTarget.id);
+      setAnnouncements(updated);
+      toast.success('Announcement removed');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to delete announcement');
+    } finally {
+      setDeleteTarget(null);
+    }
   };
 
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((a) => {
-      const matchAudience = audienceFilter === 'ALL' || a.audience === audienceFilter;
+      const matchAudience = audienceFilter === 'ALL' || a.target === audienceFilter;
       const matchSearch =
         searchTerm === '' ||
         a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -246,9 +228,9 @@ export default function AdminAnnouncementsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                        item.priority === 'URGENT'
+                        item.priority === 'High'
                           ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-                          : item.priority === 'NORMAL'
+                          : item.priority === 'Normal'
                           ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
                           : 'bg-gray-800 text-gray-400 border border-gray-700'
                       }`}
@@ -257,7 +239,7 @@ export default function AdminAnnouncementsPage() {
                     </span>
 
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700">
-                      Audience: {item.audience}
+                      Audience: {item.target === 'ALL' ? 'All' : item.target}
                     </span>
 
                     <span className="text-xs text-gray-500 flex items-center gap-1">
@@ -284,7 +266,7 @@ export default function AdminAnnouncementsPage() {
               </p>
 
               <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
-                <span>Published by: {item.author}</span>
+                <span>Published by: {item.creator?.name || item.creator?.username || 'Super Admin'}</span>
                 <span>KK Group Regional Dispatch Network</span>
               </div>
             </div>
@@ -378,10 +360,11 @@ export default function AdminAnnouncementsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                  disabled={isCreating}
+                  className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] disabled:bg-gray-600 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition-colors"
                 >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Publish Notice</span>
+                  {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  <span>{isCreating ? 'Publishing...' : 'Publish Notice'}</span>
                 </button>
               </div>
             </form>
@@ -402,7 +385,7 @@ export default function AdminAnnouncementsPage() {
           deleteTarget
             ? [
                 { label: 'Title', value: deleteTarget.title },
-                { label: 'Audience', value: deleteTarget.audience },
+                { label: 'Audience', value: deleteTarget.target },
                 { label: 'Priority', value: deleteTarget.priority },
               ]
             : undefined

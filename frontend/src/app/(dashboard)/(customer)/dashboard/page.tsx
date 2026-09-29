@@ -27,13 +27,15 @@ import {
 import { EnquiryService, ServiceEnquiry } from '@/services';
 import { ActivityFeed } from '@/components/ActivityFeed';
 import { NotificationFeed } from '@/components/NotificationFeed';
+import { AnnouncementsList } from '@/components/AnnouncementsList';
+import { Megaphone } from 'lucide-react';
 
 export default function CustomerDashboardPage() {
   const router = useRouter();
   const { user, token, isLoading } = useAuth();
   const [enquiries, setEnquiries] = useState<ServiceEnquiry[]>([]);
   const [loadingEnquiries, setLoadingEnquiries] = useState(true);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'activities' | 'notifications'>('bookings');
+  const [activeTab, setActiveTab] = useState<'bookings' | 'activities' | 'notifications' | 'announcements'>('bookings');
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -213,6 +215,19 @@ export default function CustomerDashboardPage() {
 
             <button
               type="button"
+              onClick={() => setActiveTab('announcements')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'announcements'
+                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white'
+              }`}
+            >
+              <Megaphone className="w-4 h-4 text-indigo-400" />
+              <span>Announcements</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab('notifications')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer relative ${
                 activeTab === 'notifications'
@@ -334,6 +349,24 @@ export default function CustomerDashboardPage() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB: Announcements */}
+          {activeTab === 'announcements' && (
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Megaphone className="w-4 h-4 text-indigo-500" />
+                    Company Announcements
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Important notices and updates from KK Group
+                  </p>
+                </div>
+              </div>
+              <AnnouncementsList />
             </div>
           )}
 

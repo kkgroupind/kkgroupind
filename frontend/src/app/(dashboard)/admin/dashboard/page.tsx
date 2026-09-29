@@ -55,24 +55,6 @@ export default function AdminDashboardPage() {
             <Settings className="w-4 h-4 text-[#2A835F]" />
             <span>Site Settings</span>
           </Link>
-
-          <div className="flex items-center gap-2 bg-[#1A1C23] border border-gray-800 px-4 py-2 rounded-xl text-sm font-medium text-gray-300">
-            <Calendar className="w-4 h-4 text-gray-500" />
-            <span>Jun 1 - Jun 30</span>
-            <span className="w-px h-4 bg-gray-700 mx-1"></span>
-            <span>Monthly</span>
-            <ChevronDown className="w-4 h-4 text-gray-500 ml-1" />
-          </div>
-          
-          <button className="flex items-center gap-2 bg-[#1A1C23] border border-gray-800 px-4 py-2 rounded-xl text-sm font-medium text-gray-300 hover:bg-[#2A2D35] transition-colors">
-            All Segment
-            <ChevronDown className="w-4 h-4 text-gray-500" />
-          </button>
-          
-          <button className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all">
-            <Sparkles className="w-4 h-4" />
-            AI Assistant
-          </button>
         </div>
       </div>
 

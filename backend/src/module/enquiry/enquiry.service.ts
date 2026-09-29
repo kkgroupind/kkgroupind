@@ -25,6 +25,8 @@ import { resolveServiceSpec } from '../../common/constants/service-specs.constan
 import { NotificationType, Role, ServiceStatus, WorkerStatus } from '../../database';
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notification/notification.service';
+import { FinanceService } from '../finance/finance.service';
+import { TransactionType, TransactionCategory, PaymentMethod, FinancialStatus } from '../../database';
 
 @Injectable()
 export class EnquiryService {
@@ -32,6 +34,7 @@ export class EnquiryService {
     private readonly enquiryRepo: EnquiryRepository,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
+    private readonly financeService: FinanceService,
   ) {}
 
   async createEnquiry(
@@ -421,7 +424,7 @@ export class EnquiryService {
     };
   }
 
-  async updateJobPay(enquiryId: string, dto: UpdateJobPayDto) {
+  async updateJobPay(enquiryId: string, dto: UpdateJobPayDto, recordedById: string) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
@@ -481,6 +484,46 @@ export class EnquiryService {
         specificationDetails: updatedSpec,
       },
     );
+
+    // AUTO FEED FINANCES
+    try {
+      const mockUser = { id: recordedById, role: Role.OFFICE_STAFF }; // For createTransaction authorization
+      const today = new Date().toISOString().split('T')[0];
+
+      // Income (Customer Payment)
+      if (dto.totalCalculatedCost && dto.totalCalculatedCost > 0) {
+        await this.financeService.createTransaction(mockUser as any, {
+          type: TransactionType.INCOME,
+          category: TransactionCategory.SERVICE_PAYMENT,
+          amount: dto.totalCalculatedCost,
+          date: today,
+          paymentMethod: dto.paymentMode as any || PaymentMethod.CASH,
+          serviceType: updated.serviceName,
+          customerName: updated.customerName,
+          notes: `Auto-generated revenue for completed work order: ${updated.trackingNumber}`,
+          enquiryId: updated.id,
+          referenceNumber: dto.paymentRef,
+        });
+      }
+
+      // Expense (Worker Wage)
+      if (dto.totalCalculatedWage && dto.totalCalculatedWage > 0 && updated.workerId) {
+        await this.financeService.createTransaction(mockUser as any, {
+          type: TransactionType.EXPENSE,
+          category: TransactionCategory.WORKER_WAGE,
+          amount: dto.totalCalculatedWage,
+          date: today,
+          paymentMethod: dto.paymentMode as any || PaymentMethod.CASH,
+          serviceType: updated.serviceName,
+          workerId: updated.workerId,
+          notes: `Auto-generated worker wage payout for: ${updated.trackingNumber}`,
+          enquiryId: updated.id,
+          referenceNumber: dto.paymentRef,
+        });
+      }
+    } catch (e) {
+      console.error('Failed to auto-feed finances', e);
+    }
 
     // Non-blocking notification to assigned worker
     if (updated.workerId) {

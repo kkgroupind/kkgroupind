@@ -55,6 +55,8 @@ import {
 } from '@/components/OfficeStaff';
 import { ActivityFeed } from '@/components/ActivityFeed';
 import { NotificationFeed } from '@/components/NotificationFeed';
+import { AnnouncementsList } from '@/components/AnnouncementsList';
+import { Megaphone } from 'lucide-react';
 
 // Services Master Catalog
 const SERVICES_CATALOG = [
@@ -1626,6 +1628,24 @@ export default function OfficeStaffDashboardPage() {
               subtitle="Immutable detailed record of enquiries created, staff check-ins, technician assignments, and cash entries"
               limit={20}
             />
+          )}
+
+          {/* Section: Announcements */}
+          {activeSection === 'announcements' && (
+            <div className="bg-white rounded-2xl border border-white/80 p-6 shadow-md">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-[#091540] flex items-center gap-2">
+                  <Megaphone className="w-6 h-6 text-[#1B2CC1]" />
+                  Notices &amp; Announcements
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Important operational updates and notices
+                </p>
+              </div>
+              <div className="max-w-4xl">
+                <AnnouncementsList />
+              </div>
+            </div>
           )}
 
           {/* Section: Settings */}

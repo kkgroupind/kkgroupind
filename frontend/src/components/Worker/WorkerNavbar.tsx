@@ -22,6 +22,7 @@ import {
   Globe,
   Check,
   RefreshCw,
+  Megaphone,
 } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useWorkerLanguage, WORKER_LANGUAGES } from '@/context/worker-language-context';
@@ -86,6 +87,8 @@ export function WorkerNavbar({
       ? 'tasks'
       : pathname.startsWith('/worker/notifications')
       ? 'notifications'
+      : pathname.startsWith('/worker/announcements')
+      ? 'announcements'
       : pathname.startsWith('/worker/profile')
       ? 'profile'
       : 'home');
@@ -117,6 +120,8 @@ export function WorkerNavbar({
       router.push('/worker/jobs');
     } else if (tabId === 'notifications') {
       router.push('/worker/notifications');
+    } else if (tabId === 'announcements') {
+      router.push('/worker/announcements');
     } else {
       router.push('/worker/dashboard');
     }
@@ -137,6 +142,11 @@ export function WorkerNavbar({
       label: t('notifications'),
       badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
     },
+    {
+      id: 'announcements',
+      icon: Megaphone,
+      label: 'Notices',
+    },
   ];
 
   const mobileNavItems: NavItem[] = [
@@ -152,6 +162,11 @@ export function WorkerNavbar({
       icon: Bell,
       label: t('notifications'),
       badge: hasNotifications && assignedJobsCount && assignedJobsCount > 0 ? assignedJobsCount : undefined,
+    },
+    {
+      id: 'announcements',
+      icon: Megaphone,
+      label: 'Notices',
     },
     { id: 'profile', icon: UserCircle, label: t('profile') },
   ];

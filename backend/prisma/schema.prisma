@@ -78,6 +78,7 @@ model User {
   workerFinances      FinancialTransaction[] @relation("WorkerFinances")
   auditLogs           AuditLog[]             @relation("UserAuditLogs")
   notifications       Notification[]         @relation("UserNotifications")
+  createdAnnouncements Announcement[]        @relation("CreatedAnnouncements")
 
   @@map("users")
 }
@@ -374,5 +375,31 @@ model SiteSetting {
   updatedBy           String?
 
   @@map("site_settings")
+}
+
+enum TargetAudience {
+  ALL
+  WORKERS
+  CUSTOMERS
+  OFFICE_STAFF
+}
+
+model Announcement {
+  id          String         @id @default(uuid())
+  title       String
+  content     String
+  target      TargetAudience @default(ALL)
+  priority    String         @default("Normal")
+  isPublished Boolean        @default(true)
+  
+  createdById String
+  creator     User           @relation("CreatedAnnouncements", fields: [createdById], references: [id])
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([target])
+  @@index([createdAt])
+  @@map("announcements")
 }
 

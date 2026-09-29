@@ -14,6 +14,7 @@ import {
   X,
   Bell,
   Activity,
+  Megaphone,
 } from 'lucide-react';
 
 export type OfficeStaffSection =
@@ -30,6 +31,7 @@ export type OfficeStaffSection =
   | 'workforce-leave'
   | 'reports'
   | 'notifications'
+  | 'announcements'
   | 'activity-logs'
   | 'settings';
 
@@ -243,6 +245,20 @@ export function OfficeStaffSidebar({
           >
             <Bell className={`w-4 h-4 shrink-0 ${isCurrent('notifications') ? 'text-white' : 'text-[#7692FF]'}`} />
             <span>Alerts &amp; Notifications</span>
+          </button>
+
+          {/* Announcements */}
+          <button
+            type="button"
+            onClick={() => handleItemClick('announcements')}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl transition-all text-left ${
+              isCurrent('announcements')
+                ? 'bg-[#1B2CC1] text-white font-bold shadow-md shadow-[#1B2CC1]/40'
+                : 'text-[#ABD2FA]/80 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            <Megaphone className={`w-4 h-4 shrink-0 ${isCurrent('announcements') ? 'text-white' : 'text-[#7692FF]'}`} />
+            <span>Notices &amp; Announcements</span>
           </button>
 
           {/* Activity Logs */}

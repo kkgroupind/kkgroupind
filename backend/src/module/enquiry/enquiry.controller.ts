@@ -103,8 +103,9 @@ export class EnquiryController {
   async updateJobPay(
     @Param('id') id: string,
     @Body() dto: UpdateJobPayDto,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.updateJobPay(id, dto);
+    return this.enquiryService.updateJobPay(id, dto, user.id);
   }
 
   @Roles(Role.WORKER)
