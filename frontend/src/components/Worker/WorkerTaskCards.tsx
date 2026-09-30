@@ -156,14 +156,37 @@ export function WorkerTaskCards({
               {/* Service Execution Mode Badge */}
               {task.job && (() => {
                 const sName = (task.job.serviceName || '').toLowerCase();
-                const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
-                const isTimer = isMachinery || task.job.wageType === 'HOURLY';
-                const isCococare = sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || task.job.wageType === 'PER_TREE';
-                const isTimerActive = task.job.timerStartedAt && !task.job.timerStoppedAt && !task.job.isTimerPaused;
+                const isCococare =
+                  sName.includes('cococare') ||
+                  sName.includes('coconut') ||
+                  sName.includes('palm') ||
+                  sName.includes('tree') ||
+                  sName.includes('plucking') ||
+                  sName.includes('harvest') ||
+                  sName.includes('തെങ്ങ്') ||
+                  sName.includes('കയറ്റം') ||
+                  task.job.wageType === 'PER_TREE';
+
+                const isMachinery =
+                  !isCococare &&
+                  (sName.includes('jcb') ||
+                  sName.includes('excavat') ||
+                  sName.includes('loader') ||
+                  sName.includes('crane') ||
+                  sName.includes('ജെസിബി') ||
+                  sName.includes('എസ്കവേറ്റർ'));
+
+                const isTimer = !isCococare && (isMachinery || task.job.wageType === 'HOURLY');
+                const isTimerActive = isTimer && task.job.timerStartedAt && !task.job.timerStoppedAt && !task.job.isTimerPaused;
 
                 return (
                   <div className="flex items-center justify-center mt-2">
-                    {isTimer ? (
+                    {isCococare ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/30">
+                        <TreePalm className="w-3 h-3 text-[#2A835F]" />
+                        🌴 Count Mode (Per Tree)
+                      </span>
+                    ) : isTimer ? (
                       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
                         isTimerActive
                           ? 'bg-[#EAF4EE] text-[#134B4C] border border-[#88B793]/40 animate-pulse'
@@ -171,11 +194,6 @@ export function WorkerTaskCards({
                       }`}>
                         <Timer className="w-3 h-3 text-[#2A835F]" />
                         {isTimerActive ? '⏱️ Live Meter Running' : '⏱️ Timer Mode (Hourly)'}
-                      </span>
-                    ) : isCococare ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/30">
-                        <TreePalm className="w-3 h-3 text-[#2A835F]" />
-                        🌴 Count Mode (Per Tree)
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">

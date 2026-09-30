@@ -31,6 +31,7 @@ import {
   Check,
   X,
   ChevronDown,
+  TreePalm,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useAuth } from '@/context/auth-context';
@@ -155,9 +156,32 @@ export default function WorkerDashboardPage() {
     }
   }, [currentWork]);
 
-  // Live timer intervals
+  const sName = (currentWork?.serviceName || '').toLowerCase();
+  const sCat = (currentWork?.serviceCategory || '').toLowerCase();
+  const uLbl = (currentWork?.unitLabel || '').toLowerCase();
+  const wType = (currentWork?.wageType || '').toUpperCase();
+  const specDetails = (currentWork?.specificationDetails as any) || {};
+
+  const isTreePlucking =
+    wType === 'PER_TREE' ||
+    uLbl === 'tree' ||
+    specDetails.treeCounterEnabled === true ||
+    sCat.includes('cococare') ||
+    sCat.includes('agriculture') ||
+    sName.includes('coconut') ||
+    sName.includes('cococare') ||
+    sName.includes('palm') ||
+    sName.includes('tree') ||
+    sName.includes('plucking') ||
+    sName.includes('harvest') ||
+    sName.includes('കയറ്റം') ||
+    sName.includes('തെങ്ങ്') ||
+    sName.includes('thengu') ||
+    sName.includes('kayattam');
+
+  // Live timer intervals (only for machinery / hourly jobs, NEVER for tree plucking)
   useEffect(() => {
-    if (!currentWork || currentWork.status !== 'IN_PROGRESS') return;
+    if (!currentWork || currentWork.status !== 'IN_PROGRESS' || isTreePlucking) return;
 
     if (!isOnBreak) {
       const interval = setInterval(() => {
@@ -170,7 +194,7 @@ export default function WorkerDashboardPage() {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [currentWork, isOnBreak]);
+  }, [currentWork, isOnBreak, isTreePlucking]);
 
   // Format seconds into HH:MM:SS
   const formatTimer = (totalSeconds: number) => {
@@ -180,6 +204,22 @@ export default function WorkerDashboardPage() {
     return `${hours.toString().padStart(2, '0')}:${minutes
       .toString()
       .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Direct Tree Count Update handler (Increments / Decrements & persists to backend draft)
+  const handleUpdateTreeCount = async (newCount: number) => {
+    const validCount = Math.max(1, newCount);
+    setCompletionUnits(validCount);
+    if (!currentWork || !token) return;
+    try {
+      await EnquiryService.saveWorkDraft(
+        currentWork.id,
+        { completedUnits: validCount },
+        token
+      );
+    } catch (err) {
+      console.error('Failed to sync tree count draft', err);
+    }
   };
 
   // Toggle Duty handler
@@ -195,18 +235,18 @@ export default function WorkerDashboardPage() {
     try {
       await EnquiryService.startWorkTimer(
         job.id,
-        { notes: 'Worker started work timer on site' },
+        { notes: 'Worker started work on site' },
         token
       );
       toast.success(
         language === 'ml' ? 'പണി ആരംഭിച്ചു!' : 'Work Started!',
-        language === 'ml'
-          ? 'സൈറ്റിൽ പണി ആരംഭിച്ചു. ടൈമർ ഓടുന്നു.'
-          : 'Work timer started on site.'
+        isTreePlucking
+          ? (language === 'ml' ? 'തെങ്ങ് കയറ്റം ആരംഭിച്ചു. കൗണ്ടറിൽ എണ്ണം ചേർക്കുക.' : 'Harvesting started. Record trees plucked.')
+          : (language === 'ml' ? 'സൈറ്റിൽ പണി ആരംഭിച്ചു. ടൈമർ ഓടുന്നു.' : 'Work timer started on site.')
       );
       await refreshJobs();
     } catch (err: any) {
-      toast.error('Failed to start work', err?.message || 'Could not start timer');
+      toast.error('Failed to start work', err?.message || 'Could not start work');
     } finally {
       setSubmittingAction(false);
     }
@@ -219,7 +259,11 @@ export default function WorkerDashboardPage() {
     try {
       await EnquiryService.pauseWorkTimer(
         currentWork.id,
-        { reason: selectedPauseReason, notes: pauseNotes.trim() || undefined },
+        {
+          reason: selectedPauseReason,
+          notes: pauseNotes.trim() || undefined,
+          specificationDetails: isTreePlucking ? { unitsBeforeBreak: Number(completionUnits || 1) } : undefined,
+        },
         token
       );
       setIsOnBreak(true);
@@ -228,7 +272,9 @@ export default function WorkerDashboardPage() {
       setPauseNotes('');
       toast.info(
         language === 'ml' ? 'ബ്രേക്ക് എടുത്തു' : 'On Break',
-        language === 'ml' ? 'ടൈമർ താൽക്കാലികമായി നിർത്തി.' : 'Timer paused for break.'
+        isTreePlucking
+          ? (language === 'ml' ? `${completionUnits || 1} തെങ്ങുകൾ രേഖപ്പെടുത്തി.` : `${completionUnits || 1} trees logged before break.`)
+          : (language === 'ml' ? 'ടൈമർ താൽക്കാലികമായി നിർത്തി.' : 'Timer paused for break.')
       );
       await refreshJobs();
     } catch (err: any) {
@@ -250,7 +296,9 @@ export default function WorkerDashboardPage() {
       setBreakTimerSeconds(0);
       toast.success(
         language === 'ml' ? 'പണി തുടരുന്നു' : 'Work Resumed',
-        language === 'ml' ? 'ബ്രേക്ക് കഴിഞ്ഞ് പണി പുനരാരംഭിച്ചു.' : 'Timer resumed.'
+        isTreePlucking
+          ? (language === 'ml' ? 'ബാക്കി തെങ്ങുകൾ എണ്ണുക.' : 'Continue counting plucked palms.')
+          : (language === 'ml' ? 'ബ്രേക്ക് കഴിഞ്ഞ് പണി പുനരാരംഭിച്ചു.' : 'Timer resumed.')
       );
       await refreshJobs();
     } catch (err: any) {
@@ -265,12 +313,13 @@ export default function WorkerDashboardPage() {
     if (!currentWork || !token) return;
     setSubmittingAction(true);
     try {
-      const durationMinutes = Math.max(1, Math.round(timerSeconds / 60));
+      const units = completionUnits === '' ? 1 : Number(completionUnits);
+      const durationMinutes = isTreePlucking ? undefined : Math.max(1, Math.round(timerSeconds / 60));
       await EnquiryService.stopWorkTimer(
         currentWork.id,
         {
           durationMinutes,
-          completedUnits: completionUnits === '' ? undefined : Number(completionUnits),
+          completedUnits: units,
           completionNotes: completionNotes.trim() || undefined,
         },
         token
@@ -279,8 +328,8 @@ export default function WorkerDashboardPage() {
       toast.success(
         language === 'ml' ? 'പണി പൂർത്തിയായി!' : 'Work Completed!',
         language === 'ml'
-          ? 'പണി വിജയകരമായി രേഖപ്പെടുത്തി. ഓഫീസ് പരിശോധിച്ച് വേതനം നൽകും.'
-          : 'Work recorded! Office staff will review and assign payout.'
+          ? (isTreePlucking ? `${units} തെങ്ങുകൾ പൂർത്തിയായി സമർപ്പിച്ചു.` : 'പണി വിജയകരമായി രേഖപ്പെടുത്തി.')
+          : (isTreePlucking ? `${units} trees submitted successfully.` : 'Work recorded! Office staff will review and assign payout.')
       );
       setIsCompletionModalOpen(false);
       await refreshJobs();
@@ -292,7 +341,7 @@ export default function WorkerDashboardPage() {
     }
   };
 
-  const unitLabel = currentWork?.unitLabel || 'Units';
+  const unitLabel = currentWork?.unitLabel || (isTreePlucking ? (language === 'ml' ? 'തെങ്ങ്' : 'Tree') : 'Units');
   const squadMembers: any[] = Array.isArray((currentWork?.specificationDetails as any)?.squadMembers)
     ? (currentWork?.specificationDetails as any).squadMembers
     : [];
@@ -641,52 +690,152 @@ export default function WorkerDashboardPage() {
                 )}
 
                 {/* ========================================================
-                    LIVE STOPWATCH CHRONOMETER (If IN_PROGRESS)
+                    LIVE EXECUTION HUD: TREE COUNTER (COCONUT) OR STOPWATCH (HOURLY)
                 ======================================================== */}
-                {currentWork.status === 'IN_PROGRESS' && (
-                  <div className={`p-4 rounded-2xl text-center space-y-2 shadow-inner border transition-all ${
-                    isOnBreak
-                      ? 'bg-[#1C160C] border-amber-500/40 text-amber-200'
-                      : 'bg-[#091540] border-emerald-500/40 text-white'
-                  }`}>
-                    {isOnBreak ? (
-                      <div className="space-y-1.5">
-                        <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-amber-400">
-                          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                          <span>{language === 'ml' ? '☕ ബ്രേക്കിലാണ് (ടൈമർ നിർത്തി)' : '☕ ON BREAK (TIMER PAUSED)'}</span>
-                          {activeBreakReason && (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                              {activeBreakReason}
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-mono text-3xl sm:text-4xl font-black text-amber-300 tracking-wider">
-                          {formatTimer(breakTimerSeconds)}
-                        </div>
-                        <div className="text-[11px] text-amber-200/80 flex items-center justify-center gap-2 pt-0.5">
-                          <span>{language === 'ml' ? 'ആകെ ചെയ്ത ജോലി സമയം:' : 'Active Work Completed:'}</span>
-                          <span className="font-mono font-bold text-white bg-black/40 px-2 py-0.5 rounded-md border border-white/10">
-                            {formatTimer(timerSeconds)}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400 flex items-center justify-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span>{language === 'ml' ? '⏱️ ലൈവ് ജോലി സമയം' : '⏱️ LIVE ON-SITE STOPWATCH'}</span>
+                {(currentWork.status === 'IN_PROGRESS' || (isTreePlucking && currentWork.status === 'ASSIGNED')) && (
+                  isTreePlucking ? (
+                    <div className="p-4 sm:p-5 rounded-2xl text-center space-y-3 shadow-inner border border-emerald-500/40 bg-gradient-to-br from-[#0c231a] via-[#102e22] to-[#0a1b14] text-white">
+                      <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
+                          <TreePalm className="w-4 h-4 text-emerald-400" />
+                          <span>{language === 'ml' ? '🌴 തെങ്ങ് കയറ്റം കൗണ്ടർ (കയറിയ തെങ്ങുകൾ)' : '🌴 Cococare Tree Count (Palms Plucked)'}</span>
                         </span>
-                        <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-wider">
-                          {formatTimer(timerSeconds)}
-                        </div>
-                        <p className="text-[11px] text-slate-300">
-                          {language === 'ml'
-                            ? 'പണി പൂർത്തിയാകുമ്പോൾ താഴെയുള്ള ബട്ടൺ അമർത്തുക'
-                            : 'Tap Complete Work below once the task is finished.'}
-                        </p>
+                        {isOnBreak ? (
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                            {language === 'ml' ? '☕ ബ്രേക്ക്' : '☕ On Break'}
+                          </span>
+                        ) : currentWork.status === 'ASSIGNED' ? (
+                          <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            {language === 'ml' ? 'ആരംഭിക്കാൻ സജ്ജം' : 'Ready to Pluck'}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            Tree Counter Mode
+                          </span>
+                        )}
                       </div>
-                    )}
-                  </div>
+
+                      {isOnBreak && (
+                        <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-xs text-amber-200 text-left flex items-center justify-between">
+                          <div>
+                            <span className="font-bold block">{activeBreakReason || 'Rest Break'}</span>
+                            <span className="text-[10px] text-amber-300/70">
+                              {((currentWork.specificationDetails as any)?.activeBreak?.unitsBeforeBreak !== undefined)
+                                ? `🌴 ${(currentWork.specificationDetails as any).activeBreak.unitsBeforeBreak} ${language === 'ml' ? 'തെങ്ങുകൾ ബ്രേക്കിന് മുൻപ് പൂർത്തിയായി' : 'trees plucked before break'}`
+                                : language === 'ml' ? 'ബ്രേക്ക് സമയം' : 'Break in progress'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIsResumeModalOpen(true)}
+                            className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow cursor-pointer active:scale-95"
+                          >
+                            <Play className="w-3 h-3 fill-white" />
+                            <span>{language === 'ml' ? 'തുടരുക' : 'Resume'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Tree Counter HUD with - and + */}
+                      <div className="flex flex-col items-center justify-center gap-3 py-2">
+                        <span className="text-xs text-emerald-200/80 font-medium">
+                          {language === 'ml' ? 'ഇതുവരെ കയറിയ തെങ്ങുകളുടെ എണ്ണം രേഖപ്പെടുത്തുക' : 'Record number of coconut trees plucked'}
+                        </span>
+                        <div className="flex items-center gap-4">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateTreeCount(Math.max(1, Number(completionUnits || 1) - 1))}
+                            disabled={submittingAction}
+                            className="w-12 h-12 rounded-2xl bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-xl font-bold border border-emerald-500/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-md"
+                          >
+                            <Minus className="w-5 h-5" />
+                          </button>
+
+                          <div className="flex items-baseline gap-1.5 px-6 py-2.5 rounded-2xl bg-black/60 border border-emerald-500/50 shadow-inner">
+                            <input
+                              type="number"
+                              min={1}
+                              value={completionUnits}
+                              onChange={(e) => handleUpdateTreeCount(Math.max(1, Number(e.target.value)))}
+                              disabled={submittingAction}
+                              className="w-20 bg-transparent text-center font-mono text-3xl sm:text-4xl font-black text-white focus:outline-none"
+                            />
+                            <span className="text-xs font-bold text-emerald-400">
+                              {language === 'ml' ? 'തെങ്ങ്' : 'Trees'}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateTreeCount(Number(completionUnits || 1) + 1)}
+                            disabled={submittingAction}
+                            className="w-12 h-12 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-emerald-900/40 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                          >
+                            <Plus className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Quick Add Chips */}
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-[10px] text-emerald-300/70 uppercase font-bold">Quick add:</span>
+                          {[5, 10, 15, 20].map((inc) => (
+                            <button
+                              key={inc}
+                              type="button"
+                              onClick={() => handleUpdateTreeCount(Number(completionUnits || 1) + inc)}
+                              className="px-2.5 py-1 rounded-lg bg-black/40 hover:bg-emerald-950/60 text-emerald-200 hover:text-white text-xs font-bold border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+                            >
+                              +{inc}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`p-4 rounded-2xl text-center space-y-2 shadow-inner border transition-all ${
+                      isOnBreak
+                        ? 'bg-[#1C160C] border-amber-500/40 text-amber-200'
+                        : 'bg-[#091540] border-emerald-500/40 text-white'
+                    }`}>
+                      {isOnBreak ? (
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-bold tracking-widest uppercase text-amber-400">
+                            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+                            <span>{language === 'ml' ? '☕ ബ്രേക്കിലാണ് (ടൈമർ നിർത്തി)' : '☕ ON BREAK (TIMER PAUSED)'}</span>
+                            {activeBreakReason && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                {activeBreakReason}
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-mono text-3xl sm:text-4xl font-black text-amber-300 tracking-wider">
+                            {formatTimer(breakTimerSeconds)}
+                          </div>
+                          <div className="text-[11px] text-amber-200/80 flex items-center justify-center gap-2 pt-0.5">
+                            <span>{language === 'ml' ? 'ആകെ ചെയ്ത ജോലി സമയം:' : 'Active Work Completed:'}</span>
+                            <span className="font-mono font-bold text-white bg-black/40 px-2 py-0.5 rounded-md border border-white/10">
+                              {formatTimer(timerSeconds)}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold tracking-widest uppercase text-emerald-400 flex items-center justify-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                            <span>{language === 'ml' ? '⏱️ ലൈവ് ജോലി സമയം' : '⏱️ LIVE ON-SITE STOPWATCH'}</span>
+                          </span>
+                          <div className="font-mono text-3xl sm:text-4xl font-black text-white tracking-wider">
+                            {formatTimer(timerSeconds)}
+                          </div>
+                          <p className="text-[11px] text-slate-300">
+                            {language === 'ml'
+                              ? 'പണി പൂർത്തിയാകുമ്പോൾ താഴെയുള്ള ബട്ടൺ അമർത്തുക'
+                              : 'Tap Complete Work below once the task is finished.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
                 )}
 
                 {/* ========================================================
@@ -751,9 +900,9 @@ export default function WorkerDashboardPage() {
                       >
                         <CheckCircle2 className="w-4 h-4" />
                         <span>
-                          {language === 'ml'
-                            ? 'പണി പൂർത്തിയായി (Complete)'
-                            : 'COMPLETE WORK'}
+                          {isTreePlucking
+                            ? (language === 'ml' ? `പൂർത്തിയായി (${completionUnits || 1} തെങ്ങ്)` : `Submit ${completionUnits || 1} Trees & Complete`)
+                            : (language === 'ml' ? 'പണി പൂർത്തിയായി (Complete)' : 'COMPLETE WORK')}
                         </span>
                       </button>
                     </div>
@@ -1010,6 +1159,21 @@ export default function WorkerDashboardPage() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+
+                  {/* Quick Add Chips */}
+                  <div className="flex items-center gap-1.5 pt-2">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Quick add:</span>
+                    {[5, 10, 15, 20].map((inc) => (
+                      <button
+                        key={inc}
+                        type="button"
+                        onClick={() => setCompletionUnits((prev) => (Number(prev) || 0) + inc)}
+                        className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200 cursor-pointer transition-all active:scale-95"
+                      >
+                        +{inc}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Completion Notes */}
@@ -1084,23 +1248,59 @@ export default function WorkerDashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                    {language === 'ml' ? 'ബ്രേക്ക് സ്ഥിരീകരിക്കുക' : 'Pause Timer for Break'}
+                    {isTreePlucking
+                      ? (language === 'ml' ? 'ബ്രേക്ക് സമയം (Take Break)' : 'Take a Break')
+                      : (language === 'ml' ? 'ബ്രേക്ക് സ്ഥിരീകരിക്കുക' : 'Pause Timer for Break')}
                   </h3>
                   <p className="text-xs text-amber-700 font-medium">
-                    {language === 'ml' ? 'ബ്രേക്ക് കാരണം തിരഞ്ഞെടുക്കുക' : 'Select break reason to pause live work meter'}
+                    {isTreePlucking
+                      ? (language === 'ml' ? 'ബ്രേക്കിന് മുൻപുള്ള തെങ്ങുകളുടെ എണ്ണം ഉറപ്പാക്കുക' : 'Log trees plucked before break')
+                      : (language === 'ml' ? 'ബ്രേക്ക് കാരണം തിരഞ്ഞെടുക്കുക' : 'Select break reason to pause live work meter')}
                   </p>
                 </div>
               </div>
 
-              {/* Current Working Time */}
-              <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                <span className="text-slate-500 font-medium">
-                  {language === 'ml' ? 'നിലവിൽ ചെയ്ത സമയം:' : 'Active Meter So Far:'}
-                </span>
-                <span className="font-mono text-base font-black text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
-                  {formatTimer(timerSeconds)}
-                </span>
-              </div>
+              {/* Current Working Time or Trees Plucked Before Break */}
+              {isTreePlucking ? (
+                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-emerald-900 font-bold block">
+                      {language === 'ml' ? 'ബ്രേക്കിന് മുൻപ് കയറിയ തെങ്ങുകൾ:' : 'Trees Plucked Before Break:'}
+                    </span>
+                    <span className="text-[10px] text-emerald-700">
+                      {language === 'ml' ? 'ഈ എണ്ണം സേവ് ചെയ്യപ്പെടും' : 'This snapshot is preserved'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCompletionUnits((prev) => Math.max(1, (Number(prev) || 1) - 1))}
+                      className="w-8 h-8 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold flex items-center justify-center cursor-pointer active:scale-95"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="font-mono text-base font-black text-emerald-800 bg-white px-3 py-0.5 rounded-lg border border-emerald-200">
+                      {completionUnits || 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setCompletionUnits((prev) => (Number(prev) || 0) + 1)}
+                      className="w-8 h-8 rounded-lg bg-[#2A835F] text-white font-bold flex items-center justify-center cursor-pointer active:scale-95"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 font-medium">
+                    {language === 'ml' ? 'നിലവിൽ ചെയ്ത സമയം:' : 'Active Meter So Far:'}
+                  </span>
+                  <span className="font-mono text-base font-black text-slate-900 bg-white px-2 py-0.5 rounded-lg border border-slate-200">
+                    {formatTimer(timerSeconds)}
+                  </span>
+                </div>
+              )}
 
               {/* Reason Selection Grid */}
               <div className="space-y-2">
@@ -1112,7 +1312,7 @@ export default function WorkerDashboardPage() {
                     { key: 'Breakfast / Morning Tea', icon: '☕', label: 'Breakfast / Tea', ml: 'രാവിലത്തെ ചായ / ഭക്ഷണം' },
                     { key: 'Lunch Break', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
                     { key: 'Evening Tea / Snacks', icon: '🫖', label: 'Evening Tea', ml: 'വൈകുന്നേരത്തെ ചായ' },
-                    { key: 'Machine / Fuel Refuel', icon: '⛽', label: 'Refuel / Repair', ml: 'ഇന്ധനം / മെഷീൻ' },
+                    { key: 'Machine / Fuel Refuel', icon: isTreePlucking ? '🌴' : '⛽', label: isTreePlucking ? 'Rest / Fatigue' : 'Refuel / Repair', ml: isTreePlucking ? 'വിശ്രമം' : 'ഇന്ധനം / മെഷീൻ' },
                     { key: 'Rain / Weather Delay', icon: '🌧️', label: 'Rain Delay', ml: 'മഴ / കാലാവസ്ഥ' },
                     { key: 'Other Delay / Obstruction', icon: '❓', label: 'Other Reason', ml: 'മറ്റ് കാരണങ്ങൾ' },
                   ].map(({ key, icon, label, ml }) => (
@@ -1145,7 +1345,7 @@ export default function WorkerDashboardPage() {
                   type="text"
                   value={pauseNotes}
                   onChange={(e) => setPauseNotes(e.target.value)}
-                  placeholder={language === 'ml' ? 'e.g. 30 മിനിറ്റ് ഉച്ചഭക്ഷണം' : 'e.g. 30 min lunch, equipment parked safely'}
+                  placeholder={language === 'ml' ? 'e.g. 30 മിനിറ്റ് ഉച്ചഭക്ഷണം' : 'e.g. 30 min lunch, rested safely'}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-amber-500"
                 />
               </div>
@@ -1153,9 +1353,13 @@ export default function WorkerDashboardPage() {
               <div className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 p-2.5 rounded-xl flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
                 <span>
-                  {language === 'ml'
-                    ? 'ബ്രേക്ക് സമയം വേതനത്തിൽ ഉൾപ്പെടില്ല. ടൈമർ താൽക്കാലികമായി നിർത്തും.'
-                    : 'Working meter will freeze. Break duration is non-billable to the client.'}
+                  {isTreePlucking
+                    ? (language === 'ml'
+                      ? 'ബ്രേക്ക് സമയം എണ്ണത്തിൽ മാറ്റം വരുത്തില്ല. ജോലി തുടരുമ്പോൾ ബാക്കി തെങ്ങുകൾ എണ്ണാം.'
+                      : 'Break records are saved with your tree count snapshot. Resume plucking when ready.')
+                    : (language === 'ml'
+                      ? 'ബ്രേക്ക് സമയം വേതനത്തിൽ ഉൾപ്പെടില്ല. ടൈമർ താൽക്കാലികമായി നിർത്തും.'
+                      : 'Working meter will freeze. Break duration is non-billable to the client.')}
                 </span>
               </div>
 
@@ -1166,7 +1370,7 @@ export default function WorkerDashboardPage() {
                   onClick={() => setIsPauseModalOpen(false)}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer"
                 >
-                  {language === 'ml' ? 'പണി തുടരുക' : 'Keep Working'}
+                  {language === 'ml' ? (isTreePlucking ? 'തെങ്ങ് കയറ്റം തുടരുക' : 'പണി തുടരുക') : 'Keep Working'}
                 </button>
                 <button
                   type="button"
@@ -1198,10 +1402,14 @@ export default function WorkerDashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                    {language === 'ml' ? 'പണി പുനരാരംഭിക്കുക' : 'Resume Work Order?'}
+                    {isTreePlucking
+                      ? (language === 'ml' ? 'തെങ്ങ് കയറ്റം പുനരാരംഭിക്കുക' : 'Resume Coconut Plucking?')
+                      : (language === 'ml' ? 'പണി പുനരാരംഭിക്കുക' : 'Resume Work Order?')}
                   </h3>
                   <p className="text-xs text-blue-700 font-medium">
-                    {language === 'ml' ? 'ബ്രേക്ക് അവസാനിപ്പിച്ച് ടൈമർ ഓൺ ചെയ്യുക' : 'Conclude current break and resume live on-site timer'}
+                    {isTreePlucking
+                      ? (language === 'ml' ? 'ബ്രേക്ക് അവസാനിപ്പിച്ച് ബാക്കി തെങ്ങുകൾ എണ്ണുക' : 'End break and continue counting harvested palms')
+                      : (language === 'ml' ? 'ബ്രേക്ക് അവസാനിപ്പിച്ച് ടൈമർ ഓൺ ചെയ്യുക' : 'Conclude current break and resume live on-site timer')}
                   </p>
                 </div>
               </div>
@@ -1216,20 +1424,31 @@ export default function WorkerDashboardPage() {
                     {activeBreakReason || 'General Break'}
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-blue-700 font-medium">
-                    {language === 'ml' ? 'ബ്രേക്ക് ദൈർഘ്യം:' : 'Break Duration:'}
-                  </span>
-                  <span className="font-mono text-base font-black text-blue-800">
-                    {formatTimer(breakTimerSeconds)}
-                  </span>
-                </div>
+                {isTreePlucking ? (
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-700 font-medium">
+                      {language === 'ml' ? 'ബ്രേക്കിന് മുൻപ് കയറിയത്:' : 'Trees Before Break:'}
+                    </span>
+                    <span className="font-mono text-base font-black text-emerald-800 bg-emerald-100/60 px-2 py-0.5 rounded-lg">
+                      🌴 {completionUnits || 1} {language === 'ml' ? 'തെങ്ങ്' : 'Trees'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-700 font-medium">
+                      {language === 'ml' ? 'ബ്രേക്ക് ദൈർഘ്യം:' : 'Break Duration:'}
+                    </span>
+                    <span className="font-mono text-base font-black text-blue-800">
+                      {formatTimer(breakTimerSeconds)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="text-[11px] text-slate-600 bg-slate-50 border border-slate-200 p-2.5 rounded-xl">
-                ℹ️ {language === 'ml'
-                  ? 'സ്ഥിരീകരിച്ച ശേഷം ലൈവ് സ്റ്റോപ്പ് വാച്ച് വീണ്ടും റൺ ചെയ്യും.'
-                  : 'Live working chronometer will immediately resume recording working hours.'}
+                ℹ️ {isTreePlucking
+                  ? (language === 'ml' ? 'സ്ഥിരീകരിച്ച ശേഷം ബാക്കി തെങ്ങുകൾ രേഖപ്പെടുത്താം.' : 'Resume work and continue adding newly harvested trees.')
+                  : (language === 'ml' ? 'സ്ഥിരീകരിച്ച ശേഷം ലൈവ് സ്റ്റോപ്പ് വാച്ച് വീണ്ടും റൺ ചെയ്യും.' : 'Live working chronometer will immediately resume recording working hours.')}
               </div>
 
               {/* Modal Buttons */}

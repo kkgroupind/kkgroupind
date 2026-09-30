@@ -528,11 +528,15 @@ export class EnquiryRepository {
         computedCost = enquiry.totalCalculatedCost ?? null;
       }
 
+      const isStartingWork =
+        status === ServiceStatus.IN_PROGRESS && !enquiry.workStartedAt;
+
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
         data: {
           status,
           notes: notes ? notes : undefined,
+          workStartedAt: isStartingWork ? new Date() : undefined,
           completedAt: isCompleted ? new Date() : undefined,
           completedUnits: finalCompletedUnits !== undefined ? finalCompletedUnits : undefined,
           totalCalculatedWage: computedWage !== undefined ? computedWage : undefined,

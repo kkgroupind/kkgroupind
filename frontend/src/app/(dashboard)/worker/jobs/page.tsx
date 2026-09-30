@@ -257,13 +257,41 @@ export default function WorkerJobsPage() {
 
                     {(() => {
                       const sName = (job.serviceName || '').toLowerCase();
-                      const isMachinery = sName.includes('jcb') || sName.includes('excavat') || sName.includes('loader') || sName.includes('crane');
-                      const wageType = job.wageType && (job.wageType !== 'HOURLY' || isMachinery)
-                        ? job.wageType
-                        : sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm')
+                      const sCat = (job.serviceCategory || '').toLowerCase();
+                      const uLbl = (job.unitLabel || '').toLowerCase();
+                      const wType = (job.wageType || '').toUpperCase();
+                      const spec = (job.specificationDetails as any) || {};
+                      const isTreeService =
+                        wType === 'PER_TREE' ||
+                        uLbl === 'tree' ||
+                        spec.treeCounterEnabled === true ||
+                        sCat.includes('cococare') ||
+                        sCat.includes('agriculture') ||
+                        sName.includes('cococare') ||
+                        sName.includes('coconut') ||
+                        sName.includes('palm') ||
+                        sName.includes('tree') ||
+                        sName.includes('plucking') ||
+                        sName.includes('harvest') ||
+                        sName.includes('തെങ്ങ്') ||
+                        sName.includes('കയറ്റം') ||
+                        sName.includes('thengu') ||
+                        sName.includes('kayattam');
+                      const isMachinery =
+                        !isTreeService &&
+                        (sName.includes('jcb') ||
+                        sName.includes('excavat') ||
+                        sName.includes('loader') ||
+                        sName.includes('crane') ||
+                        sName.includes('ജെസിബി') ||
+                        sName.includes('എസ്കവേറ്റർ'));
+
+                      const wageType = isTreeService
                         ? 'PER_TREE'
                         : isMachinery
                         ? 'HOURLY'
+                        : job.wageType && job.wageType !== 'HOURLY'
+                        ? job.wageType
                         : sName.includes('paint') || sName.includes('tile')
                         ? 'PER_SQFT'
                         : sName.includes('electr') || sName.includes('wir')

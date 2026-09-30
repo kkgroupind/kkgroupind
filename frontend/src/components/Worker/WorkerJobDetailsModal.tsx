@@ -77,6 +77,7 @@ export function WorkerJobDetailsModal({
     reason: string;
     startedAt: string;
     notes?: string;
+    unitsBeforeBreak?: number;
   } | null>(null);
   const [breakTimerSeconds, setBreakTimerSeconds] = useState(0);
   const [showBreakSelector, setShowBreakSelector] = useState(false);
@@ -96,6 +97,7 @@ export function WorkerJobDetailsModal({
 
   // Unit specifications & draft progress logging state (Tree count, Sq.Ft., Points, etc.)
   const [unitCount, setUnitCount] = useState<number>(10);
+  const [treesBeforeBreakInput, setTreesBeforeBreakInput] = useState<number>(10);
   const [crownCleaningDone, setCrownCleaningDone] = useState(true);
   const [beetleMedicineApplied, setBeetleMedicineApplied] = useState(true);
   const [completionNotes, setCompletionNotes] = useState('');
@@ -119,6 +121,7 @@ export function WorkerJobDetailsModal({
           ? 12
           : 5);
       setUnitCount(initialUnits);
+      setTreesBeforeBreakInput(initialUnits);
 
       if (spec.lastDraftSavedAt) {
         setLastDraftSavedTime(
@@ -142,8 +145,46 @@ export function WorkerJobDetailsModal({
         setBreakTimerSeconds(0);
       }
 
-      // Initialize timer if job is in progress with workStartedAt
-      if (job.status === 'IN_PROGRESS' && job.workStartedAt) {
+      // Detect if job is coconut plucking / tree service vs machinery
+      const sName = (job.serviceName || '').toLowerCase();
+      const sCat = (job.serviceCategory || '').toLowerCase();
+      const uLbl = (job.unitLabel || '').toLowerCase();
+      const wType = (job.wageType || '').toUpperCase();
+
+      const isTree =
+        wType === 'PER_TREE' ||
+        uLbl === 'tree' ||
+        spec.treeCounterEnabled === true ||
+        sCat.includes('cococare') ||
+        sCat.includes('agriculture') ||
+        sName.includes('coconut') ||
+        sName.includes('cococare') ||
+        sName.includes('palm') ||
+        sName.includes('tree') ||
+        sName.includes('plucking') ||
+        sName.includes('harvest') ||
+        sName.includes('തെങ്ങ്') ||
+        sName.includes('കയറ്റം') ||
+        sName.includes('thengu') ||
+        sName.includes('kayattam');
+
+      const isMach =
+        !isTree &&
+        (sName.includes('jcb') ||
+        sName.includes('excavat') ||
+        sName.includes('crane') ||
+        sName.includes('earthmoving') ||
+        sName.includes('trench') ||
+        sName.includes('grader') ||
+        sName.includes('loader') ||
+        sName.includes('ജെസിബി') ||
+        sName.includes('എസ്കവേറ്റർ') ||
+        sName.includes('ക്രെയിൻ') ||
+        sName.includes('മണ്ണെടുക്കൽ'));
+      const jobIsHourly = !isTree && (job.wageType === 'HOURLY' || isMach);
+
+      // Initialize timer ONLY for hourly machinery jobs (Coconut tree plucking strictly uses Tree Counter HUD, NEVER a timer)
+      if (job.status === 'IN_PROGRESS' && job.workStartedAt && jobIsHourly) {
         const startMs = new Date(job.workStartedAt).getTime();
         const elapsedSeconds = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
         setTimerSeconds(elapsedSeconds);
@@ -155,9 +196,32 @@ export function WorkerJobDetailsModal({
     }
   }, [job]);
 
-  // Live timer interval (runs only when timer is running and not on active break)
+  // Live timer interval (runs only when timer is running and not on active break, NEVER for tree plucking)
   useEffect(() => {
-    if (isTimerRunning && !activeBreak) {
+    const sName = (job?.serviceName || '').toLowerCase();
+    const sCat = (job?.serviceCategory || '').toLowerCase();
+    const uLbl = (job?.unitLabel || '').toLowerCase();
+    const wType = (job?.wageType || '').toUpperCase();
+    const spec = (job?.specificationDetails as any) || {};
+
+    const isTree =
+      wType === 'PER_TREE' ||
+      uLbl === 'tree' ||
+      spec.treeCounterEnabled === true ||
+      sCat.includes('cococare') ||
+      sCat.includes('agriculture') ||
+      sName.includes('coconut') ||
+      sName.includes('cococare') ||
+      sName.includes('palm') ||
+      sName.includes('tree') ||
+      sName.includes('plucking') ||
+      sName.includes('harvest') ||
+      sName.includes('തെങ്ങ്') ||
+      sName.includes('കയറ്റം') ||
+      sName.includes('thengu') ||
+      sName.includes('kayattam');
+
+    if (isTimerRunning && !activeBreak && !isTree) {
       timerIntervalRef.current = setInterval(() => {
         setTimerSeconds((prev) => prev + 1);
       }, 1000);
@@ -171,11 +235,34 @@ export function WorkerJobDetailsModal({
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [isTimerRunning, activeBreak]);
+  }, [isTimerRunning, activeBreak, job]);
 
-  // Live break timer interval (counts duration while on pause)
+  // Live break timer interval (counts duration while on pause, NEVER for tree plucking)
   useEffect(() => {
-    if (activeBreak) {
+    const sName = (job?.serviceName || '').toLowerCase();
+    const sCat = (job?.serviceCategory || '').toLowerCase();
+    const uLbl = (job?.unitLabel || '').toLowerCase();
+    const wType = (job?.wageType || '').toUpperCase();
+    const spec = (job?.specificationDetails as any) || {};
+
+    const isTree =
+      wType === 'PER_TREE' ||
+      uLbl === 'tree' ||
+      spec.treeCounterEnabled === true ||
+      sCat.includes('cococare') ||
+      sCat.includes('agriculture') ||
+      sName.includes('coconut') ||
+      sName.includes('cococare') ||
+      sName.includes('palm') ||
+      sName.includes('tree') ||
+      sName.includes('plucking') ||
+      sName.includes('harvest') ||
+      sName.includes('തെങ്ങ്') ||
+      sName.includes('കയറ്റം') ||
+      sName.includes('thengu') ||
+      sName.includes('kayattam');
+
+    if (activeBreak && !isTree) {
       breakIntervalRef.current = setInterval(() => {
         setBreakTimerSeconds((prev) => prev + 1);
       }, 1000);
@@ -189,7 +276,7 @@ export function WorkerJobDetailsModal({
         clearInterval(breakIntervalRef.current);
       }
     };
-  }, [activeBreak]);
+  }, [activeBreak, job]);
 
   if (!isOpen || !localJob) return null;
 
@@ -199,24 +286,40 @@ export function WorkerJobDetailsModal({
 
   // Identify service wage specification model accurately
   const sName = (localJob.serviceName || '').toLowerCase();
+  const sCat = (localJob.serviceCategory || '').toLowerCase();
+  const uLbl = (localJob.unitLabel || '').toLowerCase();
+  const wType = (localJob.wageType || '').toUpperCase();
+  const spec = (localJob.specificationDetails as any) || {};
+
+  const isTreeService =
+    wType === 'PER_TREE' ||
+    uLbl === 'tree' ||
+    spec.treeCounterEnabled === true ||
+    sCat.includes('cococare') ||
+    sCat.includes('agriculture') ||
+    sName.includes('coconut') ||
+    sName.includes('cococare') ||
+    sName.includes('palm') ||
+    sName.includes('tree') ||
+    sName.includes('plucking') ||
+    sName.includes('harvest') ||
+    sName.includes('തെങ്ങ്') ||
+    sName.includes('കയറ്റം') ||
+    sName.includes('thengu') ||
+    sName.includes('kayattam');
   const isMachinery =
-    sName.includes('jcb') ||
+    !isTreeService &&
+    (sName.includes('jcb') ||
     sName.includes('excavat') ||
     sName.includes('crane') ||
     sName.includes('earthmoving') ||
     sName.includes('trench') ||
     sName.includes('grader') ||
+    sName.includes('loader') ||
     sName.includes('ജെസിബി') ||
     sName.includes('എസ്കവേറ്റർ') ||
     sName.includes('ക്രെയിൻ') ||
-    sName.includes('മണ്ണെടുക്കൽ');
-  const isTreeService =
-    sName.includes('coconut') ||
-    sName.includes('cococare') ||
-    sName.includes('palm') ||
-    sName.includes('tree') ||
-    sName.includes('കയറ്റം') ||
-    sName.includes('തെങ്ങ്');
+    sName.includes('മണ്ണെടുക്കൽ'));
   const isPaintOrTile =
     sName.includes('paint') ||
     sName.includes('putty') ||
@@ -243,25 +346,24 @@ export function WorkerJobDetailsModal({
     sName.includes('plaster') ||
     sName.includes('മേസ്തിരി');
 
-  const wageType =
-    localJob.wageType && localJob.wageType !== 'HOURLY'
-      ? localJob.wageType
-      : isMachinery
-      ? 'HOURLY'
-      : isTreeService
-      ? 'PER_TREE'
-      : isPaintOrTile
-      ? 'PER_SQFT'
-      : isElectrical
-      ? 'PER_POINT'
-      : isBorewell
-      ? 'PER_FOOT'
-      : isMasonry
-      ? 'DAILY_WAGE'
-      : localJob.wageType || 'FIXED_VISIT';
+  const wageType = isTreeService
+    ? 'PER_TREE'
+    : isMachinery
+    ? 'HOURLY'
+    : localJob.wageType && localJob.wageType !== 'HOURLY'
+    ? localJob.wageType
+    : isPaintOrTile
+    ? 'PER_SQFT'
+    : isElectrical
+    ? 'PER_POINT'
+    : isBorewell
+    ? 'PER_FOOT'
+    : isMasonry
+    ? 'DAILY_WAGE'
+    : localJob.wageType || 'FIXED_VISIT';
 
-  const isCoconut = wageType === 'PER_TREE';
-  const isHourly = wageType === 'HOURLY';
+  const isCoconut = isTreeService || wageType === 'PER_TREE';
+  const isHourly = !isCoconut && wageType === 'HOURLY';
   const isSqFt = wageType === 'PER_SQFT';
   const isPoint = wageType === 'PER_POINT';
   const isFoot = wageType === 'PER_FOOT';
@@ -349,6 +451,7 @@ export function WorkerJobDetailsModal({
           token,
         );
         setLocalJob(res.enquiry);
+        setIsTimerRunning(false);
       }
       onJobUpdated?.();
     } catch (err: any) {
@@ -362,28 +465,50 @@ export function WorkerJobDetailsModal({
     }
   };
 
-  // 3. Worker Pauses Timer for Break (Lunch, Breakfast, Emergency)
-  const handlePauseForBreak = async (reason: string, notes?: string) => {
+  // 3. Worker Pauses for Break (Lunch, Breakfast, Emergency, Rain)
+  const handlePauseForBreak = async (reason: string, notes?: string, unitsBeforeBreak?: number) => {
     if (!token || !localJob) return;
     setIsSubmittingAction(true);
     setActionError(null);
     try {
-      const res = await EnquiryService.pauseWorkTimer(localJob.id, { reason, notes }, token);
+      const finalUnits = unitsBeforeBreak !== undefined ? unitsBeforeBreak : unitCount;
+      const res = await EnquiryService.pauseWorkTimer(
+        localJob.id,
+        {
+          reason,
+          notes,
+          specificationDetails: {
+            unitsBeforeBreak: finalUnits,
+            temporaryCount: finalUnits,
+            crownCleaningDone,
+            beetleMedicineApplied,
+          },
+        },
+        token,
+      );
       setLocalJob(res.enquiry);
-      setActiveBreak({ reason, startedAt: new Date().toISOString(), notes });
+      if (unitsBeforeBreak !== undefined) {
+        setUnitCount(unitsBeforeBreak);
+      }
+      setActiveBreak({
+        reason,
+        startedAt: new Date().toISOString(),
+        notes,
+        unitsBeforeBreak: finalUnits,
+      });
       setBreakTimerSeconds(0);
       setShowBreakSelector(false);
       setIsPauseConfirmOpen(false);
       setBreakNotes('');
       onJobUpdated?.();
     } catch (err: any) {
-      setActionError(err?.message || 'Failed to pause timer for break');
+      setActionError(err?.message || 'Failed to record break');
     } finally {
       setIsSubmittingAction(false);
     }
   };
 
-  // 4. Worker Resumes Timer After Break
+  // 4. Worker Resumes Work After Break
   const handleResumeFromBreak = async () => {
     if (!token || !localJob) return;
     setIsSubmittingAction(true);
@@ -393,13 +518,40 @@ export function WorkerJobDetailsModal({
       setLocalJob(res.enquiry);
       setActiveBreak(null);
       setBreakTimerSeconds(0);
-      setIsTimerRunning(true);
+      setIsTimerRunning(isHourly);
       setIsResumeConfirmOpen(false);
       onJobUpdated?.();
     } catch (err: any) {
-      setActionError(err?.message || 'Failed to resume work timer');
+      setActionError(err?.message || 'Failed to resume work');
     } finally {
       setIsSubmittingAction(false);
+    }
+  };
+
+  // Immediate Tree / Unit Count Update Handler with background draft synchronization
+  const handleUpdateUnitCount = (newCount: number) => {
+    const validCount = Math.max(1, newCount);
+    setUnitCount(validCount);
+    setTreesBeforeBreakInput(validCount);
+    if (token && localJob) {
+      EnquiryService.saveWorkDraft(
+        localJob.id,
+        {
+          completedUnits: validCount,
+          specificationDetails: {
+            crownCleaningDone,
+            beetleMedicineApplied,
+          },
+        },
+        token,
+      ).then((res) => {
+        if (res?.enquiry) setLocalJob(res.enquiry);
+        const savedTime = new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        setLastDraftSavedTime(savedTime);
+      }).catch(() => {});
     }
   };
 
@@ -554,27 +706,7 @@ export function WorkerJobDetailsModal({
         </div>
 
         {/* Service Execution Mode Badge Banner */}
-        {isHourly ? (
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/35">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
-                <Timer className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="text-xs font-black text-amber-300 block uppercase tracking-wider">
-                  ⏱️ Machinery Timer Mode (JCB / Equipment)
-                </span>
-                <span className="text-[11px] text-amber-200/70 block">
-                  On-site equipment chronometer. Break time excluded from billing.
-                </span>
-              </div>
-            </div>
-            <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
-              <span className="text-[11px] font-semibold text-amber-300/90">Post-Completion</span>
-            </div>
-          </div>
-        ) : isCoconut ? (
+        {isCoconut ? (
           <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/20 via-emerald-500/10 to-transparent border border-emerald-500/35">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
@@ -592,6 +724,26 @@ export function WorkerJobDetailsModal({
             <div className="text-right shrink-0">
               <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
               <span className="text-[11px] font-semibold text-emerald-300/90">Post-Completion</span>
+            </div>
+          </div>
+        ) : isHourly ? (
+          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent border border-amber-500/35">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+                <Timer className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="text-xs font-black text-amber-300 block uppercase tracking-wider">
+                  ⏱️ Machinery Timer Mode (JCB / Equipment)
+                </span>
+                <span className="text-[11px] text-amber-200/70 block">
+                  On-site equipment chronometer. Break time excluded from billing.
+                </span>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
+              <span className="text-[11px] font-semibold text-amber-300/90">Post-Completion</span>
             </div>
           </div>
         ) : (
@@ -849,34 +1001,96 @@ export function WorkerJobDetailsModal({
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                     Coconut Palm Harvesting
                   </h4>
-                  <span className="text-[11px] text-slate-400">ഈന്തപ്പന വിളവെടുക്കൽ</span>
+                  <span className="text-[11px] text-slate-400">ഈന്തപ്പന വിളവെടുക്കൽ • തെങ്ങ് കയറ്റം</span>
                 </div>
               </div>
 
-              {isCompleted && localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0 ? (
-                <div className="text-right">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Wage Payout</span>
-                  <span className="font-mono text-base font-black text-[#34d399]">
-                    ₹{localJob.totalCalculatedWage.toLocaleString('en-IN')}
+              <div className="text-right">
+                {isCompleted && localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0 ? (
+                  <>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Wage Payout</span>
+                    <span className="font-mono text-base font-black text-[#34d399]">
+                      ₹{localJob.totalCalculatedWage.toLocaleString('en-IN')}
+                    </span>
+                  </>
+                ) : localJob.workStartedAt ? (
+                  <>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider block">Started At</span>
+                    <span className="font-mono text-xs font-bold text-emerald-400">
+                      {new Date(localJob.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[10px] text-slate-400 italic bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
+                    Wage set after completion
                   </span>
-                </div>
-              ) : (
-                <span className="text-[10px] text-slate-400 italic bg-slate-800/60 px-2.5 py-1 rounded-lg border border-slate-700">
-                  {isCompleted ? 'Payout Pending Office Approval' : 'Wage set after completion'}
-                </span>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* Active Break Alert Banner for Coconut Plucking */}
+            {activeBreak && (
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-orange-950/40 border border-orange-500/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500/20 border border-orange-500/40 text-orange-400 flex items-center justify-center shrink-0">
+                    {activeBreak.reason === 'LUNCH' ? (
+                      <Utensils className="w-5 h-5" />
+                    ) : activeBreak.reason === 'BREAKFAST' ? (
+                      <Coffee className="w-5 h-5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-orange-300">
+                        {activeBreak.reason === 'LUNCH'
+                          ? '🍱 Lunch Break (ഉച്ചഭക്ഷണം)'
+                          : activeBreak.reason === 'BREAKFAST'
+                          ? '☕ Breakfast / Tea (പ്രാതൽ)'
+                          : activeBreak.reason === 'TEA'
+                          ? '🫖 Evening Tea (ചായ കുടി)'
+                          : activeBreak.reason === 'WEATHER'
+                          ? '🌧️ Rain Delay (മഴ തടസ്സം)'
+                          : '⏸️ Rest Break (വിശ്രമം)'}
+                      </span>
+                      <span className="text-[10px] px-2 py-0.2 rounded-full bg-orange-500/30 text-orange-200 border border-orange-500/40 font-bold">
+                        Paused
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-orange-200/80 block mt-0.5">
+                      Started: {new Date(activeBreak.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {activeBreak.unitsBeforeBreak !== undefined && (
+                        <span className="ml-2 font-bold text-emerald-300">
+                          • 🌴 {activeBreak.unitsBeforeBreak} Trees Logged Before Break
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsResumeConfirmOpen(true)}
+                  disabled={isSubmittingAction}
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-md disabled:opacity-60 active:scale-95"
+                >
+                  <Play className="w-3.5 h-3.5 fill-white" />
+                  <span>Resume Plucking (പണി തുടരുക)</span>
+                </button>
+              </div>
+            )}
 
             {/* Tree Count Counter HUD */}
             <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 flex flex-col items-center gap-3">
               <span className="text-[11px] font-semibold text-slate-300">
-                Number of Coconut Trees Plucked
+                Number of Coconut Trees Plucked (കയറിയ തെങ്ങുകൾ)
               </span>
 
               <div className="flex items-center gap-4">
                 <button
                   type="button"
-                  onClick={() => setUnitCount((prev) => Math.max(1, prev - 1))}
+                  onClick={() => handleUpdateUnitCount(Math.max(1, unitCount - 1))}
                   disabled={isCompleted || isSubmittingAction}
                   className="w-10 h-10 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center text-lg font-bold border border-slate-700 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
@@ -888,7 +1102,7 @@ export function WorkerJobDetailsModal({
                     type="number"
                     min={1}
                     value={unitCount}
-                    onChange={(e) => setUnitCount(Math.max(1, Number(e.target.value)))}
+                    onChange={(e) => handleUpdateUnitCount(Math.max(1, Number(e.target.value)))}
                     disabled={isCompleted || isSubmittingAction}
                     className="w-16 bg-transparent text-center font-mono text-3xl font-black text-white focus:outline-none"
                   />
@@ -897,7 +1111,7 @@ export function WorkerJobDetailsModal({
 
                 <button
                   type="button"
-                  onClick={() => setUnitCount((prev) => prev + 1)}
+                  onClick={() => handleUpdateUnitCount(unitCount + 1)}
                   disabled={isCompleted || isSubmittingAction}
                   className="w-10 h-10 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center text-lg font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
@@ -913,7 +1127,7 @@ export function WorkerJobDetailsModal({
                     <button
                       key={inc}
                       type="button"
-                      onClick={() => setUnitCount((prev) => prev + inc)}
+                      onClick={() => handleUpdateUnitCount(unitCount + inc)}
                       className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-bold border border-slate-700 cursor-pointer"
                     >
                       +{inc}
@@ -934,7 +1148,7 @@ export function WorkerJobDetailsModal({
                   className="w-4 h-4 rounded text-[#2A835F] focus:ring-0 bg-slate-950 border-slate-700"
                 />
                 <span className="text-slate-300 font-medium text-[11px]">
-                  Crown Cleaning & Frond Pruning Done
+                  Crown Cleaning &amp; Frond Pruning Done
                 </span>
               </label>
 
@@ -952,27 +1166,126 @@ export function WorkerJobDetailsModal({
               </label>
             </div>
 
-            {/* Save Draft Button for Count Work */}
+            {/* In-Progress Actions: Break & Save Draft */}
             {isInProgress && !isCompleted && (
-              <div className="flex items-center justify-between pt-1 border-t border-slate-700/40">
-                <span className="text-[11px] text-slate-400">
-                  {lastDraftSavedTime ? (
-                    <span className="text-emerald-400">✓ Draft saved at {lastDraftSavedTime}</span>
-                  ) : (
-                    'Save progress to protect count'
-                  )}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleSaveDraftProgress}
-                  disabled={isSavingDraft || isSubmittingAction}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-60"
-                >
-                  {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  <span>Save Draft</span>
-                </button>
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-700/40">
+                {!activeBreak ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTreesBeforeBreakInput(unitCount);
+                      setIsPauseConfirmOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[11px] font-bold transition-all cursor-pointer"
+                  >
+                    <Coffee className="w-3.5 h-3.5" />
+                    <span>Take Break (ബ്രേക്ക് എടുക്കുക)</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsResumeConfirmOpen(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all cursor-pointer shadow-sm"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                    <span>Resume Work</span>
+                  </button>
+                )}
+
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="text-[11px] text-slate-400">
+                    {lastDraftSavedTime ? (
+                      <span className="text-emerald-400">✓ Draft saved at {lastDraftSavedTime}</span>
+                    ) : (
+                      'Save progress to protect count'
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleSaveDraftProgress}
+                    disabled={isSavingDraft || isSubmittingAction}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-900/50 hover:bg-emerald-800/60 border border-emerald-500/30 text-emerald-300 text-[11px] font-bold transition-all cursor-pointer disabled:opacity-60"
+                  >
+                    {isSavingDraft ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    <span>Save Draft</span>
+                  </button>
+                </div>
               </div>
             )}
+
+            {/* Coconut Plucking Breaks History with Before-Break Tree Count */}
+            {(() => {
+              const spec = (localJob.specificationDetails as any) || {};
+              const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+              if (breaks.length === 0) return null;
+
+              const getBreakBadge = (reason: string) => {
+                const r = (reason || '').toUpperCase();
+                if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
+                if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
+                if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
+                if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain Delay (മഴ തടസ്സം)', icon: '🌧️' };
+                return { label: reason || 'Break (വിശ്രമം)', icon: '⏸️' };
+              };
+
+              return (
+                <div className="text-left border-t border-slate-700/40 pt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-amber-400 uppercase font-black tracking-wider flex items-center gap-1.5">
+                      <Coffee className="w-3.5 h-3.5" />
+                      <span>Break Records &amp; Tree Count History ({breaks.length})</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">Completed Breaks</span>
+                  </div>
+
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                    {breaks.map((b: any, i: number) => {
+                      const badge = getBreakBadge(b.reason);
+                      const startStr = b.start || b.startedAt ? new Date(b.start || b.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const endStr = b.end || b.endedAt ? new Date(b.end || b.endedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                      const dur = b.durationMinutes !== undefined ? `${b.durationMinutes}m` : 'Ongoing';
+                      const treesBefore = b.unitsBeforeBreak !== undefined ? b.unitsBeforeBreak : null;
+
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-base shrink-0">{badge.icon}</span>
+                            <div className="min-w-0">
+                              <span className="font-bold text-slate-200 block truncate text-[11px]">
+                                {badge.label}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
+                                {(startStr || endStr) && (
+                                  <span className="font-mono">
+                                    {startStr} {endStr ? `→ ${endStr}` : ''}
+                                  </span>
+                                )}
+                                {treesBefore !== null && (
+                                  <span className="font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                                    🌴 {treesBefore} Trees Plucked Before Break
+                                  </span>
+                                )}
+                              </div>
+                              {b.notes && (
+                                <span className="text-[10px] text-slate-400 italic block truncate mt-0.5">
+                                  &quot;{b.notes}&quot;
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-mono text-xs font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 shrink-0">
+                            {dur}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -1263,7 +1576,7 @@ export function WorkerJobDetailsModal({
         )}
 
         {/* ----------------- UNIVERSAL TIME & BREAK RECORDS CARD (NON-HOURLY JOBS) ----------------- */}
-        {!isHourly && (localJob.workStartedAt || localJob.workDurationMinutes || isCompleted || ((localJob.specificationDetails as any)?.breaks && (localJob.specificationDetails as any).breaks.length > 0)) && (() => {
+        {!isHourly && !isCoconut && (localJob.workStartedAt || localJob.workDurationMinutes || isCompleted || ((localJob.specificationDetails as any)?.breaks && (localJob.specificationDetails as any).breaks.length > 0)) && (() => {
           const spec = (localJob.specificationDetails as any) || {};
           const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
           const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
@@ -1545,15 +1858,20 @@ export function WorkerJobDetailsModal({
               </button>
             )}
 
-            {/* 3a. If in progress & hourly & timer running: "Pause for Break" */}
-            {isInProgress && isHourly && isTimerRunning && !activeBreak && (
+            {/* 3a. If in progress & not on break: "Take Break" */}
+            {isInProgress && !activeBreak && (
               <button
                 type="button"
-                onClick={() => setIsPauseConfirmOpen(true)}
+                onClick={() => {
+                  if (isCoconut) {
+                    setTreesBeforeBreakInput(unitCount);
+                  }
+                  setIsPauseConfirmOpen(true);
+                }}
                 className="bg-amber-600 hover:bg-amber-500 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
-                <Pause className="w-3.5 h-3.5" />
-                <span>Pause Break</span>
+                <Coffee className="w-3.5 h-3.5" />
+                <span>{isCoconut ? 'Take Break (ബ്രേക്ക്)' : 'Pause Break'}</span>
               </button>
             )}
 
@@ -1566,7 +1884,7 @@ export function WorkerJobDetailsModal({
                 className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer disabled:opacity-60 active:scale-95"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Resume Work</span>
+                <span>{isCoconut ? 'Resume Plucking' : 'Resume Work'}</span>
               </button>
             )}
 
@@ -1609,29 +1927,77 @@ export function WorkerJobDetailsModal({
           </div>
         </div>
 
-        {/* ----------------- MODAL 1: PAUSE TIMER CONFIRMATION MODAL ----------------- */}
+        {/* ----------------- MODAL 1: PAUSE / BREAK CONFIRMATION MODAL ----------------- */}
         {isPauseConfirmOpen && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
             <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-amber-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
-                  <Pause className="w-6 h-6" />
+                  {isCoconut ? <Coffee className="w-6 h-6" /> : <Pause className="w-6 h-6" />}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    Pause Timer for Break?
+                    {isCoconut ? 'Take a Break (ബ്രേക്ക് സമയം)' : 'Pause Timer for Break?'}
                   </h3>
                   <p className="text-xs text-amber-300/80">
-                    ബ്രേക്ക് സമയം രേഖപ്പെടുത്തുക
+                    {isCoconut
+                      ? 'ബ്രേക്കിന് മുൻപുള്ള തെങ്ങുകളുടെ എണ്ണം രേഖപ്പെടുത്തുക'
+                      : 'ബ്രേക്ക് സമയം രേഖപ്പെടുത്തുക'}
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 flex items-center justify-between text-xs">
-                <span className="text-slate-400">Current Work Meter:</span>
-                <span className="font-mono text-base font-black text-amber-400">{formatTimer(timerSeconds)}</span>
-              </div>
+              {/* If Coconut Plucking: Number of Trees Plucked Before Break */}
+              {isCoconut ? (
+                <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-emerald-500/30 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-300">
+                      Trees Plucked Before Break:
+                    </span>
+                    <span className="text-[10px] text-slate-400">ബ്രേക്കിന് മുൻപ് കയറിയത്</span>
+                  </div>
 
+                  <div className="flex items-center justify-center gap-3 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setTreesBeforeBreakInput((prev) => Math.max(0, prev - 1))}
+                      className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold border border-slate-750 transition-all cursor-pointer"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+
+                    <div className="flex items-baseline gap-1.5 px-5 py-1.5 rounded-xl bg-black/50 border border-emerald-500/40">
+                      <input
+                        type="number"
+                        min={0}
+                        value={treesBeforeBreakInput}
+                        onChange={(e) => setTreesBeforeBreakInput(Math.max(0, Number(e.target.value)))}
+                        className="w-14 bg-transparent text-center font-mono text-2xl font-black text-white focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-emerald-400">Trees</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setTreesBeforeBreakInput((prev) => prev + 1)}
+                      className="w-9 h-9 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold transition-all cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <p className="text-[10px] text-slate-400 text-center">
+                    💡 This snapshot is preserved. After resuming work, you can continue counting additional trees.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 flex items-center justify-between text-xs">
+                  <span className="text-slate-400">Current Work Meter:</span>
+                  <span className="font-mono text-base font-black text-amber-400">{formatTimer(timerSeconds)}</span>
+                </div>
+              )}
+
+              {/* Break Reasons */}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
                   Select Break Reason:
@@ -1641,9 +2007,9 @@ export function WorkerJobDetailsModal({
                     { key: 'BREAKFAST', icon: '☕', label: 'Breakfast / Tea', ml: 'രാവിലത്തെ ചായ' },
                     { key: 'LUNCH', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
                     { key: 'TEA', icon: '🫖', label: 'Evening Tea', ml: 'വൈകുന്നേരത്തെ ചായ' },
-                    { key: 'MAINTENANCE', icon: '⛽', label: 'Refuel / Repair', ml: 'ഇന്ധനം / മെഷീൻ' },
                     { key: 'WEATHER', icon: '🌧️', label: 'Rain / Site Delay', ml: 'മഴ / കാലാവസ്ഥ' },
-                    { key: 'OTHER', icon: '❓', label: 'Other Delay', ml: 'മറ്റ് കാരണങ്ങൾ' },
+                    { key: 'MAINTENANCE', icon: '⛽', label: isCoconut ? 'Rest / Fatigue' : 'Refuel / Repair', ml: isCoconut ? 'വിശ്രമം' : 'ഇന്ധനം / മെഷീൻ' },
+                    { key: 'OTHER', icon: '❓', label: 'Other Reason', ml: 'മറ്റ് കാരണങ്ങൾ' },
                   ].map(({ key, icon, label, ml }) => (
                     <button
                       key={key}
@@ -1665,21 +2031,18 @@ export function WorkerJobDetailsModal({
                 </div>
               </div>
 
+              {/* Break Notes */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-semibold text-slate-400 block">
                   Break Notes (Optional):
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Taking 30m lunch break, machine parked safely"
+                  placeholder={isCoconut ? "e.g. 10 trees plucked, heavy noon sun, taking lunch" : "e.g. Taking 30m lunch break, machine parked safely"}
                   value={breakNotes}
                   onChange={(e) => setBreakNotes(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-amber-500"
                 />
-              </div>
-
-              <div className="text-[11px] text-amber-200/70 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
-                ⚠️ The working timer will freeze. Break time is excluded from customer billing and finalized during payout.
               </div>
 
               <div className="flex items-center gap-2.5 pt-1">
@@ -1688,11 +2051,11 @@ export function WorkerJobDetailsModal({
                   onClick={() => setIsPauseConfirmOpen(false)}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
                 >
-                  Keep Working
+                  {isCoconut ? 'Keep Plucking' : 'Keep Working'}
                 </button>
                 <button
                   type="button"
-                  onClick={() => handlePauseForBreak(selectedBreakReason, breakNotes)}
+                  onClick={() => handlePauseForBreak(selectedBreakReason, breakNotes, isCoconut ? treesBeforeBreakInput : undefined)}
                   disabled={isSubmittingAction}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
                 >
@@ -1701,7 +2064,88 @@ export function WorkerJobDetailsModal({
                   ) : (
                     <Pause className="w-3.5 h-3.5" />
                   )}
-                  <span>Confirm Pause</span>
+                  <span>{isCoconut ? 'Confirm Break' : 'Confirm Pause'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ----------------- MODAL: RESUME WORK CONFIRMATION MODAL ----------------- */}
+        {isResumeConfirmOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                  <Play className="w-6 h-6 fill-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {isCoconut ? 'Resume Coconut Plucking?' : 'Resume Work Timer?'}
+                  </h3>
+                  <p className="text-xs text-emerald-300/80">
+                    {isCoconut
+                      ? 'പണി പുനരാരംഭിക്കുക — ബാക്കി തെങ്ങുകൾ എണ്ണുക'
+                      : 'മെഷീൻ സമയം പുനരാരംഭിക്കുക'}
+                  </p>
+                </div>
+              </div>
+
+              {activeBreak && (
+                <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-750 space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span>Break Reason:</span>
+                    <span className="font-bold text-amber-300">
+                      {activeBreak.reason === 'LUNCH'
+                        ? '🍱 Lunch Break'
+                        : activeBreak.reason === 'BREAKFAST'
+                        ? '☕ Breakfast / Tea'
+                        : activeBreak.reason === 'WEATHER'
+                        ? '🌧️ Rain Delay'
+                        : activeBreak.reason}
+                    </span>
+                  </div>
+                  {isCoconut && activeBreak.unitsBeforeBreak !== undefined && (
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>Trees Plucked Before Break:</span>
+                      <span className="font-bold text-emerald-400">🌴 {activeBreak.unitsBeforeBreak} Trees</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between text-slate-400 text-[11px]">
+                    <span>Break Started:</span>
+                    <span className="font-mono">
+                      {new Date(activeBreak.startedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[11px] text-slate-400">
+                {isCoconut
+                  ? 'Continuing work will close this break record and allow you to continue logging additional harvested palms.'
+                  : 'Ending this break will resume the working chronometer and calculate final non-billable break duration.'}
+              </p>
+
+              <div className="flex items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsResumeConfirmOpen(false)}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Stay on Break
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResumeFromBreak}
+                  disabled={isSubmittingAction}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingAction ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 fill-white" />
+                  )}
+                  <span>Resume Now</span>
                 </button>
               </div>
             </div>
@@ -1816,13 +2260,99 @@ export function WorkerJobDetailsModal({
               </div>
 
               {/* Count Summary Card */}
-              <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-2 text-xs">
-                <div className="flex items-center justify-between text-white font-bold">
-                  <span>{isCoconut ? 'Total Coconut Trees Plucked' : `Completed ${unitLabel}s`}:</span>
-                  <span className="font-mono text-base text-emerald-400">{unitCount} {isCoconut ? 'Trees' : unitLabel}</span>
-                </div>
+              <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-3 text-xs">
+                {isCoconut ? (
+                  <div className="flex flex-col items-center gap-2.5 pb-2 border-b border-slate-800">
+                    <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                      Total Coconut Trees Plucked:
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateUnitCount(Math.max(1, unitCount - 1))}
+                        className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm border border-slate-700 active:scale-95 cursor-pointer"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <div className="flex items-baseline gap-1 px-4 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40">
+                        <input
+                          type="number"
+                          min={1}
+                          value={unitCount}
+                          onChange={(e) => handleUpdateUnitCount(Math.max(1, Number(e.target.value)))}
+                          className="w-14 bg-transparent text-center font-mono text-2xl font-black text-emerald-400 focus:outline-none"
+                        />
+                        <span className="text-xs font-bold text-emerald-400">Trees</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateUnitCount(unitCount + 1)}
+                        className="w-9 h-9 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-sm active:scale-95 cursor-pointer shadow-md"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                    {/* Quick add */}
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold">Quick:</span>
+                      {[5, 10, 15, 20].map((inc) => (
+                        <button
+                          key={inc}
+                          type="button"
+                          onClick={() => handleUpdateUnitCount(unitCount + inc)}
+                          className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer"
+                        >
+                          +{inc}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between text-white font-bold">
+                    <span>Completed {unitLabel}s:</span>
+                    <span className="font-mono text-base text-emerald-400">{unitCount} {unitLabel}</span>
+                  </div>
+                )}
+                {localJob.workStartedAt && (
+                  <div className="py-2 border-y border-slate-800 space-y-1 text-slate-300 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">Started At:</span>
+                      <span className="font-mono text-white">
+                        {new Date(localJob.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {!isCoconut && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400">Gross On-Site Time:</span>
+                          <span className="font-mono text-white">
+                            {(() => {
+                              const start = new Date(localJob.workStartedAt).getTime();
+                              const diffMins = Math.max(1, Math.round((Date.now() - start) / (1000 * 60)));
+                              const h = Math.floor(diffMins / 60);
+                              const m = diffMins % 60;
+                              return h > 0 ? `${h}h ${m}m` : `${m}m`;
+                            })()}
+                          </span>
+                        </div>
+                        {(() => {
+                          const spec = (localJob.specificationDetails as any) || {};
+                          const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+                          const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                          if (totalBreakMins <= 0) return null;
+                          return (
+                            <div className="flex items-center justify-between text-amber-300">
+                              <span>Breaks Deducted:</span>
+                              <span className="font-mono">{totalBreakMins} mins ({breaks.length} breaks)</span>
+                            </div>
+                          );
+                        })()}
+                      </>
+                    )}
+                  </div>
+                )}
                 {isCoconut && (
-                  <div className="py-2 border-y border-slate-800 space-y-1 text-slate-300">
+                  <div className="py-2 border-b border-slate-800 space-y-1 text-slate-300">
                     <div className="flex items-center justify-between">
                       <span>Crown Cleaning &amp; Frond Pruning:</span>
                       <span className={crownCleaningDone ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
@@ -1875,69 +2405,6 @@ export function WorkerJobDetailsModal({
                     <CheckCircle className="w-3.5 h-3.5" />
                   )}
                   <span>Confirm &amp; Complete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ----------------- MODAL 4: RESUME TIMER CONFIRMATION MODAL ----------------- */}
-        {isResumeConfirmOpen && (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-blue-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
-                  <Play className="w-6 h-6 fill-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    Resume Work Timer?
-                  </h3>
-                  <p className="text-xs text-blue-300/80">
-                    ബ്രേക്ക് അവസാനിപ്പിച്ച് പണി പുനരാരംഭിക്കുക
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 space-y-1.5 text-xs">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Current Break Reason:</span>
-                  <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
-                    {activeBreak?.reason || 'General Break'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Break Duration:</span>
-                  <span className="font-mono text-base font-black text-blue-400">
-                    {formatTimer(breakTimerSeconds)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="text-[11px] text-blue-200/80 bg-blue-950/40 border border-blue-500/30 p-2.5 rounded-xl">
-                ℹ️ The live working timer will resume immediately. Break duration is recorded and subtracted from final billable units.
-              </div>
-
-              <div className="flex items-center gap-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setIsResumeConfirmOpen(false)}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
-                >
-                  Stay on Break
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResumeFromBreak}
-                  disabled={isSubmittingAction}
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
-                >
-                  {isSubmittingAction ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 fill-white" />
-                  )}
-                  <span>Confirm Resume</span>
                 </button>
               </div>
             </div>

@@ -295,13 +295,7 @@ export function resolveServiceSpec(
 ): ServiceSpecificationConfig {
   const s = (serviceName || '').toLowerCase();
 
-  // If explicit wageType is provided and is NOT generic HOURLY (or if it's HOURLY and actually machinery), respect it:
-  if (explicitWageType && explicitWageType !== 'HOURLY') {
-    const matched = KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === explicitWageType);
-    if (matched) return matched;
-  }
-
-  // 1. Coconut & Palm Tree Harvesting / Pruning -> PER_TREE
+  // 1. Coconut & Palm Tree Harvesting / Pruning -> PER_TREE (Always Per Tree, never hourly)
   if (
     s.includes('coconut') ||
     s.includes('cococare') ||
@@ -310,6 +304,12 @@ export function resolveServiceSpec(
     s.includes('തെങ്ങ്')
   ) {
     return KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === 'PER_TREE')!;
+  }
+
+  // If explicit wageType is provided and is NOT generic HOURLY (or if it's HOURLY and actually machinery), respect it:
+  if (explicitWageType && explicitWageType !== 'HOURLY') {
+    const matched = KK_STANDARD_SERVICE_SPECS.find((spec) => spec.wageType === explicitWageType);
+    if (matched) return matched;
   }
 
   // 2. Heavy Machinery & Excavation (JCB, Excavator, Crane, Earthmoving) -> HOURLY

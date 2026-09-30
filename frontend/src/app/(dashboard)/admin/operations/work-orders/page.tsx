@@ -28,6 +28,8 @@ import {
   Timer,
   Loader2,
   StopCircle,
+  TreePalm,
+  Minus,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
@@ -71,9 +73,34 @@ export default function AdminWorkOrdersPage() {
       .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const isOrderTreePlucking = (order: ServiceEnquiry) => {
+    const sName = (order.serviceName || '').toLowerCase();
+    const sCat = (order.serviceCategory || '').toLowerCase();
+    const uLbl = (order.unitLabel || '').toLowerCase();
+    const wType = (order.wageType || '').toUpperCase();
+    const spec = (order.specificationDetails as any) || {};
+    return (
+      wType === 'PER_TREE' ||
+      uLbl === 'tree' ||
+      spec.treeCounterEnabled === true ||
+      sCat.includes('cococare') ||
+      sCat.includes('agriculture') ||
+      sName.includes('coconut') ||
+      sName.includes('cococare') ||
+      sName.includes('palm') ||
+      sName.includes('tree') ||
+      sName.includes('plucking') ||
+      sName.includes('harvest') ||
+      sName.includes('തെങ്ങ്') ||
+      sName.includes('കയറ്റം') ||
+      sName.includes('thengu') ||
+      sName.includes('kayattam')
+    );
+  };
+
   const getLiveTimerData = useCallback(
     (order: ServiceEnquiry) => {
-      if (order.status !== 'IN_PROGRESS' || !order.workStartedAt) {
+      if (order.status !== 'IN_PROGRESS' || !order.workStartedAt || isOrderTreePlucking(order)) {
         return null;
       }
       const spec = (order.specificationDetails as any) || {};
@@ -137,10 +164,15 @@ export default function AdminWorkOrdersPage() {
   const handleAdminPauseTimer = async () => {
     if (!pauseTargetOrder || !token) return;
     setIsSubmittingAdminAction(true);
+    const isTree = isOrderTreePlucking(pauseTargetOrder);
     try {
       await EnquiryService.pauseWorkTimer(
         pauseTargetOrder.id,
-        { reason: adminPauseReason, notes: adminPauseNotes.trim() || undefined },
+        {
+          reason: adminPauseReason,
+          notes: adminPauseNotes.trim() || undefined,
+          specificationDetails: isTree ? { unitsBeforeBreak: (pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1) } : undefined,
+        },
         token
       );
       setIsPauseModalOpen(false);
@@ -169,19 +201,37 @@ export default function AdminWorkOrdersPage() {
     }
   };
 
+  const handleAdminUpdateTreeCount = async (orderId: string, newCount: number) => {
+    if (!token) return;
+    const validCount = Math.max(1, newCount);
+    try {
+      await EnquiryService.saveWorkDraft(orderId, { completedUnits: validCount }, token);
+      setWorkOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, completedUnits: validCount } : o))
+      );
+    } catch (err: any) {
+      alert(err?.message || 'Failed to update tree count');
+    }
+  };
+
   const handleAdminCompleteWork = async () => {
     if (!completeTargetOrder || !token) return;
     setIsSubmittingAdminAction(true);
     try {
+      const isTreePlucking = isOrderTreePlucking(completeTargetOrder);
+
       const timerData = getLiveTimerData(completeTargetOrder);
-      const durationMinutes = timerData
+      const durationMinutes = isTreePlucking
+        ? undefined
+        : timerData
         ? Math.max(1, Math.round(timerData.workSeconds / 60))
         : undefined;
+
       await EnquiryService.stopWorkTimer(
         completeTargetOrder.id,
         {
           durationMinutes,
-          completedUnits: completeUnits === '' ? undefined : Number(completeUnits),
+          completedUnits: completeUnits === '' ? (isTreePlucking ? 1 : undefined) : Number(completeUnits),
           completionNotes: completeNotes.trim() || undefined,
         },
         token
@@ -838,8 +888,94 @@ export default function AdminWorkOrdersPage() {
                   </div>
                 </div>
 
-                {/* Live Chronometer Banner for Active Work Orders */}
+                {/* Live Chronometer Banner or Tree Counter HUD for Active Work Orders */}
                 {order.status === 'IN_PROGRESS' && (() => {
+                  const isTreePlucking = isOrderTreePlucking(order);
+
+                  if (isTreePlucking) {
+                    const currentUnits = order.completedUnits ?? order.estimatedUnits ?? 1;
+                    const spec = (order.specificationDetails as any) || {};
+                    const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+                    return (
+                      <div className="mb-3 p-3 rounded-2xl bg-gradient-to-r from-emerald-950/70 to-[#121B28] border border-emerald-500/40 text-emerald-200 flex flex-col gap-2.5 shadow-sm">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                              <TreePalm className="w-4 h-4" />
+                            </span>
+                            <div>
+                              <span className="font-bold text-xs text-white block">
+                                🌴 Coconut Tree Plucking (തെങ്ങ് കയറ്റം)
+                              </span>
+                              <span className="text-[10px] text-emerald-300/70">
+                                {isBreakActive
+                                  ? `☕ Worker On Break (${spec.activeBreak?.reason || 'Break'}) • ${spec.activeBreak?.unitsBeforeBreak ?? currentUnits} trees logged before break`
+                                  : 'Harvest Tree Counter • Live On Site'}
+                              </span>
+                            </div>
+                          </div>
+                          {order.workStartedAt && (
+                            <span className="text-[10px] font-mono text-gray-400 bg-black/40 px-2 py-0.5 rounded-lg border border-white/10">
+                              Started: {new Date(order.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Admin Tree Counter Increase / Decrease Controls */}
+                        <div className="flex items-center justify-between bg-black/50 p-2.5 rounded-xl border border-emerald-500/20">
+                          <span className="text-xs font-bold text-gray-200">
+                            Trees Plucked:
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdminUpdateTreeCount(order.id, Math.max(1, currentUnits - 1));
+                              }}
+                              className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center font-bold text-sm border border-gray-700 cursor-pointer active:scale-95 transition-all"
+                              title="Decrease tree count"
+                            >
+                              <Minus className="w-3.5 h-3.5" />
+                            </button>
+
+                            <span className="font-mono text-base font-black text-emerald-400 px-3.5 py-1 bg-black/60 rounded-lg border border-emerald-500/40">
+                              {currentUnits} Trees
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAdminUpdateTreeCount(order.id, currentUnits + 1);
+                              }}
+                              className="w-8 h-8 rounded-lg bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-sm cursor-pointer active:scale-95 transition-all shadow-md"
+                              title="Increase tree count"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+
+                            <div className="flex items-center gap-1 ml-1.5">
+                              {[5, 10].map((inc) => (
+                                <button
+                                  key={inc}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleAdminUpdateTreeCount(order.id, currentUnits + inc);
+                                  }}
+                                  className="px-2 py-1 rounded-md bg-gray-800 hover:bg-gray-700 text-[10px] font-bold text-emerald-300 hover:text-white border border-emerald-500/30 cursor-pointer active:scale-95"
+                                >
+                                  +{inc}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   const timerData = getLiveTimerData(order);
                   if (!timerData) return null;
                   return (
@@ -878,6 +1014,22 @@ export default function AdminWorkOrdersPage() {
 
                 {/* Time & Break Records Strip for Completed Works */}
                 {order.status === 'COMPLETED' && (() => {
+                  if (isOrderTreePlucking(order)) {
+                    return (
+                      <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-emerald-500/20 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <TreePalm className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-gray-300 font-medium">
+                            Harvested: <strong className="text-emerald-400 font-mono">{order.completedUnits ?? order.estimatedUnits ?? 1} Trees</strong>
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-emerald-300 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                          🌴 Completed
+                        </span>
+                      </div>
+                    );
+                  }
+
                   const specs = (order.specificationDetails as any) || {};
                   const breaks = Array.isArray(specs.breaks)
                     ? specs.breaks
@@ -950,10 +1102,17 @@ export default function AdminWorkOrdersPage() {
                     <div className="flex flex-col gap-2 w-full">
                       {/* Operational Timer Controls for In Progress */}
                       {order.status === 'IN_PROGRESS' && (() => {
+                        const isTree = isOrderTreePlucking(order);
+                        const currentUnits = order.completedUnits ?? order.estimatedUnits ?? 1;
                         const timerData = getLiveTimerData(order);
+                        const spec = (order.specificationDetails as any) || {};
+                        const isBreakActive = isTree
+                          ? Boolean(spec.activeBreak || spec.isTimerPaused)
+                          : timerData?.isOnBreak;
+
                         return (
                           <div className="grid grid-cols-2 gap-2 w-full">
-                            {timerData?.isOnBreak ? (
+                            {isBreakActive ? (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -985,14 +1144,14 @@ export default function AdminWorkOrdersPage() {
                               type="button"
                               onClick={() => {
                                 setCompleteTargetOrder(order);
-                                setCompleteUnits(order.completedUnits ?? order.estimatedUnits ?? 1);
+                                setCompleteUnits(currentUnits);
                                 setCompleteNotes('');
                                 setIsCompleteModalOpen(true);
                               }}
                               className="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Complete</span>
+                              <span>{isTree ? `Complete (${currentUnits} Trees)` : 'Complete'}</span>
                             </button>
                           </div>
                         );
@@ -1093,6 +1252,14 @@ export default function AdminWorkOrdersPage() {
                             </span>
                           )}
                           {order.status === 'COMPLETED' && (() => {
+                            if (isOrderTreePlucking(order)) {
+                              return (
+                                <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#14151A] border border-emerald-500/30 text-emerald-300">
+                                  <TreePalm className="w-3 h-3 text-emerald-400" />
+                                  <span>{order.completedUnits ?? order.estimatedUnits ?? 1} Trees Harvested</span>
+                                </div>
+                              );
+                            }
                             const specs = (order.specificationDetails as any) || {};
                             const breaks = Array.isArray(specs.breaks)
                               ? specs.breaks
@@ -1112,6 +1279,48 @@ export default function AdminWorkOrdersPage() {
                             );
                           })()}
                           {order.status === 'IN_PROGRESS' && (() => {
+                            if (isOrderTreePlucking(order)) {
+                              const currentUnits = order.completedUnits ?? order.estimatedUnits ?? 1;
+                              const spec = (order.specificationDetails as any) || {};
+                              const isBreakActive = Boolean(spec.activeBreak || spec.isTimerPaused);
+                              return (
+                                <div className="mt-1 flex items-center gap-1.5">
+                                  <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                                    isBreakActive
+                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                                      : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                                  }`}>
+                                    <TreePalm className="w-3 h-3 text-emerald-400" />
+                                    <span>{currentUnits} Trees</span>
+                                    {isBreakActive && <span className="text-amber-300">(Break)</span>}
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAdminUpdateTreeCount(order.id, Math.max(1, currentUnits - 1));
+                                      }}
+                                      className="w-5 h-5 rounded bg-gray-800 hover:bg-gray-700 text-gray-200 flex items-center justify-center text-xs font-bold border border-gray-700 cursor-pointer"
+                                      title="Decrease tree count"
+                                    >
+                                      -
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAdminUpdateTreeCount(order.id, currentUnits + 1);
+                                      }}
+                                      className="w-5 h-5 rounded bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center text-xs font-bold cursor-pointer"
+                                      title="Increase tree count"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
                             const timerData = getLiveTimerData(order);
                             if (!timerData) return null;
                             return (
@@ -1145,10 +1354,17 @@ export default function AdminWorkOrdersPage() {
                         ) : (
                           <div className="flex items-center justify-end gap-1.5">
                             {order.status === 'IN_PROGRESS' && (() => {
+                              const isTree = isOrderTreePlucking(order);
+                              const currentUnits = order.completedUnits ?? order.estimatedUnits ?? 1;
                               const timerData = getLiveTimerData(order);
+                              const spec = (order.specificationDetails as any) || {};
+                              const isBreakActive = isTree
+                                ? Boolean(spec.activeBreak || spec.isTimerPaused)
+                                : timerData?.isOnBreak;
+
                               return (
                                 <>
-                                  {timerData?.isOnBreak ? (
+                                  {isBreakActive ? (
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1156,7 +1372,7 @@ export default function AdminWorkOrdersPage() {
                                         setIsResumeModalOpen(true);
                                       }}
                                       className="px-2 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 text-[11px] font-bold cursor-pointer"
-                                      title="Resume Timer"
+                                      title="Resume Work"
                                     >
                                       Resume
                                     </button>
@@ -1179,14 +1395,14 @@ export default function AdminWorkOrdersPage() {
                                     type="button"
                                     onClick={() => {
                                       setCompleteTargetOrder(order);
-                                      setCompleteUnits(order.completedUnits ?? order.estimatedUnits ?? 1);
+                                      setCompleteUnits(currentUnits);
                                       setCompleteNotes('');
                                       setIsCompleteModalOpen(true);
                                     }}
                                     className="px-2 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold cursor-pointer"
                                     title="Complete Work"
                                   >
-                                    Complete
+                                    {isTree ? `Complete (${currentUnits})` : 'Complete'}
                                   </button>
                                 </>
                               );
@@ -1292,8 +1508,49 @@ export default function AdminWorkOrdersPage() {
               </div>
             </div>
 
-            {/* Active Time */}
-            {(() => {
+            {/* Active Time or Trees Plucked Before Break */}
+            {isOrderTreePlucking(pauseTargetOrder) ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-emerald-300 font-bold flex items-center gap-1.5">
+                    <TreePalm className="w-4 h-4 text-emerald-400" />
+                    Trees Plucked Before Break:
+                  </span>
+                  <span className="font-mono text-emerald-400 font-black text-sm">
+                    {pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1} Trees
+                  </span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1;
+                      const next = Math.max(1, cur - 1);
+                      handleAdminUpdateTreeCount(pauseTargetOrder.id, next);
+                      setPauseTargetOrder({ ...pauseTargetOrder, completedUnits: next });
+                    }}
+                    className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-bold flex items-center justify-center cursor-pointer transition-all active:scale-95"
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="font-mono text-xl font-black text-white px-4 py-1 bg-black/60 rounded-xl border border-emerald-500/40">
+                    {pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1} Trees
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cur = pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1;
+                      const next = cur + 1;
+                      handleAdminUpdateTreeCount(pauseTargetOrder.id, next);
+                      setPauseTargetOrder({ ...pauseTargetOrder, completedUnits: next });
+                    }}
+                    className="w-8 h-8 rounded-lg bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold flex items-center justify-center shadow cursor-pointer transition-all active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (() => {
               const td = getLiveTimerData(pauseTargetOrder);
               return (
                 <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-between text-xs">
@@ -1350,9 +1607,21 @@ export default function AdminWorkOrdersPage() {
               />
             </div>
 
-            <div className="text-[11px] text-amber-200/80 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
-              ⚠️ The live working meter will freeze immediately. Break minutes are non-billable to the customer.
-            </div>
+            {isOrderTreePlucking(pauseTargetOrder) ? (
+              <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-xs">
+                <span className="text-emerald-300 font-bold flex items-center gap-1.5">
+                  <TreePalm className="w-4 h-4 text-emerald-400" />
+                  Trees Plucked Before Break:
+                </span>
+                <span className="font-mono text-base font-black text-emerald-400">
+                  🌴 {pauseTargetOrder.completedUnits ?? pauseTargetOrder.estimatedUnits ?? 1} Trees
+                </span>
+              </div>
+            ) : (
+              <div className="text-[11px] text-amber-200/80 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                ⚠️ The live working meter will freeze immediately. Break minutes are non-billable to the customer.
+              </div>
+            )}
 
             <div className="flex items-center gap-2 pt-1">
               <button
@@ -1394,15 +1663,32 @@ export default function AdminWorkOrdersPage() {
                 <Play className="w-6 h-6 fill-blue-400" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">Resume Work Timer?</h3>
+                <h3 className="text-base font-bold text-white">
+                  {isOrderTreePlucking(resumeTargetOrder) ? 'Resume Coconut Plucking?' : 'Resume Work Timer?'}
+                </h3>
                 <p className="text-xs text-blue-300/80">
                   {resumeTargetOrder.trackingNumber} • {resumeTargetOrder.worker?.name || 'Operative'}
                 </p>
               </div>
             </div>
 
-            {/* Break Duration Strip */}
-            {(() => {
+            {/* Break Information Strip */}
+            {isOrderTreePlucking(resumeTargetOrder) ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-300">Break Reason:</span>
+                  <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                    {(resumeTargetOrder.specificationDetails as any)?.activeBreak?.reason || 'Break'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-emerald-300 font-bold">Trees Logged Before Break:</span>
+                  <span className="font-mono text-base font-black text-emerald-400">
+                    🌴 {(resumeTargetOrder.specificationDetails as any)?.activeBreak?.unitsBeforeBreak ?? resumeTargetOrder.completedUnits ?? 1} Trees
+                  </span>
+                </div>
+              </div>
+            ) : (() => {
               const td = getLiveTimerData(resumeTargetOrder);
               return (
                 <div className="p-3.5 rounded-2xl bg-blue-950/40 border border-blue-500/30 space-y-1.5 text-xs">
@@ -1423,7 +1709,9 @@ export default function AdminWorkOrdersPage() {
             })()}
 
             <div className="text-[11px] text-blue-200/80 bg-blue-950/40 border border-blue-500/30 p-2.5 rounded-xl">
-              ℹ️ Live working chronometer will restart immediately. This break will be archived in the work audit trail.
+              ℹ️ {isOrderTreePlucking(resumeTargetOrder)
+                ? 'Conclude break and resume logging harvested palms directly on site.'
+                : 'Live working chronometer will restart immediately. This break will be archived in the work audit trail.'}
             </div>
 
             <div className="flex items-center gap-2 pt-1">
@@ -1473,33 +1761,90 @@ export default function AdminWorkOrdersPage() {
               </div>
             </div>
 
-            {/* Time Stats */}
-            {(() => {
-              const td = getLiveTimerData(completeTargetOrder);
-              return (
-                <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Total Active Working Time:</span>
-                  <span className="font-mono text-base font-black text-emerald-400">
-                    {td ? td.workTimeFormatted : '00:00:00'}
+            {/* Tree Count Counter HUD or Machinery Time Stats */}
+            {isOrderTreePlucking(completeTargetOrder) ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+                    <TreePalm className="w-4 h-4 text-emerald-400" />
+                    Trees Harvested (തെങ്ങ് കയറ്റം)
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    Per-Tree Wage
                   </span>
                 </div>
-              );
-            })()}
+                <div className="flex items-center justify-center gap-3 py-1">
+                  <button
+                    type="button"
+                    onClick={() => setCompleteUnits(Math.max(1, Number(completeUnits || 1) - 1))}
+                    className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center font-bold text-lg border border-gray-700 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <div className="flex items-baseline gap-1.5 px-5 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40">
+                    <input
+                      type="number"
+                      min={1}
+                      value={completeUnits}
+                      onChange={(e) => setCompleteUnits(Math.max(1, Number(e.target.value)))}
+                      className="w-16 bg-transparent text-center font-mono text-3xl font-black text-white focus:outline-none"
+                    />
+                    <span className="text-xs font-bold text-emerald-400">Trees</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCompleteUnits(Number(completeUnits || 1) + 1)}
+                    className="w-10 h-10 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer active:scale-95 shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                {/* Quick Add Chips */}
+                <div className="flex items-center justify-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-gray-400 uppercase font-bold">Quick add:</span>
+                  {[5, 10, 15, 20].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => setCompleteUnits(Number(completeUnits || 1) + inc)}
+                      className="px-2.5 py-0.5 rounded-md bg-gray-800 hover:bg-emerald-950 text-[11px] font-bold text-emerald-300 border border-emerald-500/30 cursor-pointer"
+                    >
+                      +{inc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Time Stats */}
+                {(() => {
+                  const td = getLiveTimerData(completeTargetOrder);
+                  return (
+                    <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/80 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Total Active Working Time:</span>
+                      <span className="font-mono text-base font-black text-emerald-400">
+                        {td ? td.workTimeFormatted : '00:00:00'}
+                      </span>
+                    </div>
+                  );
+                })()}
 
-            {/* Completed Units */}
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
-                Completed Units ({completeTargetOrder.unitLabel || 'Units'}):
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={completeUnits}
-                onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+                {/* Completed Units */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+                    Completed Units ({completeTargetOrder.unitLabel || 'Units'}):
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={completeUnits}
+                    onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm font-bold text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </>
+            )}
 
             {/* Notes */}
             <div className="space-y-1.5">

@@ -672,12 +672,20 @@ export class EnquiryService {
     }
     const accruedWorkMinutes = Math.max(0, Math.round(accruedWorkSeconds / 60));
 
+    const unitsBeforeBreak =
+      dto.specificationDetails?.unitsBeforeBreak !== undefined
+        ? Number(dto.specificationDetails.unitsBeforeBreak)
+        : currentSpec.temporaryCount ?? enquiry.completedUnits ?? undefined;
+
     const updatedSpec = {
       ...currentSpec,
+      ...(dto.specificationDetails || {}),
+      temporaryCount: unitsBeforeBreak ?? currentSpec.temporaryCount,
       activeBreak: {
         reason: dto.reason,
         startedAt: new Date().toISOString(),
         notes: dto.notes || undefined,
+        unitsBeforeBreak,
       },
       isTimerPaused: true,
       actualWorkMinutes: accruedWorkMinutes,
@@ -685,6 +693,7 @@ export class EnquiryService {
     };
 
     const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
+      completedUnits: unitsBeforeBreak !== undefined ? unitsBeforeBreak : undefined,
       specificationDetails: updatedSpec,
       notes: dto.notes,
     });
@@ -731,6 +740,7 @@ export class EnquiryService {
           durationMinutes: breakDurationMinutes,
           durationSeconds: breakDurationSeconds,
           notes: activeBreak.notes,
+          unitsBeforeBreak: activeBreak.unitsBeforeBreak,
         }
       : null;
 
