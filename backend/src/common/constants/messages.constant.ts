@@ -197,8 +197,16 @@ export const SETTINGS_MESSAGES = {
   SETTINGS_NOT_FOUND: 'Site settings not found',
 } as const;
 
-
-
-
-
+export const REMINDER_MESSAGES = {
+  REMINDER_CREATED_SUCCESS: 'Service reminder setup created successfully',
+  REMINDER_UPDATED_SUCCESS: 'Service reminder updated successfully',
+  REMINDER_DELETED_SUCCESS: 'Service reminder deleted successfully',
+  REMINDER_NOT_FOUND: 'Service reminder not found',
+  REMINDERS_FETCHED_SUCCESS: 'Service reminders retrieved successfully',
+  REMINDER_COMPLETED_SUCCESS: 'Service cycle logged as completed and scheduled for next interval',
+  CUSTOMER_NAME_REQUIRED: 'Customer name is required',
+  CUSTOMER_PHONE_REQUIRED: 'Customer phone number is required',
+  SERVICE_NAME_REQUIRED: 'Service name is required',
+  DUE_DATE_REQUIRED: 'Due date is required',
+} as const;
 

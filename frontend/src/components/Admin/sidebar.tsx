@@ -30,6 +30,7 @@ import {
   Menu,
   IndianRupee,
   BarChart3,
+  CalendarClock,
 } from 'lucide-react';
 
 interface SidebarIndicators {
@@ -86,6 +87,7 @@ const buildMenuData = (indicators: SidebarIndicators) => [
         badgeLabel: `${indicators.pendingEnquiriesCount} new job enquiries pending review`,
       },
       { name: 'Workforce Dispatch', icon: HardHat, href: '/admin/operations/assignments' },
+      { name: 'Service Reminders', icon: CalendarClock, href: '/admin/operations/reminders' },
     ],
   },
   {

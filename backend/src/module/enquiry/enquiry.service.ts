@@ -26,6 +26,7 @@ import { NotificationType, Role, ServiceStatus, WorkerStatus } from '../../datab
 import { AuditService } from '../audit/audit.service';
 import { NotificationService } from '../notification/notification.service';
 import { FinanceService } from '../finance/finance.service';
+import { ReminderService } from '../reminder/reminder.service';
 import { TransactionType, TransactionCategory, PaymentMethod, FinancialStatus } from '../../database';
 
 @Injectable()
@@ -35,6 +36,7 @@ export class EnquiryService {
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
     private readonly financeService: FinanceService,
+    private readonly reminderService: ReminderService,
   ) {}
 
   async createEnquiry(
@@ -521,6 +523,15 @@ export class EnquiryService {
           referenceNumber: dto.paymentRef,
         });
       }
+
+      // Auto-schedule cyclic reminder if service has recurring reminder enabled
+      if (updated.status === ServiceStatus.COMPLETED) {
+        try {
+          await this.reminderService.handleJobCompleted(updated);
+        } catch (e) {
+          console.warn('Auto-reminder feed warning during pay finalize:', e);
+        }
+      }
     } catch (e) {
       console.error('Failed to auto-feed finances', e);
     }
@@ -906,6 +917,13 @@ export class EnquiryService {
       }
 
       if (isCompleted) {
+        // Auto-schedule next cyclic reminder for client based on service configuration
+        try {
+          await this.reminderService.handleJobCompleted(updated);
+        } catch (reminderErr) {
+          console.warn('Auto-reminder creation warning on job completion:', reminderErr);
+        }
+
         await this.notificationService.notifyAdminsAndStaff({
           title: `Work Completed: ${updated.serviceName}`,
           message: `Order ${updated.trackingNumber} completed by field technician. Units: ${dto.completedUnits || '—'}, Wage: ₹${updated.totalCalculatedWage || '—'}`,

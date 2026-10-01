@@ -20,6 +20,7 @@ import { FinanceModule } from './module/finance/finance.module';
 import { NotificationModule } from './module/notification/notification.module';
 import { SettingsModule } from './module/settings/settings.module';
 import { AnnouncementModule } from './module/announcement/announcement.module';
+import { ReminderModule } from './module/reminder/reminder.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import {
   CloudinaryModule,
@@ -59,6 +60,7 @@ import {
     NotificationModule,
     SettingsModule,
     AnnouncementModule,
+    ReminderModule,
   ],
   providers: [
     {

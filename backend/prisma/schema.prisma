@@ -79,6 +79,8 @@ model User {
   auditLogs           AuditLog[]             @relation("UserAuditLogs")
   notifications       Notification[]         @relation("UserNotifications")
   createdAnnouncements Announcement[]        @relation("CreatedAnnouncements")
+  customerReminders   ServiceReminder[]      @relation("CustomerReminders")
+  createdReminders    ServiceReminder[]      @relation("CreatedReminders")
 
   @@map("users")
 }
@@ -177,6 +179,7 @@ model ServiceEnquiry {
   worker              User?         @relation("WorkerAssignments", fields: [workerId], references: [id], onDelete: SetNull)
 
   financialTransactions FinancialTransaction[]
+  serviceReminders      ServiceReminder[]
 
   assignedAt          DateTime?
   completedAt         DateTime?
@@ -213,6 +216,13 @@ model Service {
   minUnits         Float?   @default(1)        // Minimum billable units (e.g. 2 hrs, 5 trees)
   specifications   Json?    // Detailed specification schema, equipment, checklists, safety requirements
 
+  // Recurring Service Reminder Automation
+  hasReminder          Boolean           @default(false)
+  reminderFrequency    ReminderFrequency @default(EVERY_3_MONTHS)
+  reminderIntervalDays Int?
+
+  serviceReminders     ServiceReminder[]
+
   isActive         Boolean  @default(true)
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
@@ -222,6 +232,7 @@ model Service {
   @@index([isActive])
   @@index([category])
   @@index([wageType])
+  @@index([hasReminder])
   @@map("services")
 }
 
@@ -403,3 +414,63 @@ model Announcement {
   @@map("announcements")
 }
 
+enum ReminderStatus {
+  UPCOMING
+  DUE
+  OVERDUE
+  COMPLETED
+  CANCELLED
+}
+
+enum ReminderFrequency {
+  ONCE
+  MONTHLY
+  EVERY_2_MONTHS
+  EVERY_3_MONTHS
+  EVERY_6_MONTHS
+  YEARLY
+  CUSTOM_DAYS
+}
+
+model ServiceReminder {
+  id                 String            @id @default(uuid())
+  title              String
+  serviceName        String
+  serviceId          String?
+  service            Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  enquiryId          String?
+  enquiry            ServiceEnquiry?   @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+
+  customerName       String
+  customerPhone      String
+  customerEmail      String?
+  customerAddress    String?
+  customerId         String?
+  customer           User?             @relation("CustomerReminders", fields: [customerId], references: [id], onDelete: SetNull)
+
+  frequency          ReminderFrequency @default(EVERY_3_MONTHS)
+  customIntervalDays Int?
+
+  lastServicedDate   DateTime?
+  dueDate            DateTime
+  completedDate      DateTime?
+
+  status             ReminderStatus    @default(UPCOMING)
+  notes              String?
+
+  createdById        String?
+  creator            User?             @relation("CreatedReminders", fields: [createdById], references: [id], onDelete: SetNull)
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([status])
+  @@index([dueDate])
+  @@index([customerId])
+  @@index([customerPhone])
+  @@index([serviceName])
+  @@index([serviceId])
+  @@index([enquiryId])
+  @@map("service_reminders")
+}
