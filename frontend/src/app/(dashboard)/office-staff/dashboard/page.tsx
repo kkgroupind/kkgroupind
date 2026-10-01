@@ -526,116 +526,126 @@ export default function OfficeStaffDashboardPage() {
         </header>
 
         {/* Dynamic Section Views */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6 max-w-7xl w-full mx-auto">
           {/* Section: Dashboard */}
           {activeSection === 'dashboard' && (
             <div className="space-y-6">
-              {/* Top Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Top Stats Cards: 5 in a single row on mobile & desktop */}
+              <div className="grid grid-cols-5 gap-1.5 sm:gap-3 lg:gap-4">
+                {/* 1. Pending Enquiries */}
                 <div
                   onClick={() => setActiveSection('operations-enquiries')}
-                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
+                  className="p-2 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] flex flex-col justify-between items-center sm:items-start text-center sm:text-left min-w-0"
                 >
-                  <div className="flex items-center justify-between text-[#091540] mb-3">
-                    <span className="text-xs font-bold">Pending Enquiries</span>
-                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
-                      <FolderKanban className="w-4 h-4" />
+                  <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+                    <span className="hidden sm:inline text-xs font-bold text-[#091540]">Pending Enquiries</span>
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30 shrink-0 mx-auto sm:mx-0">
+                      <FolderKanban className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black text-[#091540]">
+                  <div className="text-base sm:text-2xl font-black text-[#091540] my-0.5 sm:my-0">
                     {stats.pendingEnquiries}
                   </div>
-                  <span className="text-xs text-slate-500 mt-1 block font-medium">
-                    {stats.totalEnquiries} total requests
+                  <span className="text-[10px] sm:text-xs text-slate-500 font-bold sm:font-medium truncate w-full">
+                    <span className="sm:hidden">Enquiries</span>
+                    <span className="hidden sm:inline">{stats.totalEnquiries} total requests</span>
                   </span>
                 </div>
 
+                {/* 2. Active Works */}
                 <div
                   onClick={() => setActiveSection('operations-works')}
-                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
+                  className="p-2 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] flex flex-col justify-between items-center sm:items-start text-center sm:text-left min-w-0"
                 >
-                  <div className="flex items-center justify-between text-[#091540] mb-3">
-                    <span className="text-xs font-bold">Active Works</span>
-                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
-                      <ClipboardCheck className="w-4 h-4" />
+                  <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+                    <span className="hidden sm:inline text-xs font-bold text-[#091540]">Active Works</span>
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30 shrink-0 mx-auto sm:mx-0">
+                      <ClipboardCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black text-[#091540]">
+                  <div className="text-base sm:text-2xl font-black text-[#091540] my-0.5 sm:my-0">
                     {stats.activeWorks}
                   </div>
-                  <span className="text-xs text-slate-500 mt-1 block font-medium">
-                    Assigned and in progress
+                  <span className="text-[10px] sm:text-xs text-slate-500 font-bold sm:font-medium truncate w-full">
+                    <span className="sm:hidden">Works</span>
+                    <span className="hidden sm:inline">Assigned and active</span>
                   </span>
                 </div>
 
-                {/* Finished Works Awaiting Payout Bento Card */}
+                {/* 3. Finished Works Awaiting Payout */}
                 <div
                   onClick={() => {
                     setActiveSection('operations-works');
                     setStatusFilter('PENDING_PAYOUT');
                   }}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] ${
+                  className={`p-2 sm:p-5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] flex flex-col justify-between items-center sm:items-start text-center sm:text-left min-w-0 ${
                     stats.pendingPayout > 0
                       ? 'bg-amber-50 border-amber-300 hover:border-amber-400'
                       : 'bg-white border-white/80 hover:border-[#7692FF]/50'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[#091540] mb-3">
-                    <span className="text-xs font-bold">Payout Pending</span>
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+                  <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+                    <span className="hidden sm:inline text-xs font-bold text-[#091540]">Payout Pending</span>
+                    <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center border shrink-0 mx-auto sm:mx-0 ${
                       stats.pendingPayout > 0
                         ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}>
-                      <IndianRupee className="w-4 h-4" />
+                      <IndianRupee className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
-                  <div className={`text-2xl font-black ${stats.pendingPayout > 0 ? 'text-amber-700' : 'text-[#091540]'}`}>
+                  <div className={`text-base sm:text-2xl font-black my-0.5 sm:my-0 ${stats.pendingPayout > 0 ? 'text-amber-700' : 'text-[#091540]'}`}>
                     {stats.pendingPayout}
                   </div>
-                  <span className="text-xs text-slate-500 mt-1 block font-medium">
-                    Finished works awaiting pay
+                  <span className="text-[10px] sm:text-xs text-slate-500 font-bold sm:font-medium truncate w-full">
+                    <span className="sm:hidden">Payouts</span>
+                    <span className="hidden sm:inline">Awaiting worker pay</span>
                   </span>
                 </div>
 
+                {/* 4. Available Workers */}
                 <div
                   onClick={() => setActiveSection('workforce-availability')}
-                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
+                  className="p-2 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] flex flex-col justify-between items-center sm:items-start text-center sm:text-left min-w-0"
                 >
-                  <div className="flex items-center justify-between text-[#091540] mb-3">
-                    <span className="text-xs font-bold">Available Workers</span>
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">
-                      <HardHat className="w-4 h-4" />
+                  <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+                    <span className="hidden sm:inline text-xs font-bold text-[#091540]">Available Workers</span>
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200 shrink-0 mx-auto sm:mx-0">
+                      <HardHat className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
-                  <div className="text-2xl font-black text-emerald-600">
+                  <div className="text-base sm:text-2xl font-black text-emerald-600 my-0.5 sm:my-0">
                     {stats.availableWorkers}
                   </div>
-                  <span className="text-xs text-slate-500 mt-1 block font-medium">
-                    {stats.busyWorkers} busy &bull; {stats.offDutyWorkers} away
+                  <span className="text-[10px] sm:text-xs text-slate-500 font-bold sm:font-medium truncate w-full">
+                    <span className="sm:hidden">Workers</span>
+                    <span className="hidden sm:inline">{stats.busyWorkers} busy &bull; {stats.offDutyWorkers} away</span>
                   </span>
                 </div>
 
+                {/* 5. Desk Presence */}
                 <div
                   onClick={handleOpenToggleModal}
-                  className="p-5 rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)]"
+                  className="p-2 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-white/80 hover:border-[#7692FF]/50 transition-all cursor-pointer shadow-[0_4px_16px_rgba(9,21,64,0.06)] hover:shadow-[0_8px_24px_rgba(9,21,64,0.12)] flex flex-col justify-between items-center sm:items-start text-center sm:text-left min-w-0"
                 >
-                  <div className="flex items-center justify-between text-[#091540] mb-3">
-                    <span className="text-xs font-bold">Desk Presence</span>
-                    <div className="w-9 h-9 rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30">
-                      <ShieldCheck className="w-4 h-4" />
+                  <div className="flex items-center justify-between w-full mb-1 sm:mb-3">
+                    <span className="hidden sm:inline text-xs font-bold text-[#091540]">Desk Presence</span>
+                    <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-[#ABD2FA]/40 flex items-center justify-center text-[#1B2CC1] border border-[#7692FF]/30 shrink-0 mx-auto sm:mx-0">
+                      <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
-                  <div className="text-xl font-black text-[#091540] flex items-center gap-2">
+                  <div className="text-sm sm:text-xl font-black text-[#091540] flex items-center gap-1.5 my-0.5 sm:my-0">
                     <span
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        isAvailable ? 'bg-emerald-500' : 'bg-amber-500'
+                      className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shrink-0 ${
+                        isAvailable ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
                       }`}
                     />
-                    <span>{isAvailable ? 'Available' : 'Unavailable'}</span>
+                    <span className="hidden sm:inline">{isAvailable ? 'Available' : 'Unavailable'}</span>
+                    <span className="sm:hidden text-xs">{isAvailable ? 'Desk' : 'Away'}</span>
                   </div>
-                  <span className="text-xs text-[#1B2CC1] font-bold mt-1 block">
-                    Click to change status
+                  <span className="text-[10px] sm:text-xs text-[#1B2CC1] font-bold truncate w-full">
+                    <span className="sm:hidden">Toggle</span>
+                    <span className="hidden sm:inline">Click to switch</span>
                   </span>
                 </div>
               </div>
@@ -758,50 +768,40 @@ export default function OfficeStaffDashboardPage() {
                 </div>
               </div>
 
-              {/* Recent Works Table */}
+              {/* Recent Works & Enquiries Cards */}
               <div className="bg-white rounded-2xl border border-white/80 shadow-[0_4px_16px_rgba(9,21,64,0.06)] overflow-hidden">
-                <div className="p-4 border-b border-sky-100 flex items-center justify-between bg-[#F8FBFF]">
-                  <h3 className="text-sm font-bold text-[#091540]">
-                    Recent Works & Enquiries
-                  </h3>
+                <div className="p-3.5 sm:p-4 border-b border-sky-100 flex items-center justify-between bg-[#F8FBFF]">
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#091540]">
+                      Recent Works & Enquiries
+                    </h3>
+                    <p className="text-[10px] sm:text-xs text-slate-500">Live operational orders & requests</p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActiveSection('operations-works')}
-                    className="text-xs font-bold text-[#1B2CC1] hover:underline flex items-center gap-1"
+                    className="text-[11px] sm:text-xs font-bold text-[#1B2CC1] hover:underline flex items-center gap-1"
                   >
                     <span>View all</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-700">
-                    <thead className="bg-[#091540]/5 text-[#091540] font-bold border-b border-[#7692FF]/20">
-                      <tr>
-                        <th className="py-3 px-4">Tracking Code</th>
-                        <th className="py-3 px-4">Customer</th>
-                        <th className="py-3 px-4">Service</th>
-                        <th className="py-3 px-4">Status</th>
-                        <th className="py-3 px-4">Assigned Worker</th>
-                        <th className="py-3 px-4 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-sky-100">
-                      {filteredEnquiries.slice(0, 8).map((job) => (
-                        <tr key={job.id} className="hover:bg-[#ABD2FA]/15 transition-colors">
-                          <td className="py-3 px-4 font-mono font-bold text-[#1B2CC1]">
-                            {job.trackingNumber}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900">{job.customerName}</div>
-                            <div className="text-[11px] text-slate-500">{job.customerPhone}</div>
-                          </td>
-                          <td className="py-3 px-4 text-slate-700 max-w-xs truncate font-medium">
-                            {job.serviceName}
-                          </td>
-                          <td className="py-3 px-4">
+                <div className="p-2.5 sm:p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5">
+                    {filteredEnquiries.slice(0, 8).map((job) => (
+                      <div
+                        key={job.id}
+                        className="bg-white hover:bg-sky-50/40 rounded-xl border border-sky-100/90 hover:border-[#1B2CC1]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-2.5 sm:p-3.5 group"
+                      >
+                        {/* Header: Tracking & Status */}
+                        <div>
+                          <div className="flex items-start justify-between gap-1 mb-1.5">
+                            <span className="font-mono font-black text-[10px] sm:text-xs text-[#1B2CC1] tracking-tight truncate">
+                              {job.trackingNumber}
+                            </span>
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-extrabold uppercase shrink-0 ${
                                 job.status === 'COMPLETED'
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                   : job.status === 'IN_PROGRESS'
@@ -811,53 +811,86 @@ export default function OfficeStaffDashboardPage() {
                                   : 'bg-amber-50 text-amber-700 border border-amber-200'
                               }`}
                             >
-                              {job.status}
+                              {job.status === 'IN_PROGRESS' ? 'Progress' : job.status}
                             </span>
-                          </td>
-                          <td className="py-3 px-4">
+                          </div>
+
+                          {/* Service Name */}
+                          <h4
+                            className="text-xs sm:text-sm font-bold text-[#091540] truncate leading-tight"
+                            title={job.serviceName}
+                          >
+                            {job.serviceName}
+                          </h4>
+
+                          {/* Customer Info */}
+                          <div className="mt-1.5 space-y-0.5 text-[10px] sm:text-[11px] text-slate-600">
+                            <div className="flex items-center gap-1 font-semibold text-slate-800 truncate">
+                              <UserIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{job.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-slate-500 truncate text-[9px] sm:text-[10px]">
+                              <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{job.customerPhone}</span>
+                            </div>
+                          </div>
+
+                          {/* Worker Assignment */}
+                          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-1 text-[10px] sm:text-[11px] truncate">
+                            <HardHat className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#1B2CC1] shrink-0" />
                             {job.worker ? (
-                              <span className="font-semibold text-slate-900">
+                              <span className="font-bold text-[#091540] truncate">
                                 {job.worker.name || job.worker.username}
                               </span>
                             ) : (
-                              <span className="text-slate-400 italic font-medium">Unassigned</span>
+                              <span className="text-amber-600 font-semibold italic text-[9px] sm:text-[10px]">
+                                Unassigned
+                              </span>
                             )}
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            {job.status === 'PENDING' ? (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenAssignModal(job)}
-                                className="px-3 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-semibold transition-colors shadow-xs"
-                              >
-                                Assign
-                              </button>
-                            ) : job.status === 'COMPLETED' && (!job.totalCalculatedWage || Number(job.totalCalculatedWage) === 0) ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedEnquiryToPay(job);
-                                  setIsPayModalOpen(true);
-                                }}
-                                className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1 ml-auto"
-                              >
-                                <IndianRupee className="w-3 h-3" />
-                                <span>Assign Pay</span>
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setActiveSection('operations-works')}
-                                className="px-3 py-1 rounded-lg bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] border border-[#7692FF]/30 text-xs font-semibold transition-colors"
-                              >
-                                View
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+
+                        {/* Action CTA */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100">
+                          {job.status === 'PENDING' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAssignModal(job)}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                            >
+                              Assign
+                            </button>
+                          ) : job.status === 'COMPLETED' && (!job.totalCalculatedWage || Number(job.totalCalculatedWage) === 0) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiryToPay(job);
+                                setIsPayModalOpen(true);
+                              }}
+                              className="w-full py-1.5 px-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                            >
+                              <IndianRupee className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+                              <span>Assign Pay</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setActiveSection('operations-works')}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] border border-[#7692FF]/30 text-[10px] sm:text-xs font-bold transition-colors text-center cursor-pointer"
+                            >
+                              View Details
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {filteredEnquiries.length === 0 && (
+                    <div className="py-10 text-center text-slate-400 text-xs italic">
+                      No works or enquiries found matching your search.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -921,39 +954,39 @@ export default function OfficeStaffDashboardPage() {
               {/* 1. Workers Directory View */}
               {workerSubTab === 'directory' && (
                 <div className="bg-white rounded-2xl border border-white/80 shadow-md overflow-hidden">
-                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="p-3.5 sm:p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-sm font-bold text-[#091540]">Field Workers Directory</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">Active personnel registered for Kerala operations</p>
+                      <h3 className="text-xs sm:text-sm font-bold text-[#091540]">Field Workers Directory</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Active personnel registered for Kerala operations</p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs">
+                    <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs">
                       <span className="text-emerald-700 font-semibold">{stats.availableWorkers} Available</span>
                       <span className="text-slate-300">&bull;</span>
                       <span className="text-blue-700 font-semibold">{stats.busyWorkers} Busy</span>
                       <span className="text-slate-300">&bull;</span>
-                      <span className="text-slate-500 font-semibold">{stats.offDutyWorkers} Off Duty</span>
+                      <span className="text-slate-500 font-semibold">{stats.offDutyWorkers} Off</span>
                     </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-4">Name</th>
-                          <th className="py-2.5 px-4">Username</th>
-                          <th className="py-2.5 px-4">Phone</th>
-                          <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4">Active Assignments</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {workersList.map((worker) => (
-                          <tr key={worker.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-2.5 px-4 font-bold text-[#091540]">{worker.name || worker.username}</td>
-                            <td className="py-2.5 px-4 font-mono text-[#1B2CC1] font-semibold">@{worker.username}</td>
-                            <td className="py-2.5 px-4 text-slate-600">{worker.phone || '—'}</td>
-                            <td className="py-2.5 px-4">
+
+                  <div className="p-2.5 sm:p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5">
+                      {workersList.map((worker) => (
+                        <div
+                          key={worker.id}
+                          className="bg-white hover:bg-slate-50/80 rounded-xl border border-slate-200/90 hover:border-[#1B2CC1]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-2.5 sm:p-3.5 group"
+                        >
+                          <div>
+                            {/* Avatar & Status */}
+                            <div className="flex items-center justify-between gap-1 mb-2">
+                              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1B2CC1]/10 text-[#1B2CC1] font-black text-xs flex items-center justify-center shrink-0">
+                                {worker.name
+                                  ? worker.name.charAt(0).toUpperCase()
+                                  : worker.username
+                                  ? worker.username.charAt(0).toUpperCase()
+                                  : 'W'}
+                              </div>
                               <span
-                                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold shrink-0 ${
                                   worker.workerStatus === 'AVAILABLE'
                                     ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                     : worker.workerStatus === 'BUSY'
@@ -970,38 +1003,70 @@ export default function OfficeStaffDashboardPage() {
                                       : 'bg-slate-400'
                                   }`}
                                 />
-                                {worker.workerStatus}
+                                {worker.workerStatus === 'AVAILABLE' ? 'Avail' : worker.workerStatus === 'OFF_DUTY' ? 'Off' : worker.workerStatus}
                               </span>
-                            </td>
-                            <td className="py-2.5 px-4 font-bold text-slate-700">
-                              {worker._count?.workerAssignments ?? 0}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+
+                            {/* Name & Username */}
+                            <div className="font-bold text-[#091540] text-xs sm:text-sm truncate">
+                              {worker.name || worker.username}
+                            </div>
+                            <div className="font-mono text-[10px] sm:text-[11px] text-[#1B2CC1] font-semibold truncate">
+                              @{worker.username}
+                            </div>
+
+                            {/* Phone */}
+                            {worker.phone ? (
+                              <a
+                                href={`tel:${worker.phone}`}
+                                className="text-[10px] sm:text-[11px] text-slate-600 hover:text-[#1B2CC1] flex items-center gap-1 mt-1.5 truncate"
+                              >
+                                <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{worker.phone}</span>
+                              </a>
+                            ) : (
+                              <div className="text-[10px] text-slate-400 mt-1.5 italic">No phone</div>
+                            )}
+                          </div>
+
+                          {/* Footer: Assignments count */}
+                          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] sm:text-[11px]">
+                            <span className="text-slate-500 font-medium">Active:</span>
+                            <span className="font-black text-[#091540] bg-slate-100 px-1.5 py-0.5 rounded-md text-[10px]">
+                              {worker._count?.workerAssignments ?? 0} jobs
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {workersList.length === 0 && (
+                      <div className="py-10 text-center text-slate-400 text-xs italic">
+                        No field workers found.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* 2. Live Availability View */}
               {workerSubTab === 'availability' && (
-                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
-                  <div className="flex items-center justify-between">
+                <div className="bg-white rounded-2xl border border-white/80 p-3.5 sm:p-5 space-y-4 shadow-md">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
-                      <h3 className="text-sm font-bold text-[#091540]">Live Worker Availability</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">Real-time status of on-duty and dispatch-ready staff</p>
+                      <h3 className="text-xs sm:text-sm font-bold text-[#091540]">Live Worker Availability</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">Real-time status of on-duty and dispatch-ready staff</p>
                     </div>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[10px] sm:text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 w-fit">
                       {stats.availableWorkers} ready for dispatch
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                     {workers.map((worker) => (
                       <div
                         key={worker.id}
-                        className={`p-3.5 rounded-xl border transition-all bg-slate-50 hover:bg-white hover:shadow-xs ${
+                        className={`p-2.5 sm:p-3.5 rounded-xl border transition-all bg-slate-50 hover:bg-white hover:shadow-xs flex flex-col justify-between ${
                           worker.workerStatus === 'AVAILABLE'
                             ? 'border-emerald-200'
                             : worker.workerStatus === 'BUSY'
@@ -1009,24 +1074,26 @@ export default function OfficeStaffDashboardPage() {
                             : 'border-slate-200 opacity-70'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-xs font-bold text-[#091540]">
-                            {worker.name || worker.username}
-                          </span>
-                          <span
-                            className={`w-2 h-2 rounded-full ${
-                              worker.workerStatus === 'AVAILABLE'
-                                ? 'bg-emerald-500'
-                                : worker.workerStatus === 'BUSY'
-                                ? 'bg-blue-500'
-                                : 'bg-slate-400'
-                            }`}
-                          />
+                        <div>
+                          <div className="flex items-center justify-between mb-1.5 gap-1">
+                            <span className="text-xs font-bold text-[#091540] truncate">
+                              {worker.name || worker.username}
+                            </span>
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 ${
+                                worker.workerStatus === 'AVAILABLE'
+                                  ? 'bg-emerald-500'
+                                  : worker.workerStatus === 'BUSY'
+                                  ? 'bg-blue-500'
+                                  : 'bg-slate-400'
+                              }`}
+                            />
+                          </div>
+                          <div className="text-[10px] sm:text-[11px] text-slate-500 mb-2 truncate">
+                            {worker.phone || 'No phone'}
+                          </div>
                         </div>
-                        <div className="text-[11px] text-slate-500 mb-2">
-                          {worker.phone || 'No phone'}
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200">
+                        <div className="flex items-center justify-between text-[10px] sm:text-[11px] pt-2 border-t border-slate-200">
                           <span className="text-slate-500 font-medium">Status:</span>
                           <span className={
                             worker.workerStatus === 'AVAILABLE' ? 'text-emerald-700 font-bold' : 'text-slate-600 font-medium'
@@ -1191,11 +1258,11 @@ export default function OfficeStaffDashboardPage() {
 
               {/* 1. Enquiries View */}
               {activeSection === 'operations-enquiries' && (
-                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="bg-white rounded-2xl border border-white/80 p-3.5 sm:p-5 space-y-4 shadow-md">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-bold text-[#091540]">Pending Customer Enquiries</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <h3 className="text-xs sm:text-sm font-bold text-[#091540]">Pending Customer Enquiries</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
                         New requests waiting for worker assignment.
                       </p>
                     </div>
@@ -1203,77 +1270,89 @@ export default function OfficeStaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIsCreateWorkModalOpen(true)}
-                      className="px-3.5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                      className="px-3.5 py-1.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Create Work</span>
                     </button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-4">Tracking Code</th>
-                          <th className="py-2.5 px-4">Customer</th>
-                          <th className="py-2.5 px-4">Service</th>
-                          <th className="py-2.5 px-4">Requirements</th>
-                          <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4 text-right">Action</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {enquiries
-                          .filter((e) => e.status === 'PENDING')
-                          .map((enquiry) => (
-                            <tr key={enquiry.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="py-2.5 px-4 font-mono font-bold text-[#1B2CC1]">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5">
+                    {enquiries
+                      .filter((e) => e.status === 'PENDING')
+                      .map((enquiry) => (
+                        <div
+                          key={enquiry.id}
+                          className="bg-white hover:bg-amber-50/20 rounded-xl border border-amber-200/70 hover:border-amber-400 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-2.5 sm:p-3.5 group"
+                        >
+                          <div>
+                            {/* Header: Tracking & Status */}
+                            <div className="flex items-start justify-between gap-1 mb-1.5">
+                              <span className="font-mono font-black text-[10px] sm:text-xs text-[#1B2CC1] tracking-tight truncate">
                                 {enquiry.trackingNumber}
-                              </td>
-                              <td className="py-2.5 px-4">
-                                <div className="font-bold text-[#091540]">{enquiry.customerName}</div>
-                                <div className="text-[11px] text-slate-500">{enquiry.customerPhone}</div>
-                              </td>
-                              <td className="py-2.5 px-4 text-slate-700 font-medium">{enquiry.serviceName}</td>
-                              <td className="py-2.5 px-4 text-slate-600 max-w-xs truncate">
-                                {enquiry.message}
-                              </td>
-                              <td className="py-2.5 px-4">
-                                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                  PENDING
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-4 text-right">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenAssignModal(enquiry)}
-                                  className="px-3 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                                >
-                                  Assign Worker
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        {enquiries.filter((e) => e.status === 'PENDING').length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="py-8 text-center text-slate-400 italic">
-                              No pending enquiries.
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-extrabold uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                PENDING
+                              </span>
+                            </div>
+
+                            {/* Service */}
+                            <h4
+                              className="text-xs sm:text-sm font-bold text-[#091540] truncate leading-tight"
+                              title={enquiry.serviceName}
+                            >
+                              {enquiry.serviceName}
+                            </h4>
+
+                            {/* Customer Info */}
+                            <div className="mt-1.5 space-y-0.5 text-[10px] sm:text-[11px] text-slate-600">
+                              <div className="flex items-center gap-1 font-semibold text-slate-800 truncate">
+                                <UserIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400 shrink-0" />
+                                <span className="truncate">{enquiry.customerName}</span>
+                              </div>
+                              <div className="flex items-center gap-1 text-slate-500 truncate text-[9px] sm:text-[10px]">
+                                <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{enquiry.customerPhone}</span>
+                              </div>
+                            </div>
+
+                            {/* Requirements/Message */}
+                            {enquiry.message && (
+                              <p className="mt-2 text-[10px] text-slate-500 line-clamp-2 italic bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                                "{enquiry.message}"
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Action Button */}
+                          <div className="mt-2.5 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAssignModal(enquiry)}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                            >
+                              Assign Worker
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                   </div>
+
+                  {enquiries.filter((e) => e.status === 'PENDING').length === 0 && (
+                    <div className="py-10 text-center text-slate-400 text-xs italic">
+                      No pending enquiries waiting for assignment.
+                    </div>
+                  )}
                 </div>
               )}
 
               {/* 2. Works View */}
               {activeSection === 'operations-works' && (
-                <div className="bg-white rounded-2xl border border-white/80 p-5 space-y-4 shadow-md">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="bg-white rounded-2xl border border-white/80 p-3.5 sm:p-5 space-y-4 shadow-md">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-sm font-bold text-[#091540]">All Work Orders</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">
+                      <h3 className="text-xs sm:text-sm font-bold text-[#091540]">All Work Orders</h3>
+                      <p className="text-[10px] sm:text-xs text-slate-500 mt-0.5">
                         Overview of all works created directly or through enquiries.
                       </p>
                     </div>
@@ -1281,7 +1360,7 @@ export default function OfficeStaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => setIsCreateWorkModalOpen(true)}
-                      className="px-3.5 py-2 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Create Work Order</span>
@@ -1296,7 +1375,7 @@ export default function OfficeStaffDashboardPage() {
                           key={st}
                           type="button"
                           onClick={() => setStatusFilter(st)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          className={`px-2.5 sm:px-3 py-1 rounded-lg text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 ${
                             statusFilter === st
                               ? st === 'PENDING_PAYOUT'
                                 ? 'bg-amber-500 text-white shadow-xs'
@@ -1308,8 +1387,8 @@ export default function OfficeStaffDashboardPage() {
                         >
                           {st === 'PENDING_PAYOUT' ? (
                             <>
-                              <IndianRupee className="w-3.5 h-3.5" />
-                              <span>Payout Pending ({pendingPayoutWorks.length})</span>
+                              <IndianRupee className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                              <span>Payout ({pendingPayoutWorks.length})</span>
                             </>
                           ) : (
                             st
@@ -1319,108 +1398,122 @@ export default function OfficeStaffDashboardPage() {
                     )}
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-700">
-                      <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
-                        <tr>
-                          <th className="py-2.5 px-4">Code</th>
-                          <th className="py-2.5 px-4">Service</th>
-                          <th className="py-2.5 px-4">Customer</th>
-                          <th className="py-2.5 px-4">Worker</th>
-                          <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {filteredEnquiries.map((work) => (
-                          <tr key={work.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-2.5 px-4 font-mono font-bold text-[#1B2CC1]">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3.5">
+                    {filteredEnquiries.map((work) => (
+                      <div
+                        key={work.id}
+                        className="bg-white hover:bg-sky-50/40 rounded-xl border border-sky-100/90 hover:border-[#1B2CC1]/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between p-2.5 sm:p-3.5 group"
+                      >
+                        <div>
+                          {/* Header: Tracking & Status */}
+                          <div className="flex items-start justify-between gap-1 mb-1.5">
+                            <span className="font-mono font-black text-[10px] sm:text-xs text-[#1B2CC1] tracking-tight truncate">
                               {work.trackingNumber}
-                            </td>
-                            <td className="py-2.5 px-4 text-slate-800 font-medium">
-                              {work.serviceName}
-                            </td>
-                            <td className="py-2.5 px-4">
-                              <div className="text-[#091540] font-bold">{work.customerName}</div>
-                              <div className="text-[11px] text-slate-500">{work.customerPhone}</div>
-                            </td>
-                            <td className="py-2.5 px-4">
-                              {work.worker ? (
-                                <span className="font-semibold text-[#091540]">
-                                  {work.worker.name || work.worker.username}
-                                </span>
-                              ) : (
-                                <span className="text-amber-700 text-[11px] font-semibold">Unassigned</span>
-                              )}
-                            </td>
-                            <td className="py-2.5 px-4">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                                  work.status === 'COMPLETED'
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    : work.status === 'IN_PROGRESS'
-                                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                    : work.status === 'ASSIGNED'
-                                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                                    : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                }`}
-                              >
-                                {work.status}
+                            </span>
+                            <span
+                              className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] sm:text-[10px] font-extrabold uppercase shrink-0 ${
+                                work.status === 'COMPLETED'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : work.status === 'IN_PROGRESS'
+                                  ? 'bg-sky-50 text-[#1B2CC1] border border-sky-200'
+                                  : work.status === 'ASSIGNED'
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}
+                            >
+                              {work.status === 'IN_PROGRESS' ? 'Progress' : work.status}
+                            </span>
+                          </div>
+
+                          {/* Service Name */}
+                          <h4
+                            className="text-xs sm:text-sm font-bold text-[#091540] truncate leading-tight"
+                            title={work.serviceName}
+                          >
+                            {work.serviceName}
+                          </h4>
+
+                          {/* Customer Info */}
+                          <div className="mt-1.5 space-y-0.5 text-[10px] sm:text-[11px] text-slate-600">
+                            <div className="flex items-center gap-1 font-semibold text-slate-800 truncate">
+                              <UserIcon className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{work.customerName}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-slate-500 truncate text-[9px] sm:text-[10px]">
+                              <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{work.customerPhone}</span>
+                            </div>
+                          </div>
+
+                          {/* Worker Assignment */}
+                          <div className="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-1 text-[10px] sm:text-[11px] truncate">
+                            <HardHat className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-[#1B2CC1] shrink-0" />
+                            {work.worker ? (
+                              <span className="font-bold text-[#091540] truncate">
+                                {work.worker.name || work.worker.username}
                               </span>
-                            </td>
-                            <td className="py-2.5 px-4 text-right">
-                              {!work.worker ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenAssignModal(work)}
-                                  className="px-2.5 py-1 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                                >
-                                  Assign
-                                </button>
-                              ) : (
-                                <div className="flex items-center justify-end gap-1.5">
-                                  {work.status !== 'COMPLETED' ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleOpenAssignModal(work)}
-                                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-all shadow-xs cursor-pointer"
-                                      >
-                                        Squad
-                                      </button>
-                                      <span className="text-[11px] text-slate-400 font-medium px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200">
-                                        Payout on complete
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedEnquiryToPay(work);
-                                        setIsPayModalOpen(true);
-                                      }}
-                                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 ${
-                                        work.totalCalculatedWage
-                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                          : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
-                                      }`}
-                                    >
-                                      <IndianRupee className="w-3.5 h-3.5" />
-                                      <span>
-                                        {work.totalCalculatedWage
-                                          ? `Paid: ₹${work.totalCalculatedWage} (${(work.specificationDetails as any)?.paymentMode || 'CASH'})`
-                                          : 'Assign Payment'}
-                                      </span>
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            ) : (
+                              <span className="text-amber-600 font-semibold italic text-[9px] sm:text-[10px]">
+                                Unassigned
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions / Wage CTA */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100">
+                          {!work.worker ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAssignModal(work)}
+                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                            >
+                              Assign
+                            </button>
+                          ) : work.status !== 'COMPLETED' ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenAssignModal(work)}
+                                className="flex-1 py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] sm:text-xs font-semibold transition-all shadow-xs cursor-pointer text-center"
+                              >
+                                Squad
+                              </button>
+                              <span className="text-[9px] text-slate-400 font-medium px-1.5 py-1 rounded bg-slate-50 border border-slate-200 truncate">
+                                In Progress
+                              </span>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiryToPay(work);
+                                setIsPayModalOpen(true);
+                              }}
+                              className={`w-full py-1.5 px-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1 truncate ${
+                                work.totalCalculatedWage
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                              }`}
+                            >
+                              <IndianRupee className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                              <span className="truncate">
+                                {work.totalCalculatedWage
+                                  ? `Paid: ₹${work.totalCalculatedWage}`
+                                  : 'Assign Pay'}
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
+
+                  {filteredEnquiries.length === 0 && (
+                    <div className="py-10 text-center text-slate-400 text-xs italic">
+                      No work orders found for the selected filter.
+                    </div>
+                  )}
                 </div>
               )}
 

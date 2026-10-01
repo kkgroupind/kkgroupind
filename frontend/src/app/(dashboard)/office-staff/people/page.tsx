@@ -351,7 +351,7 @@ export default function OfficeStaffPeoplePage() {
         </header>
 
         {/* Main Content */}
-        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
           {/* Toast Notification */}
           {toastMessage && (
             <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">
@@ -493,9 +493,115 @@ export default function OfficeStaffPeoplePage() {
             </div>
           </div>
 
-          {/* Workers Table */}
+          {/* Workers Content: Cards on Mobile (2 per row), Table on Desktop */}
           <div className="bg-white rounded-2xl border border-white/80 overflow-hidden shadow-md">
-            <div className="overflow-x-auto">
+            {/* Mobile Card Grid (2 cards per row on mobile) */}
+            <div className="sm:hidden p-2.5">
+              {isLoading ? (
+                <div className="py-12 text-center text-slate-500">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto text-[#1B2CC1] mb-2" />
+                  <p className="text-xs">Loading workers...</p>
+                </div>
+              ) : filteredWorkers.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-xs italic">
+                  No field workers found matching criteria.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {filteredWorkers.map((worker) => {
+                    const assignmentCount = (worker as any)?._count?.workerAssignments || 0;
+                    return (
+                      <div
+                        key={worker.id}
+                        className="bg-white hover:bg-slate-50/80 rounded-xl border border-slate-200/90 shadow-xs flex flex-col justify-between p-2.5"
+                      >
+                        <div>
+                          {/* Top: Avatar & Status */}
+                          <div className="flex items-center justify-between gap-1 mb-2">
+                            <div className="w-7 h-7 rounded-full bg-[#1B2CC1]/10 text-[#1B2CC1] font-black text-xs flex items-center justify-center shrink-0">
+                              {(worker.name || worker.username || 'W').charAt(0).toUpperCase()}
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold shrink-0 ${
+                                worker.workerStatus === 'AVAILABLE'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : worker.workerStatus === 'BUSY'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : 'bg-slate-100 text-slate-600 border border-slate-200'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  worker.workerStatus === 'AVAILABLE'
+                                    ? 'bg-emerald-500'
+                                    : worker.workerStatus === 'BUSY'
+                                    ? 'bg-blue-500'
+                                    : 'bg-slate-400'
+                                }`}
+                              />
+                              {worker.workerStatus === 'AVAILABLE' ? 'Avail' : worker.workerStatus === 'OFF_DUTY' ? 'Off' : worker.workerStatus}
+                            </span>
+                          </div>
+
+                          {/* Name & Username */}
+                          <div className="font-bold text-[#091540] text-xs truncate">
+                            {worker.name || worker.username}
+                          </div>
+                          <div className="font-mono text-[10px] text-[#1B2CC1] font-semibold truncate">
+                            @{worker.username}
+                          </div>
+
+                          {/* Contact Info */}
+                          {worker.phone ? (
+                            <a
+                              href={`tel:${worker.phone}`}
+                              className="text-[10px] text-slate-600 hover:text-[#1B2CC1] flex items-center gap-1 mt-1.5 truncate"
+                            >
+                              <Phone className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{worker.phone}</span>
+                            </a>
+                          ) : (
+                            <div className="text-[10px] text-slate-400 mt-1.5 italic">No phone</div>
+                          )}
+                        </div>
+
+                        {/* Footer: Assignments count & Actions */}
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between gap-1">
+                          <span className="font-black text-[#091540] bg-slate-100 px-1.5 py-0.5 rounded text-[9px]">
+                            {assignmentCount} jobs
+                          </span>
+
+                          <div className="flex items-center gap-1 shrink-0">
+                            {worker.phone && (
+                              <a
+                                href={`https://wa.me/${worker.phone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title="WhatsApp"
+                                className="p-1 rounded bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                              >
+                                <MessageCircle className="w-3 h-3" />
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(worker)}
+                              title="Edit"
+                              className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition-colors"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700">
                 <thead className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
                   <tr>

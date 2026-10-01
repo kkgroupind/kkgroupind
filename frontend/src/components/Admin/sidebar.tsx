@@ -1,10 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAdminTheme } from '@/context/admin-theme-context';
+import { EnquiryService, NotificationService, FinanceService } from '@/services';
 import {
   LayoutDashboard,
   Users,
@@ -12,18 +13,8 @@ import {
   Briefcase,
   UserCircle,
   Building2,
-  Building,
-  Factory,
   ClipboardList,
   FolderKanban,
-  ClipboardCheck,
-  Box,
-  Clock,
-  IndianRupee,
-  Package,
-  Globe,
-  BarChart3,
-  Inbox,
   CalendarCheck,
   Activity,
   Coffee,
@@ -31,53 +22,177 @@ import {
   Megaphone,
   MessageSquare,
   Layers,
-  Lock,
   ShieldCheck,
   Settings,
   LogOut,
   X,
   ChevronsLeft,
   Menu,
+  IndianRupee,
+  BarChart3,
 } from 'lucide-react';
 
-const menuData = [
-  { name: 'Overview', icon: LayoutDashboard, subItems: [
+interface SidebarIndicators {
+  pendingPayoutCount: number;
+  pendingEnquiriesCount: number;
+  unreadNotificationsCount: number;
+  pendingFinanceCount: number;
+}
+
+const buildMenuData = (indicators: SidebarIndicators) => [
+  {
+    name: 'Overview',
+    icon: LayoutDashboard,
+    subItems: [
       { name: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
       { name: 'Services', icon: Layers, href: '/admin/services' },
       { name: 'Site Settings', icon: Settings, href: '/admin/settings?tab=site' },
-  ] },
-  { name: 'People', icon: Users, subItems: [
+    ],
+  },
+  {
+    name: 'People',
+    icon: Users,
+    subItems: [
       { name: 'Workers', icon: HardHat, href: '/admin/people/workers' },
       { name: 'Office Staff', icon: Briefcase, href: '/admin/people/office-staff' },
       { name: 'Customers', icon: UserCircle, href: '/admin/people/customers' },
-    ] },
-  { name: 'Operations', icon: ClipboardList, subItems: [
-      { name: 'Job Orders', icon: FolderKanban, href: '/admin/operations/enquiries' },
+    ],
+  },
+  {
+    name: 'Operations',
+    icon: ClipboardList,
+    hasAlert: indicators.pendingPayoutCount > 0 || indicators.pendingEnquiriesCount > 0,
+    badgeVariant: indicators.pendingPayoutCount > 0 ? ('amber' as const) : ('blue' as const),
+    badgeCount: indicators.pendingPayoutCount || indicators.pendingEnquiriesCount,
+    subItems: [
+      {
+        name: 'Work Orders',
+        icon: Briefcase,
+        href: '/admin/operations/work-orders',
+        badge: indicators.pendingPayoutCount > 0 ? indicators.pendingPayoutCount : undefined,
+        badgeVariant: 'amber' as const,
+        badgePulse: true,
+        badgeLabel: `${indicators.pendingPayoutCount} completed ${
+          indicators.pendingPayoutCount === 1 ? 'work order' : 'work orders'
+        } awaiting worker payout`,
+      },
+      {
+        name: 'Job Orders',
+        icon: FolderKanban,
+        href: '/admin/operations/enquiries',
+        badge: indicators.pendingEnquiriesCount > 0 ? indicators.pendingEnquiriesCount : undefined,
+        badgeVariant: 'blue' as const,
+        badgePulse: false,
+        badgeLabel: `${indicators.pendingEnquiriesCount} new job enquiries pending review`,
+      },
       { name: 'Workforce Dispatch', icon: HardHat, href: '/admin/operations/assignments' },
-    ] },
-  { name: 'Attendance & Availability', icon: CalendarCheck, subItems: [
+    ],
+  },
+  {
+    name: 'Attendance & Availability',
+    icon: CalendarCheck,
+    subItems: [
       { name: 'Attendances', icon: CalendarCheck, href: '/admin/attendance' },
       { name: 'Availabilities', icon: Activity, href: '/admin/availability' },
       { name: 'Leaves', icon: Coffee, href: '/admin/leaves' },
-    ] },
-  { name: 'Communications', icon: MessageSquare, subItems: [
-      { name: 'Notifications', icon: Bell, href: '/admin/communications/notifications' },
+    ],
+  },
+  {
+    name: 'Communications',
+    icon: MessageSquare,
+    hasAlert: indicators.unreadNotificationsCount > 0,
+    badgeVariant: 'purple' as const,
+    badgeCount: indicators.unreadNotificationsCount,
+    subItems: [
+      {
+        name: 'Notifications',
+        icon: Bell,
+        href: '/admin/communications/notifications',
+        badge: indicators.unreadNotificationsCount > 0 ? indicators.unreadNotificationsCount : undefined,
+        badgeVariant: 'purple' as const,
+        badgePulse: true,
+        badgeLabel: `${indicators.unreadNotificationsCount} unread notifications`,
+      },
       { name: 'Announcements', icon: Megaphone, href: '/admin/communications/announcements' },
       { name: 'Complaints & Feedback', icon: MessageSquare, href: '/admin/communications/feedback' },
-    ] },
-  { name: 'Business & Finance', icon: Building2, subItems: [
-      { name: 'Finance', icon: IndianRupee, href: '/admin/finance' },
+    ],
+  },
+  {
+    name: 'Business & Finance',
+    icon: Building2,
+    hasAlert: indicators.pendingFinanceCount > 0,
+    badgeVariant: 'amber' as const,
+    badgeCount: indicators.pendingFinanceCount,
+    subItems: [
+      {
+        name: 'Finance',
+        icon: IndianRupee,
+        href: '/admin/finance',
+        badge: indicators.pendingFinanceCount > 0 ? indicators.pendingFinanceCount : undefined,
+        badgeVariant: 'amber' as const,
+        badgePulse: false,
+        badgeLabel: `${indicators.pendingFinanceCount} pending financial transactions`,
+      },
       { name: 'Reports', icon: BarChart3, href: '/admin/reports' },
-    ] },
+    ],
+  },
   { type: 'divider' },
   { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
 ];
 
 interface SidebarProps {
-  onClose?: () => void; // Mobile close
+  onClose?: () => void;
   isCollapsed?: boolean;
-  onToggleCollapse?: () => void; // Desktop toggle
+  onToggleCollapse?: () => void;
 }
+
+const SidebarBadge = ({
+  count,
+  variant = 'amber',
+  pulse = false,
+  label,
+  isDark,
+}: {
+  count: number;
+  variant?: 'amber' | 'blue' | 'purple' | 'emerald';
+  pulse?: boolean;
+  label?: string;
+  isDark: boolean;
+}) => {
+  if (!count || count <= 0) return null;
+
+  const colorStyles = {
+    amber: isDark
+      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
+      : 'bg-amber-50 text-amber-800 border-amber-300',
+    blue: isDark
+      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40 shadow-[0_0_10px_rgba(59,130,246,0.2)]'
+      : 'bg-blue-50 text-blue-800 border-blue-300',
+    purple: isDark
+      ? 'bg-[#7B4DFF]/20 text-[#9E7BFF] border-[#7B4DFF]/40 shadow-[0_0_10px_rgba(123,77,255,0.2)]'
+      : 'bg-purple-50 text-purple-800 border-purple-300',
+    emerald: isDark
+      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.2)]'
+      : 'bg-emerald-50 text-emerald-800 border-emerald-300',
+  }[variant];
+
+  const dotColor = {
+    amber: 'bg-amber-400',
+    blue: 'bg-blue-400',
+    purple: 'bg-[#9E7BFF]',
+    emerald: 'bg-emerald-400',
+  }[variant];
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold rounded-full border shrink-0 transition-all ${colorStyles}`}
+      title={label || `${count} pending`}
+    >
+      {pulse && <span className={`w-1.5 h-1.5 rounded-full ${dotColor} animate-pulse`} />}
+      <span>{count > 99 ? '99+' : count}</span>
+    </span>
+  );
+};
 
 const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
   if (item.type === 'divider') {
@@ -94,25 +209,62 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
   const itemBaseHref = item.href ? item.href.split('?')[0] : '';
   const isActive =
     (item.href && (pathname === item.href || (item.href.includes('?') && pathname === itemBaseHref))) ||
-    (hasSubItems && item.subItems.some((sub: any) => pathname.startsWith(sub.href.split('?')[0])));
+    (hasSubItems &&
+      item.subItems.some((sub: any) => {
+        const base = sub.href.split('?')[0];
+        return (
+          pathname === base ||
+          pathname.startsWith(base + '/') ||
+          (base.startsWith('/admin/operations') && pathname.startsWith('/admin/operations'))
+        );
+      }));
 
   if (hasSubItems) {
     return (
       <li className="mb-4">
         <div
           className={`flex items-center ${
-            isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2'
+            isCollapsed ? 'justify-center px-0 py-3' : 'px-4 py-2 justify-between'
           } ${isDark ? 'text-gray-500' : 'text-slate-400'}`}
-          title={isCollapsed ? item.name : undefined}
+          title={isCollapsed ? `${item.name}${item.badgeCount ? ` (${item.badgeCount} pending)` : ''}` : undefined}
         >
           {isCollapsed ? (
-            <item.icon
-              className={`w-5 h-5 ${
-                isActive ? 'text-[#2A835F]' : isDark ? 'text-gray-500' : 'text-slate-400'
-              }`}
-            />
+            <div className="relative flex items-center justify-center">
+              <item.icon
+                className={`w-5 h-5 ${
+                  isActive ? 'text-[#2A835F]' : isDark ? 'text-gray-500' : 'text-slate-400'
+                }`}
+              />
+              {item.hasAlert && (
+                <span
+                  className={`absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full animate-pulse ring-2 ${
+                    isDark ? 'ring-[#0D0E12]' : 'ring-white'
+                  } ${
+                    item.badgeVariant === 'amber'
+                      ? 'bg-amber-400'
+                      : item.badgeVariant === 'purple'
+                      ? 'bg-[#7B4DFF]'
+                      : 'bg-blue-400'
+                  }`}
+                />
+              )}
+            </div>
           ) : (
-            <span className="font-semibold text-xs uppercase tracking-wider">{item.name}</span>
+            <>
+              <span className="font-semibold text-xs uppercase tracking-wider">{item.name}</span>
+              {item.hasAlert && item.badgeCount > 0 && (
+                <span
+                  className={`w-2 h-2 rounded-full animate-pulse ${
+                    item.badgeVariant === 'amber'
+                      ? 'bg-amber-400'
+                      : item.badgeVariant === 'purple'
+                      ? 'bg-[#7B4DFF]'
+                      : 'bg-blue-400'
+                  }`}
+                  title={`${item.badgeCount} pending items`}
+                />
+              )}
+            </>
           )}
         </div>
         {!isCollapsed && (
@@ -120,13 +272,17 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
             {item.subItems.map((sub: any) => {
               const SubIcon = sub.icon;
               const subBaseHref = sub.href.split('?')[0];
-              const isSubActive = pathname === sub.href || (sub.href.includes('?') && pathname === subBaseHref);
+              const isSubActive =
+                pathname === sub.href ||
+                (sub.href.includes('?') && pathname === subBaseHref) ||
+                (sub.href === '/admin/operations/work-orders' && pathname === '/admin/operations') ||
+                (subBaseHref !== '/admin/dashboard' && pathname.startsWith(subBaseHref + '/'));
               return (
                 <li key={sub.name}>
                   <Link
                     href={sub.href}
                     onClick={onClose}
-                    className={`flex items-center gap-3 px-4 py-2.5 mx-2 text-sm rounded-xl transition-all ${
+                    className={`flex items-center justify-between gap-2 px-4 py-2.5 mx-2 text-sm rounded-xl transition-all ${
                       isSubActive
                         ? isDark
                           ? 'bg-[#2A835F]/15 text-[#2A835F] font-semibold border border-[#2A835F]/30'
@@ -136,8 +292,20 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                     }`}
                   >
-                    {SubIcon && <SubIcon className="w-4 h-4" />}
-                    <span>{sub.name}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {SubIcon && <SubIcon className="w-4 h-4 shrink-0" />}
+                      <span className="truncate">{sub.name}</span>
+                    </div>
+
+                    {sub.badge !== undefined && sub.badge > 0 && (
+                      <SidebarBadge
+                        count={sub.badge}
+                        variant={sub.badgeVariant}
+                        pulse={sub.badgePulse}
+                        label={sub.badgeLabel}
+                        isDark={isDark}
+                      />
+                    )}
                   </Link>
                 </li>
               );
@@ -154,7 +322,7 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
         href={item.href}
         onClick={onClose}
         title={isCollapsed ? item.name : undefined}
-        className={`flex items-center ${
+        className={`flex items-center justify-between ${
           isCollapsed ? 'justify-center px-0 py-3 mx-2' : 'px-4 py-2.5 mx-2'
         } rounded-xl transition-all duration-200 ${
           isActive
@@ -166,10 +334,25 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
             : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
         }`}
       >
-        <div className="flex items-center gap-3">
-          <item.icon className="w-5 h-5" />
-          {!isCollapsed && <span className="font-medium text-sm">{item.name}</span>}
+        <div className="flex items-center gap-3 relative min-w-0">
+          <item.icon className="w-5 h-5 shrink-0" />
+          {isCollapsed && item.hasAlert && (
+            <span
+              className={`absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full animate-pulse ring-2 ${
+                isDark ? 'ring-[#0D0E12]' : 'ring-white'
+              } ${item.badgeVariant === 'amber' ? 'bg-amber-400' : 'bg-blue-400'}`}
+            />
+          )}
+          {!isCollapsed && <span className="font-medium text-sm truncate">{item.name}</span>}
         </div>
+        {!isCollapsed && item.badge !== undefined && item.badge > 0 && (
+          <SidebarBadge
+            count={item.badge}
+            variant={item.badgeVariant}
+            pulse={item.badgePulse}
+            isDark={isDark}
+          />
+        )}
       </Link>
     </li>
   );
@@ -177,9 +360,74 @@ const MenuItem = ({ item, pathname, onClose, isCollapsed, isDark }: any) => {
 
 export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout, user, token } = useAuth();
   const router = useRouter();
   const { isDark } = useAdminTheme();
+
+  const [indicators, setIndicators] = useState<SidebarIndicators>({
+    pendingPayoutCount: 0,
+    pendingEnquiriesCount: 0,
+    unreadNotificationsCount: 0,
+    pendingFinanceCount: 0,
+  });
+
+  const fetchIndicators = useCallback(async () => {
+    if (!token || user?.role !== 'SUPER_ADMIN') return;
+    try {
+      const [enquiriesRes, notifRes, financeRes] = await Promise.allSettled([
+        EnquiryService.getAllEnquiries({}, token),
+        NotificationService.getMyNotifications(token, { unreadOnly: true, limit: 1 }),
+        FinanceService.getTransactions(token, { status: 'PENDING', limit: 1 }),
+      ]);
+
+      let pendingPayout = 0;
+      let pendingEnquiries = 0;
+      if (enquiriesRes.status === 'fulfilled' && enquiriesRes.value?.enquiries) {
+        const list = enquiriesRes.value.enquiries;
+        pendingPayout = list.filter(
+          (w) => w.status === 'COMPLETED' && (!w.totalCalculatedWage || Number(w.totalCalculatedWage) === 0)
+        ).length;
+        pendingEnquiries = list.filter((w) => w.status === 'PENDING').length;
+      }
+
+      let unreadNotifs = 0;
+      if (notifRes.status === 'fulfilled' && typeof notifRes.value?.unreadCount === 'number') {
+        unreadNotifs = notifRes.value.unreadCount;
+      }
+
+      let pendingFinance = 0;
+      if (financeRes.status === 'fulfilled') {
+        pendingFinance = financeRes.value?.meta?.total ?? financeRes.value?.items?.length ?? 0;
+      }
+
+      setIndicators({
+        pendingPayoutCount: pendingPayout,
+        pendingEnquiriesCount: pendingEnquiries,
+        unreadNotificationsCount: unreadNotifs,
+        pendingFinanceCount: pendingFinance,
+      });
+    } catch (err) {
+      console.warn('Failed to load admin sidebar indicators:', err);
+    }
+  }, [token, user]);
+
+  useEffect(() => {
+    fetchIndicators();
+    const interval = setInterval(fetchIndicators, 30000);
+    const onFocus = () => fetchIndicators();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [fetchIndicators]);
+
+  // Re-check indicators whenever the route changes (e.g. after a payment or enquiry update)
+  useEffect(() => {
+    fetchIndicators();
+  }, [pathname, fetchIndicators]);
+
+  const menuData = useMemo(() => buildMenuData(indicators), [indicators]);
 
   const handleLogout = () => {
     logout();

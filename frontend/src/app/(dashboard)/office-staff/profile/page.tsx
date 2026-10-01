@@ -440,7 +440,7 @@ export default function OfficeStaffProfilePage() {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 space-y-6">
           {/* Global Feedback Banners */}
           {profileSuccess && (
             <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-medium flex items-center gap-2.5 animate-in fade-in">

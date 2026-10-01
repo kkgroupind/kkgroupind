@@ -58,6 +58,14 @@ import {
 } from 'lucide-react';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { ComboboxDropdown } from '@/components/ui/combobox-dropdown';
+import {
   BarChart,
   Bar,
   XAxis,
@@ -102,11 +110,11 @@ const EXPENSE_CATEGORIES: { id: TransactionCategory; label: string; ml: string }
   { id: 'OTHER', label: 'Miscellaneous Expense', ml: 'മറ്റ് ചെലവുകൾ' },
 ];
 
-const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: any }[] = [
-  { id: 'UPI', label: 'UPI / GPay / PhonePe', icon: QrCode },
-  { id: 'CASH', label: 'Cash on Site / Desk', icon: Banknote },
-  { id: 'BANK_TRANSFER', label: 'Bank Transfer (NEFT/IMPS)', icon: CreditCard },
-  { id: 'CHEQUE', label: 'Cheque Payment', icon: FileText },
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; icon: any }[] = [
+  { id: 'UPI', label: 'UPI / GPay / PhonePe', sub: 'Instant Digital Payment', icon: QrCode },
+  { id: 'CASH', label: 'Cash on Site / Desk', sub: 'Physical Currency Handover', icon: Banknote },
+  { id: 'BANK_TRANSFER', label: 'Bank Transfer (NEFT/IMPS)', sub: 'Direct Bank Settlement', icon: CreditCard },
+  { id: 'CHEQUE', label: 'Cheque Payment', sub: 'Bank Cheque / Voucher', icon: FileText },
 ];
 
 const CATEGORY_COLORS = ['#2A835F', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B'];
@@ -218,16 +226,34 @@ export default function AdminFinancePage() {
 
   const modalCategoryOptions: AdminDropdownOption[] = useMemo(() => {
     const cats = formData.type === 'INCOME' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-    return cats.map((c) => ({ value: c.id, label: `${c.label} (${c.ml})` }));
+    return cats.map((c) => ({
+      value: c.id,
+      label: c.label,
+      description: c.ml,
+    }));
   }, [formData.type]);
 
   const modalPaymentOptions: AdminDropdownOption[] = useMemo(
-    () => PAYMENT_METHODS.map((m) => ({ value: m.id, label: m.label })),
+    () =>
+      PAYMENT_METHODS.map((m) => ({
+        value: m.id,
+        label: m.label,
+        description: m.sub,
+        icon: m.icon,
+      })),
     [],
   );
 
   const modalServiceOptions: AdminDropdownOption[] = useMemo(
-    () => SERVICE_OPTIONS.map((s) => ({ value: s, label: s })),
+    () =>
+      SERVICE_OPTIONS.map((s) => {
+        const parts = s.split(' - ');
+        return {
+          value: s,
+          label: parts[0] || s,
+          description: parts[1] || undefined,
+        };
+      }),
     [],
   );
 
@@ -236,10 +262,32 @@ export default function AdminFinancePage() {
       { value: '', label: '-- No Direct Ticket Link --' },
       ...enquiries.map((e) => ({
         value: e.id,
-        label: `${e.trackingNumber} - ${e.customerName} (${e.serviceName})`,
+        label: `${e.trackingNumber} • ${e.customerName}`,
+        description: e.serviceName,
+        badge: e.status,
+        badgeColor:
+          e.status === 'COMPLETED'
+            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+            : e.status === 'ASSIGNED' || e.status === 'IN_PROGRESS'
+            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
       })),
     ],
     [enquiries],
+  );
+
+  const modalWorkerOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: '', label: '-- Direct Payee / No Worker Assigned --' },
+      ...workers.map((w) => ({
+        value: w.id,
+        label: w.name || w.username || 'Field Operative',
+        description: w.phone ? `Phone: ${w.phone}` : 'Registered Field Worker',
+        badge: 'Operative',
+        badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+      })),
+    ],
+    [workers],
   );
 
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -391,6 +439,27 @@ export default function AdminFinancePage() {
     setIsCreateModalOpen(true);
   };
 
+  const handleOpenEdit = (txn: FinancialTransaction) => {
+    setEditingTxn(txn);
+    setFormData({
+      type: txn.type,
+      category: txn.category,
+      amount: Number(txn.amount) || 0,
+      date: txn.dateString || (txn.date ? txn.date.split('T')[0] : '2026-09-26'),
+      paymentMethod: txn.paymentMethod || 'UPI',
+      serviceType: txn.serviceType || SERVICE_OPTIONS[0],
+      customerName: txn.customerName || '',
+      vendorName: txn.vendorName || '',
+      referenceNumber: txn.referenceNumber || '',
+      notes: txn.notes || '',
+      enquiryId: txn.enquiryId || '',
+      workerId: txn.workerId || '',
+    });
+    setInspectTxn(null);
+    setActionError(null);
+    setIsCreateModalOpen(true);
+  };
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.amount || formData.amount <= 0) {
@@ -400,11 +469,22 @@ export default function AdminFinancePage() {
     setFormSubmitting(true);
     setActionError(null);
     try {
+      const payload: CreateTransactionPayload = {
+        ...formData,
+        amount: Number(formData.amount),
+        enquiryId: formData.enquiryId && formData.enquiryId.trim() ? formData.enquiryId.trim() : undefined,
+        workerId: formData.workerId && formData.workerId.trim() ? formData.workerId.trim() : undefined,
+        customerName: formData.customerName?.trim() || undefined,
+        vendorName: formData.vendorName?.trim() || undefined,
+        referenceNumber: formData.referenceNumber?.trim() || undefined,
+        notes: formData.notes?.trim() || undefined,
+      };
+
       if (editingTxn) {
-        await FinanceService.updateTransaction(token, editingTxn.id, formData);
+        await FinanceService.updateTransaction(token, editingTxn.id, payload);
         showToast('Transaction updated successfully');
       } else {
-        await FinanceService.createTransaction(token, formData);
+        await FinanceService.createTransaction(token, payload);
         showToast('Transaction recorded successfully');
       }
       setIsCreateModalOpen(false);
@@ -936,6 +1016,7 @@ export default function AdminFinancePage() {
                   value={filterType}
                   onChange={(val) => setFilterType(val)}
                   variant="emerald"
+                  theme="dark"
                   size="md"
                 />
               </div>
@@ -947,6 +1028,7 @@ export default function AdminFinancePage() {
                   value={filterStatus}
                   onChange={(val) => setFilterStatus(val)}
                   variant="emerald"
+                  theme="dark"
                   size="md"
                 />
               </div>
@@ -958,6 +1040,7 @@ export default function AdminFinancePage() {
                   value={filterCategory}
                   onChange={(val) => setFilterCategory(val)}
                   variant="emerald"
+                  theme="dark"
                   size="md"
                   searchable
                 />
@@ -970,6 +1053,7 @@ export default function AdminFinancePage() {
                   value={filterService}
                   onChange={(val) => setFilterService(val)}
                   variant="emerald"
+                  theme="dark"
                   size="md"
                   searchable
                 />
@@ -1155,6 +1239,15 @@ export default function AdminFinancePage() {
                             <span>Inspect</span>
                           </button>
 
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(txn)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 border border-gray-800 hover:border-emerald-500/20 transition-all cursor-pointer"
+                            title="Edit Record"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+
                           {txn.status === 'PENDING' && (
                             <button
                               type="button"
@@ -1293,6 +1386,13 @@ export default function AdminFinancePage() {
                                   <Check className="w-4 h-4 stroke-[2.5]" />
                                 </button>
                               )}
+                              <button
+                                onClick={() => handleOpenEdit(txn)}
+                                className="p-1.5 rounded-lg hover:bg-[#2A835F]/15 text-gray-400 hover:text-emerald-400 transition-colors"
+                                title="Edit Entry"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => setInspectTxn(txn)}
                                 className="p-1.5 rounded-lg hover:bg-slate-500/10 text-gray-400 hover:text-slate-200 transition-colors"
@@ -1502,277 +1602,336 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      {/* CREATE / EDIT TRANSACTION MODAL */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className={`w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8 shadow-2xl border ${
-            isDark ? 'bg-[#14151A] border-gray-800 text-white' : 'bg-[#14151A] border-gray-800 text-gray-200'
-          }`}>
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
-                  Financial Entry
-                </span>
-                <h3 className="text-xl font-black mt-0.5">
-                  {editingTxn ? 'Edit Financial Entry' : 'Record Business Transaction'}
-                </h3>
-              </div>
+      {/* CREATE / EDIT TRANSACTION MODAL WITH SHADCN DIALOG */}
+      <Dialog
+        open={isCreateModalOpen}
+        onOpenChange={(open) => {
+          if (!formSubmitting) setIsCreateModalOpen(open);
+        }}
+      >
+        <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl p-6 sm:p-8 shadow-2xl border text-gray-200 relative z-50 custom-scrollbar bg-[#14151A] border-gray-800">
+          {/* Top ambient brand glow */}
+          <div
+            className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent ${
+              formData.type === 'INCOME' ? 'via-[#2A835F]/70' : 'via-rose-500/70'
+            } to-transparent`}
+          />
+
+          <DialogHeader className="pb-4 border-b border-gray-800 mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
+              Financial Entry
+            </span>
+            <DialogTitle className="text-lg font-bold text-white mt-0.5">
+              {editingTxn ? 'Edit Financial Entry' : 'Record Business Transaction'}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Record or update transaction details
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Error Notification */}
+          {actionError && (
+            <div className="p-3.5 mb-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{actionError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleFormSubmit} className="space-y-4">
+            {/* Type Switcher */}
+            <div
+              className={`p-1.5 rounded-2xl border flex items-center gap-1.5 ${
+                isDark ? 'bg-slate-950/80 border-gray-800' : 'bg-slate-900 border-gray-800'
+              }`}
+            >
               <button
-                onClick={() => setIsCreateModalOpen(false)}
-                className="p-2 rounded-xl hover:bg-slate-500/10 text-gray-400 hover:text-slate-200"
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: 'INCOME',
+                    category: 'SERVICE_PAYMENT',
+                  }))
+                }
+                className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  formData.type === 'INCOME'
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
               >
-                <X className="w-5 h-5" />
+                <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
+                <span>Cash Inflow / Income (വരവ്)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    type: 'EXPENSE',
+                    category: 'FUEL_DIESEL',
+                  }))
+                }
+                className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  formData.type === 'EXPENSE'
+                    ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/30'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <ArrowDownRight className="w-4 h-4 stroke-[2.5]" />
+                <span>Cash Outflow / Expense (ചെലവ്)</span>
               </button>
             </div>
 
-            {actionError && (
-              <div className="p-3.5 mb-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold">
-                {actionError}
-              </div>
-            )}
-
-            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs sm:text-sm">
-              
-              {/* Type Switcher */}
-              <div className={`p-1.5 rounded-2xl border flex items-center gap-1 ${
-                isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-100 border-gray-800'
-              }`}>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, type: 'INCOME', category: 'SERVICE_PAYMENT' })}
-                  className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                    formData.type === 'INCOME'
-                      ? 'bg-emerald-600 text-white shadow-md'
-                      : 'text-gray-400 hover:text-slate-200'
-                  }`}
-                >
-                  🟢 Inflow / Income (വരുമാനം)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, type: 'EXPENSE', category: 'FUEL_DIESEL' })}
-                  className={`flex-1 py-2.5 rounded-xl font-bold transition-all ${
-                    formData.type === 'EXPENSE'
-                      ? 'bg-rose-600 text-white shadow-md'
-                      : 'text-gray-400 hover:text-slate-200'
-                  }`}
-                >
-                  🔴 Outflow / Expense (ചെലവ്)
-                </button>
-              </div>
-
-              {/* Amount & Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Amount (₹ INR) *
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400">₹</span>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      step="any"
-                      placeholder="0.00"
-                      value={formData.amount || ''}
-                      onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-                      className={`w-full pl-8 pr-4 py-2.5 rounded-xl border font-bold text-base focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Transaction Date *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Category & Payment Method using AdminDropdown */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Category *
-                  </label>
-                  <AdminDropdown
-                    options={modalCategoryOptions}
-                    value={formData.category}
-                    onChange={(val) => setFormData({ ...formData, category: val as any })}
-                    variant="emerald"
-                    size="md"
-                    searchable
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Payment Method *
-                  </label>
-                  <AdminDropdown
-                    options={modalPaymentOptions}
-                    value={formData.paymentMethod || 'UPI'}
-                    onChange={(val) => setFormData({ ...formData, paymentMethod: val as any })}
-                    variant="emerald"
-                    size="md"
-                  />
-                </div>
-              </div>
-
-              {/* Service Unit & Reference */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Service Squad / Unit
-                  </label>
-                  <AdminDropdown
-                    options={modalServiceOptions}
-                    value={formData.serviceType || ''}
-                    onChange={(val) => setFormData({ ...formData, serviceType: val })}
-                    variant="emerald"
-                    size="md"
-                    searchable
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Reference / UPI Ref No.
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. GPay/9948201948 or Bill-8492"
-                    value={formData.referenceNumber || ''}
-                    onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })}
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
-                    }`}
-                  />
-                </div>
-              </div>
-
-              {/* Party: Customer or Vendor */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {formData.type === 'INCOME' ? (
-                  <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                      Customer Name & Place
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Santhosh Kumar (Kanhangad)"
-                      value={formData.customerName || ''}
-                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                      className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
-                      }`}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                      Vendor / Payee / Bunk
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. HP Fuel Station Nileshwar or UltraTech Bunk"
-                      value={formData.vendorName || ''}
-                      onChange={(e) => setFormData({ ...formData, vendorName: e.target.value })}
-                      className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                        isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
-                      }`}
-                    />
-                  </div>
-                )}
-
-                {/* Optional Link to Service Enquiry */}
-                <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                    Link to Enquiry Ticket (Optional)
-                  </label>
-                  <AdminDropdown
-                    options={modalEnquiryOptions}
-                    value={formData.enquiryId || ''}
-                    onChange={(val) => setFormData({ ...formData, enquiryId: val || undefined })}
-                    variant="emerald"
-                    size="md"
-                    searchable
-                  />
-                </div>
-              </div>
-
-              {/* Notes */}
+            {/* Amount & Date */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase mb-1.5 text-gray-400">
-                  Notes & Operational Description
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Amount (₹ INR) <span className="text-rose-400">*</span>
                 </label>
-                <textarea
-                  rows={2}
-                  placeholder="e.g. 50L diesel for JCB KL-60-A-4122 or Advance 12hr earthwork..."
-                  value={formData.notes || ''}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-50 border-gray-800'
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-base">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    step="any"
+                    placeholder="0.00"
+                    value={formData.amount || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className={`w-full pl-8 pr-4 py-2.5 rounded-xl border font-bold text-base text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all ${
+                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Transaction Date <span className="text-rose-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all ${
+                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
                   }`}
                 />
               </div>
+            </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800 dark:border-gray-800">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:text-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={formSubmitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs shadow-lg transition-all"
-                >
-                  {formSubmitting ? 'Saving...' : editingTxn ? 'Update Entry' : 'Record Transaction'}
-                </button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* INSPECT TRANSACTION MODAL */}
-      {inspectTxn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className={`w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border ${
-            isDark ? 'bg-[#14151A] border-gray-800 text-white' : 'bg-[#14151A] border-gray-800 text-gray-200'
-          }`}>
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
+            {/* Category & Payment Method using Shadcn ComboboxDropdown */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
-                  Transaction Voucher
-                </span>
-                <h3 className="text-xl font-mono font-black mt-0.5">
-                  {inspectTxn.transactionNumber}
-                </h3>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Category <span className="text-rose-400">*</span>
+                </label>
+                <ComboboxDropdown
+                  options={modalCategoryOptions}
+                  value={formData.category}
+                  onChange={(val) => setFormData({ ...formData, category: val as any })}
+                  placeholder="Select category..."
+                  align="start"
+                  searchable
+                />
               </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Payment Method <span className="text-rose-400">*</span>
+                </label>
+                <ComboboxDropdown
+                  options={modalPaymentOptions}
+                  value={formData.paymentMethod || 'UPI'}
+                  onChange={(val) => setFormData({ ...formData, paymentMethod: val as any })}
+                  placeholder="Select payment method..."
+                  align="end"
+                  searchable={false}
+                />
+              </div>
+            </div>
+
+            {/* Service Unit & Reference */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Service Squad / Operational Unit
+                </label>
+                <ComboboxDropdown
+                  options={modalServiceOptions}
+                  value={formData.serviceType || ''}
+                  onChange={(val) => setFormData({ ...formData, serviceType: val })}
+                  placeholder="Select service unit..."
+                  align="start"
+                  searchable
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Reference / UPI / Voucher No.
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. GPay/UPI-9948201 or Bill-8492"
+                  value={formData.referenceNumber || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, referenceNumber: e.target.value })
+                  }
+                  className={`w-full px-3.5 py-2.5 rounded-xl border font-mono text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
+                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Party Information & Worker Association */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {formData.type === 'INCOME' ? (
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                    Customer Name & Location
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Santhosh Kumar (Kanhangad)"
+                    value={formData.customerName || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, customerName: e.target.value })
+                    }
+                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
+                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    }`}
+                  />
+                </div>
+              ) : formData.category === 'WORKER_WAGE' || formData.category === 'WORKER_BATA' ? (
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                    Assign to Worker (Disbursement)
+                  </label>
+                  <ComboboxDropdown
+                    options={modalWorkerOptions}
+                    value={formData.workerId || ''}
+                    onChange={(val) => {
+                      const matchedWorker = workers.find((w) => w.id === val);
+                      setFormData({
+                        ...formData,
+                        workerId: val || undefined,
+                        vendorName: matchedWorker
+                          ? matchedWorker.name || matchedWorker.username || ''
+                          : formData.vendorName,
+                      });
+                    }}
+                    placeholder="Assign to worker..."
+                    align="start"
+                    searchable
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                    Vendor / Payee / Supplier
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. HP Fuel Station Nileshwar or UltraTech Bunk"
+                    value={formData.vendorName || ''}
+                    onChange={(e) =>
+                      setFormData({ ...formData, vendorName: e.target.value })
+                    }
+                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
+                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    }`}
+                  />
+                </div>
+              )}
+
+              {/* Optional Link to Service Enquiry */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  Link to Enquiry Ticket (Optional)
+                </label>
+                <ComboboxDropdown
+                  options={modalEnquiryOptions}
+                  value={formData.enquiryId || ''}
+                  onChange={(val) => setFormData({ ...formData, enquiryId: val || undefined })}
+                  placeholder="Link to enquiry ticket..."
+                  align="end"
+                  searchable
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                Notes & Operational Description
+              </label>
+              <textarea
+                rows={2}
+                placeholder="e.g. 50L diesel for JCB KL-60-A-4122 or Advance 12hr earthwork..."
+                value={formData.notes || ''}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] resize-none transition-all ${
+                  isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                }`}
+              />
+            </div>
+
+            {/* Submit Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
               <button
-                onClick={() => setInspectTxn(null)}
-                className="p-2 rounded-xl hover:bg-slate-500/10 text-gray-400 hover:text-slate-200"
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:text-slate-200 transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={formSubmitting}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs shadow-lg shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {formSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <span>{editingTxn ? 'Update Entry' : 'Record Transaction'}</span>
+                  </>
+                )}
               </button>
             </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* INSPECT TRANSACTION MODAL WITH SHADCN DIALOG */}
+      <Dialog open={!!inspectTxn} onOpenChange={(open) => !open && setInspectTxn(null)}>
+        {inspectTxn && (
+          <DialogContent className="w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl p-6 sm:p-8 shadow-2xl border text-gray-200 bg-[#14151A] border-gray-800">
+            <DialogHeader className="pb-4 border-b border-gray-800 mb-4">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
+                Transaction Voucher
+              </span>
+              <DialogTitle className="text-xl font-mono font-black mt-0.5 text-white">
+                {inspectTxn.transactionNumber}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                Transaction details and verification actions
+              </DialogDescription>
+            </DialogHeader>
 
             <div className="space-y-4 text-xs sm:text-sm">
               <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-500/10">
@@ -1831,33 +1990,44 @@ export default function AdminFinancePage() {
 
               {/* Action Buttons in Inspect */}
               <div className="flex items-center justify-end gap-2.5 pt-4">
+                <button
+                  type="button"
+                  onClick={() => handleOpenEdit(inspectTxn)}
+                  className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Edit2 className="w-3.5 h-3.5 text-gray-400" />
+                  <span>Edit</span>
+                </button>
                 {inspectTxn.status === 'PENDING' && (
                   <>
                     <button
+                      type="button"
                       onClick={() => handleVerify(inspectTxn.id, 'REJECTED')}
-                      className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 font-bold text-xs hover:bg-rose-500/20"
+                      className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 font-bold text-xs hover:bg-rose-500/20 cursor-pointer"
                     >
                       Reject
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleVerify(inspectTxn.id, 'VERIFIED')}
-                      className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700"
+                      className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 cursor-pointer"
                     >
                       Approve & Verify
                     </button>
                   </>
                 )}
                 <button
+                  type="button"
                   onClick={() => handleDelete(inspectTxn.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 font-bold text-xs hover:bg-rose-500/20"
+                  className="px-4 py-2 rounded-xl bg-rose-500/10 text-rose-500 font-bold text-xs hover:bg-rose-500/20 cursor-pointer"
                 >
                   Delete
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
 
       {/* Financial Record Deletion Confirmation Modal */}
       <ConfirmationModal
