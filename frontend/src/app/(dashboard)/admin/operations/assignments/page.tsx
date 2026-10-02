@@ -133,33 +133,33 @@ export default function AdminAssignmentsPage() {
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+      {/* Metrics Row: Single row on mobile */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
+        <div className="group p-2.5 sm:p-5 rounded-xl sm:rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent group-hover:via-amber-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
-            Pending Jobs in Queue
+          <span className="text-[9px] sm:text-[11px] text-amber-400 font-semibold uppercase tracking-wider truncate">
+            Pending Queue
           </span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{pendingEnquiries.length}</div>
-          <span className="text-[11px] text-amber-400/70 mt-1 block">Requires operative dispatch</span>
+          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">{pendingEnquiries.length}</div>
+          <span className="text-[10px] text-amber-400/70 mt-1 hidden sm:block">Requires operative dispatch</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+        <div className="group p-2.5 sm:p-5 rounded-xl sm:rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent group-hover:via-emerald-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
-            Available Technicians
+          <span className="text-[9px] sm:text-[11px] text-emerald-400 font-semibold uppercase tracking-wider truncate">
+            Available Techs
           </span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{availableWorkers.length}</div>
-          <span className="text-[11px] text-emerald-400/70 mt-1 block">Ready for job dispatch</span>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">{availableWorkers.length}</div>
+          <span className="text-[10px] text-emerald-400/70 mt-1 hidden sm:block">Ready for job dispatch</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
+        <div className="group p-2.5 sm:p-5 rounded-xl sm:rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent group-hover:via-purple-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-purple-400 font-semibold uppercase tracking-wider">
+          <span className="text-[9px] sm:text-[11px] text-purple-400 font-semibold uppercase tracking-wider truncate">
             Active Dispatches
           </span>
-          <div className="text-2xl font-bold text-purple-400 mt-1">{assignedEnquiries.length}</div>
-          <span className="text-[11px] text-purple-400/70 mt-1 block">Currently on-field</span>
+          <div className="text-lg sm:text-2xl font-bold text-purple-400 mt-0.5 sm:mt-1">{assignedEnquiries.length}</div>
+          <span className="text-[10px] text-purple-400/70 mt-1 hidden sm:block">Currently on-field</span>
         </div>
       </div>
 

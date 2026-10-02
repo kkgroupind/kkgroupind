@@ -113,30 +113,30 @@ export default function AdminAvailabilityPage() {
         </button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Ready for Dispatch</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{counts.available}</div>
-          <span className="text-xs text-emerald-500/80 mt-1 block">Technicians currently available</span>
+      {/* Metrics Row: Double row on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Ready for Dispatch</span>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">{counts.available}</div>
+          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Available today</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Active on Job</span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{counts.busy}</div>
-          <span className="text-xs text-blue-400/80 mt-1 block">Engaged on-site</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Active on Job</span>
+          <div className="text-lg sm:text-2xl font-bold text-blue-400 mt-0.5 sm:mt-1">{counts.busy}</div>
+          <span className="text-[10px] sm:text-xs text-blue-400/80 mt-1 block truncate">Engaged on-site</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Off Duty / Away</span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{counts.offDuty}</div>
-          <span className="text-xs text-amber-500/80 mt-1 block">Unavailable today</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Off Duty / Away</span>
+          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">{counts.offDuty}</div>
+          <span className="text-[10px] sm:text-xs text-amber-500/80 mt-1 block truncate">Unavailable today</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Total Registered Force</span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{counts.total}</div>
-          <span className="text-xs text-gray-500 mt-1 block">Registered technicians</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Registered Force</span>
+          <div className="text-lg sm:text-2xl font-bold text-gray-100 mt-0.5 sm:mt-1">{counts.total}</div>
+          <span className="text-[10px] sm:text-xs text-gray-500 mt-1 block truncate">Total technicians</span>
         </div>
       </div>
 

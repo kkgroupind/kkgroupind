@@ -25,6 +25,12 @@ export const metadata: Metadata = {
   title: 'KK Group | Enterprise Workforce & Heavy Machinery Solutions',
   description:
     'Deploy on-demand verified teams for coconut harvesting, JCB earthmoving, plastering squads, and field operations.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'KK Group',
+  },
 };
 
 export default function RootLayout({

@@ -39,6 +39,7 @@ import { useToast } from '@/context/toast-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
 import { WorkerShell } from '@/components/Worker';
 import { ServiceEnquiry, EnquiryService } from '@/services';
+import { PwaInstallButton } from '@/components/PwaInstall';
 
 export default function WorkerDashboardPage() {
   const { user, token, logout } = useAuth();
@@ -423,6 +424,9 @@ export default function WorkerDashboardPage() {
             </button>
           </div>
         </div>
+
+        {/* PWA Install Banner Card for Field Workers */}
+        <PwaInstallButton role="worker" variant="card" />
 
         {/* ========================================================
             2. SIMPLE 3-TAB SEGMENT CONTROL

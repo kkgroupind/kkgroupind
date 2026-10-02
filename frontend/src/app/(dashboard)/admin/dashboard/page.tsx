@@ -138,8 +138,8 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid: Double row on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <StatCard
           title="Total Employees"
           value={overview?.stats ? overview.stats.totalEmployees.toString() : '...'}
@@ -164,10 +164,10 @@ export default function AdminDashboardPage() {
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-3 min-w-0 w-full overflow-hidden">
           <PerformanceChart />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 min-w-0 w-full overflow-hidden">
           <AttendanceChart attendance={overview?.attendance} />
         </div>
       </div>

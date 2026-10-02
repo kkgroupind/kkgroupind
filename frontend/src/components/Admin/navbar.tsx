@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import NextLink from 'next/link';
 import { Search, Bell, Settings, Maximize, Minimize, Menu } from 'lucide-react';
+import { PwaInstallButton } from '@/components/PwaInstall';
 
 interface NavbarProps {
   onMenuClick?: () => void;
@@ -83,8 +84,11 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
 
-      {/* Right Actions: Only Fullscreen, Notifications, and Settings */}
-      <div className="flex items-center gap-2.5 sm:gap-3 ml-4">
+      {/* Right Actions: PWA Install, Fullscreen, Notifications, and Settings */}
+      <div className="flex items-center gap-2 sm:gap-3 ml-4">
+        {/* PWA App Download Button */}
+        <PwaInstallButton role="admin" variant="navbar" />
+
         {/* Fullscreen Toggle Button */}
         <button
           onClick={handleToggleFullscreen}

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { useAdminTheme } from '@/context/admin-theme-context';
 import { EnquiryService, NotificationService, FinanceService } from '@/services';
+import { PwaInstallButton } from '@/components/PwaInstall';
 import {
   LayoutDashboard,
   Users,
@@ -521,6 +522,11 @@ export function Sidebar({ onClose, isCollapsed = false, onToggleCollapse }: Side
           isCollapsed ? 'items-center px-2' : ''
         }`}
       >
+        {/* PWA Web App Download Box */}
+        {!isCollapsed && (
+          <PwaInstallButton role="admin" variant="sidebar" className="mb-1" />
+        )}
+
         {/* 1. Admin Profile Card */}
         <Link
           href="/admin/settings"

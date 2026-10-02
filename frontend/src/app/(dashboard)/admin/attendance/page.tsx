@@ -133,44 +133,44 @@ export default function AdminAttendancePage() {
         </button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Office Staff Present</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">
+      {/* Metrics Row: Double row on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Office Staff Present</span>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">
             {data?.counts?.officeStaff?.available ?? 0}
-            <span className="text-xs text-gray-500 font-normal ml-1">
-              / {data?.counts?.officeStaff?.total ?? 0} total
+            <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-1">
+              / {data?.counts?.officeStaff?.total ?? 0}
             </span>
           </div>
-          <span className="text-xs text-emerald-500/80 mt-1 block">Active on desk</span>
+          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Active on desk</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Workers Available</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Workers Available</span>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">
             {data?.counts?.workers?.available ?? 0}
-            <span className="text-xs text-gray-500 font-normal ml-1">
-              / {data?.counts?.workers?.total ?? 0} total
+            <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-1">
+              / {data?.counts?.workers?.total ?? 0}
             </span>
           </div>
-          <span className="text-xs text-emerald-500/80 mt-1 block">Ready for job dispatch</span>
+          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Ready for dispatch</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Workers on Field Job</span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Workers on Field</span>
+          <div className="text-lg sm:text-2xl font-bold text-blue-400 mt-0.5 sm:mt-1">
             {data?.counts?.workers?.busy ?? 0}
           </div>
-          <span className="text-xs text-blue-400/80 mt-1 block">Busy executing tasks</span>
+          <span className="text-[10px] sm:text-xs text-blue-400/80 mt-1 block truncate">Executing tasks</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Personnel Away / Off Duty</span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Away / Off Duty</span>
+          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">
             {(data?.counts?.officeStaff?.offDuty ?? 0) + (data?.counts?.workers?.offDuty ?? 0)}
           </div>
-          <span className="text-xs text-amber-500/80 mt-1 block">On leave or inactive</span>
+          <span className="text-[10px] sm:text-xs text-amber-500/80 mt-1 block truncate">On leave/inactive</span>
         </div>
       </div>
 

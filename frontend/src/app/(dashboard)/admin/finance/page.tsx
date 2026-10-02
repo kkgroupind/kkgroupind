@@ -630,23 +630,23 @@ export default function AdminFinancePage() {
         </div>
       </div>
 
-      {/* KPI Stats Cards Bar: Single row on mobile */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 lg:gap-6 mb-5 sm:mb-8">
+      {/* KPI Stats Cards Bar: Double row on mobile, 4 columns on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6 mb-5 sm:mb-8">
         
         {/* Total Inflow */}
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-emerald-500/30 transition-all flex flex-col justify-between overflow-hidden">
-          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-emerald-500/30 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
               Inflows<span className="hidden md:inline"> (വരുമാനം)</span>
             </span>
-            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-[#2A835F] shrink-0">
-              <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-[#2A835F] shrink-0">
+              <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
             </div>
           </div>
-          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-emerald-400 truncate">
+          <div className="text-sm sm:text-xl lg:text-2xl font-black text-emerald-400 truncate">
             ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
             <span className="hidden sm:inline">{monthLabel}</span>
             <span className="font-semibold text-emerald-400 bg-emerald-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               Today: ₹{formatCompactINR(summary?.todayIncome || 0)}
@@ -655,19 +655,19 @@ export default function AdminFinancePage() {
         </div>
 
         {/* Total Outflow */}
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-rose-500/30 transition-all flex flex-col justify-between overflow-hidden">
-          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-rose-500/30 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
               Outflows<span className="hidden md:inline"> (ചെലവ്)</span>
             </span>
-            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0">
-              <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-rose-400" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0">
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
             </div>
           </div>
-          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-rose-400 truncate">
+          <div className="text-sm sm:text-xl lg:text-2xl font-black text-rose-400 truncate">
             ₹{(summary?.totalExpense || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
             <span className="hidden sm:inline">{monthLabel}</span>
             <span className="font-semibold text-rose-400 bg-rose-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               Today: ₹{formatCompactINR(summary?.todayExpense || 0)}
@@ -676,21 +676,21 @@ export default function AdminFinancePage() {
         </div>
 
         {/* Net Cash Flow / Profit */}
-        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-[#2A835F]/40 transition-all flex flex-col justify-between overflow-hidden">
-          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-[#2A835F]/40 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
               Net<span className="hidden md:inline"> Margin</span>
             </span>
-            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0">
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#2A835F]" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0">
+              <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#2A835F]" />
             </div>
           </div>
-          <div className={`text-[11px] sm:text-xl lg:text-2xl font-black truncate ${
+          <div className={`text-sm sm:text-xl lg:text-2xl font-black truncate ${
             (summary?.netProfit || 0) >= 0 ? 'text-[#2A835F]' : 'text-rose-400'
           }`}>
             ₹{(summary?.netProfit || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
             <span className="text-emerald-400 font-semibold">{summary?.profitMargin || 0}% margin</span>
             <span className="hidden sm:inline text-gray-500">
               Today: ₹{formatCompactINR(summary?.todayNet || 0)}
@@ -704,20 +704,20 @@ export default function AdminFinancePage() {
             setActiveTab('ledger');
             setFilterStatus('PENDING');
           }}
-          className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-amber-500/40 transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
+          className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-amber-500/40 transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
         >
-          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+          <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
               Pending<span className="hidden md:inline"> (സ്റ്റാഫ്)</span>
             </span>
-            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
-              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             </div>
           </div>
-          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-amber-400 truncate">
-            {summary?.pendingVerificationCount || 0} <span className="text-[9px] sm:text-xs font-normal text-gray-400">entries</span>
+          <div className="text-sm sm:text-xl lg:text-2xl font-black text-amber-400 truncate">
+            {summary?.pendingVerificationCount || 0} <span className="text-[10px] sm:text-xs font-normal text-gray-400">entries</span>
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
             <span className="hidden sm:inline">Awaiting Approval</span>
             <span className="font-semibold text-amber-400 bg-amber-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               ₹{formatCompactINR(summary?.pendingVerificationAmount || 0)}

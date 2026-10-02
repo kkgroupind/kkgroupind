@@ -94,24 +94,24 @@ export default function AdminLeavesPage() {
         </button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Total on Leave Today</span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{totalOffDuty}</div>
-          <span className="text-xs text-amber-500/80 mt-1 block">Staff &amp; workers off duty</span>
+      {/* Metrics Row: Single row on mobile */}
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
+        <div className="p-2.5 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[9px] sm:text-xs text-gray-400 font-medium truncate block">Total Leave Today</span>
+          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">{totalOffDuty}</div>
+          <span className="text-[10px] text-amber-500/80 mt-1 hidden sm:block truncate">Staff &amp; workers off duty</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Office Staff Away</span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{offDutyStaff.length}</div>
-          <span className="text-xs text-gray-500 mt-1 block">Desk status inactive</span>
+        <div className="p-2.5 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[9px] sm:text-xs text-gray-400 font-medium truncate block">Office Staff Away</span>
+          <div className="text-lg sm:text-2xl font-bold text-gray-100 mt-0.5 sm:mt-1">{offDutyStaff.length}</div>
+          <span className="text-[10px] text-gray-500 mt-1 hidden sm:block truncate">Desk status inactive</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Field Workers Away</span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{offDutyWorkers.length}</div>
-          <span className="text-xs text-gray-500 mt-1 block">Unavailable for field dispatch</span>
+        <div className="p-2.5 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[9px] sm:text-xs text-gray-400 font-medium truncate block">Field Workers Away</span>
+          <div className="text-lg sm:text-2xl font-bold text-gray-100 mt-0.5 sm:mt-1">{offDutyWorkers.length}</div>
+          <span className="text-[10px] text-gray-500 mt-1 hidden sm:block truncate">Unavailable for dispatch</span>
         </div>
       </div>
 

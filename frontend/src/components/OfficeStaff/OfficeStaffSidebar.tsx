@@ -18,6 +18,7 @@ import {
   Menu,
   Users,
 } from 'lucide-react';
+import { PwaInstallButton } from '@/components/PwaInstall';
 
 export type OfficeStaffSection =
   | 'dashboard'
@@ -318,8 +319,11 @@ export function OfficeStaffSidebar({
             )}
           </div>
 
-          {/* User profile card & Red Logout below */}
+          {/* PWA App Download & User profile card */}
           <div className="flex flex-col gap-2 pt-1 border-t border-[#1B2CC1]/20">
+            {/* PWA Install Box */}
+            <PwaInstallButton role="office-staff" variant="sidebar" className="mb-1" />
+
             {/* 1. Staff Profile Card */}
             <div
               onClick={() => {
@@ -682,6 +686,9 @@ export function OfficeStaffSidebar({
                   </div>
                   <ChevronRight className="w-4 h-4 text-[#7692FF]" />
                 </button>
+
+                {/* PWA Download Web App Option in Mobile Drawer */}
+                <PwaInstallButton role="office-staff" variant="menu-item" />
               </div>
 
               {/* Logout Button */}

@@ -27,6 +27,7 @@ import {
 import { useRouter, usePathname } from 'next/navigation';
 import { useWorkerLanguage, WORKER_LANGUAGES } from '@/context/worker-language-context';
 import { useWorker } from '@/context/worker-context';
+import { PwaInstallButton } from '@/components/PwaInstall';
 
 export interface NavItem {
   id: string;
@@ -233,8 +234,11 @@ export function WorkerNavbar({
             })}
           </div>
 
-          {/* Right: Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
+          {/* Right: PWA Install, Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* PWA App Download Button */}
+            <PwaInstallButton role="worker" variant="navbar" />
+
             {/* 0. Live Reload / Sync Button */}
             <button
               type="button"
@@ -436,6 +440,9 @@ export function WorkerNavbar({
                         </span>
                       </div>
                     </button>
+
+                    {/* Download Web App (PWA) Option */}
+                    <PwaInstallButton role="worker" variant="menu-item" />
                   </div>
 
                   {/* Sign Out Item */}

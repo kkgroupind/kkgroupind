@@ -58,9 +58,9 @@ export function PerformanceChart() {
   }, [token, interval]);
 
   return (
-    <div className="bg-[#14151A] p-6 rounded-2xl border border-gray-800 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-6 relative">
-        <h3 className="font-semibold text-gray-200">Operations Performance</h3>
+    <div className="bg-[#14151A] p-4 sm:p-6 rounded-2xl border border-gray-800 h-full flex flex-col min-w-0 w-full overflow-hidden">
+      <div className="flex justify-between items-center mb-4 sm:mb-6 relative">
+        <h3 className="font-semibold text-gray-200 text-sm sm:text-base">Operations Performance</h3>
         <div className="relative">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -87,14 +87,14 @@ export function PerformanceChart() {
           )}
         </div>
       </div>
-      <div className="h-64 flex-1">
+      <div className="h-64 flex-1 w-full min-w-0">
         {isLoading ? (
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-gray-500 animate-spin" />
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#A881FF" stopOpacity={1}/>

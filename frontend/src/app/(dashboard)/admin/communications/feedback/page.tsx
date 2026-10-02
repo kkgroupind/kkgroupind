@@ -192,30 +192,30 @@ export default function AdminFeedbackPage() {
         </button>
       </div>
 
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">All Feedback Items</span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{metrics.total}</div>
-          <span className="text-xs text-gray-500 mt-1 block">Customer ticket entries</span>
+      {/* Metrics Row: Double row on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">All Feedback</span>
+          <div className="text-lg sm:text-2xl font-bold text-gray-100 mt-0.5 sm:mt-1">{metrics.total}</div>
+          <span className="text-[10px] sm:text-xs text-gray-500 mt-1 block truncate">Customer tickets</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Open / Unreviewed</span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.open}</div>
-          <span className="text-xs text-amber-500/80 mt-1 block">Pending investigation</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Open / Unreviewed</span>
+          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">{metrics.open}</div>
+          <span className="text-[10px] sm:text-xs text-amber-500/80 mt-1 block truncate">Pending review</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">In Investigation</span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.investigating}</div>
-          <span className="text-xs text-blue-400/80 mt-1 block">Contact in progress</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">In Investigation</span>
+          <div className="text-lg sm:text-2xl font-bold text-blue-400 mt-0.5 sm:mt-1">{metrics.investigating}</div>
+          <span className="text-[10px] sm:text-xs text-blue-400/80 mt-1 block truncate">Contact in progress</span>
         </div>
 
-        <div className="p-4 rounded-xl bg-[#14151A] border border-gray-800">
-          <span className="text-xs text-gray-500 font-medium">Resolved Cases</span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.resolved}</div>
-          <span className="text-xs text-emerald-400/80 mt-1 block">Satisfied / Closed</span>
+        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
+          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Resolved Cases</span>
+          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">{metrics.resolved}</div>
+          <span className="text-[10px] sm:text-xs text-emerald-400/80 mt-1 block truncate">Satisfied / Closed</span>
         </div>
       </div>
 

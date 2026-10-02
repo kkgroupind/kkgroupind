@@ -225,84 +225,92 @@ export default function AdminServicesPage() {
         </div>
       </div>
 
-      {/* KPI Bento Cards with People styling */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI Bento Cards: Double row on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         {/* Total Services */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Total Registered
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
+                Total Registered
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF] shrink-0">
+                <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF]">
-              <Layers className="w-4 h-4" />
+            <div className="text-xl sm:text-2xl font-extrabold text-white mt-1">
+              {services.length}
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-white mt-1">
-            {services.length}
-          </div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
-            <Hash className="w-3 h-3 text-[#7B4DFF]" />
-            <span>Alphanumeric Sequential Ledger</span>
+          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
+            <Hash className="w-3 h-3 text-[#7B4DFF] shrink-0" />
+            <span className="truncate">Sequential Ledger</span>
           </div>
         </div>
 
         {/* Active Deployments */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-emerald-500/60 transition-all duration-300" />
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Active Deployable
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
+                Active Deployable
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <Sparkles className="w-4 h-4" />
+            <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 mt-1">
+              {activeCount}
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-emerald-400 mt-1">
-            {activeCount}
-          </div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Available for live client enquiries</span>
+          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="truncate">Available for booking</span>
           </div>
         </div>
 
         {/* Inactive / Archived */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-rose-500/60 transition-all duration-300" />
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Inactive / Draft
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
+                Inactive / Draft
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
+                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <AlertCircle className="w-4 h-4" />
+            <div className="text-xl sm:text-2xl font-extrabold text-rose-400 mt-1">
+              {inactiveCount}
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-rose-400 mt-1">
-            {inactiveCount}
-          </div>
-          <div className="text-[11px] text-gray-500 mt-1">
-            Hidden from customer dispatch booking
+          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 truncate">
+            Hidden from customer portal
           </div>
         </div>
 
         {/* Operational Categories */}
-        <div className="p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all">
+        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-indigo-500/60 transition-all duration-300" />
-          <div className="flex items-center justify-between">
-            <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              Categories
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
+                Categories
+              </div>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </div>
             </div>
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-              <Tag className="w-4 h-4" />
+            <div className="text-xl sm:text-2xl font-extrabold text-indigo-400 mt-1">
+              {categories.length || '—'}
             </div>
           </div>
-          <div className="text-2xl font-extrabold text-indigo-400 mt-1">
-            {categories.length || '—'}
-          </div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1.5">
-            <Tag className="w-3 h-3 text-indigo-400" />
-            <span>Sector classifications</span>
+          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
+            <Tag className="w-3 h-3 text-indigo-400 shrink-0" />
+            <span className="truncate">Sector classifications</span>
           </div>
         </div>
       </div>
