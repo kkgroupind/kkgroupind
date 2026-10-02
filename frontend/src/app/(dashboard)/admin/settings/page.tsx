@@ -597,9 +597,7 @@ export default function AdminSettingsPage() {
                         onChange={(e) => setPrimaryDistrict(e.target.value)}
                         className="flex-1 bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F]"
                       />
-                      <span className="text-xs text-emerald-400 font-medium px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 whitespace-nowrap">
-                        Default District in Enquiries
-                      </span>
+                      
                     </div>
                   </div>
 

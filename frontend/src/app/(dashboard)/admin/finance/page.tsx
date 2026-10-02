@@ -119,6 +119,16 @@ const PAYMENT_METHODS: { id: PaymentMethod; label: string; sub: string; icon: an
 
 const CATEGORY_COLORS = ['#2A835F', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#64748B'];
 
+function formatCompactINR(val: number): string {
+  if (!val) return '0';
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '-' : '';
+  if (abs >= 10000000) return `${sign}${(abs / 10000000).toFixed(1)}Cr`;
+  if (abs >= 100000) return `${sign}${(abs / 100000).toFixed(abs % 100000 === 0 ? 0 : 1)}L`;
+  if (abs >= 1000) return `${sign}${(abs / 1000).toFixed(abs % 1000 === 0 ? 0 : 1)}k`;
+  return `${sign}${abs}`;
+}
+
 export default function AdminFinancePage() {
   const { token, user } = useAuth();
   const { isDark } = useAdminTheme();
@@ -581,132 +591,109 @@ export default function AdminFinancePage() {
         </div>
       )}
 
-      {/* Header Bento Banner */}
-      <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8 border shadow-xl ${
-        isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-      }`}>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-radial from-[#2A835F]/20 to-transparent pointer-events-none rounded-full blur-3xl -mr-20 -mt-20" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[#EBF6F1] text-[#2A835F] border border-[#2A835F]/20 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                KK Group Command Center
-              </span>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isDark ? 'bg-slate-800 text-gray-300' : 'bg-slate-100 text-gray-400'}`}>
-                Kerala Operations
-              </span>
+      {/* Simplified Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-gray-100 flex items-center gap-2.5">
+            <div className="p-2 bg-[#14151A] border border-gray-800 rounded-xl text-[#2A835F]">
+              <IndianRupee className="w-5 h-5" />
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight flex items-center gap-3">
-              <span>Business Finance & Cashbook</span>
-              <span className="text-lg sm:text-2xl font-bold text-[#2A835F] opacity-90 hidden sm:inline">
-                ധനകാര്യ മാനേജ്‌മെന്റ്
-              </span>
-            </h1>
-            <p className={`mt-2 text-sm max-w-2xl ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-              Daily calendar transaction feeding, fleet & equipment meter billing, wage disbursements, and verified voucher audits across Kasaragod & Kerala operational districts.
-            </p>
-          </div>
+            <span>Business Finance</span>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/20 hidden sm:inline">
+              Cashbook &amp; Ledger
+            </span>
+          </h1>
+          <p className="text-gray-400 text-xs sm:text-sm mt-0.5 hidden sm:block">
+            Daily collections, field expenditure, and cash flow ledger
+          </p>
+        </div>
 
-          {/* Quick Header Actions */}
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <button
-              onClick={() => openCreateForDay()}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-sm shadow-lg shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Record Transaction</span>
-            </button>
+        {/* Quick Header Actions: Only Record Transaction & Reload */}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => openCreateForDay()}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>Record Transaction</span>
+          </button>
 
-            <button
-              onClick={() => fetchData()}
-              disabled={isLoading}
-              className={`p-3 rounded-2xl border transition-all ${
-                isDark ? 'border-gray-800 bg-slate-800/80 hover:bg-slate-800 text-gray-300' : 'border-gray-800 bg-slate-100 hover:bg-slate-200 text-gray-300'
-              }`}
-              title="Refresh Data"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-[#2A835F]' : ''}`} />
-            </button>
-          </div>
+          <button
+            onClick={() => fetchData()}
+            disabled={isLoading}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-800 bg-[#14151A] hover:bg-[#1A1C23] text-gray-300 hover:text-white text-xs sm:text-sm font-semibold transition-all disabled:opacity-50"
+            title="Reload Data"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Reload</span>
+          </button>
         </div>
       </div>
 
-      {/* KPI Stats Cards Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      {/* KPI Stats Cards Bar: Single row on mobile */}
+      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 lg:gap-6 mb-5 sm:mb-8">
         
         {/* Total Inflow */}
-        <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-        }`}>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-              Total Inflows (വരുമാനം)
+        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-emerald-500/30 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+              Inflows<span className="hidden md:inline"> (വരുമാനം)</span>
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-[#2A835F]">
-              <ArrowDownRight className="w-5 h-5 text-emerald-500" />
+            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-[#2A835F] shrink-0">
+              <ArrowDownRight className="w-3 h-3 sm:w-4 sm:h-4 text-emerald-400" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
+          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-emerald-400 truncate">
             ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>{monthLabel}</span>
-            <span className="font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
-              Today: ₹{(summary?.todayIncome || 0).toLocaleString('en-IN')}
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+            <span className="hidden sm:inline">{monthLabel}</span>
+            <span className="font-semibold text-emerald-400 bg-emerald-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
+              Today: ₹{formatCompactINR(summary?.todayIncome || 0)}
             </span>
           </div>
         </div>
 
         {/* Total Outflow */}
-        <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-        }`}>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-              Total Outflows (ചെലവ്)
+        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-rose-500/30 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+              Outflows<span className="hidden md:inline"> (ചെലവ്)</span>
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-500">
-              <ArrowUpRight className="w-5 h-5 text-rose-500" />
+            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0">
+              <ArrowUpRight className="w-3 h-3 sm:w-4 sm:h-4 text-rose-400" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400">
+          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-rose-400 truncate">
             ₹{(summary?.totalExpense || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>{monthLabel}</span>
-            <span className="font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full">
-              Today: ₹{(summary?.todayExpense || 0).toLocaleString('en-IN')}
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+            <span className="hidden sm:inline">{monthLabel}</span>
+            <span className="font-semibold text-rose-400 bg-rose-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
+              Today: ₹{formatCompactINR(summary?.todayExpense || 0)}
             </span>
           </div>
         </div>
 
         {/* Net Cash Flow / Profit */}
-        <div className={`p-6 rounded-3xl border transition-all hover:shadow-lg ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-        }`}>
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-              Net Margin (ലാഭം)
+        <div className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-[#2A835F]/40 transition-all flex flex-col justify-between overflow-hidden">
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+              Net<span className="hidden md:inline"> Margin</span>
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-[#EBF6F1] flex items-center justify-center text-[#2A835F]">
-              <TrendingUp className="w-5 h-5 text-[#2A835F]" />
+            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-[#2A835F]" />
             </div>
           </div>
-          <div className={`text-2xl sm:text-3xl font-black ${
-            (summary?.netProfit || 0) >= 0 ? 'text-[#2A835F]' : 'text-rose-600'
+          <div className={`text-[11px] sm:text-xl lg:text-2xl font-black truncate ${
+            (summary?.netProfit || 0) >= 0 ? 'text-[#2A835F]' : 'text-rose-400'
           }`}>
             ₹{(summary?.netProfit || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs">
-            <span className={isDark ? 'text-gray-400' : 'text-gray-400'}>
-              Margin: <strong className="text-emerald-500">{summary?.profitMargin || 0}%</strong>
-            </span>
-            <span className={`font-semibold px-2 py-0.5 rounded-full ${
-              (summary?.todayNet || 0) >= 0 ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40' : 'bg-rose-50 text-rose-600 dark:bg-rose-950/40'
-            }`}>
-              Today: ₹{(summary?.todayNet || 0).toLocaleString('en-IN')}
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+            <span className="text-emerald-400 font-semibold">{summary?.profitMargin || 0}% margin</span>
+            <span className="hidden sm:inline text-gray-500">
+              Today: ₹{formatCompactINR(summary?.todayNet || 0)}
             </span>
           </div>
         </div>
@@ -717,158 +704,143 @@ export default function AdminFinancePage() {
             setActiveTab('ledger');
             setFilterStatus('PENDING');
           }}
-          className={`p-6 rounded-3xl border transition-all hover:shadow-lg cursor-pointer ${
-            isDark ? 'bg-[#14151A] border-gray-800 hover:border-amber-500/40' : 'bg-[#14151A] border-gray-800 hover:border-amber-400'
-          }`}
+          className="p-2 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-amber-500/40 transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
         >
-          <div className="flex items-center justify-between mb-4">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-              Pending Approvals (സ്റ്റാഫ്)
+          <div className="flex items-center justify-between gap-1 mb-1 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
+              Pending<span className="hidden md:inline"> (സ്റ്റാഫ്)</span>
             </span>
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-              <Clock className="w-5 h-5 text-amber-500" />
+            <div className="w-5 h-5 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
+              <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-black text-amber-500">
-            {summary?.pendingVerificationCount || 0} <span className="text-base font-normal text-gray-400">Entries</span>
+          <div className="text-[11px] sm:text-xl lg:text-2xl font-black text-amber-400 truncate">
+            {summary?.pendingVerificationCount || 0} <span className="text-[9px] sm:text-xs font-normal text-gray-400">entries</span>
           </div>
-          <div className="mt-2 flex items-center justify-between text-xs text-gray-400">
-            <span>Awaiting Super Admin</span>
-            <span className="font-semibold text-amber-500 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
-              ₹{(summary?.pendingVerificationAmount || 0).toLocaleString('en-IN')}
+          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[8px] sm:text-xs text-gray-400 truncate">
+            <span className="hidden sm:inline">Awaiting Approval</span>
+            <span className="font-semibold text-amber-400 bg-amber-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
+              ₹{formatCompactINR(summary?.pendingVerificationAmount || 0)}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Main View Mode Selector Tabs */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        <div className={`p-1.5 rounded-2xl border flex items-center gap-1 w-full sm:w-auto ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-slate-200/60 border-gray-800'
-        }`}>
+      {/* Main View Mode Selector Tabs & Month Navigator */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-4 sm:mb-5">
+        <div className="p-1 rounded-xl sm:rounded-2xl border border-gray-800 bg-[#14151A] flex items-center gap-1 w-full sm:w-auto">
           <button
             onClick={() => setActiveTab('calendar')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'calendar'
-                ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-[#2A835F] text-white shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
-            <CalendarIcon className="w-4 h-4" />
-            <span>Interactive Calendar</span>
+            <CalendarIcon className="w-3.5 h-3.5" />
+            <span>Calendar</span>
           </button>
 
           <button
             onClick={() => setActiveTab('ledger')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'ledger'
-                ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-[#2A835F] text-white shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Transaction Ledger</span>
+            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <span>Ledger</span>
           </button>
 
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'analytics'
-                ? 'bg-[#2A835F] text-white shadow-md'
-                : isDark ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-200'
+                ? 'bg-[#2A835F] text-white shadow-sm'
+                : 'text-gray-400 hover:text-white'
             }`}
           >
-            <TrendingUp className="w-4 h-4" />
-            <span>Financial Analytics</span>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span>Analytics</span>
           </button>
         </div>
 
         {/* Month Navigator Controls */}
-        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl border ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-        }`}>
+        <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-2.5 py-1 rounded-xl border border-gray-800 bg-[#14151A]">
           <button
             onClick={handlePrevMonth}
-            className={`p-2 rounded-xl transition-colors ${
-              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-gray-300'
-            }`}
+            className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-800 text-gray-300 transition-colors"
             title="Previous Month"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span className="font-extrabold text-sm px-3 min-w-[140px] text-center">
+          <span className="font-extrabold text-xs sm:text-sm px-2 sm:px-3 min-w-[120px] text-center text-gray-200">
             {monthLabel}
           </span>
 
           <button
             onClick={handleNextMonth}
-            className={`p-2 rounded-xl transition-colors ${
-              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-gray-300'
-            }`}
+            className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-800 text-gray-300 transition-colors"
             title="Next Month"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       {/* VIEW 1: INTERACTIVE CALENDAR */}
       {activeTab === 'calendar' && (
-        <div className={`rounded-3xl border shadow-xl overflow-hidden p-6 ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
-        }`}>
+        <div className="rounded-2xl sm:rounded-3xl border border-gray-800 bg-[#14151A] shadow-xl overflow-hidden p-3 sm:p-5">
           
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <span>{monthLabel} Daily Finance Grid</span>
-                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[#EBF6F1] text-[#2A835F]">
-                  Click date to view / feed
-                </span>
+          {/* Calendar Header with Legend */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-gray-100 flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-[#2A835F]" />
+                <span>{monthLabel} Daily Finance</span>
               </h2>
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-400'}`}>
-                Showing daily collections, field expenditure, and net balance for each day in Kerala time.
-              </p>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#EBF6F1] text-[#2A835F]">
+                Tap date to view/feed
+              </span>
             </div>
 
-            <div className="flex items-center gap-4 text-xs font-semibold">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                <span>Inflow (വരുമാനം)</span>
+            <div className="flex items-center gap-3 text-[11px] font-medium text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Inflow</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                <span>Outflow (ചെലവ്)</span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span>Outflow</span>
               </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span>Staff Pending</span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span>Pending</span>
               </span>
             </div>
           </div>
 
           {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-2 mb-2 text-center text-xs font-bold uppercase tracking-wider text-gray-400">
-            <div>Sun</div>
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">
+            <div><span className="sm:hidden">S</span><span className="hidden sm:inline">Sun</span></div>
+            <div><span className="sm:hidden">M</span><span className="hidden sm:inline">Mon</span></div>
+            <div><span className="sm:hidden">T</span><span className="hidden sm:inline">Tue</span></div>
+            <div><span className="sm:hidden">W</span><span className="hidden sm:inline">Wed</span></div>
+            <div><span className="sm:hidden">T</span><span className="hidden sm:inline">Thu</span></div>
+            <div><span className="sm:hidden">F</span><span className="hidden sm:inline">Fri</span></div>
+            <div><span className="sm:hidden">S</span><span className="hidden sm:inline">Sat</span></div>
           </div>
 
           {/* Calendar Grid Cells */}
-          <div className="grid grid-cols-7 gap-2 sm:gap-3">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarDays.map((cell, idx) => {
               if (!cell) {
                 return (
                   <div
                     key={`blank-${idx}`}
-                    className={`min-h-[50px] sm:min-h-[60px] rounded-2xl border border-dashed opacity-20 ${
-                      isDark ? 'border-gray-800' : 'border-gray-800'
-                    }`}
+                    className="min-h-[44px] sm:min-h-[58px] rounded-lg sm:rounded-xl border border-dashed border-gray-800/40 opacity-20"
                   />
                 );
               }
@@ -881,52 +853,67 @@ export default function AdminFinancePage() {
                 <div
                   key={cell.dateString}
                   onClick={() => handleSelectDay(cell.dateString)}
-                  className={`min-h-[55px] sm:min-h-[65px] p-2.5 sm:p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between group ${
+                  className={`min-h-[44px] sm:min-h-[58px] p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden ${
                     isSelected
-                      ? 'border-[#2A835F] ring-2 ring-[#2A835F]/30 bg-[#2A835F]/5 shadow-md'
-                      : isDark
-                      ? 'border-gray-800/80 bg-slate-950/60 hover:border-slate-700 hover:bg-slate-800/40'
-                      : 'border-gray-800 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-100/60'
+                      ? 'border-[#2A835F] ring-1 sm:ring-2 ring-[#2A835F]/40 bg-[#2A835F]/10 shadow-sm'
+                      : 'border-gray-800/80 bg-[#1A1C23]/60 hover:border-gray-700 hover:bg-[#1A1C23]'
                   }`}
                 >
                   {/* Top Bar of cell */}
                   <div className="flex items-center justify-between">
-                    <span className={`text-xs sm:text-sm font-extrabold px-1.5 py-0.5 rounded-lg ${
+                    <span className={`text-[10px] sm:text-xs font-extrabold px-1 py-0.2 rounded-md ${
                       isToday
                         ? 'bg-[#2A835F] text-white shadow-xs'
                         : isSelected
                         ? 'text-[#2A835F]'
-                        : isDark ? 'text-gray-300' : 'text-gray-300'
+                        : 'text-gray-300'
                     }`}>
                       {cell.dayNumber}
                     </span>
 
                     {cell.feed.hasPending && (
-                      <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Pending staff entry" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="Pending staff entry" />
                     )}
                   </div>
 
-                  {/* Mid Content: Inflow & Outflow Chips */}
-                  <div className="space-y-1 my-1">
+                  {/* MOBILE VIEW (< sm): Compact smart pills that fit in 40px cell */}
+                  <div className="sm:hidden my-0.5 space-y-0.5">
                     {cell.feed.totalIncome > 0 && (
-                      <div className="text-[10px] sm:text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md truncate">
+                      <div className="text-[8px] font-black text-emerald-400 bg-emerald-500/10 px-0.5 rounded truncate text-center leading-tight">
+                        +{formatCompactINR(cell.feed.totalIncome)}
+                      </div>
+                    )}
+                    {cell.feed.totalExpense > 0 && (
+                      <div className="text-[8px] font-black text-rose-400 bg-rose-500/10 px-0.5 rounded truncate text-center leading-tight">
+                        -{formatCompactINR(cell.feed.totalExpense)}
+                      </div>
+                    )}
+                    {!hasActivity && (
+                      <div className="h-1.5" />
+                    )}
+                  </div>
+
+                  {/* DESKTOP VIEW (>= sm): Full Inflow & Outflow Chips */}
+                  <div className="hidden sm:block space-y-1 my-1">
+                    {cell.feed.totalIncome > 0 && (
+                      <div className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-md truncate">
                         +₹{cell.feed.totalIncome.toLocaleString('en-IN')}
                       </div>
                     )}
                     {cell.feed.totalExpense > 0 && (
-                      <div className="text-[10px] sm:text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded-md truncate">
+                      <div className="text-[10px] font-bold text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded-md truncate">
                         -₹{cell.feed.totalExpense.toLocaleString('en-IN')}
                       </div>
                     )}
                   </div>
 
-                  {/* Bottom: Net movement or count */}
-                  <div className="text-[9px] sm:text-[10px] flex items-center justify-between text-gray-400">
+                  {/* Bottom: Net movement or count (Desktop) */}
+                  <div className="hidden sm:flex text-[9px] items-center justify-between text-gray-400">
                     {hasActivity ? (
                       <>
                         <span className="font-semibold text-gray-400">{cell.feed.count} txn</span>
                         <span className={`font-bold ${
-                          cell.feed.netAmount >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                          cell.feed.netAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'
                         }`}>
                           {cell.feed.netAmount >= 0 ? '+' : ''}₹{Math.abs(cell.feed.netAmount).toLocaleString('en-IN')}
                         </span>
