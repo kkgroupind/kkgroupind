@@ -7,6 +7,7 @@ export * from './interceptors/transform.interceptor';
 export * from './filters/http-exception.filter';
 export * from './constants';
 export * from './utils/username.util';
+export * from './utils/phone.util';
 export * from './cloudinary/cloudinary.service';
 export * from './cloudinary/cloudinary.module';
 

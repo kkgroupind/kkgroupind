@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService, Role, ServiceStatus, WorkerStatus } from '../../database';
+import { normalizePhoneNumber, extractCorePhone } from '../../common';
 
 @Injectable()
 export class EnquiryRepository {
@@ -35,7 +36,7 @@ export class EnquiryRepository {
         trackingNumber: data.trackingNumber,
         serviceName: data.serviceName,
         customerName: data.customerName,
-        customerPhone: data.customerPhone,
+        customerPhone: normalizePhoneNumber(data.customerPhone),
         customerEmail: data.customerEmail,
         state: data.state || 'Kerala',
         district: data.district || 'Kasaragod',
@@ -689,6 +690,98 @@ export class EnquiryRepository {
         worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
         customer: { select: { id: true, name: true, phone: true, email: true } },
         officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
+
+  async findCustomerByPhoneOrEmail(phone?: string, email?: string) {
+    if (!phone && !email) return null;
+    const cleanPhone = phone?.trim();
+    const cleanEmail = email?.trim().toLowerCase();
+    const normalized = cleanPhone ? normalizePhoneNumber(cleanPhone) : undefined;
+    const coreDigits = cleanPhone ? extractCorePhone(cleanPhone) : undefined;
+
+    return this.prisma.user.findFirst({
+      where: {
+        role: Role.CUSTOMER,
+        OR: [
+          ...(normalized ? [{ phone: normalized }] : []),
+          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+          ...(coreDigits && coreDigits.length >= 7 ? [{ phone: { endsWith: coreDigits } }] : []),
+          ...(cleanEmail ? [{ email: cleanEmail }] : []),
+        ],
+      },
+    });
+  }
+
+  async findUserByUsername(username: string) {
+    return this.prisma.user.findUnique({
+      where: { username },
+    });
+  }
+
+  async findUserByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+    });
+  }
+
+  async createCustomer(data: {
+    name: string;
+    phone: string;
+    email?: string | null;
+    address?: string | null;
+    username: string;
+    passwordHash: string;
+  }) {
+    return this.prisma.user.create({
+      data: {
+        name: data.name,
+        phone: normalizePhoneNumber(data.phone),
+        email: data.email || null,
+        address: data.address || null,
+        username: data.username,
+        password: data.passwordHash,
+        role: Role.CUSTOMER,
+        isActive: true,
+        isEmailVerified: false,
+      },
+    });
+  }
+
+  async updateCustomerAddress(customerId: string, address: string) {
+    return this.prisma.user.update({
+      where: { id: customerId },
+      data: { address },
+    });
+  }
+
+  async linkOrphanEnquiriesToCustomer(customerId: string, phone?: string, email?: string) {
+    const cleanPhone = phone?.trim();
+    const cleanEmail = email?.trim().toLowerCase();
+    const normalized = cleanPhone ? normalizePhoneNumber(cleanPhone) : undefined;
+    const coreDigits = cleanPhone ? extractCorePhone(cleanPhone) : undefined;
+    if (!cleanPhone && !cleanEmail) return;
+
+    await this.prisma.serviceEnquiry.updateMany({
+      where: {
+        AND: [
+          {
+            OR: [
+              ...(normalized ? [{ customerPhone: normalized }] : []),
+              ...(cleanPhone ? [{ customerPhone: cleanPhone }] : []),
+              ...(coreDigits && coreDigits.length >= 7 ? [{ customerPhone: { endsWith: coreDigits } }] : []),
+              ...(cleanEmail ? [{ customerEmail: cleanEmail }] : []),
+            ],
+          },
+          {
+            OR: [{ customerId: null }, { customerId: '' }],
+          },
+        ],
+      },
+      data: {
+        customerId,
+        ...(normalized ? { customerPhone: normalized } : {}),
       },
     });
   }

@@ -52,12 +52,71 @@ export interface EmailAvailabilityResponse {
   email: string;
 }
 
+export interface FeedCustomerData {
+  name: string;
+  mobileNumber: string;
+  email?: string;
+  address?: string;
+  district?: string;
+  city?: string;
+  username?: string;
+  password?: string;
+  addService?: boolean;
+  serviceName?: string;
+  serviceDate?: string;
+  serviceStatus?: string;
+  serviceCost?: number;
+  serviceNotes?: string;
+  addWorker?: boolean;
+  workerId?: string;
+}
+
+export interface SearchCustomerResult {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+}
+
+export interface ActiveWorkerResult {
+  id: string;
+  name: string | null;
+  phone: string | null;
+  workerStatus: string | null;
+  avatar: string | null;
+}
+
 export const peopleService = {
   createPerson: (data: CreatePersonData, token: string) =>
     request<{ message: string; person: User; staff: User }>('/admin/people', {
       method: 'POST',
       body: JSON.stringify(data),
     }, token),
+
+  feedCustomer: (data: FeedCustomerData, token: string) =>
+    request<{ message: string; customer: User; enquiry?: any }>(
+      '/admin/people/feed-customer',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    ),
+
+  searchCustomers: (query: string, token: string) =>
+    request<SearchCustomerResult[]>(
+      `/admin/people/search-customers?q=${encodeURIComponent(query)}`,
+      { method: 'GET' },
+      token,
+    ),
+
+  getActiveWorkers: (token: string) =>
+    request<ActiveWorkerResult[]>(
+      '/admin/people/active-workers',
+      { method: 'GET' },
+      token,
+    ),
 
   listPeople: (token: string, params?: ListPeopleParams) => {
     const query = new URLSearchParams();

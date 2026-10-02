@@ -10,3 +10,5 @@ export * from './modify-worker-job-modal';
 export * from './SetupReminderModal';
 export * from './ConfigureServiceRuleModal';
 export * from './ServiceSelectDropdown';
+export * from './CustomerDetailView';
+

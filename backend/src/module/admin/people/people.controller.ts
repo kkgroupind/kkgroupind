@@ -17,6 +17,7 @@ import {
   CheckEmailDto,
   CheckUsernameDto,
   CreatePersonDto,
+  FeedCustomerDto,
   ListPeopleDto,
   UpdatePersonDto,
 } from './dto';
@@ -33,9 +34,28 @@ export class PeopleController {
   }
 
   @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Post('feed-customer')
+  @HttpCode(HttpStatus.CREATED)
+  async feedCustomer(@Body() dto: FeedCustomerDto) {
+    return this.peopleService.feedCustomer(dto);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Get()
   async listPeople(@Query() query: ListPeopleDto) {
     return this.peopleService.listPeople(query);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Get('search-customers')
+  async searchCustomers(@Query('q') query: string) {
+    return this.peopleService.searchCustomers(query || '');
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Get('active-workers')
+  async getActiveWorkers() {
+    return this.peopleService.getActiveWorkers();
   }
 
   @Roles(Role.SUPER_ADMIN)

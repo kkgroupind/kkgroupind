@@ -20,7 +20,7 @@ import {
   ServiceReminder,
   Service,
 } from '../../database';
-import { REMINDER_MESSAGES, SECURITY_CONSTANTS } from '../../common';
+import { REMINDER_MESSAGES, SECURITY_CONSTANTS, normalizePhoneNumber } from '../../common';
 
 @Injectable()
 export class ReminderService {
@@ -82,11 +82,21 @@ export class ReminderService {
     email?: string,
   ): Promise<string> {
     const cleanPhone = phone.trim();
+    const normalizedPhone = normalizePhoneNumber(cleanPhone);
     const cleanEmail = email?.trim().toLowerCase() || undefined;
 
     // 1. Check if customer already exists by phone
     let customer = await this.reminderRepo.findCustomerByPhone(cleanPhone);
     if (customer) {
+      // Sync customer name if admin provided a specific name and it differs
+      if (name?.trim() && customer.name !== name.trim()) {
+        try {
+          await this.reminderRepo.updateCustomerUser(customer.id, {
+            name: name.trim(),
+            ...(normalizedPhone ? { phone: normalizedPhone } : {}),
+          });
+        } catch {}
+      }
       return customer.id;
     }
 

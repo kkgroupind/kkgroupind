@@ -15,6 +15,8 @@ import {
   FileText,
   Loader2,
   CheckCircle2,
+  Search,
+  Check,
 } from 'lucide-react';
 import {
   reminderService,
@@ -24,6 +26,10 @@ import {
   CreateReminderInput,
   UpdateReminderInput,
 } from '@/services/reminder.service';
+import {
+  peopleService,
+  SearchCustomerResult,
+} from '@/services/Admin/people/people.service';
 import {
   ServiceSelectDropdown,
   ServiceSelectOption,
@@ -37,6 +43,14 @@ interface SetupReminderModalProps {
   token: string;
   reminderToEdit?: ServiceReminder | null;
   services?: ServiceSelectOption[];
+  prefilledCustomer?: {
+    id?: string;
+    name?: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+  } | null;
+  prefilledServiceName?: string;
 }
 
 const PRESET_SERVICES = [
@@ -84,6 +98,8 @@ export function SetupReminderModal({
   token,
   reminderToEdit,
   services = [],
+  prefilledCustomer,
+  prefilledServiceName,
 }: SetupReminderModalProps) {
   const isEditing = Boolean(reminderToEdit);
 
@@ -100,9 +116,63 @@ export function SetupReminderModal({
   const [lastServicedDate, setLastServicedDate] = useState('');
   const [notes, setNotes] = useState('');
   const [feedCustomer, setFeedCustomer] = useState(true);
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Customer Search & Autocomplete
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchCustomerResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<SearchCustomerResult | null>(null);
+
+  // Reset search when modal opens or closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSuggestions(false);
+      setSelectedCustomer(null);
+    }
+  }, [isOpen]);
+
+  // Debounced search for clients
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await peopleService.searchCustomers(q, token);
+        setSearchResults(results || []);
+      } catch (err) {
+        console.error('Failed to search customers:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, token]);
+
+  const handleSelectCustomer = (cust: SearchCustomerResult) => {
+    setSelectedCustomer(cust);
+    setCustomerName(cust.name || '');
+    setCustomerPhone(cust.phone || '');
+    if (cust.email) setCustomerEmail(cust.email);
+    if (cust.address) setCustomerAddress(cust.address);
+    setSearchQuery('');
+    setShowSuggestions(false);
+  };
+
+  const handleClearSelectedCustomer = () => {
+    setSelectedCustomer(null);
+  };
 
   // Available services list for the dropdown
   const dropdownServices: ServiceSelectOption[] = useMemo(() => {
@@ -189,16 +259,52 @@ export function SetupReminderModal({
       setNotes(reminderToEdit.notes || '');
       setFeedCustomer(true);
     } else {
-      // Default: Coconut Plucking or first available service
+      // Determine initial service: prefilled or default
       const defaultSvc = dropdownServices.find((s) => s.id !== 'CUSTOM') || dropdownServices[0];
-      setServiceName(defaultSvc ? defaultSvc.name : PRESET_SERVICES[0].name);
-      setCustomServiceName('');
-      setCustomerName('');
-      setCustomerPhone('');
-      setCustomerEmail('');
-      setCustomerAddress('');
-      setFrequency(defaultSvc?.reminderFrequency || 'EVERY_3_MONTHS');
-      setCustomIntervalDays(defaultSvc?.reminderIntervalDays || 90);
+      const targetServiceName = prefilledServiceName || (defaultSvc ? defaultSvc.name : PRESET_SERVICES[0].name);
+      const matchedSvc = dropdownServices.find(
+        (s) => s.name.toLowerCase() === targetServiceName.toLowerCase() && s.id !== 'CUSTOM',
+      );
+
+      if (matchedSvc) {
+        setServiceName(matchedSvc.name);
+        setCustomServiceName('');
+        setFrequency(matchedSvc.reminderFrequency || 'EVERY_3_MONTHS');
+        setCustomIntervalDays(matchedSvc.reminderIntervalDays || 90);
+      } else if (prefilledServiceName) {
+        setServiceName('CUSTOM');
+        setCustomServiceName(prefilledServiceName);
+        setFrequency('EVERY_3_MONTHS');
+        setCustomIntervalDays(90);
+      } else {
+        setServiceName(defaultSvc ? defaultSvc.name : PRESET_SERVICES[0].name);
+        setCustomServiceName('');
+        setFrequency(defaultSvc?.reminderFrequency || 'EVERY_3_MONTHS');
+        setCustomIntervalDays(defaultSvc?.reminderIntervalDays || 90);
+      }
+
+      // Customer info from prefilledCustomer if provided
+      if (prefilledCustomer) {
+        setCustomerName(prefilledCustomer.name || '');
+        setCustomerPhone(prefilledCustomer.phone || '');
+        setCustomerEmail(prefilledCustomer.email || '');
+        setCustomerAddress(prefilledCustomer.address || '');
+        if (prefilledCustomer.id) {
+          setSelectedCustomer({
+            id: prefilledCustomer.id,
+            name: prefilledCustomer.name || '',
+            phone: prefilledCustomer.phone || '',
+            email: prefilledCustomer.email || null,
+            address: prefilledCustomer.address || null,
+          });
+        }
+      } else {
+        setCustomerName('');
+        setCustomerPhone('');
+        setCustomerEmail('');
+        setCustomerAddress('');
+        setSelectedCustomer(null);
+      }
 
       // Default due date: exactly 3 months from today
       const defaultNext = new Date();
@@ -210,7 +316,7 @@ export function SetupReminderModal({
       setNotes('Automated maintenance cycle. Team equipment required.');
       setFeedCustomer(true);
     }
-  }, [isOpen, reminderToEdit, dropdownServices]);
+  }, [isOpen, reminderToEdit, dropdownServices, prefilledCustomer, prefilledServiceName]);
 
   // Handle service change
   const handleServiceSelect = (selectedId: string) => {
@@ -280,13 +386,27 @@ export function SetupReminderModal({
       return;
     }
 
+    const formatIndianPhone = (raw: string): string => {
+      const trimmed = raw.trim();
+      if (!trimmed) return '';
+      const digits = trimmed.replace(/\D/g, '');
+      if (digits.length === 10) return `+91${digits}`;
+      if (digits.length === 11 && digits.startsWith('0')) return `+91${digits.slice(1)}`;
+      if (digits.length === 12 && digits.startsWith('91')) return `+91${digits.slice(2)}`;
+      if (trimmed.startsWith('+')) return `+${digits}`;
+      if (digits.length > 10) return `+91${digits.slice(-10)}`;
+      return digits ? `+91${digits}` : trimmed;
+    };
+
+    const normalizedPhone = formatIndianPhone(customerPhone);
+
     setIsSubmitting(true);
     try {
       if (isEditing && reminderToEdit) {
         const updatePayload: UpdateReminderInput = {
           serviceName: finalService,
           customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
+          customerPhone: normalizedPhone,
           customerEmail: customerEmail.trim() || undefined,
           customerAddress: customerAddress.trim() || undefined,
           frequency,
@@ -304,7 +424,7 @@ export function SetupReminderModal({
         const createPayload: CreateReminderInput = {
           serviceName: finalService,
           customerName: customerName.trim(),
-          customerPhone: customerPhone.trim(),
+          customerPhone: normalizedPhone,
           customerEmail: customerEmail.trim() || undefined,
           customerAddress: customerAddress.trim() || undefined,
           frequency,
@@ -405,8 +525,80 @@ export function SetupReminderModal({
                 <User className="w-3.5 h-3.5 text-[#7B4DFF]" />
                 <span>Client &amp; Property Information</span>
               </span>
-              <span className="text-[10px] text-gray-500">Direct WhatsApp &amp; Call linked</span>
+              <span className="text-[10px] text-gray-400">Search existing or feed new</span>
             </div>
+
+            {/* Quick Search & Select Client */}
+            <div className="relative">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="🔍 Quick Search &amp; Select existing client (by Name or Mobile)..."
+                  className="w-full bg-[#14151A] border border-gray-800 focus:border-[#7B4DFF] rounded-xl pl-9 pr-8 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none transition-colors"
+                />
+                {isSearching && (
+                  <Loader2 className="w-3.5 h-3.5 text-[#7B4DFF] animate-spin absolute right-3 top-2.5" />
+                )}
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {showSuggestions && searchQuery.trim().length >= 2 && (
+                <div className="absolute z-30 left-0 right-0 mt-1 max-h-52 overflow-y-auto rounded-xl bg-[#171922] border border-gray-700 shadow-2xl custom-scrollbar py-1 divide-y divide-gray-800">
+                  {searchResults.length === 0 && !isSearching ? (
+                    <div className="p-3 text-center text-xs text-gray-400">
+                      No matching clients found in directory. You can enter details below to feed new client.
+                    </div>
+                  ) : (
+                    searchResults.map((cust) => (
+                      <button
+                        key={cust.id}
+                        type="button"
+                        onClick={() => handleSelectCustomer(cust)}
+                        className="w-full text-left px-3.5 py-2.5 hover:bg-[#252836] flex items-center justify-between gap-3 transition-colors group"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-white group-hover:text-[#9E7BFF] transition-colors truncate">
+                            {cust.name || 'Unnamed Client'}
+                          </p>
+                          <div className="text-[11px] text-gray-400 flex items-center gap-2.5 mt-0.5">
+                            <span>📞 {cust.phone || 'No phone'}</span>
+                            {cust.address && <span className="truncate">📍 {cust.address}</span>}
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#7B4DFF]/15 text-[#9E7BFF] border border-[#7B4DFF]/30">
+                          Auto Fill
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {selectedCustomer && (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-[#7B4DFF]/10 border border-[#7B4DFF]/30 text-xs text-[#E0D7FE] animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 truncate">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="truncate">
+                    Selected Existing Client: <strong className="text-white">{selectedCustomer.name || 'Client'}</strong> ({selectedCustomer.phone || 'No phone'})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearSelectedCustomer}
+                  className="text-[11px] text-red-400 hover:text-red-300 ml-2 shrink-0 underline"
+                >
+                  Clear Selection
+                </button>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>

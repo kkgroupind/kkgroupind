@@ -98,6 +98,7 @@ export const PEOPLE_MESSAGES = {
   NAME_REQUIRED: 'Name is required',
   PHONE_REQUIRED: 'Mobile number is required',
   CUSTOMER_EMAIL_REQUIRED: 'Email address is required for customer accounts',
+  CUSTOMER_FED_SUCCESS: 'Customer profile synced and service recorded successfully',
 };
 
 export const PROFILE_MESSAGES = {

@@ -6,19 +6,30 @@ import {
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
 import { PeopleRepository } from './people.repository';
-import { CreatePersonDto, ListPeopleDto, UpdatePersonDto } from './dto';
+import {
+  CreatePersonDto,
+  FeedCustomerDto,
+  ListPeopleDto,
+  UpdatePersonDto,
+} from './dto';
 import {
   AUTH_MESSAGES,
   PEOPLE_MESSAGES,
   SECURITY_CONSTANTS,
   VALIDATION_MESSAGES,
   REGEX_PATTERNS,
+  normalizePhoneNumber,
 } from '../../../common';
-import { Role } from '../../../database';
+import { resolveServiceSpec } from '../../../common/constants/service-specs.constant';
+import { Role, ServiceStatus } from '../../../database';
+import { ReminderService } from '../../reminder/reminder.service';
 
 @Injectable()
 export class PeopleService {
-  constructor(private readonly peopleRepo: PeopleRepository) {}
+  constructor(
+    private readonly peopleRepo: PeopleRepository,
+    private readonly reminderService: ReminderService,
+  ) {}
 
   async checkUsernameAvailability(username: string) {
     const cleanUsername = username?.trim().toLowerCase();
@@ -324,5 +335,161 @@ export class PeopleService {
 
     await this.peopleRepo.delete(id);
     return { message: PEOPLE_MESSAGES.PERSON_DELETED_SUCCESS };
+  }
+
+  async feedCustomer(dto: FeedCustomerDto) {
+    const finalName = dto.name?.trim();
+    if (!finalName) {
+      throw new BadRequestException(PEOPLE_MESSAGES.NAME_REQUIRED);
+    }
+
+    const cleanPhone = normalizePhoneNumber(dto.mobileNumber);
+    if (!cleanPhone) {
+      throw new BadRequestException(PEOPLE_MESSAGES.PHONE_REQUIRED);
+    }
+
+    const cleanEmail = dto.email?.trim().toLowerCase() || undefined;
+
+    // 1. Check if customer already exists by phone or email
+    let customer = await this.peopleRepo.findCustomerByPhoneOrEmail(cleanPhone, cleanEmail);
+
+    if (customer) {
+      // Feed user's data into the existing customer profile
+      const updateData: any = {};
+      if (finalName && finalName !== customer.name) {
+        updateData.name = finalName;
+      }
+      if (dto.address && dto.address.trim()) {
+        updateData.address = dto.address.trim();
+      }
+      if (cleanEmail && (!customer.email || customer.email !== cleanEmail)) {
+        const existingWithEmail = await this.peopleRepo.findByEmail(cleanEmail);
+        if (!existingWithEmail || existingWithEmail.id === customer.id) {
+          updateData.email = cleanEmail;
+        }
+      }
+      if (customer.phone !== cleanPhone) {
+        updateData.phone = cleanPhone;
+      }
+      if (Object.keys(updateData).length > 0) {
+        customer = await this.peopleRepo.update(customer.id, updateData);
+      }
+    } else {
+      // 2. Customer does not exist -> Create new customer
+      let finalUsername = dto.username?.trim().toLowerCase();
+      if (!finalUsername) {
+        // Generate an intuitive username
+        const sanitized = finalName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const suffix = cleanPhone.replace(/[^0-9]/g, '').slice(-4) || `${crypto.randomInt(1000, 9999)}`;
+        finalUsername = `${sanitized || 'cust'}_${suffix}`;
+        // Verify unique
+        const existingU = await this.peopleRepo.findByUsername(finalUsername);
+        if (existingU) {
+          finalUsername = `${finalUsername}_${crypto.randomInt(10, 99)}`;
+        }
+      }
+
+      // Check if username already exists
+      const existingUserWithUsername = await this.peopleRepo.findByUsername(finalUsername);
+      if (existingUserWithUsername) {
+        throw new BadRequestException(AUTH_MESSAGES.USERNAME_ALREADY_EXISTS(finalUsername));
+      }
+
+      // Generate secure password if omitted
+      let rawPassword = dto.password?.trim();
+      if (!rawPassword || rawPassword.length < 8) {
+        // Secure password adhering to REGEX_PATTERNS.PASSWORD: at least 1 upper, 1 lower, 1 digit, 1 special symbol
+        const letters = 'abcdefghjkmnpqrstuvwxyz';
+        const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+        const numbers = '23456789';
+        const symbols = '!@#$%&*';
+        rawPassword =
+          upper[crypto.randomInt(0, upper.length)] +
+          letters[crypto.randomInt(0, letters.length)] +
+          numbers[crypto.randomInt(0, numbers.length)] +
+          symbols[crypto.randomInt(0, symbols.length)] +
+          crypto.randomBytes(4).toString('hex');
+      }
+
+      const hashedPassword = await bcrypt.hash(
+        rawPassword,
+        SECURITY_CONSTANTS.BCRYPT_SALT_ROUNDS,
+      );
+
+      customer = await this.peopleRepo.create({
+        name: finalName,
+        phone: cleanPhone,
+        email: cleanEmail,
+        address: dto.address?.trim() || null,
+        username: finalUsername,
+        password: hashedPassword,
+        role: Role.CUSTOMER,
+        isEmailVerified: true,
+        isActive: true,
+      });
+    }
+
+    // 3. Auto-link any previous orphan enquiries to this customer
+    await this.peopleRepo.linkOrphanEnquiriesToCustomer(customer.id, cleanPhone, cleanEmail);
+
+    // 4. If addService is requested, record the service enquiry
+    let createdEnquiry: any = null;
+    if (dto.addService && dto.serviceName?.trim()) {
+      const serviceName = dto.serviceName.trim();
+      const spec = resolveServiceSpec(serviceName);
+      const trackingNumber = `ENQ-${new Date().getFullYear()}-${crypto.randomInt(100000, 999999)}`;
+
+      const serviceDate = dto.serviceDate ? new Date(dto.serviceDate) : new Date();
+      const status = dto.serviceStatus || ServiceStatus.COMPLETED;
+
+      createdEnquiry = await this.peopleRepo.createServiceEnquiry({
+        trackingNumber,
+        serviceName,
+        customerName: customer.name || finalName,
+        customerPhone: cleanPhone,
+        customerEmail: cleanEmail,
+        location: dto.address?.trim() || 'Kerala Residence',
+        district: dto.district?.trim() || 'Kasaragod',
+        city: dto.city?.trim() || null,
+        preferredDate: serviceDate,
+        workStartedAt: serviceDate,
+        workEndedAt: serviceDate,
+        status,
+        message: `Customer direct feed: ${serviceName}`,
+        notes: dto.serviceNotes?.trim() || undefined,
+        totalCalculatedCost: dto.serviceCost !== undefined ? Number(dto.serviceCost) : undefined,
+        wageType: spec.wageType,
+        unitLabel: spec.unitLabel,
+        createdByRole: Role.SUPER_ADMIN,
+        customer: { connect: { id: customer.id } },
+        ...(dto.addWorker && dto.workerId?.trim() ? { worker: { connect: { id: dto.workerId.trim() } } } : {}),
+      });
+
+      // 5. If marked as COMPLETED, auto-create cyclic service reminder
+      if (status === ServiceStatus.COMPLETED) {
+        try {
+          await this.reminderService.handleJobCompleted(createdEnquiry);
+        } catch (reminderErr) {
+          console.error('Failed to auto-create reminder after feedCustomer completion:', reminderErr);
+        }
+      }
+    }
+
+    const { password: _, ...customerWithoutPassword } = customer;
+    return {
+      message: dto.addService
+        ? 'Customer profile fed and service recorded successfully'
+        : 'Customer profile fed successfully',
+      customer: customerWithoutPassword,
+      enquiry: createdEnquiry,
+    };
+  }
+
+  async searchCustomers(query: string) {
+    return this.peopleRepo.searchCustomers(query);
+  }
+
+  async getActiveWorkers() {
+    return this.peopleRepo.findActiveWorkers();
   }
 }

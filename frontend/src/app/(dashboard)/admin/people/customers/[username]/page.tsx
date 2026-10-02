@@ -2,18 +2,17 @@
 
 import React from 'react';
 import { useParams } from 'next/navigation';
-import { PersonDetailView } from '@/components/Admin/person-detail-view';
+import { CustomerDetailView } from '@/components/Admin/CustomerDetailView';
 
 export default function CustomerDetailPage() {
   const params = useParams<{ username: string }>();
   const username = decodeURIComponent(params.username || '');
 
   return (
-    <PersonDetailView
+    <CustomerDetailView
       username={username}
-      expectedRole="CUSTOMER"
       backHref="/admin/people/customers"
-      categoryLabel="Customers"
     />
   );
 }
+

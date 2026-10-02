@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import * as crypto from 'node:crypto';
 import { EnquiryRepository } from './enquiry.repository';
 import {
@@ -20,7 +21,7 @@ import {
   ReachedSiteDto,
   UpdateJobPayDto,
 } from './dto';
-import { ENQUIRY_MESSAGES } from '../../common';
+import { ENQUIRY_MESSAGES, SECURITY_CONSTANTS, normalizePhoneNumber } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
 import { NotificationType, Role, ServiceStatus, WorkerStatus } from '../../database';
 import { AuditService } from '../audit/audit.service';
@@ -64,7 +65,7 @@ export class EnquiryService {
     // Determine creator role and creator ID
     const createdByRole = currentUser?.role || Role.CUSTOMER;
     const createdById = currentUser?.id || undefined;
-    const customerId = currentUser?.role === Role.CUSTOMER ? currentUser.id : undefined;
+    let customerId = currentUser?.role === Role.CUSTOMER ? currentUser.id : undefined;
 
     // Compose formatted location summary if district and city are provided
     let locationSummary = dto.location;
@@ -72,6 +73,25 @@ export class EnquiryService {
       locationSummary = [dto.city, dto.district, dto.state || 'Kerala']
         .filter(Boolean)
         .join(', ');
+    }
+
+    // Auto-link to existing customer by phone/email OR auto-create client in database
+    if (!customerId && (dto.customerPhone || dto.customerEmail)) {
+      const client = await this.getOrCreateCustomerForEnquiry(
+        dto.customerName,
+        dto.customerPhone,
+        dto.customerEmail,
+        locationSummary || dto.location,
+      );
+      if (client) {
+        customerId = client.id;
+        // Auto-link any previous orphan enquiries to this customer
+        await this.enquiryRepo.linkOrphanEnquiriesToCustomer(
+          customerId,
+          dto.customerPhone,
+          dto.customerEmail,
+        );
+      }
     }
 
     // Resolve service wage specification dynamically from service name
@@ -965,5 +985,98 @@ export class EnquiryService {
     return {
       enquiries,
     };
+  }
+
+  private async getOrCreateCustomerForEnquiry(
+    name: string,
+    phone?: string,
+    email?: string,
+    address?: string,
+  ) {
+    if (!phone && !email) return null;
+
+    const cleanPhone = normalizePhoneNumber(phone);
+    const cleanEmail = email?.trim().toLowerCase() || null;
+    const cleanName = name?.trim() || 'Valued Customer';
+
+    // 1. Check if customer already exists by phone or email
+    let customer = await this.enquiryRepo.findCustomerByPhoneOrEmail(
+      cleanPhone,
+      cleanEmail || undefined,
+    );
+
+    if (customer) {
+      // If customer has no address, update address with location
+      if (!customer.address && address?.trim()) {
+        try {
+          customer = await this.enquiryRepo.updateCustomerAddress(
+            customer.id,
+            address.trim(),
+          );
+        } catch {
+          // ignore address update failure
+        }
+      }
+      return customer;
+    }
+
+    // 2. Auto-generate secure unique username
+    const digits = cleanPhone.replace(/\D/g, '').slice(-10);
+    let baseUsername = digits
+      ? `cust_${digits}`
+      : `cust_${cleanName.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 10)}`;
+    if (baseUsername.length < SECURITY_CONSTANTS.USERNAME_MIN_LENGTH) {
+      baseUsername = `cust_${crypto.randomInt(100000, 999999)}`;
+    }
+
+    let finalUsername = baseUsername;
+    const existingUsername = await this.enquiryRepo.findUserByUsername(finalUsername);
+    if (existingUsername) {
+      finalUsername = `${baseUsername}_${crypto.randomInt(10, 999)}`;
+    }
+
+    // 3. Check email uniqueness before assigning
+    let finalEmail: string | null = cleanEmail;
+    if (finalEmail) {
+      const existingEmail = await this.enquiryRepo.findUserByEmail(finalEmail);
+      if (existingEmail) {
+        finalEmail = null;
+      }
+    }
+
+    // 4. Generate compliant password hash
+    const letters = 'abcdefghjkmnpqrstuvwxyz';
+    const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const numbers = '23456789';
+    const symbols = '!@#$%&*';
+    const rawPassword =
+      upper[crypto.randomInt(0, upper.length)] +
+      letters[crypto.randomInt(0, letters.length)] +
+      numbers[crypto.randomInt(0, numbers.length)] +
+      symbols[crypto.randomInt(0, symbols.length)] +
+      crypto.randomBytes(4).toString('hex');
+
+    const passwordHash = await bcrypt.hash(
+      rawPassword,
+      SECURITY_CONSTANTS.BCRYPT_SALT_ROUNDS,
+    );
+
+    try {
+      customer = await this.enquiryRepo.createCustomer({
+        name: cleanName,
+        phone: cleanPhone,
+        email: finalEmail,
+        address: address?.trim() || null,
+        username: finalUsername,
+        passwordHash,
+      });
+      return customer;
+    } catch {
+      // In case of concurrent race condition, attempt to find again
+      return this.enquiryRepo.findCustomerByPhoneOrEmail(
+        cleanPhone,
+        cleanEmail || undefined,
+      );
+    }
   }
 }

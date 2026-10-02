@@ -9,14 +9,19 @@ import {
   Service,
   User,
 } from '../../database';
+import { normalizePhoneNumber, extractCorePhone } from '../../common';
 
 @Injectable()
 export class ReminderRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(data: Prisma.ServiceReminderCreateInput): Promise<ServiceReminder> {
+    const customerPhone = normalizePhoneNumber(data.customerPhone);
     return this.prisma.serviceReminder.create({
-      data,
+      data: {
+        ...data,
+        customerPhone,
+      },
       include: {
         customer: {
           select: {
@@ -111,19 +116,31 @@ export class ReminderRepository {
 
   async findCustomerByPhone(phone: string): Promise<User | null> {
     const cleanPhone = phone.trim();
+    const normalized = normalizePhoneNumber(cleanPhone);
+    const coreDigits = extractCorePhone(cleanPhone);
     return this.prisma.user.findFirst({
       where: {
-        phone: cleanPhone,
         role: Role.CUSTOMER,
+        OR: [
+          ...(normalized ? [{ phone: normalized }] : []),
+          { phone: cleanPhone },
+          ...(coreDigits && coreDigits.length >= 7 ? [{ phone: { endsWith: coreDigits } }] : []),
+        ],
       },
     });
   }
 
   async findUserByPhoneAnyRole(phone: string): Promise<User | null> {
     const cleanPhone = phone.trim();
+    const normalized = normalizePhoneNumber(cleanPhone);
+    const coreDigits = extractCorePhone(cleanPhone);
     return this.prisma.user.findFirst({
       where: {
-        phone: cleanPhone,
+        OR: [
+          ...(normalized ? [{ phone: normalized }] : []),
+          { phone: cleanPhone },
+          ...(coreDigits && coreDigits.length >= 7 ? [{ phone: { endsWith: coreDigits } }] : []),
+        ],
       },
     });
   }
@@ -144,7 +161,20 @@ export class ReminderRepository {
 
   async createCustomerUser(data: Prisma.UserCreateInput): Promise<User> {
     return this.prisma.user.create({
-      data,
+      data: {
+        ...data,
+        ...(data.phone ? { phone: normalizePhoneNumber(data.phone as string) } : {}),
+      },
+    });
+  }
+
+  async updateCustomerUser(id: string, data: Prisma.UserUpdateInput): Promise<User> {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        ...data,
+        ...(data.phone ? { phone: normalizePhoneNumber(data.phone as string) } : {}),
+      },
     });
   }
 
@@ -244,12 +274,22 @@ export class ReminderRepository {
     serviceId?: string,
   ): Promise<ServiceReminder | null> {
     const cleanPhone = phone.trim();
+    const normalized = normalizePhoneNumber(cleanPhone);
+    const coreDigits = extractCorePhone(cleanPhone);
     return this.prisma.serviceReminder.findFirst({
       where: {
-        customerPhone: cleanPhone,
         OR: [
-          ...(serviceId ? [{ serviceId }] : []),
-          { serviceName: { equals: serviceName.trim(), mode: 'insensitive' as Prisma.QueryMode } },
+          ...(normalized ? [{ customerPhone: normalized }] : []),
+          { customerPhone: cleanPhone },
+          ...(coreDigits && coreDigits.length >= 7 ? [{ customerPhone: { endsWith: coreDigits } }] : []),
+        ],
+        AND: [
+          {
+            OR: [
+              ...(serviceId ? [{ serviceId }] : []),
+              { serviceName: { equals: serviceName.trim(), mode: 'insensitive' as Prisma.QueryMode } },
+            ],
+          },
         ],
         status: { in: [ReminderStatus.UPCOMING, ReminderStatus.DUE, ReminderStatus.OVERDUE] },
       },
