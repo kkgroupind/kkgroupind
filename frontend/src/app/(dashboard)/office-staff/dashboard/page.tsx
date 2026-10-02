@@ -57,7 +57,6 @@ import { ActivityFeed } from '@/components/ActivityFeed';
 import { NotificationFeed } from '@/components/NotificationFeed';
 import { AnnouncementsList } from '@/components/AnnouncementsList';
 import { Megaphone } from 'lucide-react';
-import { PwaInstallButton } from '@/components/PwaInstall';
 
 // Services Master Catalog
 const SERVICES_CATALOG = [
@@ -499,9 +498,6 @@ export default function OfficeStaffDashboardPage() {
               />
               <span>{isAvailable ? 'Available on Desk' : 'Off Duty'}</span>
             </button>
-
-            {/* PWA Download App Button */}
-            <PwaInstallButton role="office-staff" variant="navbar" />
 
             {/* Refresh Button */}
             <button

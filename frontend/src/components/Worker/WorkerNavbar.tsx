@@ -234,11 +234,8 @@ export function WorkerNavbar({
             })}
           </div>
 
-          {/* Right: PWA Install, Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
+          {/* Right: Reload Button, Language Switcher, Quick Duty Toggle, Alerts & Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* PWA App Download Button */}
-            <PwaInstallButton role="worker" variant="navbar" />
-
             {/* 0. Live Reload / Sync Button */}
             <button
               type="button"
