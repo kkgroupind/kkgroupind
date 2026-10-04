@@ -27,6 +27,7 @@ import {
   Sparkles,
   Calendar,
   Check,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { api, User as UserType } from '@/services';
@@ -40,6 +41,7 @@ import {
 import { SetupReminderModal } from './SetupReminderModal';
 import { ConfirmationModal } from './confirmation-modal';
 import { EditPersonModal } from './edit-person-modal';
+import { CustomerStatementModal } from '@/components/CustomerStatement';
 
 interface CustomerDetailViewProps {
   username: string;
@@ -64,6 +66,7 @@ export function CustomerDetailView({
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [isStatementModalOpen, setIsStatementModalOpen] = useState(false);
   const [reminderServiceName, setReminderServiceName] = useState('');
   const [isRecordServiceModalOpen, setIsRecordServiceModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -294,11 +297,22 @@ export function CustomerDetailView({
             <RefreshCw className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
 
+          {/* Download Statement Button */}
+          <button
+            type="button"
+            onClick={() => setIsStatementModalOpen(true)}
+            className="flex items-center gap-2 bg-[#2A835F]/20 hover:bg-[#2A835F]/35 border border-[#2A835F]/40 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-[#A3E5C7] hover:text-white shadow-xs transition-all cursor-pointer"
+            title="Download Customer Account & Work Statement PDF"
+          >
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>Download Statement</span>
+          </button>
+
           {/* Record Service Button */}
           <button
             type="button"
             onClick={() => setIsRecordServiceModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all"
+            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Record Service</span>
@@ -308,7 +322,7 @@ export function CustomerDetailView({
           <button
             type="button"
             onClick={() => setIsReminderModalOpen(true)}
-            className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#222530] border border-gray-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-200 hover:text-white transition-all"
+            className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#222530] border border-gray-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-200 hover:text-white transition-all cursor-pointer"
           >
             <CalendarClock className="w-4 h-4 text-[#7B4DFF]" />
             <span>Setup Reminder</span>
@@ -1316,6 +1330,14 @@ export function CustomerDetailView({
         isLoading={isDeleting}
         onConfirm={handleDeleteCustomer}
         onClose={() => setIsDeleteModalOpen(false)}
+      />
+
+      {/* MODAL: Customer Account & Work Statement */}
+      <CustomerStatementModal
+        isOpen={isStatementModalOpen}
+        onClose={() => setIsStatementModalOpen(false)}
+        customer={customer}
+        currentUserName={currentUser?.name || currentUser?.username || 'Super Admin'}
       />
     </div>
   );
