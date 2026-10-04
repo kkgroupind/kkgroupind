@@ -43,11 +43,14 @@ import {
   Plus,
   Minus,
   X,
+  Receipt,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
 import { EnquiryService, ServiceEnquiry } from '@/services';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
+import { QuotationModal } from '@/components/Quotation';
+import { InvoiceModal } from '@/components/Invoice';
 
 export default function AdminEnquiryDetailPage() {
   const params = useParams<{ id: string }>();
@@ -63,6 +66,8 @@ export default function AdminEnquiryDetailPage() {
   // Modals
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   // Live timer ticker
   const [nowTimestamp, setNowTimestamp] = useState(Date.now());
@@ -487,6 +492,30 @@ export default function AdminEnquiryDetailPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+          {/* Create Quotation Button */}
+          <button
+            type="button"
+            onClick={() => setIsQuotationModalOpen(true)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#2A835F] hover:bg-[#236D4F] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#2A835F]/25 cursor-pointer"
+            title="Create Quotation PDF & WhatsApp"
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Create Quotation</span>
+          </button>
+
+          {/* Generate Tax Invoice Button (for Completed Jobs) */}
+          {isCompleted && (
+            <button
+              type="button"
+              onClick={() => setIsInvoiceModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/30 cursor-pointer"
+              title="Generate Official Tax Invoice PDF & WhatsApp"
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Generate Tax Invoice</span>
+            </button>
+          )}
+
           {/* Dispatch or Re-assign Modal Trigger — hidden for IN_PROGRESS */}
           {!isInProgress && (
             <button
@@ -1922,6 +1951,28 @@ export default function AdminEnquiryDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quotation Modal */}
+      {enquiry && (
+        <QuotationModal
+          isOpen={isQuotationModalOpen}
+          onClose={() => setIsQuotationModalOpen(false)}
+          enquiry={enquiry}
+          currentUserName={currentUser?.name || currentUser?.username || 'Super Admin'}
+          currentUserRole="SUPER_ADMIN"
+        />
+      )}
+
+      {/* Invoice Modal */}
+      {enquiry && (
+        <InvoiceModal
+          isOpen={isInvoiceModalOpen}
+          onClose={() => setIsInvoiceModalOpen(false)}
+          enquiry={enquiry}
+          currentUserName={currentUser?.name || currentUser?.username || 'Super Admin'}
+          currentUserRole="SUPER_ADMIN"
+        />
       )}
     </div>
   );

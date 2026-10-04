@@ -34,6 +34,8 @@ import {
   Search,
   IndianRupee,
   User as UserIcon,
+  FileText,
+  Receipt,
 } from 'lucide-react';
 import {
   AttendanceService,
@@ -53,6 +55,8 @@ import {
   CreateWorkModal,
   OfficeStaffLoadingScreen,
 } from '@/components/OfficeStaff';
+import { QuotationModal } from '@/components/Quotation';
+import { InvoiceModal } from '@/components/Invoice';
 import { ActivityFeed } from '@/components/ActivityFeed';
 import { NotificationFeed } from '@/components/NotificationFeed';
 import { AnnouncementsList } from '@/components/AnnouncementsList';
@@ -222,6 +226,10 @@ export default function OfficeStaffDashboardPage() {
   const [selectedEnquiryToAssign, setSelectedEnquiryToAssign] = useState<ServiceEnquiry | null>(null);
   const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [selectedEnquiryToPay, setSelectedEnquiryToPay] = useState<ServiceEnquiry | null>(null);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
+  const [selectedEnquiryForQuotation, setSelectedEnquiryForQuotation] = useState<ServiceEnquiry | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedEnquiryForInvoice, setSelectedEnquiryForInvoice] = useState<ServiceEnquiry | null>(null);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -851,12 +859,40 @@ export default function OfficeStaffDashboardPage() {
                         </div>
 
                         {/* Action CTA */}
-                        <div className="mt-2.5 pt-2 border-t border-slate-100">
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEnquiryForQuotation(job);
+                              setIsQuotationModalOpen(true);
+                            }}
+                            className="py-1.5 px-2 rounded-lg bg-[#2A835F]/15 hover:bg-[#2A835F]/25 text-[#2A835F] text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                            title="Generate Quotation PDF & WhatsApp"
+                          >
+                            <FileText className="w-3 h-3" />
+                            <span>Quotation</span>
+                          </button>
+
+                          {job.status === 'COMPLETED' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiryForInvoice(job);
+                                setIsInvoiceModalOpen(true);
+                              }}
+                              className="py-1.5 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                              title="Generate Completed Work Invoice"
+                            >
+                              <Receipt className="w-3 h-3" />
+                              <span>Invoice</span>
+                            </button>
+                          )}
+
                           {job.status === 'PENDING' ? (
                             <button
                               type="button"
                               onClick={() => handleOpenAssignModal(job)}
-                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
                             >
                               Assign
                             </button>
@@ -867,7 +903,7 @@ export default function OfficeStaffDashboardPage() {
                                 setSelectedEnquiryToPay(job);
                                 setIsPayModalOpen(true);
                               }}
-                              className="w-full py-1.5 px-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer"
                             >
                               <IndianRupee className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               <span>Assign Pay</span>
@@ -876,7 +912,7 @@ export default function OfficeStaffDashboardPage() {
                             <button
                               type="button"
                               onClick={() => setActiveSection('operations-works')}
-                              className="w-full py-1.5 px-2 rounded-lg bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] border border-[#7692FF]/30 text-[10px] sm:text-xs font-bold transition-colors text-center cursor-pointer"
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-[#ABD2FA]/30 hover:bg-[#ABD2FA]/60 text-[#1B2CC1] border border-[#7692FF]/30 text-[10px] sm:text-xs font-bold transition-colors text-center cursor-pointer truncate"
                             >
                               View Details
                             </button>
@@ -1325,11 +1361,37 @@ export default function OfficeStaffDashboardPage() {
                           </div>
 
                           {/* Action Button */}
-                          <div className="mt-2.5 pt-2 border-t border-slate-100">
+                          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiryForQuotation(enquiry);
+                                setIsQuotationModalOpen(true);
+                              }}
+                              className="py-1.5 px-2 rounded-lg bg-[#2A835F]/15 hover:bg-[#2A835F]/25 text-[#2A835F] text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                              title="Generate Quotation PDF & WhatsApp"
+                            >
+                              <FileText className="w-3 h-3" />
+                              <span>Quotation</span>
+                            </button>
+                            {enquiry.status === 'COMPLETED' && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedEnquiryForInvoice(enquiry);
+                                  setIsInvoiceModalOpen(true);
+                                }}
+                                className="py-1.5 px-2 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                                title="Generate Completed Work Invoice"
+                              >
+                                <Receipt className="w-3 h-3" />
+                                <span>Invoice</span>
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleOpenAssignModal(enquiry)}
-                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
                             >
                               Assign Worker
                             </button>
@@ -1461,17 +1523,40 @@ export default function OfficeStaffDashboardPage() {
                         </div>
 
                         {/* Actions / Wage CTA */}
-                        <div className="mt-2.5 pt-2 border-t border-slate-100">
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEnquiryForQuotation(work);
+                              setIsQuotationModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-[#2A835F]/15 hover:bg-[#2A835F]/25 text-[#2A835F] text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                            title="Generate Quotation PDF & WhatsApp"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEnquiryForInvoice(work);
+                              setIsInvoiceModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-600 text-[10px] sm:text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer shrink-0"
+                            title="Generate Tax Invoice PDF & WhatsApp"
+                          >
+                            <Receipt className="w-3.5 h-3.5" />
+                          </button>
+
                           {!work.worker ? (
                             <button
                               type="button"
                               onClick={() => handleOpenAssignModal(work)}
-                              className="w-full py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
+                              className="flex-1 py-1.5 px-2 rounded-lg bg-[#1B2CC1] hover:bg-[#15239E] text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs text-center cursor-pointer"
                             >
                               Assign
                             </button>
                           ) : work.status !== 'COMPLETED' ? (
-                            <div className="flex items-center gap-1">
+                            <div className="flex-1 flex items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => handleOpenAssignModal(work)}
@@ -1490,7 +1575,7 @@ export default function OfficeStaffDashboardPage() {
                                 setSelectedEnquiryToPay(work);
                                 setIsPayModalOpen(true);
                               }}
-                              className={`w-full py-1.5 px-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1 truncate ${
+                              className={`flex-1 py-1.5 px-2 rounded-lg text-[10px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1 truncate ${
                                 work.totalCalculatedWage
                                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
@@ -1839,6 +1924,30 @@ export default function OfficeStaffDashboardPage() {
           }}
         />
       )}
+
+      {/* Quotation Generator & Preview Modal */}
+      <QuotationModal
+        isOpen={isQuotationModalOpen}
+        onClose={() => {
+          setIsQuotationModalOpen(false);
+          setSelectedEnquiryForQuotation(null);
+        }}
+        enquiry={selectedEnquiryForQuotation}
+        currentUserName={user?.name || user?.username || 'Office Staff'}
+        currentUserRole={user?.role || 'OFFICE_STAFF'}
+      />
+
+      {/* Invoice Generator & Preview Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedEnquiryForInvoice(null);
+        }}
+        enquiry={selectedEnquiryForInvoice}
+        currentUserName={user?.name || user?.username || 'Office Staff'}
+        currentUserRole={user?.role || 'OFFICE_STAFF'}
+      />
     </div>
   );
 }

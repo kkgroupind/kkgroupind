@@ -28,10 +28,14 @@ import {
   Briefcase,
   ChevronRight,
   User,
+  FileText,
+  Receipt,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
+import { QuotationModal } from '@/components/Quotation';
+import { InvoiceModal } from '@/components/Invoice';
 
 export default function AdminEnquiriesPage() {
   const { token, user, isLoading: authLoading } = useAuth();
@@ -50,6 +54,10 @@ export default function AdminEnquiriesPage() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedEnquiryForQuotation, setSelectedEnquiryForQuotation] = useState<ServiceEnquiry | null>(null);
+  const [isQuotationModalOpen, setIsQuotationModalOpen] = useState(false);
+  const [selectedEnquiryForInvoice, setSelectedEnquiryForInvoice] = useState<ServiceEnquiry | null>(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
 
   const loadData = useCallback(
     async (showRefreshIndicator = false) => {
@@ -612,25 +620,53 @@ export default function AdminEnquiriesPage() {
                 </div>
 
                 {/* Card Action Footer */}
-                <div className="flex items-center justify-between pt-2 gap-2">
+                <div className="flex items-center justify-between pt-2 gap-2 flex-wrap sm:flex-nowrap">
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedEnquiry(enquiry);
                       setIsDetailsModalOpen(true);
                     }}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700 cursor-pointer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5 text-gray-400" />
                     <span>Quick View</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedEnquiryForQuotation(enquiry);
+                      setIsQuotationModalOpen(true);
+                    }}
+                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-[#2A835F]/20 hover:bg-[#2A835F]/35 text-[#A3E5C7] hover:text-white border border-[#2A835F]/40 transition-all cursor-pointer shadow-xs"
+                    title="Generate Quotation PDF & WhatsApp"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#2A835F]" />
+                    <span>Quotation</span>
+                  </button>
+
+                  {enquiry.status === 'COMPLETED' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedEnquiryForInvoice(enquiry);
+                        setIsInvoiceModalOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 hover:text-white border border-teal-500/40 transition-all cursor-pointer shadow-xs"
+                      title="Generate Official Tax Invoice PDF & WhatsApp"
+                    >
+                      <Receipt className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Invoice</span>
+                    </button>
+                  )}
+
                   <Link
                     href={`/admin/operations/enquiries/${enquiry.id}`}
-                    className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white transition-all"
+                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white transition-all"
                     title="Full Work Order Page"
                   >
-                    <span>Full Details</span>
+                    <span>Details</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
 
@@ -725,7 +761,31 @@ export default function AdminEnquiriesPage() {
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEnquiryForQuotation(enquiry);
+                              setIsQuotationModalOpen(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-[#2A835F]/20 hover:bg-[#2A835F]/35 text-[#A3E5C7] hover:text-white border border-[#2A835F]/40 transition-colors cursor-pointer"
+                            title="Generate Quotation PDF & WhatsApp"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                          </button>
+                          {enquiry.status === 'COMPLETED' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEnquiryForInvoice(enquiry);
+                                setIsInvoiceModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/35 text-teal-300 hover:text-white border border-teal-500/40 transition-colors cursor-pointer"
+                              title="Generate Official Tax Invoice PDF & WhatsApp"
+                            >
+                              <Receipt className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <Link
                             href={`/admin/operations/enquiries/${enquiry.id}`}
                             className="p-1.5 rounded-lg bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 text-[#A78BFA] hover:text-white border border-[#7B4DFF]/30 transition-colors"
@@ -965,6 +1025,30 @@ export default function AdminEnquiriesPage() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => {
+                    setSelectedEnquiryForQuotation(selectedEnquiry);
+                    setIsQuotationModalOpen(true);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Create Quotation</span>
+                </button>
+                {selectedEnquiry.status === 'COMPLETED' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedEnquiryForInvoice(selectedEnquiry);
+                      setIsInvoiceModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>Generate Invoice</span>
+                  </button>
+                )}
+                <button
+                  type="button"
                   onClick={() => setIsDetailsModalOpen(false)}
                   className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-gray-800 transition-colors cursor-pointer"
                 >
@@ -1014,6 +1098,30 @@ export default function AdminEnquiriesPage() {
         }}
         token={token}
         workers={workers}
+      />
+
+      {/* Quotation Modal */}
+      <QuotationModal
+        isOpen={isQuotationModalOpen}
+        onClose={() => {
+          setIsQuotationModalOpen(false);
+          setSelectedEnquiryForQuotation(null);
+        }}
+        enquiry={selectedEnquiryForQuotation}
+        currentUserName={user?.name || user?.username || 'Super Admin'}
+        currentUserRole="SUPER_ADMIN"
+      />
+
+      {/* Invoice Modal */}
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => {
+          setIsInvoiceModalOpen(false);
+          setSelectedEnquiryForInvoice(null);
+        }}
+        enquiry={selectedEnquiryForInvoice}
+        currentUserName={user?.name || user?.username || 'Super Admin'}
+        currentUserRole="SUPER_ADMIN"
       />
     </div>
   );
