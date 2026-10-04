@@ -217,7 +217,7 @@ export const pageTranslations: {
       storyP1:
         'Rooted in Kasaragod district, KK Group emerged from a critical realization: landowners, farmers, and builders across Kasaragod, Kanhangad, Nileshwaram, and Uppala struggled to find reliable, safety-equipped field workers and heavy machinery operators on transparent terms.',
       storyP2:
-        'We eliminated arbitrary pricing, unannounced work cancellations, and hazardous manual practices by creating an integrated, digitally-managed workforce. Today, KK Group coordinates certified climbing squads, modern JCB fleets, and master finishing masons backed by a 24/7 central dispatch desk serving all Kasaragod taluks.',
+        'We eliminated arbitrary pricing, unannounced work cancellations, and hazardous manual practices by creating an integrated, digitally-managed workforce. Today, KK Group coordinates certified climbing squads, modern JCB fleets, commercial poultry & feed pellet mills, and master finishing masons backed by a 24/7 central dispatch desk serving all regional operations.',
       stats: {
         districts: '4/4',
         districtsLabel: 'Kasaragod Taluks Covered (Hosdurg, Kasaragod, Manjeshwaram, Vellarikundu)',
@@ -840,7 +840,7 @@ export const pageTranslations: {
       storyP1:
         'കാസർഗോഡ് ജില്ലയിൽ വേരുകളുള്ള കെകെ ഗ്രൂപ്പ്, ജില്ലയിലെ കർഷകർക്കും വീട്ടുടമകൾക്കും കോൺട്രാക്ടർമാർക്കും വിശ്വസ്തരായ തൊഴിലാളികളെയും യന്ത്രസാമഗ്രികളെയും ലഭ്യമാക്കാനാണ് രൂപീകരിക്കപ്പെട്ടത്. വിദഗ്ദ്ധ തൊഴിലാളികളുടെ ദൗർലഭ്യവും അനിയന്ത്രിതമായ നിരക്കുകളും പരിഹരിക്കാൻ ഞങ്ങൾ മുന്നിട്ടിറങ്ങി.',
       storyP2:
-        'സാങ്കേതിക പരിശീലനം ലഭിച്ച തെങ്ങുകയറ്റ തൊഴിലാളികൾ, സുരക്ഷിതമായ ജെസിബി പൈലറ്റുമാർ, വിദഗ്ദ്ധ പ്ലാസ്റ്ററിംഗ് മേസൺമാർ എന്നിവരെ ഒരൊറ്റ കുടക്കീഴിൽ അണിനിരത്തി കാസർഗോഡ് ടൗണിലും കാഞ്ഞങ്ങാട്ടുമുള്ള കൺട്രോൾ റൂമുകളിലൂടെ ഞങ്ങൾ സേവനം ഉറപ്പാക്കുന്നു.',
+        'സാങ്കേതിക പരിശീലനം ലഭിച്ച തെങ്ങുകയറ്റ തൊഴിലാളികൾ, സുരക്ഷിതമായ ജെസിബി പൈലറ്റുമാർ, അത്യാധുനിക പോൾട്രി ഫാമുകൾ, കോഴിത്തീറ്റ പെല്ലറ്റ് മില്ലുകൾ, വിദഗ്ദ്ധ പ്ലാസ്റ്ററിംഗ് മേസൺമാർ എന്നിവരെ ഒരൊറ്റ കുടക്കീഴിൽ അണിനിരത്തി കാസർഗോഡ് ടൗണിലും കാഞ്ഞങ്ങാട്ടുമുള്ള കൺട്രോൾ റൂമുകളിലൂടെ ഞങ്ങൾ സേവനം ഉറപ്പാക്കുന്നു.',
       stats: {
         districts: '4/4',
         districtsLabel: 'കാസർഗോഡ് താലൂക്കുകളിൽ സേവനം (ഹോസ്ദുർഗ്, കാസർഗോഡ്, മഞ്ചേശ്വരം, വെള്ളരിക്കുണ്ട്)',

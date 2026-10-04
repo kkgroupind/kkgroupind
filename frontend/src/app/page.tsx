@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Navbar } from '@/components/Home/Navbar';
 import { HeroSection } from '@/components/Home/HeroSection';
 import { PopularPackagesSection } from '@/components/Home/PopularPackagesSection';
+import { PoultryFarmingSection } from '@/components/Home/PoultryFarmingSection';
 import { CosmicConnectionsSection } from '@/components/Home/CosmicConnectionsSection';
 import { FaqSection } from '@/components/Home/FaqSection';
 import { Footer } from '@/components/Home/Footer';
@@ -45,7 +46,12 @@ export default function HomePage() {
       <PopularPackagesSection onSelectPackage={handleOpenEnquiry} />
 
       {/* ========================================================
-          3. THIRD SECTION: Regional Operations Network & Live Fleet
+          3. THIRD SECTION: Poultry & Commercial Chicken Farming
+      ======================================================== */}
+      <PoultryFarmingSection />
+
+      {/* ========================================================
+          4. FOURTH SECTION: Regional Operations Network & Live Fleet
       ======================================================== */}
       <CosmicConnectionsSection onOpenEnquiry={handleOpenEnquiry} />
 
