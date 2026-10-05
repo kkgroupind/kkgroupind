@@ -1,4 +1,5 @@
 import { QuotationData } from './types';
+import { toPng, toBlob } from 'html-to-image';
 
 export function formatINR(val: number): string {
   if (isNaN(val) || val === null || val === undefined) return '₹0';
@@ -117,8 +118,7 @@ export function buildWhatsAppQuotationMessage(data: QuotationData): string {
 
   const lines: string[] = [
     `*KK GROUP PROFESSIONAL SERVICES* 🌴`,
-    `_Official Quotation & Scope Estimate_`,
-    `_കെ.കെ ഗ്രൂപ്പ് പ്രൊഫഷണൽ കൊട്ടേഷൻ_`,
+    `_Official Commercial Quotation & Work Estimate_`,
     `━━━━━━━━━━━━━━━━━━━━━━`,
     `📋 *Quotation Ref:* \`${data.quotationNumber}\``,
     `📌 *Enquiry Code:* \`${data.trackingNumber}\``,
@@ -193,19 +193,19 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
         <td style="padding: 10px 12px; text-align: center; font-family: monospace; font-size: 11px; color: #64748b;">
           ${idx + 1}
         </td>
-        <td style="padding: 10px 12px; font-weight: 600; color: #0f172a;">
+        <td style="padding: 10px 12px; font-weight: 600; color: #0f172a; letter-spacing: -0.01em;">
           ${item.description}
         </td>
-        <td style="padding: 10px 12px; text-align: center; font-family: monospace; color: #334155;">
+        <td style="padding: 10px 12px; text-align: center; font-family: 'JetBrains Mono', ui-monospace, monospace; color: #334155; font-feature-settings: 'tnum' on, 'lnum' on;">
           ${item.quantity}
         </td>
-        <td style="padding: 10px 12px; color: #64748b; font-size: 11px;">
+        <td style="padding: 10px 12px; color: #64748b; font-size: 11px; font-weight: 500;">
           ${item.unit}
         </td>
-        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #334155;">
+        <td style="padding: 10px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; color: #334155; font-feature-settings: 'tnum' on, 'lnum' on;">
           ${formatINR(item.rate)}
         </td>
-        <td style="padding: 10px 12px; text-align: right; font-family: monospace; font-weight: 700; color: #0f172a;">
+        <td style="padding: 10px 12px; text-align: right; font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; color: #0f172a; font-feature-settings: 'tnum' on, 'lnum' on;">
           ${formatINR(item.amount)}
         </td>
       </tr>
@@ -218,6 +218,9 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
   <head>
     <meta charset="utf-8" />
     <title>KK_Group_Quotation_${data.quotationNumber}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
       @page {
         size: A4 portrait;
@@ -242,12 +245,15 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
         background-color: #ffffff !important;
         background: #ffffff !important;
         color: #0f172a !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        font-size: 12px;
-        line-height: 1.45;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        font-size: 11.5px;
+        line-height: 1.5;
         width: 100% !important;
         min-height: 297mm !important;
         display: block !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
       }
       .page-sheet {
         width: 210mm !important;
@@ -276,6 +282,10 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
       }
       tr {
         page-break-inside: avoid !important;
+      }
+      .font-mono {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace !important;
+        font-feature-settings: 'tnum' on, 'lnum' on !important;
       }
       @media print {
         html, body {
@@ -312,13 +322,13 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.02em;">KK GROUP</span>
-                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background-color: #EBF6F1; color: #2A835F; border: 1px solid #C3E6D5;">
+                <span style="font-size: 20px; font-weight: 800; color: #0f172a; letter-spacing: -0.03em;">KK GROUP</span>
+                <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 6px; background-color: #EBF6F1; color: #2A835F; border: 1px solid #C3E6D5; letter-spacing: 0.05em;">
                   Kerala Operations
                 </span>
               </div>
-              <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 2px;">
-                Field Squad &amp; Engineering Services &bull; കെ.കെ ഗ്രൂപ്പ്
+              <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 2px; letter-spacing: -0.01em;">
+                Field Squad &amp; Engineering Operations Desk
               </div>
               <div style="font-size: 10px; color: #94a3b8; margin-top: 2px;">
                 HQ: Kasaragod, Kerala - 671121 &bull; Helpline: +91 94000 00000
@@ -331,14 +341,14 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
             <div style="font-size: 18px; font-weight: 900; letter-spacing: 0.05em; color: #0f172a; text-transform: uppercase;">
               QUOTATION
             </div>
-            <div style="font-family: monospace; font-size: 12px; font-weight: 700; color: #2A835F; margin-top: 2px;">
+            <div style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; font-weight: 700; color: #2A835F; margin-top: 2px; font-feature-settings: 'tnum' on, 'lnum' on;">
               ${data.quotationNumber}
             </div>
             <div style="font-size: 11px; color: #64748b; margin-top: 2px;">
-              Date: <span style="font-weight: 600; color: #334155;">${data.date}</span>
+              Date: <span style="font-weight: 600; color: #334155; font-family: 'JetBrains Mono', monospace;">${data.date}</span>
             </div>
             <div style="font-size: 11px; color: #64748b;">
-              Valid Until: <span style="font-weight: 600; color: #b45309;">${data.validUntil}</span>
+              Valid Until: <span style="font-weight: 600; color: #b45309; font-family: 'JetBrains Mono', monospace;">${data.validUntil}</span>
             </div>
           </div>
         </div>
@@ -353,7 +363,7 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
               ${data.customerName || 'Customer'}
             </div>
             <div style="color: #475569; margin-top: 2px;">
-              Mobile: <span style="font-family: monospace; font-weight: 600; color: #0f172a;">${data.customerPhone}</span>
+              Mobile: <span style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #0f172a;">${data.customerPhone}</span>
             </div>
             ${data.customerEmail ? `<div style="color: #64748b; font-size: 11px;">${data.customerEmail}</div>` : ''}
             <div style="color: #64748b; font-size: 11px; margin-top: 2px;">
@@ -365,7 +375,7 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
             <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">
               ENQUIRY REFERENCE:
             </span>
-            <div style="font-family: monospace; font-size: 12px; font-weight: 700; color: #0f172a;">
+            <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700; color: #0f172a; font-feature-settings: 'tnum' on, 'lnum' on;">
               Ticket: ${data.trackingNumber}
             </div>
             <div style="font-size: 12px; font-weight: 700; color: #2A835F; margin-top: 2px;">
@@ -429,14 +439,14 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
           <div style="font-size: 12px;">
             <div style="display: flex; justify-content: space-between; color: #64748b; padding: 2px 4px;">
               <span>Subtotal:</span>
-              <span style="font-family: monospace; font-weight: 600; color: #0f172a;">${formatINR(data.subtotal)}</span>
+              <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; color: #0f172a; font-feature-settings: 'tnum' on, 'lnum' on;">${formatINR(data.subtotal)}</span>
             </div>
 
             ${
               data.discountAmount > 0
                 ? `<div style="display: flex; justify-content: space-between; color: #15803d; padding: 2px 4px;">
                     <span>Discount ${data.discountType === 'PERCENTAGE' ? `(${data.discountValue}%)` : ''}:</span>
-                    <span style="font-family: monospace; font-weight: 600;">-${formatINR(data.discountAmount)}</span>
+                    <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; font-feature-settings: 'tnum' on, 'lnum' on;">-${formatINR(data.discountAmount)}</span>
                   </div>`
                 : ''
             }
@@ -445,7 +455,7 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
               data.taxAmount > 0
                 ? `<div style="display: flex; justify-content: space-between; color: #64748b; padding: 2px 4px;">
                     <span>GST / Taxes (${data.taxRate}%):</span>
-                    <span style="font-family: monospace; font-weight: 600; color: #0f172a;">+${formatINR(data.taxAmount)}</span>
+                    <span style="font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 600; color: #0f172a; font-feature-settings: 'tnum' on, 'lnum' on;">+${formatINR(data.taxAmount)}</span>
                   </div>`
                 : ''
             }
@@ -453,12 +463,12 @@ export function renderQuotationHTML(data: QuotationData, logoOrigin?: string): s
             <!-- Grand Total Highlight Box -->
             <div style="padding: 12px 14px; border-radius: 10px; background-color: #EBF6F1; border: 1px solid #C3E6D5; display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
               <div>
-                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #2A835F; display: block;">
+                <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #2A835F; display: block; letter-spacing: 0.05em;">
                   GRAND TOTAL
                 </span>
-                <span style="font-size: 9px; color: #166534;">Total Payable Value</span>
+                <span style="font-size: 9px; color: #166534; font-weight: 500;">Total Payable Value</span>
               </div>
-              <div style="font-size: 18px; font-weight: 900; font-family: monospace; color: #2A835F;">
+              <div style="font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: #2A835F; font-feature-settings: 'tnum' on, 'lnum' on;">
                 ${formatINR(data.grandTotal)}
               </div>
             </div>
@@ -552,6 +562,9 @@ export async function downloadQuotationPDF(
   <head>
     <meta charset="utf-8" />
     <title>${optionalFilename || 'KK_Group_Quotation'}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style>
       @page { size: A4 portrait; margin: 0mm !important; }
       *, *::before, *::after { box-sizing: border-box !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -561,11 +574,14 @@ export async function downloadQuotationPDF(
         background-color: #ffffff !important;
         background: #ffffff !important;
         color: #0f172a !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        font-size: 12px;
-        line-height: 1.45;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-size: 11.5px;
+        line-height: 1.5;
         width: 100% !important;
         min-height: 297mm !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
       }
       .page-sheet {
         width: 210mm !important;
@@ -638,13 +654,262 @@ export async function downloadQuotationPDF(
       }
     };
 
+    const checkReadyAndPrint = () => {
+      if (doc.fonts && doc.fonts.ready) {
+        doc.fonts.ready.then(() => executePrint()).catch(() => executePrint());
+      } else {
+        executePrint();
+      }
+    };
+
     const logo = doc.querySelector('img');
     if (logo && !logo.complete) {
-      logo.onload = () => setTimeout(executePrint, 100);
-      logo.onerror = () => setTimeout(executePrint, 100);
-      setTimeout(executePrint, 600);
+      logo.onload = () => setTimeout(checkReadyAndPrint, 80);
+      logo.onerror = () => setTimeout(checkReadyAndPrint, 80);
+      setTimeout(checkReadyAndPrint, 600);
     } else {
-      setTimeout(executePrint, 150);
+      setTimeout(checkReadyAndPrint, 100);
     }
   });
 }
+
+/**
+ * Downloads a high-resolution, pixel-perfect PNG image of the quotation preview document.
+ * - Ensures fonts and graphics are loaded before rasterization.
+ * - Employs a 2x pixel ratio for crisp Retina quality.
+ * - Forces full desktop 800px width so images captured on mobile devices are fully formatted.
+ */
+export async function downloadQuotationImage(
+  elementId: string = 'quotation-printable-document',
+  filename?: string,
+): Promise<void> {
+  const node = document.getElementById(elementId);
+  if (!node) {
+    console.error(`Quotation preview element #${elementId} not found in DOM`);
+    throw new Error('Quotation preview document not found');
+  }
+
+  // Inject temporary capture styles to completely suppress scrollbars
+  const styleEl = document.createElement('style');
+  styleEl.setAttribute('data-capture-override', 'true');
+  styleEl.textContent = `
+    #${elementId}, #${elementId} * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    #${elementId} *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    #${elementId} [class*="overflow-"] {
+      overflow: hidden !important;
+    }
+  `;
+  document.head.appendChild(styleEl);
+
+  try {
+    // Ensure all fonts are ready
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch {
+        // Font readiness fallback
+      }
+    }
+
+    // Settle layout
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
+    let dataUrl: string;
+    try {
+      dataUrl = await toPng(node, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        style: {
+          width: '800px',
+          maxWidth: '800px',
+          margin: '0 auto',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        },
+      });
+    } catch (err) {
+      console.warn('html-to-image standard capture failed, retrying with skipFonts fallback:', err);
+      dataUrl = await toPng(node, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        skipFonts: true,
+        style: {
+          width: '800px',
+          maxWidth: '800px',
+          margin: '0 auto',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        },
+      });
+    }
+
+    const link = document.createElement('a');
+    link.download = `${filename || 'KK_Group_Quotation'}.png`;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } finally {
+    styleEl.remove();
+  }
+}
+
+/**
+ * Generates a high-resolution Blob of the quotation preview document.
+ */
+export async function generateQuotationImageBlob(
+  elementId: string = 'quotation-printable-document',
+): Promise<Blob> {
+  const node = document.getElementById(elementId);
+  if (!node) {
+    throw new Error('Quotation preview document not found');
+  }
+
+  const styleEl = document.createElement('style');
+  styleEl.setAttribute('data-capture-override', 'true');
+  styleEl.textContent = `
+    #${elementId}, #${elementId} * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    #${elementId} *::-webkit-scrollbar {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    #${elementId} [class*="overflow-"] {
+      overflow: hidden !important;
+    }
+  `;
+  document.head.appendChild(styleEl);
+
+  try {
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+      } catch {}
+    }
+    await new Promise((r) => setTimeout(r, 80));
+
+    let blob = await toBlob(node, {
+      quality: 1,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      style: {
+        width: '800px',
+        maxWidth: '800px',
+        margin: '0 auto',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+      },
+    });
+
+    if (!blob) {
+      blob = await toBlob(node, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff',
+        skipFonts: true,
+        style: {
+          width: '800px',
+          maxWidth: '800px',
+          margin: '0 auto',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        },
+      });
+    }
+
+    if (!blob) {
+      throw new Error('Failed to generate quotation image blob');
+    }
+    return blob;
+  } finally {
+    styleEl.remove();
+  }
+}
+
+/**
+ * Sends quotation via WhatsApp with both the rendered image and formatted breakdown data:
+ * 1. Mobile / Web Share API: Natively shares both the image file and data text together into WhatsApp.
+ * 2. Desktop Fallback: Downloads the image, copies image to clipboard, and opens WhatsApp Web with the pre-filled text.
+ */
+export async function sendQuotationViaWhatsAppWithImage(
+  data: QuotationData,
+  elementId: string = 'quotation-printable-document',
+): Promise<{ method: 'native' | 'web'; copiedImage: boolean }> {
+  const rawPhone = data.customerPhone || '';
+  const cleanPhone = cleanPhoneNumber(rawPhone);
+  if (!cleanPhone || cleanPhone.length < 10) {
+    throw new Error('Please enter a valid 10-digit mobile number for this customer.');
+  }
+
+  const message = buildWhatsAppQuotationMessage(data);
+  const blob = await generateQuotationImageBlob(elementId);
+  const fileName = `KK_Group_Quotation_${data.quotationNumber || 'Estimate'}.png`;
+  const file = new File([blob], fileName, { type: 'image/png' });
+
+  // 1. Web Share API (native WhatsApp file + text share on mobile)
+  if (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare({ files: [file] })
+  ) {
+    try {
+      await navigator.share({
+        title: `KK Group Quotation - ${data.quotationNumber}`,
+        text: message,
+        files: [file],
+      });
+      return { method: 'native', copiedImage: false };
+    } catch (shareErr: any) {
+      if (shareErr.name === 'AbortError') {
+        return { method: 'native', copiedImage: false };
+      }
+      console.warn('Native share failed, falling back to WhatsApp Web:', shareErr);
+    }
+  }
+
+  // 2. Desktop Fallback: Copy to clipboard & download image
+  let copiedImage = false;
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof window.ClipboardItem !== 'undefined'
+  ) {
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob }),
+      ]);
+      copiedImage = true;
+    } catch (clipErr) {
+      console.warn('Could not copy image to clipboard:', clipErr);
+    }
+  }
+
+  // Auto-download image so user has it immediately
+  const link = document.createElement('a');
+  link.download = fileName;
+  const objectUrl = URL.createObjectURL(blob);
+  link.href = objectUrl;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+
+  // Open WhatsApp Web with text prefilled
+  const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+
+  return { method: 'web', copiedImage };
+}
+

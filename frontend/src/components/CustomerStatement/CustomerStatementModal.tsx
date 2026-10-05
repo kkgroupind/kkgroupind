@@ -204,7 +204,7 @@ export function CustomerStatementModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-bold text-gray-200">
                     <CalendarRange className="w-4 h-4 text-emerald-400" />
-                    <span>Select Statement Period / സമയപരിധി</span>
+                    <span>Select Statement Period</span>
                   </div>
                   <span className="text-xs text-gray-500">Filters all works and transactions</span>
                 </div>

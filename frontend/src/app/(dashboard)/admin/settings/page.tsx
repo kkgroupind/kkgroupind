@@ -57,6 +57,7 @@ export default function AdminSettingsPage() {
   const [multilingualEnabled, setMultilingualEnabled] = useState(true);
   const [announcementBanner, setAnnouncementBanner] = useState('Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.');
   const [bannerActive, setBannerActive] = useState(false);
+  const [signedBy, setSignedBy] = useState('Authorized Officer');
   const [isSavingSite, setIsSavingSite] = useState(false);
   const [siteSuccess, setSiteSuccess] = useState('');
 
@@ -114,6 +115,7 @@ export default function AdminSettingsPage() {
           if (parsed.multilingualEnabled !== undefined) setMultilingualEnabled(parsed.multilingualEnabled);
           if (parsed.announcementBanner) setAnnouncementBanner(parsed.announcementBanner);
           if (parsed.bannerActive !== undefined) setBannerActive(parsed.bannerActive);
+          if (parsed.signedBy) setSignedBy(parsed.signedBy);
         }
       } catch (err) {
         console.warn('Could not read local site settings:', err);
@@ -141,6 +143,7 @@ export default function AdminSettingsPage() {
         if (data.multilingualEnabled !== undefined) setMultilingualEnabled(data.multilingualEnabled);
         if (data.announcementBanner) setAnnouncementBanner(data.announcementBanner);
         if (data.bannerActive !== undefined) setBannerActive(data.bannerActive);
+        if (data.signedBy) setSignedBy(data.signedBy);
       }
     } catch (err) {
       console.warn('Could not load site settings from backend:', err);
@@ -346,10 +349,11 @@ export default function AdminSettingsPage() {
         multilingualEnabled,
         announcementBanner,
         bannerActive,
+        signedBy,
       };
 
       await SettingsService.updateSettings(token, payload);
-      setSiteSuccess('Site settings, WhatsApp number, and Kasaragod contact details saved and published successfully!');
+      setSiteSuccess('Site settings, document signatory, and contact details saved and published successfully!');
       setTimeout(() => setSiteSuccess(''), 4500);
     } catch (err: any) {
       console.error('Failed to save site settings:', err);
@@ -702,6 +706,42 @@ export default function AdminSettingsPage() {
                       placeholder="KK Group Hub, Main Road, Kasaragod, Kerala - 671121"
                       className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bento Card 4: Document Signatory (Quotation & Invoice) */}
+              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                  <div>
+                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-[#2A835F]" />
+                      <span>Document Signatory (Quotation &amp; Invoice)</span>
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      The official signatory name stamped across all generated Quotations, Tax Invoices, and Statements.
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30 font-semibold">
+                    Finance &amp; Legal Seal
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                      Signed By (Full Name / Authority Title)
+                    </label>
+                    <input
+                      type="text"
+                      value={signedBy}
+                      onChange={(e) => setSignedBy(e.target.value)}
+                      placeholder="e.g. K. K. Balakrishnan or Operations Controller"
+                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                    />
+                    <p className="text-[11px] text-gray-500 mt-1.5">
+                      This signatory name will automatically appear on all Quotation and Tax Invoice documents.
+                    </p>
                   </div>
                 </div>
               </div>

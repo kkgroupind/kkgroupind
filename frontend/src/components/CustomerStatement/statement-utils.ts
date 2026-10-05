@@ -436,6 +436,9 @@ export function renderStatementHTML(data: CustomerStatementData): string {
 <head>
   <meta charset="utf-8" />
   <title>Customer Statement - ${customer.name} - ${statementRef}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     @page {
       margin: 0;
@@ -450,10 +453,13 @@ export function renderStatementHTML(data: CustomerStatementData): string {
       margin: 0;
       padding: 0;
       background-color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       color: #111827;
-      line-height: 1.35;
+      line-height: 1.4;
       font-size: 11px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
     .sheet {
       width: 210mm;
@@ -471,6 +477,10 @@ export function renderStatementHTML(data: CustomerStatementData): string {
       page-break-inside: avoid;
       page-break-after: auto;
     }
+    .font-mono {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace !important;
+      font-feature-settings: 'tnum' on, 'lnum' on !important;
+    }
   </style>
 </head>
 <body>
@@ -485,11 +495,11 @@ export function renderStatementHTML(data: CustomerStatementData): string {
           style="width: 58px; height: 58px; object-fit: contain; border-radius: 8px; background: #ffffff;"
         />
         <div>
-          <div style="font-size: 20px; font-weight: 900; letter-spacing: -0.5px; color: #111827; line-height: 1.1;">
+          <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: #111827; line-height: 1.1;">
             KK GROUP <span style="color: #2A835F;">KERALA</span>
           </div>
-          <div style="font-size: 10px; font-weight: 700; color: #2A835F; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px;">
-            Agricultural, Heavy Machinery & Estate Operations
+          <div style="font-size: 10px; font-weight: 700; color: #2A835F; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px;">
+            Agricultural, Heavy Machinery &amp; Estate Operations
           </div>
           <div style="font-size: 9.5px; color: #4b5563; margin-top: 1px;">
             Govt. Reg. Kerala Field Operations • GSTIN: 32AABCK9876Q1Z9 • Calicut / Ernakulam / Palakkad
@@ -498,13 +508,13 @@ export function renderStatementHTML(data: CustomerStatementData): string {
       </div>
 
       <div style="text-align: right;">
-        <div style="display: inline-block; padding: 4px 10px; background: #2A835F; color: #ffffff; font-weight: 800; font-size: 11px; letter-spacing: 0.5px; border-radius: 4px; text-transform: uppercase;">
+        <div style="display: inline-block; padding: 4px 10px; background: #2A835F; color: #ffffff; font-weight: 800; font-size: 11px; letter-spacing: 0.05em; border-radius: 4px; text-transform: uppercase;">
           Account Statement
         </div>
-        <div style="font-size: 10px; color: #4b5563; font-weight: 600; margin-top: 5px;">
-          ഉപഭോക്തൃ സ്റ്റേറ്റ്മെന്റ്
+        <div style="font-size: 10px; color: #4b5563; font-weight: 600; margin-top: 4px; letter-spacing: -0.01em;">
+          Official Customer Ledger Report
         </div>
-        <div style="font-size: 11px; font-family: monospace; font-weight: 700; color: #111827; margin-top: 3px;">
+        <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #111827; margin-top: 3px; font-feature-settings: 'tnum' on, 'lnum' on;">
           ${statementRef}
         </div>
       </div>
@@ -518,7 +528,7 @@ export function renderStatementHTML(data: CustomerStatementData): string {
       </div>
       <div>
         <span style="color: #64748b; font-weight: 500;">Generated On:</span>
-        <strong style="color: #0f172a; margin-left: 4px;">${generatedAt}</strong>
+        <strong style="color: #0f172a; margin-left: 4px; font-family: 'JetBrains Mono', monospace;">${generatedAt}</strong>
       </div>
       <div>
         <span style="color: #64748b; font-weight: 500;">Issued By:</span>
@@ -529,15 +539,15 @@ export function renderStatementHTML(data: CustomerStatementData): string {
     <!-- Customer Profile Card -->
     <div style="margin-top: 12px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 14px;">
       <div>
-        <div style="font-size: 9.5px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px;">
-          Client Profile / വിവരങ്ങൾ
+        <div style="font-size: 9.5px; font-weight: 800; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px;">
+          Customer &amp; Account Profile
         </div>
-        <div style="font-size: 14px; font-weight: 800; color: #111827;">
+        <div style="font-size: 14px; font-weight: 800; color: #111827; letter-spacing: -0.02em;">
           ${customer.name}
-          <span style="font-size: 11px; font-family: monospace; font-weight: 600; color: #7B4DFF; margin-left: 6px;">@${customer.username}</span>
+          <span style="font-size: 11px; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #7B4DFF; margin-left: 6px;">@${customer.username}</span>
         </div>
         <div style="font-size: 10.5px; color: #374151; margin-top: 4px;">
-          📞 <strong>Phone:</strong> ${customer.phone || 'N/A'} ${customer.email ? `&nbsp;|&nbsp; ✉️ <strong>Email:</strong> ${customer.email}` : ''}
+          📞 <strong>Phone:</strong> <span style="font-family: 'JetBrains Mono', monospace;">${customer.phone || 'N/A'}</span> ${customer.email ? `&nbsp;|&nbsp; ✉️ <strong>Email:</strong> ${customer.email}` : ''}
         </div>
         <div style="font-size: 10.5px; color: #4b5563; margin-top: 2px;">
           📍 <strong>Service Location:</strong> ${customer.address || 'Kerala Residence'}
@@ -649,13 +659,13 @@ export function renderStatementHTML(data: CustomerStatementData): string {
     <!-- Official Stamp & Verification Footer -->
     <div style="margin-top: 26px; padding-top: 14px; border-top: 1px dashed #cbd5e1; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; align-items: flex-end;">
       <div>
-        <div style="font-size: 10px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 2px;">
-          Official Operations Verification / സാക്ഷ്യപത്രം
+        <div style="font-size: 10px; font-weight: 800; color: #1e293b; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.05em;">
+          Official Operations Verification &amp; Audit Seal
         </div>
         <div style="font-size: 9.5px; color: #64748b; line-height: 1.4;">
           This document is an authenticated statement of services rendered and accounts maintained by KK Group Kerala Operations. For any discrepancies or additional receipts, please connect with our central billing desk.
         </div>
-        <div style="margin-top: 6px; font-size: 9px; color: #94a3b8; font-family: monospace;">
+        <div style="margin-top: 6px; font-size: 9px; color: #94a3b8; font-family: 'JetBrains Mono', monospace;">
           Ref ID: ${statementRef} • Issued at Calicut Command Center
         </div>
       </div>
@@ -664,7 +674,7 @@ export function renderStatementHTML(data: CustomerStatementData): string {
         <div style="display: inline-block; text-align: center;">
           <div style="width: 140px; border-bottom: 1.5px solid #0f172a; margin: 0 auto 4px auto; height: 32px;"></div>
           <div style="font-size: 10.5px; font-weight: 800; color: #0f172a;">Authorized Signatory</div>
-          <div style="font-size: 9px; color: #2A835F; font-weight: 700;">KK GROUP KERALA HQ</div>
+          <div style="font-size: 9px; color: #2A835F; font-weight: 700; letter-spacing: 0.05em;">KK GROUP KERALA HQ</div>
         </div>
       </div>
     </div>
@@ -714,13 +724,21 @@ export function downloadStatementPDF(data: CustomerStatementData): Promise<void>
       }
     };
 
+    const checkReadyAndPrint = () => {
+      if (doc.fonts && doc.fonts.ready) {
+        doc.fonts.ready.then(() => executePrint()).catch(() => executePrint());
+      } else {
+        executePrint();
+      }
+    };
+
     const logo = doc.querySelector('img');
     if (logo && !logo.complete) {
-      logo.onload = () => setTimeout(executePrint, 100);
-      logo.onerror = () => setTimeout(executePrint, 100);
-      setTimeout(executePrint, 600);
+      logo.onload = () => setTimeout(checkReadyAndPrint, 80);
+      logo.onerror = () => setTimeout(checkReadyAndPrint, 80);
+      setTimeout(checkReadyAndPrint, 600);
     } else {
-      setTimeout(executePrint, 150);
+      setTimeout(checkReadyAndPrint, 100);
     }
   });
 }

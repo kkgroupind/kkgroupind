@@ -383,6 +383,7 @@ model SiteSetting {
   multilingualEnabled Boolean  @default(true)
   announcementBanner  String?  @default("Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.")
   bannerActive        Boolean  @default(false)
+  signedBy            String?  @default("Authorized Officer")
   updatedAt           DateTime @updatedAt
   updatedBy           String?
 

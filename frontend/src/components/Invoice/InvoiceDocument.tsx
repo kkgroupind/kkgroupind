@@ -25,12 +25,12 @@ export function InvoiceDocument({
   return (
     <div
       id={id}
-      className="w-full max-w-[800px] min-w-[280px] mx-auto bg-white text-slate-900 p-4 sm:p-7 md:p-9 shadow-xl rounded-2xl sm:rounded-xl border border-slate-200 relative font-sans leading-normal box-border"
+      className="pdf-document-root w-full max-w-[800px] min-w-[280px] mx-auto bg-white text-slate-900 p-4 sm:p-7 md:p-9 shadow-xl rounded-2xl sm:rounded-xl border border-slate-200 relative font-sans leading-normal box-border"
       style={{
         backgroundColor: '#ffffff',
         color: '#0f172a',
         fontFamily:
-          "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+          "'Plus Jakarta Sans', var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
     >
       {/* Top Subtle Emerald Accent Bar */}
@@ -49,15 +49,15 @@ export function InvoiceDocument({
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+              <span className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
                 KK GROUP
               </span>
-              <span className="text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#EBF6F1] text-[#2A835F] border border-[#C3E6D5]">
+              <span className="text-[9px] sm:text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-[#EBF6F1] text-[#2A835F] border border-[#C3E6D5] tracking-wider">
                 Kerala Operations
               </span>
             </div>
-            <div className="text-[10px] sm:text-xs font-semibold text-slate-500 mt-0.5">
-              Field Squad &amp; Engineering Services &bull; കെ.കെ ഗ്രൂപ്പ്
+            <div className="text-[10px] sm:text-xs font-semibold text-slate-500 mt-0.5 tracking-tight">
+              Field Squad &amp; Engineering Operations Desk
             </div>
             <div className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5">
               HQ: Kasaragod, Kerala - 671121 &bull; Helpline: +91 94000 00000
@@ -124,17 +124,18 @@ export function InvoiceDocument({
           </div>
         </div>
 
-        <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-transparent">
+        <div className="text-left sm:text-right pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 sm:border-transparent flex flex-col items-start sm:items-end justify-start">
           <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
             JOB &amp; SETTLEMENT DETAILS:
           </span>
           <div className="font-mono text-xs font-bold text-slate-900">
             Work Order Ref: {data.trackingNumber}
           </div>
-          <div className="text-xs font-bold text-[#2A835F] mt-0.5">
-            Service: {data.serviceName}
+          <div className="text-xs font-bold text-[#2A835F] mt-1 leading-snug break-words whitespace-normal max-w-full sm:max-w-[320px] text-left sm:text-right">
+            <span className="text-slate-500 font-medium">Service: </span>
+            <span>{data.serviceName}</span>
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">
+          <div className="text-[11px] text-slate-500 mt-1">
             Payment Mode: <span className="font-semibold text-slate-700">{data.paymentMethod}</span>
             {data.transactionRef && (
               <span> &bull; Ref: <strong className="font-mono text-slate-800">{data.transactionRef}</strong></span>
@@ -185,17 +186,17 @@ export function InvoiceDocument({
         </div>
       </div>
 
-      {/* 4. Scope of Deliverables Table */}
-      <div className="my-3 sm:my-4 rounded-lg border border-slate-200 overflow-x-auto w-full">
-        <table className="w-full min-w-[480px] sm:min-w-full border-collapse text-xs">
+      {/* 4. Scope of Deliverables Table - table-fixed with zero inner scrollbars */}
+      <div className="my-3 sm:my-4 rounded-lg border border-slate-200 overflow-hidden w-full">
+        <table className="w-full table-fixed border-collapse text-xs">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 text-left">
-              <th className="py-2.5 px-3 w-8 text-center font-bold">#</th>
-              <th className="py-2.5 px-3 font-bold">Scope of Work &amp; Deliverables Completed</th>
-              <th className="py-2.5 px-3 text-center font-bold w-14">Qty</th>
-              <th className="py-2.5 px-3 text-left font-bold w-16">Unit</th>
-              <th className="py-2.5 px-3 text-right font-bold w-20">Rate (₹)</th>
-              <th className="py-2.5 px-3 text-right font-bold w-24">Amount (₹)</th>
+              <th className="py-2.5 px-3 w-[6%] text-center font-bold">#</th>
+              <th className="py-2.5 px-3 w-[48%] text-left font-bold">Scope of Work &amp; Deliverables Completed</th>
+              <th className="py-2.5 px-3 w-[10%] text-center font-bold">Qty</th>
+              <th className="py-2.5 px-3 w-[10%] text-left font-bold">Unit</th>
+              <th className="py-2.5 px-3 w-[12%] text-right font-bold">Rate (₹)</th>
+              <th className="py-2.5 px-3 w-[14%] text-right font-bold">Amount (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -206,22 +207,22 @@ export function InvoiceDocument({
                   index % 2 === 1 ? 'bg-slate-50/50' : 'bg-white'
                 }`}
               >
-                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400">
+                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-slate-400 align-top">
                   {index + 1}
                 </td>
-                <td className="py-2.5 px-3 font-medium text-slate-900">
-                  {item.description}
+                <td className="py-2.5 px-3 font-medium text-slate-900 break-words whitespace-normal leading-relaxed align-top">
+                  <div className="break-words whitespace-normal leading-relaxed">{item.description}</div>
                 </td>
-                <td className="py-2.5 px-3 text-center font-mono text-slate-700">
+                <td className="py-2.5 px-3 text-center font-mono text-slate-700 whitespace-nowrap align-top">
                   {item.quantity}
                 </td>
-                <td className="py-2.5 px-3 text-slate-500 text-[11px]">
+                <td className="py-2.5 px-3 text-slate-500 text-[11px] break-words whitespace-normal align-top">
                   {item.unit}
                 </td>
-                <td className="py-2.5 px-3 text-right font-mono text-slate-700">
+                <td className="py-2.5 px-3 text-right font-mono text-slate-700 whitespace-nowrap align-top">
                   {formatINR(item.rate)}
                 </td>
-                <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap align-top">
                   {formatINR(item.amount)}
                 </td>
               </tr>

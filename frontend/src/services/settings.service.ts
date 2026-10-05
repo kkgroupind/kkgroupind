@@ -17,6 +17,7 @@ export interface SiteSettings {
   multilingualEnabled: boolean;
   announcementBanner?: string | null;
   bannerActive: boolean;
+  signedBy?: string;
   updatedAt?: string;
   updatedBy?: string;
 }
@@ -39,6 +40,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   announcementBanner:
     'Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.',
   bannerActive: false,
+  signedBy: 'Authorized Officer',
 };
 
 export const SettingsService = {

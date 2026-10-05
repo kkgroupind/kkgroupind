@@ -35,6 +35,7 @@ export class SettingsRepository {
           announcementBanner:
             'Special seasonal offers available on coconut tree maintenance and cleaning across Kasaragod.',
           bannerActive: false,
+          signedBy: 'Authorized Officer',
         },
       });
     }
@@ -70,6 +71,7 @@ export class SettingsRepository {
         multilingualEnabled: data.multilingualEnabled ?? true,
         announcementBanner: data.announcementBanner,
         bannerActive: data.bannerActive ?? false,
+        signedBy: data.signedBy ?? 'Authorized Officer',
         updatedBy,
       },
       update: {
@@ -88,6 +90,7 @@ export class SettingsRepository {
         ...(data.multilingualEnabled !== undefined && { multilingualEnabled: data.multilingualEnabled }),
         ...(data.announcementBanner !== undefined && { announcementBanner: data.announcementBanner }),
         ...(data.bannerActive !== undefined && { bannerActive: data.bannerActive }),
+        ...(data.signedBy !== undefined && { signedBy: data.signedBy }),
         updatedBy,
       },
     });

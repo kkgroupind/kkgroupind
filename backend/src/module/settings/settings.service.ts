@@ -33,6 +33,7 @@ export class SettingsService {
         ? settings.announcementBanner
         : null,
       bannerActive: settings.bannerActive,
+      signedBy: settings.signedBy ?? 'Authorized Officer',
     };
   }
 

@@ -16,6 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { QuotationData, QuotationLineItem } from './types';
 import { QuotationDocument } from './QuotationDocument';
@@ -25,8 +26,11 @@ import {
   generateQuotationRef,
   buildWhatsAppQuotationMessage,
   downloadQuotationPDF,
+  downloadQuotationImage,
+  sendQuotationViaWhatsAppWithImage,
 } from './quotation-utils';
 import { KK_SERVICE_RATES } from '@/components/OfficeStaff/OfficeStaffEstimatesView';
+import { SettingsService } from '@/services/settings.service';
 
 interface QuotationModalProps {
   isOpen: boolean;
@@ -47,6 +51,8 @@ export function QuotationModal({
   const [activeTab, setActiveTab] = useState<'builder' | 'preview'>('builder');
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
   const [whatsAppAlert, setWhatsAppAlert] = useState<string | null>(null);
 
   // Form State
@@ -101,7 +107,27 @@ export function QuotationModal({
       setDistrict(enquiry.district || 'Kasaragod');
       setServiceName(enquiry.serviceName || 'General Engineering Service');
       setServiceCategory(enquiry.serviceCategory || 'Operations');
-      setPreparedBy(currentUserName);
+
+      // Load configured signatory from Site Settings or fallback
+      let initialSignatory = currentUserName;
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = localStorage.getItem('kk_site_settings');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.signedBy && parsed.signedBy.trim()) {
+              initialSignatory = parsed.signedBy.trim();
+            }
+          }
+        } catch {}
+      }
+      setPreparedBy(initialSignatory);
+
+      SettingsService.getPublicSettings().then((settings) => {
+        if (settings?.signedBy && settings.signedBy.trim()) {
+          setPreparedBy(settings.signedBy.trim());
+        }
+      }).catch(() => {});
 
       // Create initial line item from enquiry
       const unit =
@@ -284,7 +310,26 @@ export function QuotationModal({
     }
   };
 
-  const handleSendWhatsApp = () => {
+  const handleDownloadImage = async () => {
+    setIsDownloadingImage(true);
+    try {
+      if (activeTab !== 'preview') {
+        setActiveTab('preview');
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      await downloadQuotationImage(
+        'quotation-printable-document',
+        `KK_Group_Quotation_${quotationNumber || 'Estimate'}`,
+      );
+    } catch (err) {
+      console.error('Failed to download quotation preview image:', err);
+      alert('Could not download quotation image. Please try again.');
+    } finally {
+      setIsDownloadingImage(false);
+    }
+  };
+
+  const handleSendWhatsApp = async () => {
     const rawPhone = customerPhone || enquiry?.customerPhone || '';
     const cleanPhone = cleanPhoneNumber(rawPhone);
 
@@ -293,15 +338,41 @@ export function QuotationModal({
       return;
     }
 
-    const message = buildWhatsAppQuotationMessage(quotationData);
-    const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    setIsSendingWhatsApp(true);
+    try {
+      if (activeTab !== 'preview') {
+        setActiveTab('preview');
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
 
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      const result = await sendQuotationViaWhatsAppWithImage(
+        quotationData,
+        'quotation-printable-document',
+      );
 
-    setWhatsAppAlert(
-      `WhatsApp chat launched for ${customerName} (+${cleanPhone})! You can attach the downloaded PDF in WhatsApp.`,
-    );
-    setTimeout(() => setWhatsAppAlert(null), 7000);
+      if (result.method === 'native') {
+        setWhatsAppAlert(
+          `Quotation image and breakdown details shared to WhatsApp for ${customerName}!`,
+        );
+      } else {
+        setWhatsAppAlert(
+          `WhatsApp chat opened for ${customerName}! The quotation image has been downloaded & copied to your clipboard — press Ctrl+V in WhatsApp to attach the image.`,
+        );
+      }
+      setTimeout(() => setWhatsAppAlert(null), 10000);
+    } catch (err: any) {
+      console.error('Failed to send quotation image via WhatsApp:', err);
+      // Graceful fallback to text-only WhatsApp if image capture fails
+      const message = buildWhatsAppQuotationMessage(quotationData);
+      const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      setWhatsAppAlert(
+        `WhatsApp chat opened with quotation data for ${customerName}!`,
+      );
+      setTimeout(() => setWhatsAppAlert(null), 7000);
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
   };
 
   const handleCopyWhatsAppText = () => {
@@ -728,7 +799,7 @@ export function QuotationModal({
             </div>
 
             {/* Terms & Notes */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               <div>
                 <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1 text-gray-400">
                   Payment Terms
@@ -752,6 +823,22 @@ export function QuotationModal({
                   className="w-full bg-slate-950 border border-gray-800 focus:border-[#2A835F] rounded-xl p-2.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none resize-none"
                 />
               </div>
+
+              <div>
+                <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-1 text-gray-400">
+                  Signed By (Signatory)
+                </label>
+                <input
+                  type="text"
+                  value={preparedBy}
+                  onChange={(e) => setPreparedBy(e.target.value)}
+                  placeholder="Configured in Site Settings"
+                  className="w-full bg-slate-950 border border-gray-800 focus:border-[#2A835F] rounded-xl p-2.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none"
+                />
+                <span className="text-[10px] text-gray-500 mt-1 block">
+                  Defaults to Site Settings signatory
+                </span>
+              </div>
             </div>
           </div>
 
@@ -770,6 +857,25 @@ export function QuotationModal({
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleDownloadImage}
+                    disabled={isDownloadingImage}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold shadow-md transition-all cursor-pointer disabled:opacity-50 active:scale-95"
+                    title="Download exact high-resolution preview image (PNG)"
+                  >
+                    {isDownloadingImage ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving Image...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-3.5 h-3.5" />
+                        <span>Download Image (PNG)</span>
+                      </>
+                    )}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('builder')}
@@ -837,6 +943,26 @@ export function QuotationModal({
 
             <button
               type="button"
+              onClick={handleDownloadImage}
+              disabled={isDownloadingImage}
+              className="order-2 sm:order-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-emerald-400 hover:text-emerald-300 font-bold text-xs border border-emerald-500/30 hover:border-emerald-500/60 transition-all cursor-pointer disabled:opacity-50"
+              title="Download exact high-resolution preview image (PNG)"
+            >
+              {isDownloadingImage ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                  <span>Image...</span>
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Download Image</span>
+                </>
+              )}
+            </button>
+
+            <button
+              type="button"
               onClick={handleDownloadPDF}
               disabled={isDownloading}
               className="order-2 sm:order-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-gray-200 font-bold text-xs border border-gray-700 transition-all cursor-pointer disabled:opacity-50"
@@ -858,10 +984,20 @@ export function QuotationModal({
             <button
               type="button"
               onClick={handleSendWhatsApp}
-              className="col-span-2 sm:col-span-1 order-3 sm:order-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs shadow-lg shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              disabled={isSendingWhatsApp}
+              className="col-span-2 sm:col-span-1 order-3 sm:order-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs shadow-lg shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-60"
             >
-              <Share2 className="w-4 h-4" />
-              <span>Send via WhatsApp</span>
+              {isSendingWhatsApp ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Preparing Image &amp; Chat...</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-4 h-4" />
+                  <span>Send via WhatsApp</span>
+                </>
+              )}
             </button>
           </div>
         </div>

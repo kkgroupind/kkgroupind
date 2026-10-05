@@ -10,7 +10,13 @@ export function StatementDocument({ data }: StatementDocumentProps) {
   const { customer, stats, enquiries, transactions, statementRef, periodLabel, generatedAt, generatedBy } = data;
 
   return (
-    <div className="w-full max-w-[850px] mx-auto bg-white text-gray-900 rounded-xl shadow-2xl p-6 sm:p-10 font-sans border border-gray-200 print:shadow-none print:border-none print:p-0">
+    <div
+      className="pdf-document-root w-full max-w-[850px] mx-auto bg-white text-gray-900 rounded-xl shadow-2xl p-6 sm:p-10 font-sans border border-gray-200 print:shadow-none print:border-none print:p-0"
+      style={{
+        fontFamily:
+          "'Plus Jakarta Sans', var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
       {/* Top Header & Branding */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pb-4 border-b-2 border-[#2A835F]">
         <div className="flex items-center gap-3.5">
@@ -20,11 +26,11 @@ export function StatementDocument({ data }: StatementDocumentProps) {
             className="w-14 h-14 object-contain rounded-lg bg-white shrink-0"
           />
           <div>
-            <div className="text-xl sm:text-2xl font-black text-gray-950 tracking-tight leading-tight">
+            <div className="text-xl sm:text-2xl font-extrabold text-gray-950 tracking-tight leading-tight">
               KK GROUP <span className="text-[#2A835F]">KERALA</span>
             </div>
             <div className="text-[11px] font-bold text-[#2A835F] uppercase tracking-wider mt-0.5">
-              Agricultural, Heavy Machinery & Estate Operations
+              Agricultural, Heavy Machinery &amp; Estate Operations
             </div>
             <div className="text-[10px] text-gray-500 mt-0.5">
               Govt. Reg. Kerala Field Operations • GSTIN: 32AABCK9876Q1Z9 • Calicut / Ernakulam / Palakkad
@@ -37,7 +43,7 @@ export function StatementDocument({ data }: StatementDocumentProps) {
             Account Statement
           </div>
           <div className="text-[10.5px] text-gray-500 font-semibold mt-1">
-            ഉപഭോക്തൃ സ്റ്റേറ്റ്മെന്റ്
+            Official Customer Ledger Report
           </div>
           <div className="text-xs font-mono font-bold text-gray-900 mt-0.5">
             {statementRef}
@@ -53,7 +59,7 @@ export function StatementDocument({ data }: StatementDocumentProps) {
         </div>
         <div className="sm:text-center">
           <span className="text-slate-500 font-medium">Generated:</span>{' '}
-          <strong className="text-slate-900 ml-1">{generatedAt}</strong>
+          <strong className="text-slate-900 ml-1 font-mono">{generatedAt}</strong>
         </div>
         <div className="sm:text-right">
           <span className="text-slate-500 font-medium">Issued By:</span>{' '}
@@ -65,7 +71,7 @@ export function StatementDocument({ data }: StatementDocumentProps) {
       <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white border border-gray-200 rounded-lg p-3.5">
         <div className="sm:col-span-2">
           <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-            Client Profile / ഉപഭോക്താവ്
+            Customer &amp; Account Profile
           </div>
           <div className="text-base font-extrabold text-gray-900 flex items-center gap-2">
             <span>{customer.name}</span>
@@ -302,8 +308,8 @@ export function StatementDocument({ data }: StatementDocumentProps) {
       {/* Official Signatory Footer */}
       <div className="mt-6 pt-4 border-t border-dashed border-gray-300 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
         <div className="sm:col-span-2">
-          <div className="text-[10px] font-extrabold uppercase text-gray-900 mb-1">
-            Official Operations Verification / സാക്ഷ്യപത്രം
+          <div className="text-[10px] font-extrabold uppercase text-gray-900 mb-1 tracking-wider">
+            Official Operations Verification &amp; Audit Seal
           </div>
           <div className="text-[10px] text-gray-500 leading-relaxed">
             This document is an authenticated statement of accounts and completed works generated from the KK Group Kerala Operations Management System.

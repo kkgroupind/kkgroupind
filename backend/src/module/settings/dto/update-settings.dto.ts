@@ -60,4 +60,9 @@ export class UpdateSettingsDto {
   @IsOptional()
   @IsBoolean()
   bannerActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  signedBy?: string;
 }
+
