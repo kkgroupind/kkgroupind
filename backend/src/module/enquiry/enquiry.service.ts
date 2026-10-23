@@ -282,15 +282,25 @@ export class EnquiryService {
       }
     }
 
-    // Resolve service specification dynamically from service name
+    // Resolve service specification dynamically from service name & database catalog
     const isMachinery = /jcb|excavat|crane|earthmov|tractor|loader|grader|റോഡ്|മണ്ണെടുക്കൽ/i.test(enquiry.serviceName);
     const explicitWageType = dto.wageType && (dto.wageType !== 'HOURLY' || isMachinery) ? dto.wageType : undefined;
     const spec = resolveServiceSpec(enquiry.serviceName, explicitWageType);
-    const wageType = explicitWageType || spec.wageType;
-    const unitLabel = dto.unitLabel || spec.unitLabel;
-    const unitRate = dto.unitRate !== undefined ? dto.unitRate : undefined;
-    const workerUnitWage = dto.workerUnitWage !== undefined ? dto.workerUnitWage : undefined;
-    const minUnits = dto.minUnits !== undefined ? dto.minUnits : spec.minUnits;
+
+    // Check if admin configured custom rates for this service in the catalog
+    const dbService = await this.enquiryRepo.findMatchingService(enquiry.serviceName);
+
+    const wageType = explicitWageType || dbService?.wageType || spec.wageType;
+    const unitLabel = dto.unitLabel || dbService?.unitLabel || spec.unitLabel;
+    const unitRate = dto.unitRate !== undefined
+      ? dto.unitRate
+      : (dbService?.baseCustomerRate ?? spec.baseCustomerRate ?? undefined);
+    const workerUnitWage = dto.workerUnitWage !== undefined
+      ? dto.workerUnitWage
+      : (dbService?.baseWorkerWage ?? spec.baseWorkerWage ?? undefined);
+    const minUnits = dto.minUnits !== undefined
+      ? dto.minUnits
+      : (dbService?.minUnits ?? spec.minUnits);
     const isHourlyCalculated = wageType === 'HOURLY';
 
     const mergedSpecificationDetails = {

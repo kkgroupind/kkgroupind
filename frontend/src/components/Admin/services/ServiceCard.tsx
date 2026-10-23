@@ -246,6 +246,37 @@ export function ServiceCard({
             {service.description}
           </p>
         )}
+
+        {/* Pricing & Worker Wage Strip */}
+        <div className="mt-3.5 p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span className="text-[10px] text-emerald-400 uppercase tracking-wider font-bold block">
+              Worker Pay
+            </span>
+            <span className="font-mono text-xs font-black text-emerald-300 truncate block">
+              {service.baseWorkerWage != null ? (
+                <>₹{service.baseWorkerWage} <span className="text-[10px] font-normal text-gray-400">/{service.unitLabel || 'Unit'}</span></>
+              ) : (
+                <span className="text-gray-500 font-normal">Not configured</span>
+              )}
+            </span>
+          </div>
+
+          <div className="h-6 w-px bg-gray-800 shrink-0" />
+
+          <div className="text-right min-w-0">
+            <span className="text-[10px] text-blue-400 uppercase tracking-wider font-bold block">
+              Customer Rate
+            </span>
+            <span className="font-mono text-xs font-black text-blue-300 truncate block">
+              {service.baseCustomerRate != null ? (
+                <>₹{service.baseCustomerRate} <span className="text-[10px] font-normal text-gray-400">/{service.unitLabel || 'Unit'}</span></>
+              ) : (
+                <span className="text-gray-500 font-normal">Not configured</span>
+              )}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Footer Action Bar */}

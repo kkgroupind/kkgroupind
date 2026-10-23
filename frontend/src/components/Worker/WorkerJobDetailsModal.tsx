@@ -722,8 +722,10 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
-              <span className="text-[11px] font-semibold text-emerald-300/90">Post-Completion</span>
+              <span className="text-[10px] text-emerald-400 uppercase font-bold block">Your Wage Rate</span>
+              <span className="text-xs font-black font-mono text-emerald-300">
+                ₹{localJob.workerUnitWage || 80} <span className="text-[10px] font-normal text-slate-400">/ Tree</span>
+              </span>
             </div>
           </div>
         ) : isHourly ? (
@@ -742,8 +744,10 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
-              <span className="text-[11px] font-semibold text-amber-300/90">Post-Completion</span>
+              <span className="text-[10px] text-amber-400 uppercase font-bold block">Your Wage Rate</span>
+              <span className="text-xs font-black font-mono text-amber-300">
+                ₹{localJob.workerUnitWage || 900} <span className="text-[10px] font-normal text-slate-400">/ Hour</span>
+              </span>
             </div>
           </div>
         ) : (
@@ -762,8 +766,14 @@ export function WorkerJobDetailsModal({
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] text-slate-400 uppercase font-bold block">Pricing</span>
-              <span className="text-[11px] font-semibold text-sky-300/90">Post-Completion</span>
+              <span className="text-[10px] text-sky-400 uppercase font-bold block">Your Wage Rate</span>
+              <span className="text-xs font-black font-mono text-sky-300">
+                {localJob.workerUnitWage != null ? (
+                  <>₹{localJob.workerUnitWage} <span className="text-[10px] font-normal text-slate-400">/{unitLabel}</span></>
+                ) : (
+                  'Standard Rate'
+                )}
+              </span>
             </div>
           </div>
         )}
@@ -1135,6 +1145,20 @@ export function WorkerJobDetailsModal({
                   ))}
                 </div>
               )}
+
+              {/* Live Earned Wage Preview for Coconut Care */}
+              <div className="w-full mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs px-1">
+                <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
+                  <IndianRupee className="w-3.5 h-3.5" />
+                  <span>Earned Wage (വേതനം):</span>
+                </span>
+                <span className="font-mono text-sm font-black text-emerald-300">
+                  ₹{(unitCount * (localJob.workerUnitWage || 80)).toLocaleString('en-IN')}{' '}
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    ({unitCount} trees × ₹{localJob.workerUnitWage || 80}/tree)
+                  </span>
+                </span>
+              </div>
             </div>
 
             {/* Checklists for Kerala Agriculture Standards */}
@@ -1418,6 +1442,31 @@ export function WorkerJobDetailsModal({
                   const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
                   return totalBreakMins > 0 ? `${totalBreakMins}m breaks logged` : 'No breaks yet';
                 })()}
+              </span>
+            </div>
+
+            {/* Live Earned Wage Preview for JCB Machinery */}
+            <div className="flex items-center justify-between text-xs bg-slate-900/90 px-3 py-2 rounded-xl border border-amber-500/30">
+              <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
+                <IndianRupee className="w-3.5 h-3.5" />
+                <span>Earned Wage (കണക്കാക്കിയ വേതനം):</span>
+              </span>
+              <span className="font-mono text-sm font-black text-amber-300">
+                ₹{(() => {
+                  const spec = (localJob.specificationDetails as any) || {};
+                  const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+                  const recordedBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+                  const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
+                  const totalBreakMins = recordedBreakMins + ongoingBreakMins;
+                  const elapsedMins = Math.max(1, Math.round(timerSeconds / 60));
+                  const netMins = Math.max(0, elapsedMins - totalBreakMins);
+                  const netHrs = Math.round((netMins / 60) * 10) / 10;
+                  const rate = localJob.workerUnitWage || 900;
+                  return Math.round(netHrs * rate).toLocaleString('en-IN');
+                })()}{' '}
+                <span className="text-[10px] text-slate-400 font-normal">
+                  (Rate: ₹{localJob.workerUnitWage || 900}/hr)
+                </span>
               </span>
             </div>
 
@@ -1725,80 +1774,84 @@ export function WorkerJobDetailsModal({
           )}
         </div>
 
-        {/* ----------------- FINALIZED PAYOUT CARD (worker sees after wage is set by admin) ----------------- */}
+        {/* ----------------- FINALIZED PAYOUT CARD (worker sees after work is completed) ----------------- */}
         {isCompleted && (() => {
           const spec = (localJob.specificationDetails as any) || {};
-          const finalWage = localJob.totalCalculatedWage;
-          const finalUnits = localJob.completedUnits;
-          const unitLbl = localJob.unitLabel || unitLabel;
-          const wageSet = finalWage && finalWage > 0;
-
-          if (wageSet) {
-            return (
-              <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900/80 border border-emerald-500/40 space-y-2">
-                <div className="flex items-center gap-2 border-b border-emerald-500/20 pb-2.5">
-                  <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400">
-                    <IndianRupee className="w-4 h-4" />
-                  </span>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">Your Finalized Payout</span>
-                    <span className="text-[11px] text-emerald-200/60">Confirmed by KK Group Office</span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    {finalUnits && (
-                      <span className="text-[11px] text-slate-400 block">
-                        {finalUnits} {unitLbl}(s) completed
-                      </span>
-                    )}
-                    {localJob.workDurationMinutes && (
-                      <span className="text-[11px] text-slate-400 block">
-                        {Math.floor(localJob.workDurationMinutes / 60)}h {localJob.workDurationMinutes % 60}m recorded
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-emerald-400/70 uppercase font-bold block">Total Payout</span>
-                    <span className="font-mono text-2xl font-black text-emerald-400">
-                      ₹{finalWage.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-3 pt-3 border-t border-emerald-500/20">
-                  {spec.paymentReceivedAt ? (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 justify-center">
-                      <CheckCircle2 className="w-4 h-4 shrink-0" />
-                      <span className="text-xs font-bold uppercase tracking-wider">Payment Received</span>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleConfirmPayment}
-                      disabled={isSubmittingAction}
-                      className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-md disabled:opacity-60"
-                    >
-                      {isSubmittingAction ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4" />
-                      )}
-                      <span>Confirm Payment Received</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          }
+          const unitRateWage = localJob.workerUnitWage || (isCoconut ? 80 : isHourly ? 900 : null);
+          const finalUnits = localJob.completedUnits ?? unitCount;
+          const unitLbl = localJob.unitLabel || (isCoconut ? 'Tree' : isHourly ? 'Hour' : unitLabel);
+          const finalWage =
+            localJob.totalCalculatedWage && localJob.totalCalculatedWage > 0
+              ? localJob.totalCalculatedWage
+              : unitRateWage && finalUnits
+              ? Math.round(unitRateWage * finalUnits)
+              : null;
 
           return (
-            <div className="p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center gap-3">
-              <span className="p-1.5 rounded-xl bg-slate-700 text-slate-400 shrink-0">
-                <IndianRupee className="w-4 h-4" />
-              </span>
-              <div>
-                <span className="text-xs font-semibold text-slate-300 block">Payout Pending Confirmation</span>
-                <span className="text-[11px] text-slate-500">Office team will finalize your wage shortly. Check back later.</span>
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900/80 border border-emerald-500/40 space-y-2.5">
+              <div className="flex items-center gap-2 border-b border-emerald-500/20 pb-2.5">
+                <span className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400">
+                  <IndianRupee className="w-4 h-4" />
+                </span>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
+                    Your Completed Work Payout (വേതനം)
+                  </span>
+                  <span className="text-[11px] text-emerald-200/60">
+                    {finalWage ? `Earned Pay for ${localJob.serviceName}` : 'Finalizing Payout'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  {finalUnits && (
+                    <span className="text-xs text-slate-300 font-semibold block">
+                      {finalUnits} {unitLbl}(s) completed
+                    </span>
+                  )}
+                  {unitRateWage && (
+                    <span className="text-[11px] text-emerald-400/80 font-mono block">
+                      Wage Rate: ₹{unitRateWage} / {unitLbl}
+                    </span>
+                  )}
+                  {localJob.workDurationMinutes ? (
+                    <span className="text-[10px] text-slate-400 block mt-0.5">
+                      {Math.floor(localJob.workDurationMinutes / 60)}h {localJob.workDurationMinutes % 60}m net work time
+                    </span>
+                  ) : null}
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-emerald-400/70 uppercase font-bold block">
+                    Total Wage
+                  </span>
+                  <span className="font-mono text-2xl font-black text-emerald-400">
+                    ₹{finalWage ? finalWage.toLocaleString('en-IN') : '—'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                {spec.paymentReceivedAt ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 justify-center">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-wider">Payment Received</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleConfirmPayment}
+                    disabled={isSubmittingAction}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-md disabled:opacity-60"
+                  >
+                    {isSubmittingAction ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
+                    <span>Confirm Payment Received (വേതനം ലഭിച്ചു)</span>
+                  </button>
+                )}
               </div>
             </div>
           );

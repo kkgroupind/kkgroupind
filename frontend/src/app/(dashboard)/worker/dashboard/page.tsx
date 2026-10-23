@@ -75,10 +75,12 @@ export default function WorkerDashboardPage() {
   // Total wages earned
   const totalEarned = useMemo(
     () =>
-      completedJobs.reduce(
-        (sum, j) => sum + (Number(j.totalCalculatedWage) || 0),
-        0
-      ),
+      completedJobs.reduce((sum, j) => {
+        const wage =
+          Number(j.totalCalculatedWage) ||
+          (j.workerUnitWage && j.completedUnits ? Number(j.workerUnitWage) * Number(j.completedUnits) : 0);
+        return sum + wage;
+      }, 0),
     [completedJobs]
   );
 
@@ -953,7 +955,13 @@ export default function WorkerDashboardPage() {
               <div className="space-y-3">
                 {completedJobs.map((job) => {
                   const spec = (job.specificationDetails as any) || {};
-                  const isPaid = Boolean(job.totalCalculatedWage && Number(job.totalCalculatedWage) > 0);
+                  const effectiveWage =
+                    job.totalCalculatedWage && Number(job.totalCalculatedWage) > 0
+                      ? Number(job.totalCalculatedWage)
+                      : job.workerUnitWage && job.completedUnits
+                      ? Math.round(Number(job.workerUnitWage) * Number(job.completedUnits))
+                      : null;
+                  const isPaid = Boolean(effectiveWage && effectiveWage > 0);
                   const payMode = spec.paymentMode || 'CASH';
 
                   return (
@@ -988,6 +996,11 @@ export default function WorkerDashboardPage() {
                         <div className="text-xs text-[#134B4C] bg-[#EAF4EE] border border-[#88B793]/30 px-2.5 py-1 rounded-lg inline-block font-semibold">
                           {language === 'ml' ? 'ചെയ്ത അളവ്' : 'Units'}: {job.completedUnits}{' '}
                           {job.unitLabel || 'Units'}
+                          {job.workerUnitWage && (
+                            <span className="ml-1 text-[11px] text-emerald-700 font-mono">
+                              (@ ₹{job.workerUnitWage}/{job.unitLabel || 'Unit'})
+                            </span>
+                          )}
                         </div>
                       ) : null}
 
@@ -997,7 +1010,7 @@ export default function WorkerDashboardPage() {
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black text-emerald-600 flex items-center gap-1">
                               <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                              <span>₹{job.totalCalculatedWage}</span>
+                              <span>₹{effectiveWage}</span>
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                               {payMode === 'CASH'

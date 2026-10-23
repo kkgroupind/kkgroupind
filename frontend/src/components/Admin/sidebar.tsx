@@ -140,7 +140,7 @@ const buildMenuData = (indicators: SidebarIndicators) => [
     ],
   },
   { type: 'divider' },
-  { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
+  // { name: 'Audit Logs', icon: ShieldCheck, href: '/admin/audit-logs' },
 ];
 
 interface SidebarProps {

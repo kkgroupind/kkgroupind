@@ -17,7 +17,11 @@ export const REGEX_PATTERNS = {
 export const RATE_LIMITS = {
   GLOBAL: {
     ttl: 60000,
-    limit: 30,
+    limit: 150,
+  },
+  OPERATIONS: {
+    ttl: 60000,
+    limit: 120,
   },
   REGISTER: {
     ttl: 60000,

@@ -52,6 +52,16 @@ const CATEGORY_OPTIONS: AdminDropdownOption[] = [
   { value: 'Other', label: 'Other (Custom Category)' },
 ];
 
+const WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
+  { value: 'PER_TREE', label: '🌴 Per Count / Tree (Coconut Palm Care)' },
+  { value: 'HOURLY', label: '⏱️ Hourly Meter (JCB / Heavy Machinery)' },
+  { value: 'PER_SQFT', label: '📐 Square Feet (Painting / Tile Laying)' },
+  { value: 'PER_POINT', label: '⚡ Per Point (Electrical Systems)' },
+  { value: 'PER_FOOT', label: '📏 Per Foot (Borewell Drilling)' },
+  { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry / Plastering)' },
+  { value: 'FIXED_VISIT', label: '🔧 Fixed Visit / Inspection (Plumbing)' },
+];
+
 export function EditServiceModal({
   isOpen,
   onClose,
@@ -63,6 +73,11 @@ export function EditServiceModal({
   const [serviceId, setServiceId] = useState('');
   const [category, setCategory] = useState(CATEGORY_PRESETS[0]);
   const [customCategory, setCustomCategory] = useState('');
+  const [wageType, setWageType] = useState('HOURLY');
+  const [unitLabel, setUnitLabel] = useState('Hour');
+  const [baseWorkerWage, setBaseWorkerWage] = useState<number | ''>('');
+  const [baseCustomerRate, setBaseCustomerRate] = useState<number | ''>('');
+  const [minUnits, setMinUnits] = useState<number | ''>(1);
   const [image, setImage] = useState('');
   const [imageInputTab, setImageInputTab] = useState<'upload' | 'preset' | 'url'>('upload');
   const [urlInput, setUrlInput] = useState('');
@@ -147,6 +162,11 @@ export function EditServiceModal({
         setCategory('General');
       }
       setDescription(service.description || '');
+      setWageType(service.wageType || 'HOURLY');
+      setUnitLabel(service.unitLabel || 'Hour');
+      setBaseWorkerWage(service.baseWorkerWage !== undefined && service.baseWorkerWage !== null ? service.baseWorkerWage : '');
+      setBaseCustomerRate(service.baseCustomerRate !== undefined && service.baseCustomerRate !== null ? service.baseCustomerRate : '');
+      setMinUnits(service.minUnits !== undefined && service.minUnits !== null ? service.minUnits : 1);
       setIsActive(service.isActive ?? true);
       setError(null);
     }
@@ -173,6 +193,11 @@ export function EditServiceModal({
         name: cleanName,
         serviceId: serviceId.trim() ? serviceId.trim().toUpperCase() : undefined,
         category: finalCategory,
+        wageType,
+        unitLabel: unitLabel.trim() || 'Unit',
+        baseWorkerWage: baseWorkerWage !== '' ? Number(baseWorkerWage) : undefined,
+        baseCustomerRate: baseCustomerRate !== '' ? Number(baseCustomerRate) : undefined,
+        minUnits: minUnits !== '' ? Number(minUnits) : 1,
         image: image.trim() || undefined,
         description: description.trim() || undefined,
         isActive,
@@ -290,6 +315,141 @@ export function EditServiceModal({
                 />
               </div>
             )}
+          </div>
+
+          {/* Service Wage & Pricing Model */}
+          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-4">
+            <div>
+              <div className="text-xs font-bold text-gray-200 flex items-center justify-between">
+                <span>Wage &amp; Pay Rates Model</span>
+                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  Worker &amp; Client Pay Setup
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                Configure default worker pay rate (e.g. per tree/per hour) and billable customer rate
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Calculation Model <span className="text-rose-400">*</span>
+                </label>
+                <AdminDropdown
+                  options={WAGE_TYPE_OPTIONS}
+                  value={wageType}
+                  onChange={(val) => {
+                    setWageType(val);
+                    if (val === 'PER_TREE') {
+                      setUnitLabel('Tree');
+                      if (!baseWorkerWage) setBaseWorkerWage(80);
+                      if (!baseCustomerRate) setBaseCustomerRate(120);
+                      if (!minUnits) setMinUnits(5);
+                    } else if (val === 'HOURLY') {
+                      setUnitLabel('Hour');
+                      if (!baseWorkerWage) setBaseWorkerWage(900);
+                      if (!baseCustomerRate) setBaseCustomerRate(1600);
+                      if (!minUnits) setMinUnits(2);
+                    } else if (val === 'PER_SQFT') {
+                      setUnitLabel('Sq. Ft.');
+                    } else if (val === 'PER_POINT') {
+                      setUnitLabel('Point');
+                    } else if (val === 'PER_FOOT') {
+                      setUnitLabel('Foot');
+                    } else if (val === 'DAILY_WAGE') {
+                      setUnitLabel('Day / Shift');
+                    } else if (val === 'FIXED_VISIT') {
+                      setUnitLabel('Visit');
+                    }
+                  }}
+                  variant="emerald"
+                  size="md"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-1.5">
+                  Unit Label (e.g. Tree, Hour, Sq.Ft)
+                </label>
+                <input
+                  type="text"
+                  value={unitLabel}
+                  onChange={(e) => setUnitLabel(e.target.value)}
+                  placeholder="e.g. Tree / Hour"
+                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              {/* Base Worker Wage */}
+              <div className="p-3 bg-[#14151A] border border-emerald-500/20 rounded-xl space-y-1">
+                <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  Worker Pay (₹ / {unitLabel || 'Unit'})
+                </label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400 font-mono">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={baseWorkerWage}
+                    onChange={(e) => setBaseWorkerWage(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder={wageType === 'PER_TREE' ? '80' : wageType === 'HOURLY' ? '900' : '0'}
+                    className="w-full bg-[#0E0F12] border border-emerald-500/30 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-emerald-300 placeholder-gray-600 focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 block">
+                  തൊഴിലാളി വേതനം (Earned rate)
+                </span>
+              </div>
+
+              {/* Base Customer Rate */}
+              <div className="p-3 bg-[#14151A] border border-blue-500/20 rounded-xl space-y-1">
+                <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                  Customer Rate (₹ / {unitLabel || 'Unit'})
+                </label>
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-400 font-mono">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={baseCustomerRate}
+                    onChange={(e) => setBaseCustomerRate(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder={wageType === 'PER_TREE' ? '120' : wageType === 'HOURLY' ? '1600' : '0'}
+                    className="w-full bg-[#0E0F12] border border-blue-500/30 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-blue-300 placeholder-gray-600 focus:outline-none focus:border-blue-400"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-400 block">
+                  ഉപഭോക്തൃ നിരക്ക് (Billable)
+                </span>
+              </div>
+
+              {/* Minimum Units */}
+              <div className="p-3 bg-[#14151A] border border-gray-700/60 rounded-xl space-y-1">
+                <label className="block text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+                  Min Units ({unitLabel || 'Unit'}s)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={minUnits}
+                  onChange={(e) => setMinUnits(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="1"
+                  className="w-full bg-[#0E0F12] border border-gray-700/80 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#2A835F]"
+                />
+                <span className="text-[10px] text-gray-400 block">
+                  കുറഞ്ഞ അളവ് (Min dispatch)
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Service Image / Media */}

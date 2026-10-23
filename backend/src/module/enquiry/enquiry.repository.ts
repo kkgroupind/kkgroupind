@@ -435,9 +435,17 @@ export class EnquiryRepository {
         }
       }
 
-      // Prices and wages are set exclusively by Admin / Office Staff after work is finished
-      const computedWage = enquiry.totalCalculatedWage ?? null;
-      const computedCost = enquiry.totalCalculatedCost ?? null;
+      // Automatically calculate wage and billing cost from agreed rates if not already set manually
+      const computedWage =
+        enquiry.totalCalculatedWage ??
+        (enquiry.workerUnitWage != null && finalCompletedUnits > 0
+          ? Number((enquiry.workerUnitWage * finalCompletedUnits).toFixed(2))
+          : null);
+      const computedCost =
+        enquiry.totalCalculatedCost ??
+        (enquiry.unitRate != null && finalCompletedUnits > 0
+          ? Number((enquiry.unitRate * finalCompletedUnits).toFixed(2))
+          : null);
 
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
@@ -524,9 +532,17 @@ export class EnquiryRepository {
         if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
           finalCompletedUnits = enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1;
         }
-        // Price and payout will be set on admin side or office staff side only after the work is finished
-        computedWage = enquiry.totalCalculatedWage ?? null;
-        computedCost = enquiry.totalCalculatedCost ?? null;
+        // Automatically calculate wage and billing cost from agreed rates if not already set manually
+        computedWage =
+          enquiry.totalCalculatedWage ??
+          (enquiry.workerUnitWage != null && finalCompletedUnits > 0
+            ? Number((enquiry.workerUnitWage * finalCompletedUnits).toFixed(2))
+            : null);
+        computedCost =
+          enquiry.totalCalculatedCost ??
+          (enquiry.unitRate != null && finalCompletedUnits > 0
+            ? Number((enquiry.unitRate * finalCompletedUnits).toFixed(2))
+            : null);
       }
 
       const isStartingWork =
@@ -784,5 +800,70 @@ export class EnquiryRepository {
         ...(normalized ? { customerPhone: normalized } : {}),
       },
     });
+  }
+
+  async findMatchingService(serviceName: string) {
+    if (!serviceName) return null;
+    const clean = serviceName.trim().toLowerCase();
+    const activeServices = await this.prisma.service.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (!activeServices.length) return null;
+
+    // 1. Direct equality on name or slug
+    let match = activeServices.find(
+      (s) => s.name.toLowerCase() === clean || (s.slug && s.slug.toLowerCase() === clean),
+    );
+    if (match) return match;
+
+    // 2. Direct substring containment (either direction)
+    match = activeServices.find(
+      (s) =>
+        s.name.toLowerCase().includes(clean) ||
+        clean.includes(s.name.toLowerCase()) ||
+        (s.slug && clean.includes(s.slug.toLowerCase())),
+    );
+    if (match) return match;
+
+    // 3. Domain keyword cluster recognition (Coconut Care, JCB, Trades)
+    const isCoconut = /coco|coconut|palm|tree|തെങ്ങ്/i.test(clean);
+    const isJcb = /jcb|excavat|loader|crane|earthmov|tractor|മണ്ണെടു/i.test(clean);
+    const isPainting = /paint|varnish|coat|പെയിന്റ്/i.test(clean);
+    const isTiling = /tile|marble|granite|ടൈൽ/i.test(clean);
+    const isElectrical = /electr|wir|വയറിം/i.test(clean);
+    const isPlumbing = /plumb|pipe|പൈപ്പ്/i.test(clean);
+    const isBorewell = /bore|drill|കിണർ/i.test(clean);
+    const isMasonry = /mason|brick|plaster|തേപ്പ്/i.test(clean);
+
+    match = activeServices.find((s) => {
+      const sText = `${s.name} ${s.category || ''} ${s.slug} ${s.description || ''}`.toLowerCase();
+      if (isCoconut && (s.wageType === 'PER_TREE' || /coco|coconut|palm|tree/i.test(sText))) return true;
+      if (isJcb && (/jcb|excavat|loader|crane|earthmov/i.test(sText) || s.wageType === 'HOURLY')) return true;
+      if (isPainting && /paint/i.test(sText)) return true;
+      if (isTiling && /tile|marble|granite/i.test(sText)) return true;
+      if (isElectrical && /electr|wir/i.test(sText)) return true;
+      if (isPlumbing && /plumb/i.test(sText)) return true;
+      if (isBorewell && /bore|drill/i.test(sText)) return true;
+      if (isMasonry && /mason|brick|plaster/i.test(sText)) return true;
+      return false;
+    });
+    if (match) return match;
+
+    // 4. Token overlap scoring fallback
+    const tokens = clean.split(/[\s,/-]+/).filter((t) => t.length > 2);
+    let bestMatch: typeof activeServices[0] | null = null;
+    let maxOverlap = 0;
+    for (const s of activeServices) {
+      const sTokens = `${s.name} ${s.category || ''} ${s.slug}`.toLowerCase().split(/[\s,/-]+/);
+      const overlap = tokens.filter((t) => sTokens.includes(t)).length;
+      if (overlap > maxOverlap) {
+        maxOverlap = overlap;
+        bestMatch = s;
+      }
+    }
+    if (maxOverlap > 0) return bestMatch;
+
+    return null;
   }
 }

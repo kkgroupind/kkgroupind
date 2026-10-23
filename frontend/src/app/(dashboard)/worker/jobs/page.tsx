@@ -335,17 +335,38 @@ export default function WorkerJobsPage() {
                                 : '🔧 Fixed Visit'}
                             </span>
                           )}
-                          {job.status === 'COMPLETED' && job.totalCalculatedWage && job.totalCalculatedWage > 0 ? (
-                            <span className="text-[10px] sm:text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-md border border-emerald-200">
-                              Payout: ₹{job.totalCalculatedWage.toLocaleString()}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 bg-slate-100 px-2 sm:px-2.5 py-0.5 rounded-md border border-slate-200">
-                              {job.status === 'COMPLETED'
-                                ? (language === 'ml' ? 'വേതനം: ഓഫീസ് അനുമതിക്കായി കാത്തിരിക്കുന്നു' : 'Payout: Awaiting approval')
-                                : (language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion')}
-                            </span>
-                          )}
+                          {(() => {
+                            const effectiveWage =
+                              job.totalCalculatedWage && job.totalCalculatedWage > 0
+                                ? job.totalCalculatedWage
+                                : job.workerUnitWage && job.completedUnits
+                                ? Math.round(job.workerUnitWage * job.completedUnits)
+                                : null;
+
+                            if (job.status === 'COMPLETED' && effectiveWage && effectiveWage > 0) {
+                              return (
+                                <span className="text-[10px] sm:text-[11px] font-mono font-black text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 rounded-md border border-emerald-200">
+                                  Payout: ₹{effectiveWage.toLocaleString()}
+                                </span>
+                              );
+                            }
+
+                            if (job.workerUnitWage) {
+                              return (
+                                <span className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50/80 px-2 sm:px-2.5 py-0.5 rounded-md border border-emerald-200">
+                                  Pay: ₹{job.workerUnitWage}/{job.unitLabel || 'unit'}
+                                </span>
+                              );
+                            }
+
+                            return (
+                              <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 bg-slate-100 px-2 sm:px-2.5 py-0.5 rounded-md border border-slate-200">
+                                {job.status === 'COMPLETED'
+                                  ? (language === 'ml' ? 'വേതനം: ഓഫീസ് അനുമതിക്കായി കാത്തിരിക്കുന്നു' : 'Payout: Awaiting approval')
+                                  : (language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion')}
+                              </span>
+                            );
+                          })()}
                           {job.completedUnits ? (
                             <span className="text-[10px] sm:text-[11px] font-mono font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
                               {job.completedUnits} {unitLabel}s

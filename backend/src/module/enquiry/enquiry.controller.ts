@@ -9,7 +9,8 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { CurrentUser, Public, Roles } from '../../common';
+import { Throttle } from '@nestjs/throttler';
+import { CurrentUser, Public, Roles, RATE_LIMITS } from '../../common';
 import { Role, ServiceStatus } from '../../database';
 import { EnquiryService } from './enquiry.service';
 import {
@@ -27,6 +28,7 @@ import {
   UpdateJobPayDto,
 } from './dto';
 
+@Throttle({ default: RATE_LIMITS.OPERATIONS })
 @Controller('enquiries')
 export class EnquiryController {
   constructor(private readonly enquiryService: EnquiryService) {}

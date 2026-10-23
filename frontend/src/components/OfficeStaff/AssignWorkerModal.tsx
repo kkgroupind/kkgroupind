@@ -19,6 +19,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
+import { adminServicesService, ServiceItem } from '@/services/Admin/services';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
 
 const ASSIGN_WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
@@ -30,6 +31,89 @@ const ASSIGN_WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
   { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry / Construction)' },
   { value: 'FIXED_VISIT', label: '🔧 Fixed Visit (Plumbing / Inspection)' },
 ];
+
+let cachedPublicServices: ServiceItem[] | null = null;
+let cachedServicesPromise: Promise<ServiceItem[]> | null = null;
+
+async function getCachedPublicServices(): Promise<ServiceItem[]> {
+  if (cachedPublicServices) return cachedPublicServices;
+  if (!cachedServicesPromise) {
+    cachedServicesPromise = adminServicesService
+      .listPublicServices()
+      .then((res) => {
+        cachedPublicServices = Array.isArray(res) ? res : [];
+        return cachedPublicServices;
+      })
+      .catch(() => {
+        cachedServicesPromise = null;
+        return [];
+      });
+  }
+  return cachedServicesPromise;
+}
+
+export function findMatchingCatalogService(
+  serviceName: string,
+  catalog: ServiceItem[],
+): ServiceItem | undefined {
+  if (!catalog || !catalog.length || !serviceName) return undefined;
+  const clean = serviceName.trim().toLowerCase();
+
+  // 1. Direct equality on name or slug
+  let found = catalog.find(
+    (s) => s.name.toLowerCase() === clean || (s.slug && s.slug.toLowerCase() === clean),
+  );
+  if (found) return found;
+
+  // 2. Direct substring containment (either direction)
+  found = catalog.find(
+    (s) =>
+      clean.includes(s.name.toLowerCase()) ||
+      s.name.toLowerCase().includes(clean) ||
+      (s.slug && clean.includes(s.slug.toLowerCase())),
+  );
+  if (found) return found;
+
+  // 3. Domain keyword cluster recognition (Coconut Care, JCB, Trades)
+  const isCoconut = /coco|coconut|palm|tree|തെങ്ങ്/i.test(clean);
+  const isJcb = /jcb|excavat|loader|crane|earthmov|tractor|മണ്ണെടു/i.test(clean);
+  const isPainting = /paint|varnish|coat|പെയിന്റ്/i.test(clean);
+  const isTiling = /tile|marble|granite|ടൈൽ/i.test(clean);
+  const isElectrical = /electr|wir|വയറിം/i.test(clean);
+  const isPlumbing = /plumb|pipe|പൈപ്പ്/i.test(clean);
+  const isBorewell = /bore|drill|കിണർ/i.test(clean);
+  const isMasonry = /mason|brick|plaster|തേപ്പ്/i.test(clean);
+
+  found = catalog.find((s) => {
+    const sText = `${s.name} ${s.category || ''} ${s.slug} ${s.description || ''}`.toLowerCase();
+    if (isCoconut && (s.wageType === 'PER_TREE' || /coco|coconut|palm|tree/i.test(sText))) return true;
+    if (isJcb && (/jcb|excavat|loader|crane|earthmov/i.test(sText) || s.wageType === 'HOURLY')) return true;
+    if (isPainting && /paint/i.test(sText)) return true;
+    if (isTiling && /tile|marble|granite/i.test(sText)) return true;
+    if (isElectrical && /electr|wir/i.test(sText)) return true;
+    if (isPlumbing && /plumb/i.test(sText)) return true;
+    if (isBorewell && /bore|drill/i.test(sText)) return true;
+    if (isMasonry && /mason|brick|plaster/i.test(sText)) return true;
+    return false;
+  });
+  if (found) return found;
+
+  // 4. Token overlap scoring fallback
+  const tokens = clean.split(/[\s,/-]+/).filter((t) => t.length > 2);
+  let bestMatch: ServiceItem | undefined = undefined;
+  let maxOverlap = 0;
+  for (const s of catalog) {
+    const sTokens = `${s.name} ${s.category || ''} ${s.slug}`.toLowerCase().split(/[\s,/-]+/);
+    const overlap = tokens.filter((t) => sTokens.includes(t)).length;
+    if (overlap > maxOverlap) {
+      maxOverlap = overlap;
+      bestMatch = s;
+    }
+  }
+  if (maxOverlap > 0) return bestMatch;
+
+  return undefined;
+}
 
 interface AssignWorkerModalProps {
   isOpen: boolean;
@@ -45,10 +129,11 @@ export function AssignWorkerModal({
   onClose,
   enquiry,
   token,
+  workers: propWorkers,
   onAssignedSuccess,
 }: AssignWorkerModalProps) {
-  const [workers, setWorkers] = useState<WorkerWithAvailability[]>([]);
-  const [loadingWorkers, setLoadingWorkers] = useState(true);
+  const [workers, setWorkers] = useState<WorkerWithAvailability[]>(propWorkers || []);
+  const [loadingWorkers, setLoadingWorkers] = useState(false);
   const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
   const [workerSearch, setWorkerSearch] = useState('');
 
@@ -65,71 +150,16 @@ export function AssignWorkerModal({
   const [unitLabel, setUnitLabel] = useState('Hour');
   const [deadline, setDeadline] = useState('');
 
+  // Pay & Wage configuration state
+  const [defaultWorkerWage, setDefaultWorkerWage] = useState<number | null>(null);
+  const [defaultCustomerRate, setDefaultCustomerRate] = useState<number | null>(null);
+  const [matchedServiceName, setMatchedServiceName] = useState<string | null>(null);
+  const [workerUnitWage, setWorkerUnitWage] = useState<number | ''>('');
+  const [unitRate, setUnitRate] = useState<number | ''>('');
+  const [isCustomPay, setIsCustomPay] = useState(false);
+
   const [assigning, setAssigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen && token) {
-      fetchWorkers();
-      setSelectedWorkerId(null);
-      setSelectedSquadWorkerIds([]);
-      setLeadWorkerId(null);
-      setIsSquadMode(false);
-      setError(null);
-      setWorkerSearch('');
-
-      if (enquiry) {
-        setMapUrl(enquiry.mapUrl || '');
-        setLocationRemarks(enquiry.locationRemarks || '');
-        setNotes(enquiry.notes || '');
-
-        const sName = (enquiry.serviceName || '').toLowerCase();
-        let detectedType = enquiry.wageType || 'HOURLY';
-        let detectedUnit = enquiry.unitLabel || 'Hour';
-
-        const isMachinery =
-          sName.includes('jcb') ||
-          sName.includes('excavat') ||
-          sName.includes('loader') ||
-          sName.includes('crane') ||
-          sName.includes('earthmov') ||
-          sName.includes('tractor');
-
-        const shouldAutoClassify =
-          !enquiry.wageType ||
-          (enquiry.wageType === 'HOURLY' && !isMachinery);
-
-        if (shouldAutoClassify) {
-          if (sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || sName.includes('tree')) {
-            detectedType = 'PER_TREE';
-            detectedUnit = 'Tree';
-          } else if (isMachinery) {
-            detectedType = 'HOURLY';
-            detectedUnit = 'Hour';
-          } else if (sName.includes('paint') || sName.includes('tile') || sName.includes('marble') || sName.includes('granite')) {
-            detectedType = 'PER_SQFT';
-            detectedUnit = 'Sq. Ft.';
-          } else if (sName.includes('electr') || sName.includes('wir')) {
-            detectedType = 'PER_POINT';
-            detectedUnit = 'Point';
-          } else if (sName.includes('bore') || sName.includes('drill')) {
-            detectedType = 'PER_FOOT';
-            detectedUnit = 'Foot';
-          } else if (sName.includes('mason') || sName.includes('brick')) {
-            detectedType = 'DAILY_WAGE';
-            detectedUnit = 'Day / Shift';
-          } else if (sName.includes('plumb')) {
-            detectedType = 'FIXED_VISIT';
-            detectedUnit = 'Visit / Inspection';
-          }
-        }
-
-        setWageType(detectedType);
-        setUnitLabel(detectedUnit);
-        setDeadline(enquiry.deadline ? enquiry.deadline.split('T')[0] : '');
-      }
-    }
-  }, [isOpen, token, enquiry]);
 
   const fetchWorkers = async () => {
     if (!token) return;
@@ -143,6 +173,155 @@ export function AssignWorkerModal({
       setLoadingWorkers(false);
     }
   };
+
+  // Sync propWorkers if provided, or fetch once when modal opens
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (propWorkers && propWorkers.length > 0) {
+      setWorkers(propWorkers);
+      setLoadingWorkers(false);
+    } else if (token && workers.length === 0) {
+      fetchWorkers();
+    }
+  }, [isOpen, propWorkers, token]);
+
+  // Synchronize modal state with enquiry when selected enquiry changes or modal opens
+  useEffect(() => {
+    if (!isOpen || !enquiry) return;
+
+    setSelectedWorkerId(null);
+    setSelectedSquadWorkerIds([]);
+    setLeadWorkerId(null);
+    setIsSquadMode(false);
+    setError(null);
+    setWorkerSearch('');
+
+    setMapUrl(enquiry.mapUrl || '');
+    setLocationRemarks(enquiry.locationRemarks || '');
+    setNotes(enquiry.notes || '');
+
+    const sName = (enquiry.serviceName || '').toLowerCase();
+    let detectedType = enquiry.wageType || 'HOURLY';
+    let detectedUnit = enquiry.unitLabel || 'Hour';
+
+    const isMachinery =
+      sName.includes('jcb') ||
+      sName.includes('excavat') ||
+      sName.includes('loader') ||
+      sName.includes('crane') ||
+      sName.includes('earthmov') ||
+      sName.includes('tractor');
+
+    const shouldAutoClassify =
+      !enquiry.wageType ||
+      (enquiry.wageType === 'HOURLY' && !isMachinery);
+
+    if (shouldAutoClassify) {
+      if (sName.includes('cococare') || sName.includes('coconut') || sName.includes('palm') || sName.includes('tree')) {
+        detectedType = 'PER_TREE';
+        detectedUnit = 'Tree';
+      } else if (isMachinery) {
+        detectedType = 'HOURLY';
+        detectedUnit = 'Hour';
+      } else if (sName.includes('paint') || sName.includes('tile') || sName.includes('marble') || sName.includes('granite')) {
+        detectedType = 'PER_SQFT';
+        detectedUnit = 'Sq. Ft.';
+      } else if (sName.includes('electr') || sName.includes('wir')) {
+        detectedType = 'PER_POINT';
+        detectedUnit = 'Point';
+      } else if (sName.includes('bore') || sName.includes('drill')) {
+        detectedType = 'PER_FOOT';
+        detectedUnit = 'Foot';
+      } else if (sName.includes('mason') || sName.includes('brick')) {
+        detectedType = 'DAILY_WAGE';
+        detectedUnit = 'Day / Shift';
+      } else if (sName.includes('plumb')) {
+        detectedType = 'FIXED_VISIT';
+        detectedUnit = 'Visit / Inspection';
+      }
+    }
+
+    setWageType(detectedType);
+    setUnitLabel(detectedUnit);
+    setDeadline(enquiry.deadline ? enquiry.deadline.split('T')[0] : '');
+
+    // Standard default rate resolution
+    let defWorkerPay: number | null = null;
+    let defCustRate: number | null = null;
+
+    if (detectedType === 'PER_TREE') {
+      defWorkerPay = 80;
+      defCustRate = 120;
+    } else if (detectedType === 'HOURLY') {
+      defWorkerPay = 900;
+      defCustRate = 1600;
+    } else if (detectedType === 'PER_SQFT') {
+      defWorkerPay = 14;
+      defCustRate = 24;
+    } else if (detectedType === 'PER_POINT') {
+      defWorkerPay = 260;
+      defCustRate = 450;
+    } else if (detectedType === 'PER_FOOT') {
+      defWorkerPay = 65;
+      defCustRate = 115;
+    } else if (detectedType === 'DAILY_WAGE') {
+      defWorkerPay = 1050;
+      defCustRate = 1500;
+    } else if (detectedType === 'FIXED_VISIT') {
+      defWorkerPay = 220;
+      defCustRate = 350;
+    }
+
+    // Fetch precise catalog rates from cached active services
+    getCachedPublicServices()
+      .then((catalog) => {
+        const found = findMatchingCatalogService(enquiry.serviceName, catalog);
+        if (found) {
+          setMatchedServiceName(found.name);
+          if (found.baseWorkerWage != null) defWorkerPay = found.baseWorkerWage;
+          if (found.baseCustomerRate != null) defCustRate = found.baseCustomerRate;
+          if (found.unitLabel) setUnitLabel(found.unitLabel);
+          if (found.wageType) setWageType(found.wageType);
+        } else {
+          setMatchedServiceName(null);
+        }
+
+        setDefaultWorkerWage(defWorkerPay);
+        setDefaultCustomerRate(defCustRate);
+
+        if (enquiry.workerUnitWage != null) {
+          setWorkerUnitWage(enquiry.workerUnitWage);
+          setIsCustomPay(enquiry.workerUnitWage !== defWorkerPay);
+        } else {
+          setWorkerUnitWage(defWorkerPay ?? '');
+          setIsCustomPay(false);
+        }
+
+        if (enquiry.unitRate != null) {
+          setUnitRate(enquiry.unitRate);
+        } else {
+          setUnitRate(defCustRate ?? '');
+        }
+      })
+      .catch(() => {
+        setMatchedServiceName(null);
+        setDefaultWorkerWage(defWorkerPay);
+        setDefaultCustomerRate(defCustRate);
+        if (enquiry.workerUnitWage != null) {
+          setWorkerUnitWage(enquiry.workerUnitWage);
+          setIsCustomPay(enquiry.workerUnitWage !== defWorkerPay);
+        } else {
+          setWorkerUnitWage(defWorkerPay ?? '');
+          setIsCustomPay(false);
+        }
+        if (enquiry.unitRate != null) {
+          setUnitRate(enquiry.unitRate);
+        } else {
+          setUnitRate(defCustRate ?? '');
+        }
+      });
+  }, [isOpen, enquiry?.id]);
 
   const filteredWorkers = useMemo(() => {
     return workers.filter((w) => {
@@ -193,6 +372,14 @@ export function AssignWorkerModal({
         ? leadWorkerId || selectedSquadWorkerIds[0]
         : selectedWorkerId!;
 
+      const finalWorkerWage = isCustomPay && workerUnitWage !== ''
+        ? Number(workerUnitWage)
+        : (defaultWorkerWage ?? (workerUnitWage !== '' ? Number(workerUnitWage) : undefined));
+
+      const finalUnitRate = isCustomPay && unitRate !== ''
+        ? Number(unitRate)
+        : (defaultCustomerRate ?? (unitRate !== '' ? Number(unitRate) : undefined));
+
       await EnquiryService.assignWorker(
         enquiry.id,
         {
@@ -204,6 +391,8 @@ export function AssignWorkerModal({
           isHourlyCalculated: isHourly,
           wageType,
           unitLabel: unitLabel.trim() || 'Unit',
+          workerUnitWage: finalWorkerWage,
+          unitRate: finalUnitRate,
           deadline: deadline || undefined,
         },
         undefined,
@@ -688,15 +877,36 @@ export function AssignWorkerModal({
                       <AdminDropdown
                         options={ASSIGN_WAGE_TYPE_OPTIONS}
                         value={wageType}
-                        onChange={(newType) => {
+                        onChange={async (newType) => {
                           setWageType(newType);
-                          if (newType === 'PER_TREE') { setUnitLabel('Tree'); }
-                          else if (newType === 'HOURLY') { setUnitLabel('Hour'); }
-                          else if (newType === 'PER_SQFT') { setUnitLabel('Sq. Ft.'); }
-                          else if (newType === 'PER_POINT') { setUnitLabel('Point'); }
-                          else if (newType === 'PER_FOOT') { setUnitLabel('Foot'); }
-                          else if (newType === 'DAILY_WAGE') { setUnitLabel('Day / Shift'); }
-                          else if (newType === 'FIXED_VISIT') { setUnitLabel('Visit'); }
+                          let uLabel = 'Hour';
+                          if (newType === 'PER_TREE') { uLabel = 'Tree'; }
+                          else if (newType === 'HOURLY') { uLabel = 'Hour'; }
+                          else if (newType === 'PER_SQFT') { uLabel = 'Sq. Ft.'; }
+                          else if (newType === 'PER_POINT') { uLabel = 'Point'; }
+                          else if (newType === 'PER_FOOT') { uLabel = 'Foot'; }
+                          else if (newType === 'DAILY_WAGE') { uLabel = 'Day / Shift'; }
+                          else if (newType === 'FIXED_VISIT') { uLabel = 'Visit'; }
+                          setUnitLabel(uLabel);
+
+                          try {
+                            const catalog = await getCachedPublicServices();
+                            const matched = catalog.find((s) => s.wageType === newType);
+                            if (matched) {
+                              setMatchedServiceName(matched.name);
+                              if (matched.baseWorkerWage != null) {
+                                setDefaultWorkerWage(matched.baseWorkerWage);
+                                if (!isCustomPay) setWorkerUnitWage(matched.baseWorkerWage);
+                              }
+                              if (matched.baseCustomerRate != null) {
+                                setDefaultCustomerRate(matched.baseCustomerRate);
+                                if (!isCustomPay) setUnitRate(matched.baseCustomerRate);
+                              }
+                              if (matched.unitLabel) setUnitLabel(matched.unitLabel);
+                            }
+                          } catch {
+                            // ignore catalog update on failure
+                          }
                         }}
                         variant="blue"
                         size="sm"
@@ -717,15 +927,146 @@ export function AssignWorkerModal({
                     </div>
                   </div>
 
-                  {/* Post-completion pricing notice */}
-                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900">
-                    <span className="text-base leading-none mt-0.5">ℹ️</span>
-                    <div className="space-y-0.5">
-                      <strong className="block font-bold">Rates &amp; Payouts Finalized Post-Completion</strong>
-                      <span>
-                        Pricing and worker wages are not set at dispatch. After the operative completes the job on site, Admin or Office Staff will review the logged units/hours and assign payout via <span className="font-bold text-[#1B2CC1]">&quot;Finalize Pay&quot;</span>. Workers will only see their finalized wage after this approval.
-                      </span>
+                  {/* Pay Setup & Custom Wage Toggle */}
+                  <div className="pt-2 border-t border-slate-200 space-y-3">
+                    {/* Header Strip with Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                      <div>
+                        <div className="text-xs font-bold text-[#091540] flex items-center gap-2">
+                          <span>Worker Pay &amp; Billing Rates</span>
+                          <span className={`text-[10px] font-mono px-2 py-0.2 rounded-full font-bold ${
+                            isCustomPay
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                          }`}>
+                            {isCustomPay ? 'Custom Override Active' : 'Service Standard Rates'}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {isCustomPay
+                            ? 'Custom wage and billing rate will be assigned for this specific work order.'
+                            : `Default catalog pay applies: ₹${defaultWorkerWage ?? workerUnitWage ?? '—'} / ${unitLabel}`}
+                        </p>
+                      </div>
+
+                      {/* Modify Pay Like Custom Toggle */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-semibold text-slate-700 hidden sm:inline">
+                          Modify Pay (Custom)
+                        </span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={isCustomPay}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setIsCustomPay(checked);
+                              if (!checked) {
+                                setWorkerUnitWage(defaultWorkerWage ?? '');
+                                setUnitRate(defaultCustomerRate ?? '');
+                              }
+                            }}
+                            className="sr-only peer"
+                          />
+                          <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#1B2CC1]" />
+                        </label>
+                      </div>
                     </div>
+
+                    {/* Catalog Sync Indicator Badge */}
+                    {matchedServiceName && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-[#EAF4EE] to-emerald-50/50 border border-[#88B793]/50 text-[#134B4C] text-[11px]">
+                        <ShieldCheck className="w-4 h-4 text-[#2A835F] shrink-0" />
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full gap-1">
+                          <span>
+                            Rates synced from catalog: <strong className="font-bold text-[#091540]">{matchedServiceName}</strong>
+                          </span>
+                          <span className="font-mono text-[10px] text-[#2A835F] font-bold">
+                            Base: ₹{defaultWorkerWage ?? '—'}/{unitLabel} (Worker) • ₹{defaultCustomerRate ?? '—'}/{unitLabel} (Client)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Standard Rates Summary (when toggle is off) */}
+                    {!isCustomPay ? (
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider block">
+                              Default Worker Wage
+                            </span>
+                            <span className="text-[11px] text-emerald-700">തൊഴിലാളി വേതനം</span>
+                          </div>
+                          <span className="font-mono text-sm font-black text-emerald-800">
+                            ₹{defaultWorkerWage ?? workerUnitWage ?? '—'} <span className="text-[10px] font-normal text-emerald-600">/{unitLabel}</span>
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200 flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block">
+                              Default Client Rate
+                            </span>
+                            <span className="text-[11px] text-blue-700">ഉപഭോക്തൃ നിരക്ക്</span>
+                          </div>
+                          <span className="font-mono text-sm font-black text-blue-800">
+                            ₹{defaultCustomerRate ?? unitRate ?? '—'} <span className="text-[10px] font-normal text-blue-600">/{unitLabel}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Custom Rate Inputs (when toggle is on) */
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-amber-50/50 border border-amber-200 animate-in fade-in duration-200">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                            Custom Worker Pay (₹ / {unitLabel}) *
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 font-mono">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={workerUnitWage}
+                              onChange={(e) => setWorkerUnitWage(e.target.value === '' ? '' : Number(e.target.value))}
+                              placeholder={String(defaultWorkerWage || 0)}
+                              className="w-full bg-white border border-slate-300 rounded-xl pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#1B2CC1]"
+                              required
+                            />
+                          </div>
+                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                            Amount worker receives per completed {unitLabel}
+                          </span>
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                            Custom Client Rate (₹ / {unitLabel}) *
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 font-mono">
+                              ₹
+                            </span>
+                            <input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={unitRate}
+                              onChange={(e) => setUnitRate(e.target.value === '' ? '' : Number(e.target.value))}
+                              placeholder={String(defaultCustomerRate || 0)}
+                              className="w-full bg-white border border-slate-300 rounded-xl pl-7 pr-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#1B2CC1]"
+                              required
+                            />
+                          </div>
+                          <span className="text-[10px] text-slate-500 block mt-0.5">
+                            Customer billing charge per completed {unitLabel}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
