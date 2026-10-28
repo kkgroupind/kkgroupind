@@ -6,3 +6,4 @@ export * from './accept-job.dto';
 export * from './job-timer.dto';
 export * from './reached-site.dto';
 export * from './update-job-pay.dto';
+export * from './add-extra-trees.dto';

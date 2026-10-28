@@ -21,6 +21,19 @@ export class StopWorkTimerDto {
   @IsOptional()
   @IsString()
   completionNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  workStartedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  workEndedAt?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  totalBreakMinutes?: number;
 }
 
 export class PauseWorkTimerDto {

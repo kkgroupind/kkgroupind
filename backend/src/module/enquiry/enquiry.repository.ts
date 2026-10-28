@@ -111,6 +111,19 @@ export class EnquiryRepository {
           creator: {
             select: { id: true, name: true, username: true, phone: true, role: true },
           },
+          financialTransactions: {
+            select: {
+              id: true,
+              transactionNumber: true,
+              type: true,
+              category: true,
+              amount: true,
+              dateString: true,
+              paymentMethod: true,
+              status: true,
+              workerId: true,
+            },
+          },
         },
       }),
       this.prisma.serviceEnquiry.count({ where }),
@@ -127,6 +140,14 @@ export class EnquiryRepository {
         officeStaff: { select: { id: true, name: true, username: true, phone: true, avatar: true } },
         worker: { select: { id: true, name: true, username: true, phone: true, avatar: true, workerStatus: true } },
         creator: { select: { id: true, name: true, username: true, phone: true, role: true } },
+        financialTransactions: {
+          include: {
+            recordedBy: { select: { id: true, name: true, username: true, role: true, avatar: true } },
+            verifiedBy: { select: { id: true, name: true, username: true, role: true } },
+            worker: { select: { id: true, name: true, username: true, phone: true } },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
   }
@@ -355,6 +376,9 @@ export class EnquiryRepository {
       completedUnits?: number;
       specificationDetails?: any;
       completionNotes?: string;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      totalBreakMinutes?: number;
     },
   ) {
     return this.prisma.$transaction(async (tx) => {
@@ -369,20 +393,39 @@ export class EnquiryRepository {
       const now = new Date();
       let calculatedMinutes = data?.durationMinutes;
 
+      // Handle worker manual start/end times if provided
+      let effectiveStart = enquiry.workStartedAt;
+      if (data?.workStartedAt) {
+        const candidate = new Date(data.workStartedAt);
+        if (!isNaN(candidate.getTime())) {
+          effectiveStart = candidate;
+        }
+      }
+
+      let effectiveEnd = now;
+      if (data?.workEndedAt) {
+        const candidate = new Date(data.workEndedAt);
+        if (!isNaN(candidate.getTime())) {
+          effectiveEnd = candidate;
+        }
+      }
+
       const spec = (data?.specificationDetails ?? enquiry.specificationDetails) as any || {};
       const breaks = Array.isArray(spec.breaks) ? [...spec.breaks] : [];
-      let totalBreakMinutes = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
-      let totalBreakSeconds = breaks.reduce((acc: number, b: any) => acc + (b.durationSeconds || (b.durationMinutes || 0) * 60), 0);
+      let totalBreakMinutes = data?.totalBreakMinutes !== undefined
+        ? data.totalBreakMinutes
+        : breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+      let totalBreakSeconds = totalBreakMinutes * 60;
 
       // Finalize active break if still ongoing when completing
-      if (spec.activeBreak?.startedAt) {
+      if (spec.activeBreak?.startedAt && data?.totalBreakMinutes === undefined) {
         const breakStartMs = new Date(spec.activeBreak.startedAt).getTime();
-        const breakSec = Math.max(1, Math.floor((now.getTime() - breakStartMs) / 1000));
+        const breakSec = Math.max(1, Math.floor((effectiveEnd.getTime() - breakStartMs) / 1000));
         const breakMin = Math.max(1, Math.round(breakSec / 60));
         breaks.push({
           reason: spec.activeBreak.reason || 'General Break',
           start: spec.activeBreak.startedAt,
-          end: now.toISOString(),
+          end: effectiveEnd.toISOString(),
           durationMinutes: breakMin,
           durationSeconds: breakSec,
           notes: spec.activeBreak.notes,
@@ -393,13 +436,13 @@ export class EnquiryRepository {
 
       let grossMinutes = 0;
       let grossSeconds = 0;
-      if (enquiry.workStartedAt) {
-        const diffMs = now.getTime() - new Date(enquiry.workStartedAt).getTime();
+      if (effectiveStart) {
+        const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
         grossMinutes = Math.max(1, Math.round(diffMs / (1000 * 60)));
         grossSeconds = Math.max(1, Math.floor(diffMs / 1000));
       }
 
-      if (calculatedMinutes === undefined && enquiry.workStartedAt) {
+      if (calculatedMinutes === undefined && effectiveStart) {
         calculatedMinutes = Math.max(1, grossMinutes - totalBreakMinutes);
       }
 
@@ -409,8 +452,10 @@ export class EnquiryRepository {
       // Permanent and comprehensive time tracking specification details
       const updatedSpec = {
         ...spec,
-        workStartedAt: enquiry.workStartedAt ? enquiry.workStartedAt.toISOString() : undefined,
-        workEndedAt: now.toISOString(),
+        workStartedAt: effectiveStart ? effectiveStart.toISOString() : undefined,
+        workEndedAt: effectiveEnd.toISOString(),
+        inTime: effectiveStart ? effectiveStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined,
+        outTime: effectiveEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         grossDurationMinutes: grossMinutes,
         grossDurationSeconds: grossSeconds,
         actualWorkMinutes,
@@ -421,6 +466,7 @@ export class EnquiryRepository {
         breakCount: breaks.length,
         activeBreak: null,
         isTimerPaused: false,
+        workerManualSubmission: true,
       };
 
       // Compute completed units & wage/cost totals
@@ -451,8 +497,9 @@ export class EnquiryRepository {
         where: { id: enquiryId },
         data: {
           status: ServiceStatus.COMPLETED,
-          workEndedAt: now,
-          completedAt: now,
+          workStartedAt: effectiveStart,
+          workEndedAt: effectiveEnd,
+          completedAt: effectiveEnd,
           workDurationMinutes: actualWorkMinutes,
           completedUnits: finalCompletedUnits,
           totalCalculatedWage: computedWage,
@@ -509,6 +556,10 @@ export class EnquiryRepository {
     data?: {
       completedUnits?: number;
       specificationDetails?: any;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      workDurationMinutes?: number;
+      totalBreakMinutes?: number;
     },
   ) {
     return this.prisma.$transaction(async (tx) => {
@@ -548,17 +599,65 @@ export class EnquiryRepository {
       const isStartingWork =
         status === ServiceStatus.IN_PROGRESS && !enquiry.workStartedAt;
 
+      // Handle worker manual start/end times if provided
+      let effectiveStart = enquiry.workStartedAt;
+      if (data?.workStartedAt) {
+        const candidate = new Date(data.workStartedAt);
+        if (!isNaN(candidate.getTime())) {
+          effectiveStart = candidate;
+        }
+      } else if (isStartingWork) {
+        effectiveStart = new Date();
+      }
+
+      let effectiveEnd = enquiry.workEndedAt;
+      if (data?.workEndedAt) {
+        const candidate = new Date(data.workEndedAt);
+        if (!isNaN(candidate.getTime())) {
+          effectiveEnd = candidate;
+        }
+      } else if (isCompleted && !effectiveEnd) {
+        effectiveEnd = new Date();
+      }
+
+      let workDurationMinutes = data?.workDurationMinutes ?? enquiry.workDurationMinutes;
+      if (workDurationMinutes === undefined && effectiveStart && effectiveEnd) {
+        const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
+        const grossMins = Math.max(1, Math.round(diffMs / (1000 * 60)));
+        const breakMins = data?.totalBreakMinutes || (enquiry.specificationDetails as any)?.totalBreakMinutes || 0;
+        workDurationMinutes = Math.max(1, grossMins - breakMins);
+      }
+
+      const existingSpec = (enquiry.specificationDetails as any) || {};
+      const mergedSpec = {
+        ...existingSpec,
+        ...(data?.specificationDetails || {}),
+        ...(data?.totalBreakMinutes !== undefined ? { totalBreakMinutes: data.totalBreakMinutes } : {}),
+        ...(workDurationMinutes !== undefined ? { actualWorkMinutes: workDurationMinutes } : {}),
+        ...(effectiveStart ? {
+          workStartedAt: effectiveStart.toISOString(),
+          inTime: effectiveStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        } : {}),
+        ...(effectiveEnd ? {
+          workEndedAt: effectiveEnd.toISOString(),
+          outTime: effectiveEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        } : {}),
+        ...(isCompleted ? { workerManualSubmission: true } : {}),
+      };
+
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
         data: {
           status,
           notes: notes ? notes : undefined,
-          workStartedAt: isStartingWork ? new Date() : undefined,
-          completedAt: isCompleted ? new Date() : undefined,
+          workStartedAt: effectiveStart || undefined,
+          workEndedAt: effectiveEnd || undefined,
+          workDurationMinutes: workDurationMinutes || undefined,
+          completedAt: isCompleted ? (effectiveEnd || new Date()) : undefined,
           completedUnits: finalCompletedUnits !== undefined ? finalCompletedUnits : undefined,
           totalCalculatedWage: computedWage !== undefined ? computedWage : undefined,
           totalCalculatedCost: computedCost !== undefined ? computedCost : undefined,
-          specificationDetails: data?.specificationDetails ?? undefined,
+          specificationDetails: mergedSpec,
         },
       });
 
@@ -663,6 +762,33 @@ export class EnquiryRepository {
       },
       include: {
         worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+      },
+    });
+  }
+
+  async updateExtraTrees(
+    enquiryId: string,
+    data: {
+      completedUnits: number;
+      totalCalculatedWage?: number | null;
+      totalCalculatedCost?: number | null;
+      specificationDetails: any;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.serviceEnquiry.update({
+      where: { id: enquiryId },
+      data: {
+        completedUnits: data.completedUnits,
+        totalCalculatedWage: data.totalCalculatedWage !== undefined ? data.totalCalculatedWage : undefined,
+        totalCalculatedCost: data.totalCalculatedCost !== undefined ? data.totalCalculatedCost : undefined,
+        specificationDetails: data.specificationDetails,
+        notes: data.notes ? data.notes : undefined,
+      },
+      include: {
+        worker: { select: { id: true, name: true, phone: true } },
         customer: { select: { id: true, name: true, phone: true, email: true } },
         officeStaff: { select: { id: true, name: true, username: true, phone: true } },
       },

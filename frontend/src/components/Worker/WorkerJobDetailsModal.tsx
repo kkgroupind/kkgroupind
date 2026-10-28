@@ -104,6 +104,56 @@ export function WorkerJobDetailsModal({
   const [lastDraftSavedTime, setLastDraftSavedTime] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
+  // Worker Manual Timing Setup States
+  const [manualInTime, setManualInTime] = useState<string>('08:00');
+  const [manualOutTime, setManualOutTime] = useState<string>('14:00');
+  const [manualWorkHours, setManualWorkHours] = useState<number>(5);
+  const [manualWorkMins, setManualWorkMins] = useState<number>(30);
+  const [manualBreakMins, setManualBreakMins] = useState<number>(30);
+
+  const initManualWorkMetrics = () => {
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const formatTime = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    
+    const start = localJob?.workStartedAt ? new Date(localJob.workStartedAt) : new Date(now.getTime() - 4 * 60 * 60 * 1000);
+    const inT = formatTime(start);
+    const outT = formatTime(now);
+    setManualInTime(inT);
+    setManualOutTime(outT);
+
+    const spec = (localJob?.specificationDetails as any) || {};
+    const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
+    const recordedBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
+    const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
+    const totalBreakM = spec.totalBreakMinutes ?? (recordedBreakMins + ongoingBreakMins);
+    setManualBreakMins(totalBreakM);
+
+    const diffMins = Math.max(1, Math.round((now.getTime() - start.getTime()) / (1000 * 60)));
+    const netMins = Math.max(1, diffMins - totalBreakM);
+    setManualWorkHours(Math.floor(netMins / 60));
+    setManualWorkMins(netMins % 60);
+  };
+
+  const handleRecalculateWorkDuration = (inT: string, outT: string, breakM: number) => {
+    if (!inT || !outT) return;
+    const [inH, inM] = inT.split(':').map(Number);
+    const [outH, outM] = outT.split(':').map(Number);
+    if (isNaN(inH) || isNaN(inM) || isNaN(outH) || isNaN(outM)) return;
+    
+    let grossMins = (outH * 60 + outM) - (inH * 60 + inM);
+    if (grossMins < 0) grossMins += 24 * 60; // Crosses midnight
+    const netM = Math.max(1, grossMins - (breakM || 0));
+    setManualWorkHours(Math.floor(netM / 60));
+    setManualWorkMins(netM % 60);
+  };
+
+  // Add Extra Trees Modal state (for Coconut Care accidental count fixes)
+  const [isAddExtraTreesModalOpen, setIsAddExtraTreesModalOpen] = useState(false);
+  const [extraTreesInput, setExtraTreesInput] = useState<number>(3);
+  const [extraTreesNote, setExtraTreesNote] = useState<string>('');
+  const [isSubmittingExtraTrees, setIsSubmittingExtraTrees] = useState(false);
+
   // Sync prop changes
   useEffect(() => {
     setLocalJob(job);
@@ -586,35 +636,62 @@ export function WorkerJobDetailsModal({
     }
   };
 
-  // 6. Worker completes work (Unit count or hourly duration logged)
+  // Add Extra Coconut Trees Handler (when worker accidentally submitted or needs to add more)
+  const handleAddExtraTrees = async () => {
+    if (!token || !localJob) return;
+    if (extraTreesInput <= 0) return;
+    setIsSubmittingExtraTrees(true);
+    setActionError(null);
+    try {
+      const res = await EnquiryService.addExtraTrees(
+        localJob.id,
+        {
+          extraTrees: Number(extraTreesInput),
+          notes: extraTreesNote.trim() || undefined,
+        },
+        token,
+      );
+      if (res?.enquiry) {
+        setLocalJob(res.enquiry);
+        setUnitCount(res.enquiry.completedUnits ?? (unitCount + Number(extraTreesInput)));
+      }
+      setIsAddExtraTreesModalOpen(false);
+      setExtraTreesNote('');
+      setExtraTreesInput(3);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to add extra trees');
+    } finally {
+      setIsSubmittingExtraTrees(false);
+    }
+  };
+
+  // 6. Worker completes work (Unit count, trees, in/out time, pauses, duration logged manually)
   const handleCompleteWork = async () => {
     if (!token || !localJob) return;
     setIsSubmittingAction(true);
     setActionError(null);
 
     try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const parsedStart = manualInTime ? new Date(`${todayStr}T${manualInTime}:00`).toISOString() : undefined;
+      const parsedEnd = manualOutTime ? new Date(`${todayStr}T${manualOutTime}:00`).toISOString() : new Date().toISOString();
+      const netDurationMinutes = Math.max(1, (Number(manualWorkHours) || 0) * 60 + (Number(manualWorkMins) || 0));
+      const totalBreakMinutes = Number(manualBreakMins) || 0;
+      const netHoursDecimal = Math.round((netDurationMinutes / 60) * 10) / 10;
+
       if (isHourly) {
-        const spec = (localJob.specificationDetails as any) || {};
-        const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
-        const recordedBreakMins = breaks.reduce(
-          (acc: number, b: any) => acc + (b.durationMinutes || 0),
-          0,
-        );
-        const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
-        const totalBreakMinutes = recordedBreakMins + ongoingBreakMins;
-
-        const elapsedMinutes = Math.max(1, Math.round(timerSeconds / 60));
-        const netDurationMinutes = Math.max(1, elapsedMinutes - totalBreakMinutes);
-        const netHoursDecimal = Math.round((netDurationMinutes / 60) * 10) / 10;
-
         const res = await EnquiryService.stopWorkTimer(
           localJob.id,
           {
             durationMinutes: netDurationMinutes,
             completedUnits: netHoursDecimal,
+            workStartedAt: parsedStart,
+            workEndedAt: parsedEnd,
+            totalBreakMinutes,
             completionNotes:
               completionNotes.trim() ||
-              `Work completed. Net work time: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m (${totalBreakMinutes}m breaks deducted).`,
+              `Work completed. In-Time: ${manualInTime}, Out-Time: ${manualOutTime}, Work: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m, Paused: ${totalBreakMinutes}m.`,
           },
           token,
         );
@@ -626,9 +703,9 @@ export function WorkerJobDetailsModal({
         const units = Number(unitCount) || 1;
         let notesText = completionNotes.trim();
         if (isCoconut) {
-          notesText = `Harvested ${units} coconut trees. ${crownCleaningDone ? 'Crown cleaned & fronds pruned.' : ''} ${beetleMedicineApplied ? 'Beetle medicine applied.' : ''} ${notesText}`;
+          notesText = `Harvested ${units} coconut trees. (In: ${manualInTime}, Out: ${manualOutTime}, Work: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m, Paused: ${totalBreakMinutes}m). ${crownCleaningDone ? 'Crown cleaned & fronds pruned.' : ''} ${beetleMedicineApplied ? 'Beetle medicine applied.' : ''} ${notesText}`;
         } else {
-          notesText = `Completed ${units} ${unitLabel}s. ${notesText}`;
+          notesText = `Completed ${units} ${unitLabel}s. (In: ${manualInTime}, Out: ${manualOutTime}, Work: ${Math.floor(netDurationMinutes / 60)}h ${netDurationMinutes % 60}m, Paused: ${totalBreakMinutes}m). ${notesText}`;
         }
 
         const res = await EnquiryService.updateWorkerJobStatus(
@@ -638,9 +715,18 @@ export function WorkerJobDetailsModal({
           token,
           {
             completedUnits: units,
+            workStartedAt: parsedStart,
+            workEndedAt: parsedEnd,
+            workDurationMinutes: netDurationMinutes,
+            totalBreakMinutes,
             specificationDetails: {
               crownCleaningDone,
               beetleMedicineApplied,
+              inTime: manualInTime,
+              outTime: manualOutTime,
+              actualWorkMinutes: netDurationMinutes,
+              totalBreakMinutes,
+              workerManualSubmission: true,
             },
           },
         );
@@ -1831,6 +1917,74 @@ export function WorkerJobDetailsModal({
                 </div>
               </div>
 
+              {/* Coconut Tree Specific Extra Trees Section & Breakdown */}
+              {isCoconut && (
+                <div className="mt-2.5 p-3 rounded-xl bg-slate-900/95 border border-emerald-500/30 flex flex-col gap-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <TreePalm className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span className="text-xs font-bold text-white">Harvested Coconut Trees</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExtraTreesInput(3);
+                        setExtraTreesNote('');
+                        setIsAddExtraTreesModalOpen(true);
+                      }}
+                      className="text-[11px] font-bold text-emerald-300 hover:text-white bg-emerald-600/30 hover:bg-emerald-600 px-2.5 py-1 rounded-lg border border-emerald-500/40 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Extra Trees (+ തെങ്ങുകൾ)</span>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs font-mono">
+                    <div className="bg-black/40 px-2.5 py-1.5 rounded-lg border border-slate-750">
+                      <span className="text-slate-400 text-[10px] uppercase font-bold block">Initial Logged</span>
+                      <span className="text-white font-bold">
+                        {spec.initialTreeCount ?? (localJob.completedUnits ? localJob.completedUnits - (spec.extraTreeCount || 0) : unitCount)} Trees
+                      </span>
+                    </div>
+
+                    {spec.extraTreeCount && spec.extraTreeCount > 0 ? (
+                      <div className="bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 text-emerald-300">
+                        <span className="text-emerald-400/80 text-[10px] uppercase font-bold block">Extra Added</span>
+                        <span className="font-bold text-emerald-300">+{spec.extraTreeCount} Trees</span>
+                      </div>
+                    ) : (
+                      <div className="bg-slate-950/40 px-2.5 py-1.5 rounded-lg border border-slate-800 text-slate-500">
+                        <span className="text-slate-500 text-[10px] uppercase font-bold block">Extra Added</span>
+                        <span>0 Trees</span>
+                      </div>
+                    )}
+
+                    <div className="col-span-2 sm:col-span-1 bg-emerald-950/60 px-2.5 py-1.5 rounded-lg border border-emerald-500/40 text-emerald-300 text-left sm:text-right">
+                      <span className="text-emerald-400/80 text-[10px] uppercase font-bold block">Total Trees</span>
+                      <span className="text-sm font-black text-emerald-400">{localJob.completedUnits ?? unitCount} Trees</span>
+                    </div>
+                  </div>
+
+                  {Array.isArray(spec.extraTreeLogs) && spec.extraTreeLogs.length > 0 && (
+                    <div className="mt-1 pt-1.5 border-t border-slate-800 space-y-1">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">
+                        Extra Addition Log:
+                      </span>
+                      {spec.extraTreeLogs.map((log: any, idx: number) => (
+                        <div key={idx} className="text-[10px] text-slate-400 flex items-center justify-between">
+                          <span>
+                            +{log.addedCount} trees {log.notes ? `(${log.notes})` : ''}
+                          </span>
+                          <span className="font-mono text-emerald-400">
+                            {log.addedAt ? new Date(log.addedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-3 pt-3 border-t border-emerald-500/20">
                 {spec.paymentReceivedAt ? (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 justify-center">
@@ -1946,6 +2100,7 @@ export function WorkerJobDetailsModal({
               <button
                 type="button"
                 onClick={() => {
+                  initManualWorkMetrics();
                   if (isHourly) {
                     setIsStopTimerConfirmOpen(true);
                   } else {
@@ -2207,50 +2362,124 @@ export function WorkerJobDetailsModal({
 
         {/* ----------------- MODAL 2: STOP TIMER & COMPLETE CONFIRMATION MODAL ----------------- */}
         {isStopTimerConfirmOpen && (() => {
-          const spec = (localJob.specificationDetails as any) || {};
-          const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
-          const recordedBreakMins = breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
-          const ongoingBreakMins = activeBreak ? Math.max(1, Math.round(breakTimerSeconds / 60)) : 0;
-          const totalBreakMinutes = recordedBreakMins + ongoingBreakMins;
-
-          const elapsedMinutes = Math.max(1, Math.round(timerSeconds / 60));
-          const netDurationMinutes = Math.max(1, elapsedMinutes - totalBreakMinutes);
+          const netDurationMinutes = Math.max(1, (Number(manualWorkHours) || 0) * 60 + (Number(manualWorkMins) || 0));
           const netHoursDecimal = Math.round((netDurationMinutes / 60) * 10) / 10;
           const estimatedWage = Math.round(netHoursDecimal * workerRate);
 
           return (
             <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-              <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
+              <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
                     <StopCircle className="w-6 h-6" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">
-                      Stop Timer &amp; Complete Job?
+                      Review Work Timing &amp; Submit
                     </h3>
                     <p className="text-xs text-emerald-300/80">
-                      ജോലി പൂർത്തിയാക്കി സമർപ്പിക്കുക
+                      ജോലി സമയവും പൂർത്തീകരണവും സമർപ്പിക്കുക
                     </p>
                   </div>
                 </div>
 
-                {/* Machinery Summary Card */}
-                <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-2 text-xs">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Gross Machine Time Elapsed:</span>
-                    <span className="font-mono font-bold text-white">{Math.floor(elapsedMinutes / 60)}h {elapsedMinutes % 60}m</span>
+                {/* Manual Timing Configuration Setup */}
+                <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-3.5 space-y-3 text-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                    <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      Shift In-Time &amp; Out-Time
+                    </span>
+                    <span className="text-[10px] text-slate-400">സമയ ക്രമീകരണം</span>
                   </div>
-                  <div className="flex items-center justify-between text-amber-400">
-                    <span>Break Deductions ({breaks.length + (activeBreak ? 1 : 0)} breaks):</span>
-                    <span className="font-mono font-bold">-{totalBreakMinutes} mins</span>
+
+                  {/* In-Time & Out-Time pickers */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                        In-Time (Start):
+                      </label>
+                      <input
+                        type="time"
+                        value={manualInTime}
+                        onChange={(e) => {
+                          setManualInTime(e.target.value);
+                          handleRecalculateWorkDuration(e.target.value, manualOutTime, manualBreakMins);
+                        }}
+                        className="w-full bg-black/60 border border-slate-700 rounded-xl px-2.5 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                        Out-Time (Finish):
+                      </label>
+                      <input
+                        type="time"
+                        value={manualOutTime}
+                        onChange={(e) => {
+                          setManualOutTime(e.target.value);
+                          handleRecalculateWorkDuration(manualInTime, e.target.value, manualBreakMins);
+                        }}
+                        className="w-full bg-black/60 border border-slate-700 rounded-xl px-2.5 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
                   </div>
+
+                  {/* Work Duration & Pause Duration */}
+                  <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-300 block mb-1">
+                        Active Time Worked:
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={24}
+                          value={manualWorkHours}
+                          onChange={(e) => setManualWorkHours(Math.max(0, Number(e.target.value)))}
+                          className="w-12 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-emerald-400 focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-400 font-bold">hrs</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={59}
+                          value={manualWorkMins}
+                          onChange={(e) => setManualWorkMins(Math.max(0, Math.min(59, Number(e.target.value))))}
+                          className="w-12 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-emerald-400 focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-400 font-bold">min</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-amber-400 block mb-1">
+                        Time Paused / Breaks:
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          value={manualBreakMins}
+                          onChange={(e) => {
+                            const val = Math.max(0, Number(e.target.value));
+                            setManualBreakMins(val);
+                            handleRecalculateWorkDuration(manualInTime, manualOutTime, val);
+                          }}
+                          className="w-16 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-amber-400 focus:outline-none"
+                        />
+                        <span className="text-[10px] text-slate-400 font-bold">mins</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between text-white border-t border-slate-800 pt-2 font-bold">
                     <span>Net Billable Work Duration:</span>
                     <span className="font-mono text-emerald-400 text-sm">{netHoursDecimal} Hours ({netDurationMinutes} mins)</span>
                   </div>
+
                   <div className="text-[11px] text-emerald-300/80 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl">
-                    ℹ️ Payout will be finalized and assigned by the office desk coordinator after this work ticket is submitted.
+                    ℹ️ Wage payout will be settled and registered in the KK Group finance books after this ticket is approved.
                   </div>
                 </div>
 
@@ -2297,131 +2526,183 @@ export function WorkerJobDetailsModal({
         {/* ----------------- MODAL 3: SUBMIT COUNT & COMPLETE CONFIRMATION MODAL ----------------- */}
         {isCompleteCountConfirmOpen && (
           <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in select-none">
-            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="relative w-full max-w-md bg-[#16202E] rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-2 border-emerald-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-slate-200 space-y-3.5 sm:space-y-4 animate-in zoom-in-95 duration-150 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
                   {isCoconut ? <TreePalm className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    Confirm &amp; Submit Harvest Count?
+                    Confirm Work Metrics &amp; Complete
                   </h3>
                   <p className="text-xs text-emerald-300/80">
-                    വിളവെടുപ്പ് എണ്ണം സ്ഥിരീകരിക്കുക
+                    മൊത്തം തെങ്ങുകൾ, ജോലി സമയം, ഇടവേളകൾ എന്നിവ രേഖപ്പെടുത്തുക
                   </p>
                 </div>
               </div>
 
-              {/* Count Summary Card */}
+              {/* Count & Metrics Summary Card */}
               <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 space-y-3 text-xs">
-                {isCoconut ? (
-                  <div className="flex flex-col items-center gap-2.5 pb-2 border-b border-slate-800">
-                    <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
-                      Total Coconut Trees Plucked:
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateUnitCount(Math.max(1, unitCount - 1))}
-                        className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm border border-slate-700 active:scale-95 cursor-pointer"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <div className="flex items-baseline gap-1 px-4 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40">
-                        <input
-                          type="number"
-                          min={1}
-                          value={unitCount}
-                          onChange={(e) => handleUpdateUnitCount(Math.max(1, Number(e.target.value)))}
-                          className="w-14 bg-transparent text-center font-mono text-2xl font-black text-emerald-400 focus:outline-none"
-                        />
-                        <span className="text-xs font-bold text-emerald-400">Trees</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateUnitCount(unitCount + 1)}
-                        className="w-9 h-9 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-sm active:scale-95 cursor-pointer shadow-md"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    </div>
-                    {/* Quick add */}
-                    <div className="flex items-center gap-1.5 pt-0.5">
-                      <span className="text-[10px] text-slate-500 uppercase font-bold">Quick:</span>
-                      {[5, 10, 15, 20].map((inc) => (
-                        <button
-                          key={inc}
-                          type="button"
-                          onClick={() => handleUpdateUnitCount(unitCount + inc)}
-                          className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer"
-                        >
-                          +{inc}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-between text-white font-bold">
-                    <span>Completed {unitLabel}s:</span>
-                    <span className="font-mono text-base text-emerald-400">{unitCount} {unitLabel}</span>
-                  </div>
-                )}
-                {localJob.workStartedAt && (
-                  <div className="py-2 border-y border-slate-800 space-y-1 text-slate-300 text-[11px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Started At:</span>
-                      <span className="font-mono text-white">
-                        {new Date(localJob.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {/* 1. Unit / Tree Manual Input */}
+                <div className="flex flex-col items-center gap-2 pb-3 border-b border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">
+                    {isCoconut ? 'Total Coconut Trees Plucked:' : `Completed ${unitLabel} Count:`}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUnitCount(Math.max(1, unitCount - 1))}
+                      className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm border border-slate-700 active:scale-95 cursor-pointer"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-baseline gap-1 px-4 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40">
+                      <input
+                        type="number"
+                        min={1}
+                        value={unitCount}
+                        onChange={(e) => setUnitCount(Math.max(1, Number(e.target.value)))}
+                        className="w-16 bg-transparent text-center font-mono text-2xl font-black text-emerald-400 focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-emerald-400">
+                        {isCoconut ? 'Trees' : unitLabel}
                       </span>
                     </div>
-                    {!isCoconut && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-400">Gross On-Site Time:</span>
-                          <span className="font-mono text-white">
-                            {(() => {
-                              const start = new Date(localJob.workStartedAt).getTime();
-                              const diffMins = Math.max(1, Math.round((Date.now() - start) / (1000 * 60)));
-                              const h = Math.floor(diffMins / 60);
-                              const m = diffMins % 60;
-                              return h > 0 ? `${h}h ${m}m` : `${m}m`;
-                            })()}
-                          </span>
-                        </div>
-                        {(() => {
-                          const spec = (localJob.specificationDetails as any) || {};
-                          const breaks = Array.isArray(spec.breaks) ? spec.breaks : [];
-                          const totalBreakMins = spec.totalBreakMinutes ?? breaks.reduce((acc: number, b: any) => acc + (b.durationMinutes || 0), 0);
-                          if (totalBreakMins <= 0) return null;
-                          return (
-                            <div className="flex items-center justify-between text-amber-300">
-                              <span>Breaks Deducted:</span>
-                              <span className="font-mono">{totalBreakMins} mins ({breaks.length} breaks)</span>
-                            </div>
-                          );
-                        })()}
-                      </>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setUnitCount(unitCount + 1)}
+                      className="w-9 h-9 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-sm active:scale-95 cursor-pointer shadow-md"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
+                  {/* Quick add */}
+                  <div className="flex items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold">Quick:</span>
+                    {[5, 10, 15, 20].map((inc) => (
+                      <button
+                        key={inc}
+                        type="button"
+                        onClick={() => setUnitCount(unitCount + inc)}
+                        className="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-bold border border-slate-700 cursor-pointer"
+                      >
+                        +{inc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 2. In-Time and Out-Time Manual Inputs */}
+                <div className="pt-1 space-y-2.5">
+                  <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    Shift Timings (In / Out)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                        In-Time (തുടങ്ങിയ സമയം):
+                      </label>
+                      <input
+                        type="time"
+                        value={manualInTime}
+                        onChange={(e) => {
+                          setManualInTime(e.target.value);
+                          handleRecalculateWorkDuration(e.target.value, manualOutTime, manualBreakMins);
+                        }}
+                        className="w-full bg-black/60 border border-slate-700 rounded-xl px-2.5 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 block mb-1">
+                        Out-Time (കഴിഞ്ഞ സമയം):
+                      </label>
+                      <input
+                        type="time"
+                        value={manualOutTime}
+                        onChange={(e) => {
+                          setManualOutTime(e.target.value);
+                          handleRecalculateWorkDuration(manualInTime, e.target.value, manualBreakMins);
+                        }}
+                        className="w-full bg-black/60 border border-slate-700 rounded-xl px-2.5 py-1.5 font-mono text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Work Duration & Break/Pause Duration */}
+                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-300 block mb-1">
+                      Time Worked (ജോലി സമയം):
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        max={24}
+                        value={manualWorkHours}
+                        onChange={(e) => setManualWorkHours(Math.max(0, Number(e.target.value)))}
+                        className="w-12 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-emerald-400 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">hrs</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={manualWorkMins}
+                        onChange={(e) => setManualWorkMins(Math.max(0, Math.min(59, Number(e.target.value))))}
+                        className="w-12 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-emerald-400 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">min</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-amber-400 block mb-1">
+                      Time Paused (ഇടവേള):
+                    </label>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min={0}
+                        value={manualBreakMins}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value));
+                          setManualBreakMins(val);
+                          handleRecalculateWorkDuration(manualInTime, manualOutTime, val);
+                        }}
+                        className="w-16 bg-black/60 border border-slate-700 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-amber-400 focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold">mins</span>
+                    </div>
+                  </div>
+                </div>
+
                 {isCoconut && (
-                  <div className="py-2 border-b border-slate-800 space-y-1 text-slate-300">
-                    <div className="flex items-center justify-between">
+                  <div className="py-2 border-t border-slate-800 space-y-1.5 text-slate-300">
+                    <label className="flex items-center justify-between cursor-pointer">
                       <span>Crown Cleaning &amp; Frond Pruning:</span>
-                      <span className={crownCleaningDone ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-                        {crownCleaningDone ? '✓ Completed' : '✕ Skipped'}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
+                      <input
+                        type="checkbox"
+                        checked={crownCleaningDone}
+                        onChange={(e) => setCrownCleaningDone(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-0 focus:outline-none cursor-pointer"
+                      />
+                    </label>
+                    <label className="flex items-center justify-between cursor-pointer">
                       <span>Rhinoceros Beetle Powder:</span>
-                      <span className={beetleMedicineApplied ? 'text-emerald-400 font-bold' : 'text-slate-500'}>
-                        {beetleMedicineApplied ? '✓ Applied' : '✕ Skipped'}
-                      </span>
-                    </div>
+                      <input
+                        type="checkbox"
+                        checked={beetleMedicineApplied}
+                        onChange={(e) => setBeetleMedicineApplied(e.target.checked)}
+                        className="w-4 h-4 rounded text-emerald-500 focus:ring-0 focus:outline-none cursor-pointer"
+                      />
+                    </label>
                   </div>
                 )}
+
                 <div className="text-[11px] text-emerald-300/80 bg-emerald-950/40 border border-emerald-500/30 p-2.5 rounded-xl">
-                  ℹ️ Payout will be finalized and assigned by the office desk coordinator after this harvest count is submitted.
+                  ℹ️ Payout will be finalized by office administration and registered in the finance books upon review.
                 </div>
               </div>
 
@@ -2444,7 +2725,7 @@ export function WorkerJobDetailsModal({
                   onClick={() => setIsCompleteCountConfirmOpen(false)}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-bold transition-all cursor-pointer"
                 >
-                  Edit Count
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -2458,6 +2739,173 @@ export function WorkerJobDetailsModal({
                     <CheckCircle className="w-3.5 h-3.5" />
                   )}
                   <span>Confirm &amp; Complete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Add Extra Coconut Trees (Worker accidentally entered wrong count or plucked more) */}
+        {isAddExtraTreesModalOpen && (
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in select-none">
+            <div
+              className="fixed inset-0"
+              onClick={() => !isSubmittingExtraTrees && setIsAddExtraTreesModalOpen(false)}
+            />
+            <div className="relative w-full max-w-sm bg-[#111827] border border-emerald-500/50 rounded-2xl sm:rounded-3xl p-5 shadow-[0_25px_70px_rgba(0,0,0,0.85)] z-10 flex flex-col gap-4 text-slate-200 animate-in zoom-in-95">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <TreePalm className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-white">Add Extra Coconut Trees</h3>
+                    <span className="text-[10px] text-emerald-400/80">കൂടുതൽ തെങ്ങുകൾ ചേർക്കുക</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddExtraTreesModalOpen(false)}
+                  disabled={isSubmittingExtraTrees}
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-900/90 border border-slate-750 flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Current Tree Count</span>
+                  <span className="text-sm font-black text-white font-mono">
+                    {localJob.completedUnits ?? unitCount} Trees
+                  </span>
+                </div>
+                {((localJob.specificationDetails as any)?.extraTreeCount) ? (
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold text-emerald-400 block">Previously Added Extra</span>
+                    <span className="text-xs font-bold text-emerald-300 font-mono">
+                      +{(localJob.specificationDetails as any).extraTreeCount} Trees
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-200 block">
+                  Extra Trees Plucked to Add (അധികമായി കയറിയ തെങ്ങുകൾ):
+                </label>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExtraTreesInput((prev) => Math.max(1, prev - 1))}
+                    disabled={isSubmittingExtraTrees}
+                    className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold border border-slate-700 cursor-pointer"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <div className="flex-1 flex items-baseline justify-center gap-1.5 py-1.5 px-3 rounded-xl bg-black/40 border border-emerald-500/40">
+                    <input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={extraTreesInput}
+                      onChange={(e) => setExtraTreesInput(Math.max(1, Number(e.target.value)))}
+                      disabled={isSubmittingExtraTrees}
+                      className="w-16 bg-transparent text-center font-mono text-2xl font-black text-emerald-400 focus:outline-none"
+                    />
+                    <span className="text-xs font-bold text-slate-300">Trees</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExtraTreesInput((prev) => prev + 1)}
+                    disabled={isSubmittingExtraTrees}
+                    className="w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center font-bold shadow-md cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Quick Add Chips */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Quick Add:</span>
+                  {[1, 2, 3, 5, 10].map((inc) => (
+                    <button
+                      key={inc}
+                      type="button"
+                      onClick={() => setExtraTreesInput(inc)}
+                      className={`px-2 py-0.5 rounded-md text-[11px] font-bold border cursor-pointer transition-all ${
+                        extraTreesInput === inc
+                          ? 'bg-emerald-500 text-white border-emerald-400'
+                          : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border-slate-700'
+                      }`}
+                    >
+                      +{inc}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Preview Strip */}
+              {(() => {
+                const current = localJob.completedUnits ?? unitCount;
+                const newTotal = current + extraTreesInput;
+                const rate = localJob.workerUnitWage || 80;
+                const extraEarnings = extraTreesInput * rate;
+                const newTotalWage = newTotal * rate;
+
+                return (
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-950/70 to-slate-900 border border-emerald-500/30 space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between text-slate-300">
+                      <span>New Total Harvest Count:</span>
+                      <strong className="font-mono text-white text-sm">
+                        {newTotal} Trees <span className="text-[10px] text-emerald-400 font-normal">({current} + {extraTreesInput})</span>
+                      </strong>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-300 border-t border-emerald-500/20 pt-1.5">
+                      <span>Updated Earned Wage:</span>
+                      <strong className="font-mono text-emerald-400 text-sm">
+                        ₹{newTotalWage.toLocaleString('en-IN')}{' '}
+                        <span className="text-[10px] text-emerald-300/80 font-normal">(+₹{extraEarnings})</span>
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400 block">
+                  Reason for Extra Addition (Optional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Accidentally missed 3 trees on boundary line"
+                  value={extraTreesNote}
+                  onChange={(e) => setExtraTreesNote(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-750 rounded-xl px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsAddExtraTreesModalOpen(false)}
+                  disabled={isSubmittingExtraTrees}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddExtraTrees}
+                  disabled={isSubmittingExtraTrees || extraTreesInput <= 0}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingExtraTrees ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  <span>Add +{extraTreesInput} Trees</span>
                 </button>
               </div>
             </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { useAdminTheme } from '@/context/admin-theme-context';
 import {
@@ -1318,8 +1319,14 @@ export default function AdminFinancePage() {
                               {txn.customerName || txn.vendorName || 'Direct Cash Transaction'}
                             </div>
                             {txn.enquiry && (
-                              <div className="text-[11px] text-[#2A835F]">
-                                Ticket: {txn.enquiry.trackingNumber}
+                              <div>
+                                <Link
+                                  href={`/admin/operations/enquiries/${txn.enquiry.id}`}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2A835F] hover:underline hover:text-emerald-400 transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Ticket: {txn.enquiry.trackingNumber}
+                                </Link>
                               </div>
                             )}
                           </td>
@@ -1958,9 +1965,22 @@ export default function AdminFinancePage() {
                 </div>
               </div>
 
-              <div>
-                <div className="text-gray-400 uppercase text-[11px] font-bold">Service Squad</div>
-                <div className="font-semibold mt-0.5">{inspectTxn.serviceType || 'General Operations'}</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-gray-400 uppercase text-[11px] font-bold">Service Squad</div>
+                  <div className="font-semibold mt-0.5">{inspectTxn.serviceType || 'General Operations'}</div>
+                </div>
+                {inspectTxn.enquiry && (
+                  <div>
+                    <div className="text-gray-400 uppercase text-[11px] font-bold">Linked Work Order</div>
+                    <Link
+                      href={`/admin/operations/enquiries/${inspectTxn.enquiry.id}`}
+                      className="inline-flex items-center gap-1 font-bold text-xs text-[#2A835F] hover:underline hover:text-emerald-400 transition-colors mt-0.5"
+                    >
+                      Ticket: {inspectTxn.enquiry.trackingNumber} &rarr;
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {inspectTxn.notes && (

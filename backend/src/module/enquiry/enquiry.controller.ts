@@ -26,6 +26,7 @@ import {
   SaveWorkDraftDto,
   ReachedSiteDto,
   UpdateJobPayDto,
+  AddExtraTreesDto,
 } from './dto';
 
 @Throttle({ default: RATE_LIMITS.OPERATIONS })
@@ -177,6 +178,16 @@ export class EnquiryController {
     @CurrentUser() user: { id: string; role: Role },
   ) {
     return this.enquiryService.updateWorkerJobStatus(id, dto, user.id, user.role);
+  }
+
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Patch('worker/:id/add-extra-trees')
+  async addExtraTrees(
+    @Param('id') id: string,
+    @Body() dto: AddExtraTreesDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.enquiryService.addExtraTrees(id, dto, user.id, user.role);
   }
 
   @Roles(Role.WORKER)

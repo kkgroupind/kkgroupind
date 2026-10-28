@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { ServiceStatus } from '../../../database';
 
 export class UpdateEnquiryStatusDto {
@@ -7,6 +7,8 @@ export class UpdateEnquiryStatusDto {
   status: ServiceStatus;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
   completedUnits?: number;
 
   @IsOptional()
@@ -15,4 +17,22 @@ export class UpdateEnquiryStatusDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  workStartedAt?: string;
+
+  @IsOptional()
+  @IsString()
+  workEndedAt?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  workDurationMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  totalBreakMinutes?: number;
 }

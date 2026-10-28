@@ -1015,12 +1015,22 @@ export default function AdminWorkOrdersPage() {
                 {/* Time & Break Records Strip for Completed Works */}
                 {order.status === 'COMPLETED' && (() => {
                   if (isOrderTreePlucking(order)) {
+                    const specs = (order.specificationDetails as any) || {};
+                    const totalTrees = order.completedUnits ?? order.estimatedUnits ?? 1;
+                    const extraTrees = specs.extraTreeCount;
+                    const initialTrees = specs.initialTreeCount ?? (extraTrees ? totalTrees - extraTrees : totalTrees);
+
                     return (
-                      <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-emerald-500/20 flex items-center justify-between text-xs">
+                      <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-2">
-                          <TreePalm className="w-3.5 h-3.5 text-emerald-400" />
+                          <TreePalm className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span className="text-gray-300 font-medium">
-                            Harvested: <strong className="text-emerald-400 font-mono">{order.completedUnits ?? order.estimatedUnits ?? 1} Trees</strong>
+                            Harvested: <strong className="text-emerald-400 font-mono">{totalTrees} Trees</strong>
+                            {extraTrees && extraTrees > 0 ? (
+                              <span className="ml-2 text-[11px] font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                                ({initialTrees} base + <strong className="text-emerald-400 font-bold">+{extraTrees} extra added</strong>)
+                              </span>
+                            ) : null}
                           </span>
                         </div>
                         <span className="text-[10px] text-emerald-300 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
@@ -1253,10 +1263,18 @@ export default function AdminWorkOrdersPage() {
                           )}
                           {order.status === 'COMPLETED' && (() => {
                             if (isOrderTreePlucking(order)) {
+                              const specs = (order.specificationDetails as any) || {};
+                              const total = order.completedUnits ?? order.estimatedUnits ?? 1;
+                              const extra = specs.extraTreeCount;
                               return (
                                 <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#14151A] border border-emerald-500/30 text-emerald-300">
                                   <TreePalm className="w-3 h-3 text-emerald-400" />
-                                  <span>{order.completedUnits ?? order.estimatedUnits ?? 1} Trees Harvested</span>
+                                  <span>{total} Trees Harvested</span>
+                                  {extra && extra > 0 ? (
+                                    <span className="text-emerald-400 font-bold bg-emerald-500/20 px-1 py-0.2 rounded">
+                                      (+{extra} extra)
+                                    </span>
+                                  ) : null}
                                 </div>
                               );
                             }

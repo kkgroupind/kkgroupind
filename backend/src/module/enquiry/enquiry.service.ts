@@ -20,6 +20,7 @@ import {
   SaveWorkDraftDto,
   ReachedSiteDto,
   UpdateJobPayDto,
+  AddExtraTreesDto,
 } from './dto';
 import { ENQUIRY_MESSAGES, SECURITY_CONSTANTS, normalizePhoneNumber } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
@@ -517,53 +518,13 @@ export class EnquiryService {
       },
     );
 
-    // AUTO FEED FINANCES
-    try {
-      const mockUser = { id: recordedById, role: Role.OFFICE_STAFF }; // For createTransaction authorization
-      const today = new Date().toISOString().split('T')[0];
-
-      // Income (Customer Payment)
-      if (dto.totalCalculatedCost && dto.totalCalculatedCost > 0) {
-        await this.financeService.createTransaction(mockUser as any, {
-          type: TransactionType.INCOME,
-          category: TransactionCategory.SERVICE_PAYMENT,
-          amount: dto.totalCalculatedCost,
-          date: today,
-          paymentMethod: dto.paymentMode as any || PaymentMethod.CASH,
-          serviceType: updated.serviceName,
-          customerName: updated.customerName,
-          notes: `Auto-generated revenue for completed work order: ${updated.trackingNumber}`,
-          enquiryId: updated.id,
-          referenceNumber: dto.paymentRef,
-        });
+    // Auto-schedule cyclic reminder if service has recurring reminder enabled
+    if (updated.status === ServiceStatus.COMPLETED) {
+      try {
+        await this.reminderService.handleJobCompleted(updated);
+      } catch (e) {
+        console.warn('Auto-reminder feed warning during pay finalize:', e);
       }
-
-      // Expense (Worker Wage)
-      if (dto.totalCalculatedWage && dto.totalCalculatedWage > 0 && updated.workerId) {
-        await this.financeService.createTransaction(mockUser as any, {
-          type: TransactionType.EXPENSE,
-          category: TransactionCategory.WORKER_WAGE,
-          amount: dto.totalCalculatedWage,
-          date: today,
-          paymentMethod: dto.paymentMode as any || PaymentMethod.CASH,
-          serviceType: updated.serviceName,
-          workerId: updated.workerId,
-          notes: `Auto-generated worker wage payout for: ${updated.trackingNumber}`,
-          enquiryId: updated.id,
-          referenceNumber: dto.paymentRef,
-        });
-      }
-
-      // Auto-schedule cyclic reminder if service has recurring reminder enabled
-      if (updated.status === ServiceStatus.COMPLETED) {
-        try {
-          await this.reminderService.handleJobCompleted(updated);
-        } catch (e) {
-          console.warn('Auto-reminder feed warning during pay finalize:', e);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to auto-feed finances', e);
     }
 
     // Non-blocking notification to assigned worker
@@ -910,6 +871,10 @@ export class EnquiryService {
       {
         completedUnits: dto.completedUnits,
         specificationDetails: dto.specificationDetails,
+        workStartedAt: dto.workStartedAt,
+        workEndedAt: dto.workEndedAt,
+        workDurationMinutes: dto.workDurationMinutes,
+        totalBreakMinutes: dto.totalBreakMinutes,
       },
     );
 
@@ -987,6 +952,99 @@ export class EnquiryService {
     return {
       message: ENQUIRY_MESSAGES.WORKER_STATUS_UPDATED,
       worker: updatedWorker,
+    };
+  }
+
+  async addExtraTrees(
+    enquiryId: string,
+    dto: AddExtraTreesDto,
+    userId: string,
+    userRole?: Role,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, userId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
+    }
+
+    // Verify this is a coconut tree service
+    const isTreeService =
+      enquiry.wageType === 'PER_TREE' ||
+      enquiry.unitLabel?.toLowerCase() === 'tree' ||
+      /coco|coconut|palm|tree|തെങ്ങ്/i.test(enquiry.serviceName);
+
+    if (!isTreeService) {
+      throw new BadRequestException('Adding extra tree count is only supported for Coconut Palm Tree harvesting jobs.');
+    }
+
+    const currentSpec = (enquiry.specificationDetails as any) || {};
+    const currentCompleted = enquiry.completedUnits ?? currentSpec.temporaryCount ?? enquiry.estimatedUnits ?? 0;
+    const initialTreeCount = currentSpec.initialTreeCount ?? currentCompleted;
+    const existingExtra = currentSpec.extraTreeCount ?? 0;
+    const newExtra = existingExtra + dto.extraTrees;
+    const newTotalUnits = initialTreeCount + newExtra;
+
+    const previousLogs = Array.isArray(currentSpec.extraTreeLogs) ? currentSpec.extraTreeLogs : [];
+    const newLog = {
+      addedCount: dto.extraTrees,
+      addedAt: new Date().toISOString(),
+      addedBy: userId,
+      userRole: userRole || Role.WORKER,
+      previousTotal: currentCompleted,
+      newTotal: newTotalUnits,
+      notes: dto.notes || 'Added extra coconut trees',
+    };
+
+    const workerRate = enquiry.workerUnitWage ?? 80;
+    const customerRate = enquiry.unitRate ?? 120;
+    const newWage = Number((workerRate * newTotalUnits).toFixed(2));
+    const newCost = Number((customerRate * newTotalUnits).toFixed(2));
+
+    const updatedSpec = {
+      ...currentSpec,
+      initialTreeCount,
+      extraTreeCount: newExtra,
+      extraTreeLogs: [...previousLogs, newLog],
+      lastExtraTreesAddedAt: new Date().toISOString(),
+    };
+
+    const notesAppend = ` [Extra Trees Added: +${dto.extraTrees} trees, Total: ${newTotalUnits}]`;
+    const updatedNotes = enquiry.notes ? `${enquiry.notes}${notesAppend}` : notesAppend.trim();
+
+    const updated = await this.enquiryRepo.updateExtraTrees(enquiryId, {
+      completedUnits: newTotalUnits,
+      totalCalculatedWage: newWage,
+      totalCalculatedCost: newCost,
+      specificationDetails: updatedSpec,
+      notes: updatedNotes,
+    });
+
+    await this.auditService.recordLog({
+      userId,
+      userRole: userRole || Role.WORKER,
+      action: 'EXTRA_COCONUT_TREES_ADDED',
+      entityType: 'SERVICE_ENQUIRY',
+      entityId: enquiryId,
+      details: {
+        trackingNumber: updated.trackingNumber,
+        serviceName: updated.serviceName,
+        addedTrees: dto.extraTrees,
+        initialTreeCount,
+        extraTreeCount: newExtra,
+        newTotalUnits,
+        newWage,
+        newCost,
+        notes: dto.notes,
+      },
+    });
+
+    return {
+      message: `Added ${dto.extraTrees} extra coconut trees. New total: ${newTotalUnits} trees.`,
+      enquiry: updated,
     };
   }
 

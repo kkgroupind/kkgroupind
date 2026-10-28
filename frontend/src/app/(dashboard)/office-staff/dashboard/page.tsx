@@ -724,6 +724,14 @@ export default function OfficeStaffDashboardPage() {
                           {job.completedUnits ? (
                             <div className="text-[11px] font-medium text-slate-500">
                               Logged: <strong className="text-slate-800">{job.completedUnits} {job.unitLabel || 'Units'}</strong>
+                              {((job.specificationDetails as any)?.extraTreeCount &&
+                                (job.wageType === 'PER_TREE' ||
+                                  job.serviceName?.toLowerCase().includes('tree') ||
+                                  job.serviceName?.toLowerCase().includes('coconut'))) ? (
+                                <span className="ml-1.5 text-[10px] font-mono font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                                  (+{(job.specificationDetails as any).extraTreeCount} extra)
+                                </span>
+                              ) : null}
                             </div>
                           ) : null}
                         </div>

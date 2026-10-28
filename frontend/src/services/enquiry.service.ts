@@ -242,6 +242,9 @@ export const EnquiryService = {
       completedUnits?: number;
       specificationDetails?: any;
       completionNotes?: string;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      totalBreakMinutes?: number;
     },
     token: string,
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
@@ -303,6 +306,22 @@ export const EnquiryService = {
     );
   },
 
+  // Worker: Add extra coconut trees if accidentally entered wrong count or more trees plucked
+  async addExtraTrees(
+    enquiryId: string,
+    data: { extraTrees: number; notes?: string },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
+    return request<{ message: string; enquiry: ServiceEnquiry }>(
+      `/enquiries/worker/${enquiryId}/add-extra-trees`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
+
   // Worker: Update work status (IN_PROGRESS, COMPLETED)
   async updateWorkerJobStatus(
     enquiryId: string,
@@ -312,6 +331,10 @@ export const EnquiryService = {
     extraData?: {
       completedUnits?: number;
       specificationDetails?: any;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      workDurationMinutes?: number;
+      totalBreakMinutes?: number;
     },
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
     return request<{ message: string; enquiry: ServiceEnquiry }>(
@@ -323,6 +346,10 @@ export const EnquiryService = {
           notes,
           completedUnits: extraData?.completedUnits,
           specificationDetails: extraData?.specificationDetails,
+          workStartedAt: extraData?.workStartedAt,
+          workEndedAt: extraData?.workEndedAt,
+          workDurationMinutes: extraData?.workDurationMinutes,
+          totalBreakMinutes: extraData?.totalBreakMinutes,
         }),
       },
       token,

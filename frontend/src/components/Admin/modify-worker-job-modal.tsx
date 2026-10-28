@@ -330,6 +330,23 @@ export function ModifyWorkerJobModal({
                 />
               </div>
             </div>
+
+            {((job?.specificationDetails as any)?.extraTreeCount &&
+              (job?.wageType === 'PER_TREE' ||
+                job?.serviceName?.toLowerCase().includes('tree') ||
+                job?.serviceName?.toLowerCase().includes('coconut'))) ? (
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  Initial Harvest: <strong>{(job.specificationDetails as any).initialTreeCount ?? (Number(completedUnits) - (job.specificationDetails as any).extraTreeCount)} Trees</strong>
+                </span>
+                <span className="font-bold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-md">
+                  Extra Added by Worker: +{(job.specificationDetails as any).extraTreeCount} Trees
+                </span>
+                <span>
+                  Total Plucked: <strong>{completedUnits} Trees</strong>
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* Section 3: Wages & Pricing Calculation */}

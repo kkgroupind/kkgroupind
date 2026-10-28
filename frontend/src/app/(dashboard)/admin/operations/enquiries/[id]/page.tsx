@@ -44,9 +44,15 @@ import {
   Minus,
   X,
   Receipt,
+  Banknote,
+  QrCode,
+  Building2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Wallet,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
-import { EnquiryService, ServiceEnquiry } from '@/services';
+import { EnquiryService, ServiceEnquiry, FinanceService, PaymentMethod } from '@/services';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
 import { QuotationModal } from '@/components/Quotation';
@@ -91,6 +97,17 @@ export default function AdminEnquiryDetailPage() {
   const [isModifyTimeModalOpen, setIsModifyTimeModalOpen] = useState(false);
   const [editWorkDurationMinutes, setEditWorkDurationMinutes] = useState<number | ''>('');
   const [editTotalBreakMinutes, setEditTotalBreakMinutes] = useState<number | ''>('');
+
+  // Finance Registering Modals (Only after money is given / received)
+  const [isCustomerPaymentModalOpen, setIsCustomerPaymentModalOpen] = useState(false);
+  const [isWorkerPayoutModalOpen, setIsWorkerPayoutModalOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('CASH');
+  const [paymentDate, setPaymentDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [paymentRef, setPaymentRef] = useState<string>('');
+  const [paymentNotes, setPaymentNotes] = useState<string>('');
+  const [isSubmittingFinance, setIsSubmittingFinance] = useState(false);
+  const [financeActionError, setFinanceActionError] = useState<string | null>(null);
 
   const fetchEnquiryDetails = useCallback(async () => {
     if (!token || !params.id) return;
@@ -139,6 +156,107 @@ export default function AdminEnquiryDetailPage() {
     navigator.clipboard.writeText(code);
     setCopiedTracking(true);
     setTimeout(() => setCopiedTracking(false), 2000);
+  };
+
+  // Finance calculations based on linked transactions
+  const transactions = useMemo(() => enquiry?.financialTransactions || [], [enquiry?.financialTransactions]);
+  const incomeTxns = useMemo(() => transactions.filter(t => t.type === 'INCOME'), [transactions]);
+  const expenseTxns = useMemo(() => transactions.filter(t => t.type === 'EXPENSE'), [transactions]);
+
+  const customerTotalBillable = enquiry?.totalCalculatedCost ?? 0;
+  const customerTotalPaid = useMemo(() => incomeTxns.reduce((sum, t) => sum + (t.amount || 0), 0), [incomeTxns]);
+  const customerPendingBalance = Math.max(0, customerTotalBillable - customerTotalPaid);
+
+  const workerTotalAgreedWage = enquiry?.totalCalculatedWage ?? 0;
+  const workerTotalPaid = useMemo(() => {
+    return expenseTxns
+      .filter(t => t.category === 'WORKER_WAGE' || (enquiry?.workerId && t.workerId === enquiry.workerId))
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
+  }, [expenseTxns, enquiry?.workerId]);
+  const workerPendingBalance = Math.max(0, workerTotalAgreedWage - workerTotalPaid);
+
+  const handleOpenCustomerPayment = () => {
+    setPaymentAmount(customerPendingBalance > 0 ? customerPendingBalance : customerTotalBillable || '');
+    setPaymentMethod('CASH');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentRef('');
+    setPaymentNotes('');
+    setFinanceActionError(null);
+    setIsCustomerPaymentModalOpen(true);
+  };
+
+  const handleOpenWorkerPayout = () => {
+    setPaymentAmount(workerPendingBalance > 0 ? workerPendingBalance : workerTotalAgreedWage || '');
+    setPaymentMethod('CASH');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentRef('');
+    setPaymentNotes('');
+    setFinanceActionError(null);
+    setIsWorkerPayoutModalOpen(true);
+  };
+
+  const handleRecordCustomerPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !enquiry) return;
+    const amt = Number(paymentAmount);
+    if (!amt || amt <= 0) {
+      setFinanceActionError('Please enter a valid payment amount');
+      return;
+    }
+    setIsSubmittingFinance(true);
+    setFinanceActionError(null);
+    try {
+      await FinanceService.createTransaction(token, {
+        type: 'INCOME',
+        category: customerPendingBalance <= amt ? 'FINAL_SETTLEMENT' : 'SERVICE_PAYMENT',
+        amount: amt,
+        date: paymentDate,
+        paymentMethod: paymentMethod as PaymentMethod,
+        serviceType: enquiry.serviceName,
+        customerName: enquiry.customerName,
+        referenceNumber: paymentRef.trim() || undefined,
+        notes: paymentNotes.trim() || `Customer payment collected on site/desk for ${enquiry.trackingNumber}`,
+        enquiryId: enquiry.id,
+      });
+      setIsCustomerPaymentModalOpen(false);
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      setFinanceActionError(err?.message || 'Failed to record customer payment');
+    } finally {
+      setIsSubmittingFinance(false);
+    }
+  };
+
+  const handleRecordWorkerPayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token || !enquiry) return;
+    const amt = Number(paymentAmount);
+    if (!amt || amt <= 0) {
+      setFinanceActionError('Please enter a valid payout amount');
+      return;
+    }
+    setIsSubmittingFinance(true);
+    setFinanceActionError(null);
+    try {
+      await FinanceService.createTransaction(token, {
+        type: 'EXPENSE',
+        category: 'WORKER_WAGE',
+        amount: amt,
+        date: paymentDate,
+        paymentMethod: paymentMethod as PaymentMethod,
+        serviceType: enquiry.serviceName,
+        workerId: enquiry.workerId || undefined,
+        referenceNumber: paymentRef.trim() || undefined,
+        notes: paymentNotes.trim() || `Wage payout to worker ${enquiry.worker?.name || ''} for ${enquiry.trackingNumber}`,
+        enquiryId: enquiry.id,
+      });
+      setIsWorkerPayoutModalOpen(false);
+      await fetchEnquiryDetails();
+    } catch (err: any) {
+      setFinanceActionError(err?.message || 'Failed to disburse worker wage');
+    } finally {
+      setIsSubmittingFinance(false);
+    }
   };
 
   // Helper: format seconds to HH:MM:SS
@@ -875,12 +993,21 @@ export default function AdminEnquiryDetailPage() {
           </div>
           <div className="text-xl font-black text-gray-100 tracking-tight mt-2 flex items-baseline gap-1.5">
             {isTreePlucking ? (
-              <>
-                <span className="text-2xl text-emerald-400 font-mono">
-                  {enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1}
-                </span>
-                <span className="text-xs text-gray-400 font-semibold">Trees Plucked</span>
-              </>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl text-emerald-400 font-mono">
+                    {enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1}
+                  </span>
+                  <span className="text-xs text-gray-400 font-semibold">Trees Plucked</span>
+                </div>
+                {specs.extraTreeCount && specs.extraTreeCount > 0 ? (
+                  <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 w-fit">
+                    <span>Initial: {specs.initialTreeCount ?? ((enquiry.completedUnits ?? 1) - specs.extraTreeCount)}</span>
+                    <span>•</span>
+                    <strong className="text-emerald-400 font-bold">Extra Added: +{specs.extraTreeCount}</strong>
+                  </div>
+                ) : null}
+              </div>
             ) : (
               formattedWorkDuration
             )}
@@ -1347,6 +1474,343 @@ export default function AdminEnquiryDetailPage() {
               </div>
             );
           })()}
+
+          {/* ── WORKER SUBMITTED FIELD TELEMETRY & VERIFICATION CARD ── */}
+          {(() => {
+            const spec = (enquiry.specificationDetails as any) || {};
+            const hasManualTelemetry =
+              spec.workerManualSubmission ||
+              spec.inTime ||
+              spec.outTime ||
+              enquiry.completedUnits ||
+              enquiry.workDurationMinutes ||
+              enquiry.status === 'COMPLETED';
+
+            if (!hasManualTelemetry) return null;
+
+            return (
+              <div className="bg-[#14151A] rounded-3xl border border-emerald-500/30 p-6 shadow-xl space-y-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                      <HardHat className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black text-gray-100 flex items-center gap-2">
+                        <span>Worker Field Telemetry &amp; Logged Metrics</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                          Worker Log
+                        </span>
+                      </h3>
+                      <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                        തൊഴിലാളി നേരിട്ട് രേഖപ്പെടുത്തിയ തെങ്ങുകൾ, ജോലി സമയം, ഇടവേളകൾ
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-mono font-bold text-gray-400">
+                    Lead: {enquiry.worker?.name || 'Assigned Specialist'}
+                  </span>
+                </div>
+
+                {/* 4 Metric Bento Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* Trees / Completed Units */}
+                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                    <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+                      {isTreePlucking ? 'Trees Plucked' : 'Completed Units'}
+                    </div>
+                    <div className="text-xl font-black text-emerald-400 font-mono">
+                      {enquiry.completedUnits ?? spec.temporaryCount ?? enquiry.estimatedUnits ?? '—'}{' '}
+                      <span className="text-xs text-emerald-500/80 font-normal">
+                        {isTreePlucking ? 'Trees' : enquiry.unitLabel || 'Units'}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">വിളവെടുപ്പ് എണ്ണം</div>
+                  </div>
+
+                  {/* Shift In-Time */}
+                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                    <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+                      In-Time (തുടങ്ങിയത്)
+                    </div>
+                    <div className="text-lg font-black text-white font-mono">
+                      {spec.inTime || (enquiry.workStartedAt ? new Date(enquiry.workStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '08:00 AM')}
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Site Arrival</div>
+                  </div>
+
+                  {/* Shift Out-Time */}
+                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                    <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
+                      Out-Time (കഴിഞ്ഞത്)
+                    </div>
+                    <div className="text-lg font-black text-white font-mono">
+                      {spec.outTime || (enquiry.workEndedAt ? new Date(enquiry.workEndedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : enquiry.completedAt ? new Date(enquiry.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—')}
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Job Finished</div>
+                  </div>
+
+                  {/* Pauses / Break Duration */}
+                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                    <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider mb-1">
+                      Time Paused (ഇടവേള)
+                    </div>
+                    <div className="text-xl font-black text-amber-400 font-mono">
+                      {spec.totalBreakMinutes ?? 0}{' '}
+                      <span className="text-xs text-amber-500/80 font-normal">mins</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 mt-0.5">Deducted Break</div>
+                  </div>
+                </div>
+
+                {/* Additional worker checklist & notes */}
+                <div className="p-4 rounded-2xl bg-[#0D0E12] border border-gray-800/80 space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between text-slate-300">
+                    <span className="text-gray-400">Net Active Work Duration:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {spec.actualWorkMinutes ? `${Math.floor(spec.actualWorkMinutes / 60)}h ${spec.actualWorkMinutes % 60}m` : enquiry.workDurationMinutes ? `${Math.floor(enquiry.workDurationMinutes / 60)}h ${enquiry.workDurationMinutes % 60}m` : '—'}
+                    </span>
+                  </div>
+
+                  {isTreePlucking && (
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/60">
+                      <div className="flex items-center gap-1.5 text-gray-300">
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${spec.crownCleaningDone !== false ? 'text-emerald-400' : 'text-gray-600'}`} />
+                        <span>Crown Cleaning &amp; Pruning</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-gray-300">
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${spec.beetleMedicineApplied !== false ? 'text-emerald-400' : 'text-gray-600'}`} />
+                        <span>Beetle Powder Applied</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {enquiry.notes && (
+                    <div className="pt-2 border-t border-gray-800/60 text-gray-300">
+                      <span className="text-gray-500 font-semibold block mb-0.5">Worker Remarks:</span>
+                      <p className="italic text-gray-300 font-mono">{enquiry.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* ── OPERATIONS & FINANCE FLOW SETTLEMENT CARD ── */}
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Banknote className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100 flex items-center gap-2">
+                    <span>Finance Flow &amp; Cash Settlement</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold">
+                      Direct Cashbook
+                    </span>
+                  </h3>
+                  <p className="text-[11px] font-semibold text-gray-400 mt-0.5">
+                    Transactions are registered only when money is physically given or received
+                  </p>
+                </div>
+              </div>
+
+              <NextLink
+                href={`/admin/finance?search=${encodeURIComponent(enquiry.trackingNumber)}`}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 text-xs font-bold text-gray-300 hover:text-white transition-colors"
+              >
+                <span>Full Ledger</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </NextLink>
+            </div>
+
+            {/* 2-Column Bento: Customer Revenue vs Worker Wage Disbursement */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Customer Revenue Box */}
+              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/90 space-y-3 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
+                    <span>Customer Billing (Income)</span>
+                  </span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                    customerTotalBillable === 0
+                      ? 'bg-gray-800 text-gray-400 border-gray-700'
+                      : customerPendingBalance === 0
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : customerTotalPaid > 0
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                  }`}>
+                    {customerTotalBillable === 0
+                      ? 'PENDING BILL'
+                      : customerPendingBalance === 0
+                      ? 'PAID IN FULL'
+                      : customerTotalPaid > 0
+                      ? 'PARTIALLY PAID'
+                      : 'PAYMENT DUE'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-gray-400">
+                    <span>Total Billable Cost:</span>
+                    <span className="font-mono font-bold text-white text-sm">
+                      {customerTotalBillable > 0 ? `₹${customerTotalBillable.toLocaleString('en-IN')}` : 'To be set'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-400">
+                    <span>Money Received (Paid):</span>
+                    <span className="font-mono font-bold text-sm">
+                      ₹{customerTotalPaid.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-gray-300 border-t border-gray-800 pt-1.5 font-bold">
+                    <span>Balance Pending:</span>
+                    <span className={`font-mono text-sm ${customerPendingBalance > 0 ? 'text-rose-400 font-black' : 'text-gray-500'}`}>
+                      ₹{customerPendingBalance.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenCustomerPayment}
+                  className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Record Customer Payment</span>
+                </button>
+              </div>
+
+              {/* Worker Wage Disbursement Box */}
+              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/90 space-y-3 relative overflow-hidden">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                    <ArrowUpRight className="w-4 h-4 text-amber-400" />
+                    <span>Worker Payout (Expense)</span>
+                  </span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                    workerTotalAgreedWage === 0
+                      ? 'bg-gray-800 text-gray-400 border-gray-700'
+                      : workerPendingBalance === 0
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      : workerTotalPaid > 0
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                  }`}>
+                    {workerTotalAgreedWage === 0
+                      ? 'AWAITING FINAL'
+                      : workerPendingBalance === 0
+                      ? 'DISBURSED'
+                      : workerTotalPaid > 0
+                      ? 'PARTIALLY PAID'
+                      : 'WAGE UNPAID'}
+                  </span>
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex items-center justify-between text-gray-400">
+                    <span>Calculated Worker Wage:</span>
+                    <span className="font-mono font-bold text-white text-sm">
+                      {workerTotalAgreedWage > 0 ? `₹${workerTotalAgreedWage.toLocaleString('en-IN')}` : 'To be set'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-amber-400">
+                    <span>Wage Given (Disbursed):</span>
+                    <span className="font-mono font-bold text-sm">
+                      ₹{workerTotalPaid.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-gray-300 border-t border-gray-800 pt-1.5 font-bold">
+                    <span>Pending Wage:</span>
+                    <span className={`font-mono text-sm ${workerPendingBalance > 0 ? 'text-amber-400 font-black' : 'text-gray-500'}`}>
+                      ₹{workerPendingBalance.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleOpenWorkerPayout}
+                  className="w-full py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-black transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer mt-2"
+                >
+                  <Wallet className="w-3.5 h-3.5" />
+                  <span>Disburse Worker Wage</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Linked Finance Transactions Table */}
+            <div className="space-y-2 pt-2 border-t border-gray-800/80">
+              <span className="text-[11px] font-bold uppercase text-gray-400 tracking-wider flex items-center justify-between">
+                <span>Direct Financial Ledger ({transactions.length} record{transactions.length !== 1 ? 's' : ''})</span>
+                <span className="text-[10px] text-gray-500 normal-case">Audited records</span>
+              </span>
+
+              {transactions.length === 0 ? (
+                <div className="p-4 rounded-2xl bg-[#0D0E12] border border-gray-800/60 text-center text-xs text-gray-500">
+                  No money transactions registered yet. Record payment when money is given by customer or disbursed to worker.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-gray-800/60">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#0D0E12] text-gray-400 font-semibold">
+                      <tr>
+                        <th className="py-2.5 px-3">Txn #</th>
+                        <th className="py-2.5 px-3">Type</th>
+                        <th className="py-2.5 px-3">Party / Category</th>
+                        <th className="py-2.5 px-3">Method</th>
+                        <th className="py-2.5 px-3">Date</th>
+                        <th className="py-2.5 px-3 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60 text-gray-300">
+                      {transactions.map((t) => {
+                        const isIncome = t.type === 'INCOME';
+                        return (
+                          <tr key={t.id} className="hover:bg-[#1A1C23]/40">
+                            <td className="py-2.5 px-3 font-mono text-[11px] font-bold text-gray-400">
+                              {t.transactionNumber}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${
+                                isIncome
+                                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                  : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                              }`}>
+                                {isIncome ? 'INCOME' : 'EXPENSE'}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 font-medium text-gray-200">
+                              <div>{t.category}</div>
+                              {t.customerName && <div className="text-[10px] text-gray-400">Customer: {t.customerName}</div>}
+                              {t.worker && <div className="text-[10px] text-amber-400/80">Worker: {t.worker.name}</div>}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-[11px] text-gray-300">
+                              {t.paymentMethod}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-[11px] text-gray-400">
+                              {t.dateString}
+                            </td>
+                            <td className={`py-2.5 px-3 text-right font-black font-mono text-sm ${
+                              isIncome ? 'text-emerald-400' : 'text-rose-400'
+                            }`}>
+                              {isIncome ? '+' : '-'}₹{t.amount.toLocaleString('en-IN')}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ========================================================
@@ -1946,6 +2410,360 @@ export default function AdminEnquiryDetailPage() {
                 >
                   {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   {isSubmittingAction ? 'Saving...' : 'Save Time Logs'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RECORD CUSTOMER PAYMENT MODAL ───────────────────────── */}
+      {isCustomerPaymentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800 bg-[#16181F]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <ArrowDownLeft className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100 flex items-center gap-2">
+                    <span>Record Customer Payment</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                      INCOME
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Registers income in finance ledger after cash/UPI is received</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCustomerPaymentModalOpen(false)}
+                className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {financeActionError && (
+                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{financeActionError}</span>
+                </div>
+              )}
+
+              {/* Balance Summary Header */}
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-[#0D0E12] border border-gray-800/80 text-center">
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Total Billable</div>
+                  <div className="text-sm font-black font-mono text-gray-200 mt-0.5">
+                    ₹{customerTotalBillable.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Already Received</div>
+                  <div className="text-sm font-black font-mono text-emerald-400 mt-0.5">
+                    ₹{customerTotalPaid.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Outstanding</div>
+                  <div className={`text-sm font-black font-mono mt-0.5 ${customerPendingBalance > 0 ? 'text-amber-400' : 'text-gray-400'}`}>
+                    ₹{customerPendingBalance.toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Amount to Record */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Amount Received (₹) <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-emerald-500/60 transition-colors"
+                    placeholder="Enter amount collected"
+                  />
+                </div>
+                {customerPendingBalance > 0 && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentAmount(customerPendingBalance)}
+                      className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 underline cursor-pointer"
+                    >
+                      Fill full outstanding balance (₹{customerPendingBalance.toLocaleString('en-IN')})
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Payment Method <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors cursor-pointer"
+                >
+                  <option value="CASH">Cash (കൈമാറ്റം)</option>
+                  <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
+                  <option value="BANK_TRANSFER">Direct Bank Transfer (NEFT / IMPS)</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+
+              {/* Date & Reference */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                    Payment Date
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                    Reference / UPI Ref ID
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentRef}
+                    onChange={(e) => setPaymentRef(e.target.value)}
+                    placeholder="e.g. UPI Txn ID / Receipt #"
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors placeholder:text-gray-600"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Payment Notes <span className="text-gray-500 normal-case">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  placeholder="Notes about payment collection, payer name, or receipt given..."
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2 border-t border-gray-800/80">
+                <button
+                  type="button"
+                  onClick={() => setIsCustomerPaymentModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRecordCustomerPayment}
+                  disabled={isSubmittingFinance || !paymentAmount}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-md shadow-emerald-600/25 disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingFinance ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {isSubmittingFinance ? 'Recording...' : 'Register Payment'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── DISBURSE WORKER WAGE MODAL ───────────────────────────── */}
+      {isWorkerPayoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800 bg-[#16181F]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <ArrowUpRight className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-gray-100 flex items-center gap-2">
+                    <span>Disburse Worker Wage</span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      EXPENSE
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Registers worker wage payout expense in finance upon actual disbursement</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsWorkerPayoutModalOpen(false)}
+                className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+              {financeActionError && (
+                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{financeActionError}</span>
+                </div>
+              )}
+
+              {/* Worker recipient chip */}
+              {enquiry.worker && (
+                <div className="p-3 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-xs flex items-center justify-center">
+                      {enquiry.worker.name ? enquiry.worker.name.charAt(0) : 'W'}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-gray-200">{enquiry.worker.name || enquiry.worker.username}</div>
+                      <div className="text-[10px] text-gray-500 font-mono">{enquiry.worker.phone || 'Field Worker'}</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                    Primary Worker
+                  </span>
+                </div>
+              )}
+
+              {/* Wage Balance Summary Header */}
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-[#0D0E12] border border-gray-800/80 text-center">
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Calculated Wage</div>
+                  <div className="text-sm font-black font-mono text-gray-200 mt-0.5">
+                    ₹{workerTotalAgreedWage.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Wage Disbursed</div>
+                  <div className="text-sm font-black font-mono text-emerald-400 mt-0.5">
+                    ₹{workerTotalPaid.toLocaleString('en-IN')}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-gray-500 uppercase">Pending Payout</div>
+                  <div className={`text-sm font-black font-mono mt-0.5 ${workerPendingBalance > 0 ? 'text-amber-400' : 'text-gray-400'}`}>
+                    ₹{workerPendingBalance.toLocaleString('en-IN')}
+                  </div>
+                </div>
+              </div>
+
+              {/* Amount to Disburse */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Wage Amount to Disburse (₹) <span className="text-rose-400">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-mono font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    min={1}
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-amber-500/60 transition-colors"
+                    placeholder="Enter wage amount given"
+                  />
+                </div>
+                {workerPendingBalance > 0 && (
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentAmount(workerPendingBalance)}
+                      className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline cursor-pointer"
+                    >
+                      Fill full outstanding wage (₹{workerPendingBalance.toLocaleString('en-IN')})
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Payment Method */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Payout Method <span className="text-rose-400">*</span>
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                >
+                  <option value="CASH">Cash in Hand (കൈപ്പണം)</option>
+                  <option value="UPI">UPI (Google Pay / PhonePe)</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT / IMPS)</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+
+              {/* Date & Reference */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                    Payout Date
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                    Reference / Voucher #
+                  </label>
+                  <input
+                    type="text"
+                    value={paymentRef}
+                    onChange={(e) => setPaymentRef(e.target.value)}
+                    placeholder="e.g. Cash Voucher / UPI Ref"
+                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors placeholder:text-gray-600"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">
+                  Disbursement Notes <span className="text-gray-500 normal-case">(optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  placeholder="Notes about wage settlement, tea allowance, travel allowance..."
+                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-2 border-t border-gray-800/80">
+                <button
+                  type="button"
+                  onClick={() => setIsWorkerPayoutModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRecordWorkerPayout}
+                  disabled={isSubmittingFinance || !paymentAmount}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-amber-600 hover:bg-amber-500 text-white transition-all shadow-md shadow-amber-600/25 disabled:opacity-50 cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                  {isSubmittingFinance ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  {isSubmittingFinance ? 'Disbursing...' : 'Disburse Wage'}
                 </button>
               </div>
             </div>

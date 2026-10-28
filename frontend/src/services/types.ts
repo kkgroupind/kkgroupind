@@ -192,6 +192,7 @@ export interface ServiceEnquiry {
     phone?: string | null;
     role: UserRole;
   } | null;
+  financialTransactions?: import('./finance.service').FinancialTransaction[];
 }
 
 export interface WorkerWithAvailability {

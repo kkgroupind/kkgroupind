@@ -957,6 +957,14 @@ export default function AdminEnquiriesPage() {
                           : selectedEnquiry.estimatedUnits
                           ? `${selectedEnquiry.estimatedUnits} (Est)`
                           : 'Pending'}
+                        {((selectedEnquiry.specificationDetails as any)?.extraTreeCount &&
+                          (selectedEnquiry.wageType === 'PER_TREE' ||
+                            selectedEnquiry.serviceName?.toLowerCase().includes('tree') ||
+                            selectedEnquiry.serviceName?.toLowerCase().includes('coconut'))) ? (
+                          <span className="ml-1.5 text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                            (+{(selectedEnquiry.specificationDetails as any).extraTreeCount} extra)
+                          </span>
+                        ) : null}
                       </span>
                     </div>
 
