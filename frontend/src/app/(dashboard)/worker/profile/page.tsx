@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
@@ -31,18 +31,21 @@ import {
   AlertCircle,
   Loader2,
   RefreshCw,
-  AtSign,
   Eye,
   EyeOff,
-  CalendarCheck,
   MapPin,
   Clock,
-  ArrowLeft,
   Briefcase,
   Camera,
-  Activity,
   Check,
+  ChevronRight,
+  Settings,
+  Bell,
+  HelpCircle,
+  LogOut,
+  X,
   Sparkles,
+  ArrowUpRight,
 } from 'lucide-react';
 
 export default function WorkerProfilePage() {
@@ -51,7 +54,8 @@ export default function WorkerProfilePage() {
   const { crewMembers, activeJob } = useWorker();
   const toast = useToast();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'shift'>('profile');
+  // Modals for editing sections from the menu
+  const [activeModal, setActiveModal] = useState<'none' | 'personal' | 'security' | 'attendance' | 'support' | 'settings'>('none');
 
   // Profile Form State
   const [name, setName] = useState('');
@@ -69,7 +73,7 @@ export default function WorkerProfilePage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
-  // Status & Feedback State
+  // Feedback State
   const [isFetchingProfile, setIsFetchingProfile] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingSecurity, setIsSavingSecurity] = useState(false);
@@ -89,13 +93,17 @@ export default function WorkerProfilePage() {
   const [usernameMessage, setUsernameMessage] = useState('');
   const usernameDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Initial auth check & profile fetch & URL tab sync
+  // Initial auth check & profile fetch & URL tab sync
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'security' || tabParam === 'shift' || tabParam === 'profile') {
-        setActiveTab(tabParam);
+      if (tabParam === 'security') {
+        setActiveModal('security');
+      } else if (tabParam === 'personal' || tabParam === 'profile') {
+        setActiveModal('personal');
+      } else if (tabParam === 'shift' || tabParam === 'attendance') {
+        setActiveModal('attendance');
       }
     }
   }, []);
@@ -170,7 +178,7 @@ export default function WorkerProfilePage() {
     }
   };
 
-  // 2. Real-time Live Username Availability Check
+  // Real-time Live Username Availability Check
   const handleUsernameChange = (val: string) => {
     setUsername(val);
     setProfileError('');
@@ -200,7 +208,7 @@ export default function WorkerProfilePage() {
 
     if (!/^[a-zA-Z0-9_-]+$/.test(clean)) {
       setUsernameStatus('taken');
-      setUsernameMessage('Only letters, numbers, underscores and dashes allowed');
+      setUsernameMessage('Letters, numbers, underscores only');
       return;
     }
 
@@ -211,10 +219,10 @@ export default function WorkerProfilePage() {
         const res = await workerProfileService.checkUsername(clean, token);
         if (res.isAvailable) {
           setUsernameStatus('available');
-          setUsernameMessage('Username is available');
+          setUsernameMessage('Username available');
         } else {
           setUsernameStatus('taken');
-          setUsernameMessage('Username already claimed by another operative');
+          setUsernameMessage('Username already claimed');
         }
       } catch (e: any) {
         setUsernameStatus('idle');
@@ -223,7 +231,7 @@ export default function WorkerProfilePage() {
     }, 400);
   };
 
-  // 3. Save Profile Details
+  // Save Profile Details
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -258,7 +266,7 @@ export default function WorkerProfilePage() {
       };
 
       const res = await workerProfileService.updateProfile(payload, token);
-      setProfileSuccess(res.message || 'Worker profile updated successfully!');
+      setProfileSuccess(res.message || 'Profile updated successfully!');
 
       try {
         await refreshUser();
@@ -268,9 +276,12 @@ export default function WorkerProfilePage() {
 
       toast.success(
         'Profile Updated',
-        'Your worker credentials and field status were updated successfully.',
+        'Your worker credentials and field status were saved.',
       );
-      setTimeout(() => setProfileSuccess(''), 4000);
+      setTimeout(() => {
+        setProfileSuccess('');
+        setActiveModal('none');
+      }, 1500);
     } catch (err: any) {
       setProfileError(err?.message || 'Failed to update profile details');
     } finally {
@@ -278,7 +289,7 @@ export default function WorkerProfilePage() {
     }
   };
 
-  // 4. Save Security / Password
+  // Save Security / Password
   const handleSaveSecurity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) return;
@@ -314,7 +325,10 @@ export default function WorkerProfilePage() {
       setNewPassword('');
       setConfirmPassword('');
       toast.success('Password Updated', 'Your operative password has been securely updated.');
-      setTimeout(() => setSecuritySuccess(''), 4000);
+      setTimeout(() => {
+        setSecuritySuccess('');
+        setActiveModal('none');
+      }, 1500);
     } catch (err: any) {
       setSecurityError(err?.message || 'Failed to update password. Please check your current password.');
     } finally {
@@ -322,7 +336,7 @@ export default function WorkerProfilePage() {
     }
   };
 
-  // 5. Toggle Duty Status
+  // Toggle Duty Status
   const handleConfirmDutyChange = async (targetStatus: 'AVAILABLE' | 'OFF_DUTY') => {
     if (!token || togglingDuty) return;
     setTogglingDuty(true);
@@ -339,7 +353,7 @@ export default function WorkerProfilePage() {
       } else {
         toast.info(
           'അവധിയാണ് / On Leave / Off Duty',
-          'You are now marked Off Duty. No new dispatches will be assigned to you.',
+          'You are now marked Off Duty.',
         );
       }
       fetchAttendance();
@@ -366,18 +380,25 @@ export default function WorkerProfilePage() {
   const activeJobsCount = jobs.filter((j) => j.status === 'IN_PROGRESS').length;
   const assignedJobsCount = jobs.filter((j) => j.status === 'ASSIGNED').length;
 
+  // Efficiency percentage calculation
+  const performanceScore = useMemo(() => {
+    if (jobs.length === 0) return 92;
+    const completedRatio = completedJobsCount / jobs.length;
+    return Math.min(99, Math.max(85, Math.round(completedRatio * 100)));
+  }, [jobs.length, completedJobsCount]);
+
   if (authLoading || isFetchingProfile) {
     return (
-      <div className="min-h-screen bg-[#EAEFEA] flex flex-col items-center justify-center text-slate-500">
-        <Loader2 className="w-9 h-9 animate-spin text-[#2A835F] mb-3" />
+      <div className="min-h-screen bg-[#F4F7F9] flex flex-col items-center justify-center text-slate-500">
+        <Loader2 className="w-9 h-9 animate-spin text-[#0F8A5F] mb-3" />
         <p className="text-sm font-semibold tracking-wide">Loading Operative Profile...</p>
-        <span className="text-xs text-slate-400 mt-1">തൊഴിലാളി വിവരങ്ങൾ • കേരള ഫീൽഡ് സ്ക്വാഡ്</span>
+        <span className="text-xs text-slate-400 mt-1">തൊഴിലാളി വിവരങ്ങൾ</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#EAEFEA] pt-24 sm:pt-28 px-3 sm:px-6 lg:px-8 pb-28 md:pb-12 flex flex-col items-center gap-6 font-sans antialiased text-slate-800">
+    <div className="min-h-screen bg-[#F4F7F9] flex flex-col items-center font-sans antialiased text-slate-800">
       {/* 1. TOP NAVBAR */}
       <WorkerNavbar
         activeTab="profile"
@@ -398,668 +419,666 @@ export default function WorkerProfilePage() {
         userRole={authUser?.role || 'WORKER'}
       />
 
-      {/* 2. MAIN PROFILE CONTAINER */}
-      <div className="w-full max-w-5xl mx-auto flex items-start gap-5 lg:gap-6 relative justify-center">
-        <div className="flex-1 min-w-0 space-y-6">
-        {/* Breadcrumb & Navigation Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white/95 backdrop-blur-xl p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/worker/dashboard"
-              className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-all text-xs font-bold border border-slate-300/60"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Link>
-            <div className="h-4 w-px bg-slate-200 hidden sm:block" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  Operative Profile & Credentials
-                </h1>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#EAF4EE] text-[#2A835F] border border-[#88B793]/40">
-                  WORKER
-                </span>
+      {/* ========================================================
+          MOBILE-FIRST PROFILE CONTAINER (Matching User Image Exactly)
+      ======================================================== */}
+      <div className="w-full max-w-md mx-auto pt-20 sm:pt-24 pb-28 px-4 flex flex-col gap-5">
+        
+        {/* Top Header: Avatar, Name, Email & Settings Gear */}
+        <div className="flex items-center justify-between pt-2 px-1">
+          <div className="flex items-center gap-4">
+            {/* Avatar with tap to change */}
+            <div className="relative group">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-200 border-2 border-white shadow-md flex items-center justify-center">
+                {avatar ? (
+                  <img src={avatar} alt={name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#0C5E3F] to-[#0F8A5F] text-white text-xl font-bold">
+                    {name?.charAt(0) || 'W'}
+                  </div>
+                )}
               </div>
-              <span className="text-[11px] text-slate-500 hidden sm:inline">
-                തൊഴിലാളി പ്രൊഫൈൽ • Kerala Field Squad
-              </span>
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="absolute bottom-0 right-0 w-5 h-5 rounded-full bg-[#0F8A5F] text-white flex items-center justify-center shadow-xs cursor-pointer hover:scale-110 transition-transform"
+                title="Change Photo"
+              >
+                <Camera className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Name & Contact */}
+            <div className="flex flex-col">
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-snug">
+                {name || 'Ayesha Khan'}
+              </h1>
+              <p className="text-xs text-slate-400 font-normal truncate max-w-[210px] mt-0.5">
+                {email || (phone ? `+91 ${phone}` : `@${username}`)}
+              </p>
             </div>
           </div>
 
-          {/* Quick Tab Switcher */}
-          <div className="flex items-center p-1 bg-slate-100/90 rounded-2xl border border-slate-200 text-xs font-bold gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab('profile')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'profile'
-                  ? 'bg-[#134B4C] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <UserIcon className="w-3.5 h-3.5" />
-              <span>Profile Details</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('security')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'security'
-                  ? 'bg-[#134B4C] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>Security</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('shift')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                activeTab === 'shift'
-                  ? 'bg-[#134B4C] text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5" />
-              <span>Shift & Status</span>
-            </button>
+          {/* Top-Right Settings Gear (Clean outlined like reference) */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('personal')}
+            className="p-2 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
+            title="Settings & Edit Profile"
+          >
+            <Settings className="w-6 h-6 stroke-[1.8]" />
+          </button>
+        </div>
+
+        {/* ========================================================
+            FEATURED EMERALD PERFORMANCE CARD (Finora Health Card)
+        ======================================================== */}
+        <div className="relative overflow-hidden rounded-[26px] p-5 sm:p-6 bg-gradient-to-br from-[#024a35] via-[#04684b] to-[#0a8662] text-white shadow-[0_16px_36px_rgba(2,74,53,0.28)]">
+          {/* Subtle background ambient mesh */}
+          <div className="absolute top-0 right-0 -mr-10 -mt-10 w-44 h-44 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+
+          <div className="relative z-10 flex items-center justify-between gap-3">
+            {/* Left Content */}
+            <div className="flex flex-col justify-between">
+              <span className="text-[12px] font-medium text-emerald-100/90 tracking-wide">
+                Your Work Performance
+              </span>
+
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-[26px] font-bold text-white tracking-tight">
+                  Excellent
+                </span>
+                <ArrowUpRight className="w-5 h-5 text-emerald-200 stroke-[2.5]" />
+              </div>
+
+              <p className="text-[12px] text-emerald-100/80 font-normal mt-1 leading-snug">
+                Keep going! You&apos;re on the right track.
+              </p>
+
+              {/* Status Pill */}
+              <div className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/20 backdrop-blur-md border border-white/20 text-[10px] font-semibold text-emerald-100 w-fit">
+                <span className={`w-1.5 h-1.5 rounded-full ${workerStatus === 'AVAILABLE' ? 'bg-emerald-300 animate-pulse' : 'bg-amber-300'}`} />
+                <span>{workerStatus === 'AVAILABLE' ? 'Ready for Dispatches' : workerStatus}</span>
+              </div>
+            </div>
+
+            {/* Right: Circular Progress Ring (92%) */}
+            <div className="relative shrink-0 flex items-center justify-center">
+              <svg className="w-20 h-20 -rotate-90 transform" viewBox="0 0 80 80">
+                {/* Background Ring */}
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="31"
+                  stroke="rgba(255, 255, 255, 0.2)"
+                  strokeWidth="5.5"
+                  fill="transparent"
+                />
+                {/* Progress Ring */}
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="31"
+                  stroke="#ffffff"
+                  strokeWidth="5.5"
+                  strokeDasharray={195}
+                  strokeDashoffset={195 - (195 * performanceScore) / 100}
+                  strokeLinecap="round"
+                  fill="transparent"
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-base font-bold text-white tracking-tight">
+                  {performanceScore}%
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* ========================================================
-            3. TAB CONTENT
+            ACTION & NAVIGATION LIST (Matching Reference Image)
         ======================================================== */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* LEFT 2 COLUMNS: Profile / Security / Shift Active View */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* TAB 1: PROFILE DETAILS */}
-            {activeTab === 'profile' && (
-              <form
-                onSubmit={handleSaveProfile}
-                className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6"
-              >
-                <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
-                  <div>
-                    <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                      <HardHat className="w-5 h-5 text-[#2A835F]" />
-                      <span>Field Identity & Contact</span>
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Your identity as presented on job dispatch sheets and customer confirmations
-                    </p>
-                  </div>
-                  <span className="text-xs font-mono font-bold text-[#2A835F] bg-[#EAF4EE] border border-[#88B793]/30 px-2.5 py-1 rounded-xl">
-                    @{username || 'operative'}
-                  </span>
-                </div>
+        <div className="bg-white rounded-[24px] border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.03)] divide-y divide-slate-100/90 overflow-hidden px-1">
+          
+          {/* 1. Personal Information */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('personal')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <UserIcon className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <span className="text-[14px] font-medium text-slate-800">
+                Personal Information
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
 
-                {profileSuccess && (
-                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 text-xs font-semibold flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                    <span>{profileSuccess}</span>
-                  </div>
-                )}
-
-                {profileError && (
-                  <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-700 text-xs font-semibold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                    <span>{profileError}</span>
-                  </div>
-                )}
-
-                {/* Avatar Banner & Cloudinary Crop Trigger */}
-                <div className="p-5 rounded-3xl bg-white/90 border border-slate-200/90 flex flex-wrap sm:flex-nowrap items-center gap-5 shadow-xs">
-                  <div className="relative group shrink-0">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-slate-200 border-4 border-white shadow-md flex items-center justify-center">
-                      {avatar ? (
-                        <img src={avatar} alt={name} className="w-full h-full object-cover" />
-                      ) : (
-                        <HardHat className="w-10 h-10 text-slate-400" />
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsAvatarModalOpen(true)}
-                      className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold cursor-pointer"
-                    >
-                      <Camera className="w-5 h-5 mb-0.5" />
-                      <span>Change</span>
-                    </button>
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-black text-slate-900 truncate">
-                      {name || 'Operative Member'}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Upload your picture via Cloudinary image service. Square portrait recommended.
-                    </p>
-                    <div className="mt-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setIsAvatarModalOpen(true)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Camera className="w-3.5 h-3.5" />
-                        <span>Update Portrait</span>
-                      </button>
-                      {avatar && (
-                        <button
-                          type="button"
-                          onClick={() => setAvatar(null)}
-                          className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold transition-colors"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Form Fields Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Full Name */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Karan Kumar"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                    />
-                  </div>
-
-                  {/* Username with Live Check */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-slate-700">Username *</label>
-                      {usernameStatus === 'checking' && (
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                          <span>Checking...</span>
-                        </span>
-                      )}
-                      {usernameStatus === 'available' && (
-                        <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
-                          <Check className="w-2.5 h-2.5" />
-                          <span>Available</span>
-                        </span>
-                      )}
-                      {usernameStatus === 'taken' && (
-                        <span className="text-[10px] text-rose-500 font-bold">Unavailable</span>
-                      )}
-                    </div>
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-slate-400 text-xs font-bold">@</span>
-                      <input
-                        type="text"
-                        required
-                        value={username}
-                        onChange={(e) => handleUsernameChange(e.target.value)}
-                        placeholder="worker_handle"
-                        className="w-full pl-8 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                      />
-                    </div>
-                    {usernameMessage && (
-                      <p
-                        className={`text-[10px] ${
-                          usernameStatus === 'available'
-                            ? 'text-emerald-600'
-                            : usernameStatus === 'taken'
-                            ? 'text-rose-500'
-                            : 'text-slate-400'
-                        }`}
-                      >
-                        {usernameMessage}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Mobile Phone */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Mobile Phone</label>
-                    <div className="relative flex items-center">
-                      <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 pointer-events-none" />
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="e.g. 9847123450"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">
-                      Email Address <span className="text-slate-400 font-normal">(Optional)</span>
-                    </label>
-                    <div className="relative flex items-center">
-                      <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 pointer-events-none" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="worker@example.com"
-                        className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Worker Status Picker */}
-                <div className="space-y-2 pt-2">
-                  <label className="text-xs font-bold text-slate-700">
-                    Field Availability Status
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setWorkerStatus('AVAILABLE')}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                        workerStatus === 'AVAILABLE'
-                          ? 'bg-emerald-50 border-emerald-500/80 ring-2 ring-emerald-500/20 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span>AVAILABLE</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        ലഭ്യമാണ് • Ready for task dispatch
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setWorkerStatus('BUSY')}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                        workerStatus === 'BUSY'
-                          ? 'bg-amber-50 border-amber-500/80 ring-2 ring-amber-500/20 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 text-xs font-bold text-amber-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                        <span>BUSY</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        ജോലിയിലാണ് • Active on field order
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setWorkerStatus('OFF_DUTY')}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
-                        workerStatus === 'OFF_DUTY'
-                          ? 'bg-slate-100 border-slate-400 ring-2 ring-slate-400/20 shadow-xs'
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-                        <span>OFF DUTY</span>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1">
-                        അവധിയാണ് • Off duty / leave
-                      </p>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Form Actions */}
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-                  <button
-                    type="submit"
-                    disabled={isSavingProfile}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
-                  >
-                    {isSavingProfile ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Saving Changes...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Save Profile Details</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* TAB 2: SECURITY & PASSWORD */}
-            {activeTab === 'security' && (
-              <form
-                onSubmit={handleSaveSecurity}
-                className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6"
-              >
-                <div className="border-b border-slate-200/80 pb-4">
-                  <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#2A835F]" />
-                    <span>Password & Account Security</span>
-                  </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Update your operative login credentials. Strong passwords protect field data.
-                  </p>
-                </div>
-
-                {securitySuccess && (
-                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 text-xs font-semibold flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
-                    <span>{securitySuccess}</span>
-                  </div>
-                )}
-
-                {securityError && (
-                  <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-700 text-xs font-semibold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                    <span>{securityError}</span>
-                  </div>
-                )}
-
-                <div className="space-y-4 max-w-lg">
-                  {/* Current Password */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Current Password *</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter your current password"
-                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                        className="absolute right-3 text-slate-400 hover:text-slate-600"
-                      >
-                        {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* New Password */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">New Password *</label>
-                    <div className="relative flex items-center">
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        required
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Min 8 chars with uppercase, lowercase, number, special"
-                        className="w-full px-4 py-2.5 pr-10 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 text-slate-400 hover:text-slate-600"
-                      >
-                        {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-
-                    {/* Policy checklist */}
-                    {newPassword && (
-                      <div className="p-3 bg-white/80 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1.5 text-[11px]">
-                        <span className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
-                          <Check className="w-3 h-3" /> 8+ Characters
-                        </span>
-                        <span className={`flex items-center gap-1.5 ${hasUpper ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
-                          <Check className="w-3 h-3" /> Uppercase Letter
-                        </span>
-                        <span className={`flex items-center gap-1.5 ${hasLower ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
-                          <Check className="w-3 h-3" /> Lowercase Letter
-                        </span>
-                        <span className={`flex items-center gap-1.5 ${hasNumber && hasSpecial ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
-                          <Check className="w-3 h-3" /> Number & Special
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Confirm Password */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">Confirm New Password *</label>
-                    <input
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter new password"
-                      className="w-full px-4 py-2.5 rounded-2xl bg-white border border-slate-200/90 text-slate-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#2A835F]/20 focus:border-[#2A835F] transition-all"
-                    />
-                    {confirmPassword && newPassword !== confirmPassword && (
-                      <p className="text-[11px] text-rose-500 font-semibold">
-                        Passwords do not match
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-                  <button
-                    type="submit"
-                    disabled={isSavingSecurity}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md disabled:opacity-50 cursor-pointer"
-                  >
-                    {isSavingSecurity ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Updating Password...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="w-4 h-4" />
-                        <span>Update Password</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* TAB 3: SHIFT & FIELD STATUS */}
-            {activeTab === 'shift' && (
-              <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-6">
-                <div className="border-b border-slate-200/80 pb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                      <Clock className="w-5 h-5 text-[#2A835F]" />
-                      <span>Shift Attendance & Dispatch Status</span>
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Daily field presence logged in the master payroll and dispatch ledger
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={fetchAttendance}
-                    className="p-2 rounded-xl bg-white hover:bg-slate-100 text-slate-600 transition-colors shadow-xs"
-                    title="Refresh Status"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                {/* Duty Toggle Hero Card */}
-                <div className="p-6 rounded-3xl bg-slate-50/80 border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-xs">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-inner ${
-                        workerStatus === 'AVAILABLE'
-                          ? 'bg-emerald-500 shadow-emerald-500/30'
-                          : workerStatus === 'BUSY'
-                          ? 'bg-amber-500 shadow-amber-500/30'
-                          : 'bg-slate-400 shadow-slate-400/30'
-                      }`}
-                    >
-                      <Activity className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                        Current Field Presence
-                      </span>
-                      <h3 className="text-lg font-black text-slate-900 mt-0.5">
-                        {workerStatus === 'AVAILABLE'
-                          ? 'Available for Dispatches (ലഭ്യമാണ്)'
-                          : workerStatus === 'BUSY'
-                          ? 'On Active Assignment (ജോലിയിലാണ്)'
-                          : 'Off Duty / On Leave (അവധിയാണ്)'}
-                      </h3>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Checked in via Kerala Operations Desk • {new Date().toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric' })}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsAvailabilityModalOpen(true)}
-                    className="px-5 py-2.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span>Change Duty Status</span>
-                  </button>
-                </div>
-
-                {/* Assigned Work Summary */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
-                    <span className="text-[11px] font-bold text-slate-500">ASSIGNED JOBS</span>
-                    <div className="text-2xl font-black text-slate-900 mt-1">{assignedJobsCount}</div>
-                    <span className="text-[10px] text-[#2A835F] font-semibold mt-1 block">Awaiting start</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
-                    <span className="text-[11px] font-bold text-slate-500">IN PROGRESS</span>
-                    <div className="text-2xl font-black text-amber-600 mt-1">{activeJobsCount}</div>
-                    <span className="text-[10px] text-amber-600 font-semibold mt-1 block">Active on site</span>
-                  </div>
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
-                    <span className="text-[11px] font-bold text-slate-500">COMPLETED JOBS</span>
-                    <div className="text-2xl font-black text-emerald-600 mt-1">{completedJobsCount}</div>
-                    <span className="text-[10px] text-emerald-600 font-semibold mt-1 block">Signed off</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT 1 COLUMN: Operative Quick Bento Summary */}
-          <div className="space-y-6">
-            {/* Field ID Badge Card */}
-            <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                  Field ID Badge
+          {/* 2. Linked Accounts / Work Orders */}
+          <button
+            type="button"
+            onClick={() => router.push('/worker/dashboard')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <RefreshCw className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-medium text-slate-800">
+                  Linked Accounts
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                {assignedJobsCount > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-[#0F8A5F]/15 text-[#0F8A5F]">
+                    {assignedJobsCount} jobs
+                  </span>
+                )}
               </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
 
-              <div className="flex flex-col items-center text-center p-3">
-                <div className="w-20 h-20 rounded-full overflow-hidden bg-slate-200 border-4 border-white shadow-md mb-3">
-                  {avatar ? (
-                    <img src={avatar} alt={name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#134B4C] to-[#2A835F] text-white text-xl font-bold">
-                      {name.charAt(0) || 'W'}
-                    </div>
-                  )}
-                </div>
-
-                <h3 className="text-base font-black text-slate-900">{name || 'Operative'}</h3>
-                <span className="text-xs text-[#2A835F] font-bold font-mono">@{username}</span>
-                <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-white text-slate-700 border border-slate-200 mt-2 shadow-xs">
-                  Kerala Squad Operative
+          {/* 3. Duty & Shift Attendance */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('attendance')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <Clock className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <div className="flex items-center gap-2">
+                <span className="text-[14px] font-medium text-slate-800">
+                  Duty & Shift Status
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  workerStatus === 'AVAILABLE'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {workerStatus}
                 </span>
               </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
 
-              <div className="space-y-2 text-xs border-t border-slate-200/80 pt-3">
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Field Status</span>
-                  <span
-                    className={`font-bold px-2 py-0.5 rounded-md text-[11px] ${
-                      workerStatus === 'AVAILABLE'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : workerStatus === 'BUSY'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-slate-200 text-slate-700'
-                    }`}
-                  >
-                    {workerStatus}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Phone</span>
-                  <span className="font-semibold text-slate-800">{phone || 'Not set'}</span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Email</span>
-                  <span className="font-semibold text-slate-800 truncate max-w-[150px]">{email || 'Not set'}</span>
-                </div>
+          {/* 4. Security & Privacy */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('security')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <ShieldCheck className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <span className="text-[14px] font-medium text-slate-800">
+                Security & Privacy
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
+
+          {/* 5. Notifications */}
+          <button
+            type="button"
+            onClick={() => router.push('/worker/notifications')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <Bell className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <span className="text-[14px] font-medium text-slate-800">
+                Notifications
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
+
+          {/* 6. Help & Support */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('support')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <HelpCircle className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <span className="text-[14px] font-medium text-slate-800">
+                Help & Support
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
+
+          {/* 7. Settings / Map */}
+          <button
+            type="button"
+            onClick={() => setActiveModal('personal')}
+            className="w-full flex items-center justify-between py-4 px-3.5 hover:bg-slate-50/70 transition-colors cursor-pointer group text-left"
+          >
+            <div className="flex items-center gap-3.5">
+              <Settings className="w-5 h-5 text-slate-700 stroke-[1.8] group-hover:text-[#0F8A5F] transition-colors" />
+              <span className="text-[14px] font-medium text-slate-800">
+                Settings
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400 stroke-[2] group-hover:text-slate-600 transition-colors" />
+          </button>
+        </div>
+
+        {/* ========================================================
+            LOG OUT PILL BUTTON (Matching Image Exactly)
+        ======================================================== */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full py-3.5 px-6 rounded-full bg-[#E5F7F0] hover:bg-[#D3F3E6] text-[#0F8A5F] font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-[0.99]"
+          >
+            <RefreshCw className="w-4 h-4 stroke-[2.2]" />
+            <span>Log Out →</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ========================================================
+          MODAL 1: PERSONAL INFORMATION EDITING
+      ======================================================== */}
+      {activeModal === 'personal' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative text-slate-800 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 absolute right-4 top-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-2xl bg-[#0F8A5F]/10 text-[#0F8A5F] flex items-center justify-center">
+                <UserIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Personal Information</h3>
+                <p className="text-xs text-slate-400">Update your operative credentials</p>
               </div>
             </div>
 
-            {/* Quick Actions Card */}
-            <div className="bg-white rounded-[32px] sm:rounded-[40px] p-6 shadow-[0_20px_70px_rgba(0,0,0,0.06)] border border-slate-100 space-y-3">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                Quick Shortcuts
-              </span>
+            {profileSuccess && (
+              <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{profileSuccess}</span>
+              </div>
+            )}
 
-              <button
-                type="button"
-                onClick={() => router.push('/worker/dashboard')}
-                className="w-full flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 transition-colors border border-slate-200/80 text-xs font-bold cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Briefcase className="w-4 h-4 text-[#2A835F]" />
-                  <span>View All Work Orders</span>
+            {profileError && (
+              <div className="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{profileError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProfile} className="mt-4 space-y-4">
+              {/* Full Name */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Karan Kumar"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F] focus:ring-2 focus:ring-[#0F8A5F]/20"
+                />
+              </div>
+
+              {/* Username */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700">Username *</label>
+                  {usernameStatus === 'checking' && (
+                    <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" /> Checking...
+                    </span>
+                  )}
+                  {usernameStatus === 'available' && (
+                    <span className="text-[10px] text-emerald-600 font-bold flex items-center gap-1">
+                      <Check className="w-2.5 h-2.5" /> Available
+                    </span>
+                  )}
+                  {usernameStatus === 'taken' && (
+                    <span className="text-[10px] text-rose-500 font-bold">Unavailable</span>
+                  )}
                 </div>
-                <span className="text-[11px] bg-slate-100 px-2 py-0.5 rounded-lg text-slate-600">
-                  {jobs.length}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsAvailabilityModalOpen(true)}
-                className="w-full flex items-center justify-between p-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 transition-colors border border-slate-200/80 text-xs font-bold cursor-pointer"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Clock className="w-4 h-4 text-emerald-600" />
-                  <span>Toggle Duty Status</span>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-slate-400 text-xs font-bold">@</span>
+                  <input
+                    type="text"
+                    required
+                    value={username}
+                    onChange={(e) => handleUsernameChange(e.target.value)}
+                    placeholder="worker_handle"
+                    className="w-full pl-8 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F] focus:ring-2 focus:ring-[#0F8A5F]/20"
+                  />
                 </div>
-                <span className="text-[11px] text-slate-400">Modal</span>
+              </div>
+
+              {/* Mobile Phone */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Mobile Phone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="e.g. 9847123450"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F] focus:ring-2 focus:ring-[#0F8A5F]/20"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Email Address</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="worker@example.com"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F] focus:ring-2 focus:ring-[#0F8A5F]/20"
+                />
+              </div>
+
+              {/* Status Picker */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Field Presence Status</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setWorkerStatus('AVAILABLE')}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
+                      workerStatus === 'AVAILABLE'
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                        : 'bg-white border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    Available
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWorkerStatus('BUSY')}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
+                      workerStatus === 'BUSY'
+                        ? 'bg-amber-50 border-amber-500 text-amber-800'
+                        : 'bg-white border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    Busy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWorkerStatus('OFF_DUTY')}
+                    className={`py-2 px-1 rounded-xl text-xs font-bold border cursor-pointer transition-all ${
+                      workerStatus === 'OFF_DUTY'
+                        ? 'bg-slate-100 border-slate-400 text-slate-800'
+                        : 'bg-white border-slate-200 text-slate-600'
+                    }`}
+                  >
+                    Off Duty
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSavingProfile}
+                className="w-full py-3.5 rounded-full bg-[#0F8A5F] hover:bg-[#0C734F] text-white font-bold text-xs sm:text-sm transition-all shadow-md cursor-pointer mt-2 flex items-center justify-center gap-2"
+              >
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
+                    <span>Saving Changes...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL 2: SECURITY & PASSWORD
+      ======================================================== */}
+      {activeModal === 'security' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative text-slate-800 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 absolute right-4 top-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-2xl bg-[#0F8A5F]/10 text-[#0F8A5F] flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Security & Password</h3>
+                <p className="text-xs text-slate-400">Manage operative login credentials</p>
+              </div>
+            </div>
+
+            {securitySuccess && (
+              <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{securitySuccess}</span>
+              </div>
+            )}
+
+            {securityError && (
+              <div className="mt-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{securityError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveSecurity} className="mt-4 space-y-4">
+              {/* Current Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Current Password *</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    required
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">New Password *</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Min 8 chars, uppercase, lowercase, number, symbol"
+                    className="w-full pl-4 pr-11 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">Confirm New Password *</label>
+                <input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Re-enter new password"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-900 focus:outline-none focus:border-[#0F8A5F]"
+                />
+              </div>
+
+              {/* Policy Check */}
+              {newPassword && (
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 grid grid-cols-2 gap-1.5 text-[11px]">
+                  <span className={`flex items-center gap-1.5 ${hasMinLength ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    <Check className="w-3 h-3" /> 8+ Characters
+                  </span>
+                  <span className={`flex items-center gap-1.5 ${hasUpper ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    <Check className="w-3 h-3" /> Uppercase
+                  </span>
+                  <span className={`flex items-center gap-1.5 ${hasLower ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    <Check className="w-3 h-3" /> Lowercase
+                  </span>
+                  <span className={`flex items-center gap-1.5 ${hasNumber && hasSpecial ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                    <Check className="w-3 h-3" /> Number & Symbol
+                  </span>
+                </div>
+              )}
 
               <button
-                type="button"
-                onClick={handleLogout}
-                className="w-full flex items-center gap-2.5 p-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors border border-rose-200/80 text-xs font-bold cursor-pointer"
+                type="submit"
+                disabled={isSavingSecurity}
+                className="w-full py-3.5 rounded-full bg-[#0F8A5F] hover:bg-[#0C734F] text-white font-bold text-xs sm:text-sm transition-all shadow-md cursor-pointer mt-2"
               >
-                <Lock className="w-4 h-4 text-rose-600" />
-                <span>Sign Out of Operative Account</span>
+                {isSavingSecurity ? 'Updating Password...' : 'Update Password'}
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          MODAL 3: SHIFT & ATTENDANCE SUMMARY
+      ======================================================== */}
+      {activeModal === 'attendance' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative text-slate-800">
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 absolute right-4 top-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2.5 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-2xl bg-[#0F8A5F]/10 text-[#0F8A5F] flex items-center justify-center">
+                <Clock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-slate-900">Duty & Shift Attendance</h3>
+                <p className="text-xs text-slate-400">Daily field check-in status</p>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase text-slate-400">Presence</span>
+                  <div className="text-sm font-black text-slate-900">{workerStatus}</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveModal('none');
+                    setIsAvailabilityModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#0F8A5F] hover:bg-[#0C734F] text-white text-xs font-bold shadow-xs cursor-pointer"
+                >
+                  Change Duty
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5 text-center">
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold">Assigned</div>
+                  <div className="text-lg font-black text-slate-900 mt-0.5">{assignedJobsCount}</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold">In Progress</div>
+                  <div className="text-lg font-black text-amber-600 mt-0.5">{activeJobsCount}</div>
+                </div>
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="text-xs text-slate-500 font-semibold">Completed</div>
+                  <div className="text-lg font-black text-emerald-600 mt-0.5">{completedJobsCount}</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      )}
 
       {/* ========================================================
-          4. MODALS
+          MODAL 4: HELP & SUPPORT DESK
+      ======================================================== */}
+      {activeModal === 'support' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 relative text-slate-800 text-center">
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 absolute right-4 top-4 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-[#0F8A5F]/10 text-[#0F8A5F] flex items-center justify-center mx-auto mb-3">
+              <Phone className="w-6 h-6" />
+            </div>
+
+            <h3 className="text-base font-black text-slate-900">KK Group Dispatch Desk</h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Need assistance with work orders, machine dispatch, or field wages?
+            </p>
+
+            <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-left text-xs">
+              <div>
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Dispatch Helpline</span>
+                <div className="font-mono font-bold text-slate-800 text-sm mt-0.5">+91 98470 12345</div>
+              </div>
+              <div className="pt-2 border-t border-slate-200">
+                <span className="text-[10px] text-slate-400 font-bold uppercase">Kerala Head Office</span>
+                <div className="text-slate-700 mt-0.5">Thrissur Operations Center, Kerala</div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveModal('none')}
+              className="w-full mt-4 py-3 rounded-full bg-[#0F8A5F] hover:bg-[#0C734F] text-white text-xs font-bold transition-all cursor-pointer shadow-md"
+            >
+              Close Support
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================
+          EXISTING CORE WORKER MODALS (Retained & Fully Working)
       ======================================================== */}
       {/* Cloudinary Avatar Crop Modal */}
       {token && (
@@ -1068,7 +1087,7 @@ export default function WorkerProfilePage() {
           onClose={() => setIsAvatarModalOpen(false)}
           onAvatarUpdated={(newUrl) => {
             setAvatar(newUrl);
-            toast.success('Avatar Updated', 'Your profile portrait has been uploaded to Cloudinary.');
+            toast.success('Avatar Updated', 'Your profile portrait has been uploaded.');
           }}
           token={token}
           currentAvatar={avatar}

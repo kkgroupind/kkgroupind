@@ -12,4 +12,6 @@ export * from './WorkerAvatarCropModal';
 export * from './WorkerFullMapModal';
 export * from './WorkerMapSettingsModal';
 export * from './WorkerShell';
+export * from './WorkerNotificationDetailModal';
+export * from './WorkerWorkOrderDetailModal';
 
