@@ -134,9 +134,12 @@ export default function AdminFinancePage() {
   const { token, user } = useAuth();
   const { isDark } = useAdminTheme();
 
-  // Date State - Default current year and month (2026-09)
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 8, 26)); // September 2026
-  const [selectedDateStr, setSelectedDateStr] = useState<string>('2026-09-26');
+  const today = useMemo(() => new Date(), []);
+  const todayStr = useMemo(() => today.toISOString().split('T')[0], [today]);
+
+  // Date State - Dynamic current system date
+  const [currentDate, setCurrentDate] = useState<Date>(today);
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
   const [activeTab, setActiveTab] = useState<'calendar' | 'ledger' | 'analytics'>('calendar');
 
   // Data State
@@ -147,13 +150,18 @@ export default function AdminFinancePage() {
   const [enquiries, setEnquiries] = useState<ServiceEnquiry[]>([]);
   const [workers, setWorkers] = useState<User[]>([]);
 
-  // Filter State for Ledger
+  // Comprehensive Filter State for Ledger
   const [filterType, setFilterType] = useState<string>('ALL');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('ALL');
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
   const [filterService, setFilterService] = useState<string>('ALL');
+  const [filterWorker, setFilterWorker] = useState<string>('ALL');
+  const [filterOrigin, setFilterOrigin] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [dateFilterMode, setDateFilterMode] = useState<'selected' | 'month' | 'all'>('selected');
+  const [dateFilterMode, setDateFilterMode] = useState<'selected' | 'today' | 'month' | 'range' | 'all'>('month');
+  const [startDateFilter, setStartDateFilter] = useState<string>('');
+  const [endDateFilter, setEndDateFilter] = useState<string>('');
   const [txnViewMode, setTxnViewMode] = useState<'grid' | 'table'>('grid');
 
   const filterTypeOptions: AdminDropdownOption[] = [
@@ -194,6 +202,37 @@ export default function AdminFinancePage() {
     },
   ];
 
+  const filterPaymentMethodOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: 'ALL', label: 'All Payment Modes' },
+      {
+        value: 'CASH',
+        label: 'Cash on Site / In Hand (നേരിട്ട് ക്യാഷ്)',
+        badge: 'Cash',
+        badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+      },
+      {
+        value: 'UPI',
+        label: 'UPI / GPay / PhonePe',
+        badge: 'Digital',
+        badgeColor: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+      },
+      {
+        value: 'BANK_TRANSFER',
+        label: 'Bank Transfer (ബാങ്ക് ട്രാൻസ്ഫർ)',
+        badge: 'Bank',
+        badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+      },
+      {
+        value: 'CHEQUE',
+        label: 'Cheque Payment',
+        badge: 'Cheque',
+        badgeColor: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      },
+    ],
+    [],
+  );
+
   const filterCategoryOptions: AdminDropdownOption[] = useMemo(
     () => [
       { value: 'ALL', label: 'All Categories' },
@@ -211,6 +250,65 @@ export default function AdminFinancePage() {
     [],
   );
 
+  const filterWorkerOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: 'ALL', label: 'All Field Operatives (തൊഴിലാളികൾ)' },
+      ...workers.map((w) => ({
+        value: w.id,
+        label: w.name || w.username || 'Field Operative',
+        description: w.phone ? `Phone: ${w.phone}` : undefined,
+      })),
+    ],
+    [workers],
+  );
+
+  const filterOriginOptions: AdminDropdownOption[] = useMemo(
+    () => [
+      { value: 'ALL', label: 'All Entry Sources' },
+      { value: 'ENQUIRIES', label: 'Enquiry Worker Collections (തൊഴിൽ പേയ്‌മെന്റുകൾ)' },
+      { value: 'MANUAL', label: 'Manual Admin Ledger Entries (മറ്റ് വരവ് / ചെലവ്)' },
+    ],
+    [],
+  );
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filterType !== 'ALL') count++;
+    if (filterStatus !== 'ALL') count++;
+    if (filterPaymentMethod !== 'ALL') count++;
+    if (filterCategory !== 'ALL') count++;
+    if (filterService !== 'ALL') count++;
+    if (filterWorker !== 'ALL') count++;
+    if (filterOrigin !== 'ALL') count++;
+    if (searchQuery.trim()) count++;
+    if (dateFilterMode !== 'month') count++;
+    return count;
+  }, [
+    filterType,
+    filterStatus,
+    filterPaymentMethod,
+    filterCategory,
+    filterService,
+    filterWorker,
+    filterOrigin,
+    searchQuery,
+    dateFilterMode,
+  ]);
+
+  const handleResetFilters = () => {
+    setFilterType('ALL');
+    setFilterStatus('ALL');
+    setFilterPaymentMethod('ALL');
+    setFilterCategory('ALL');
+    setFilterService('ALL');
+    setFilterWorker('ALL');
+    setFilterOrigin('ALL');
+    setSearchQuery('');
+    setDateFilterMode('month');
+    setStartDateFilter('');
+    setEndDateFilter('');
+  };
+
   // Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDayDrawerOpen, setIsDayDrawerOpen] = useState(false);
@@ -224,7 +322,7 @@ export default function AdminFinancePage() {
     type: 'INCOME',
     category: 'SERVICE_PAYMENT',
     amount: 0,
-    date: '2026-09-26',
+    date: todayStr,
     paymentMethod: 'UPI',
     serviceType: SERVICE_OPTIONS[0],
     customerName: '',
@@ -343,24 +441,122 @@ export default function AdminFinancePage() {
       const params: any = {};
       if (dateFilterMode === 'selected' && selectedDateStr) {
         params.date = selectedDateStr;
+      } else if (dateFilterMode === 'today') {
+        params.date = todayStr;
       } else if (dateFilterMode === 'month') {
         params.month = currentMonthStr;
+      } else if (dateFilterMode === 'range') {
+        if (startDateFilter) params.startDate = startDateFilter;
+        if (endDateFilter) params.endDate = endDateFilter;
       }
 
       if (filterType !== 'ALL') params.type = filterType;
       if (filterStatus !== 'ALL') params.status = filterStatus;
+      if (filterPaymentMethod !== 'ALL') params.paymentMethod = filterPaymentMethod;
       if (filterCategory !== 'ALL') params.category = filterCategory;
       if (filterService !== 'ALL') params.serviceType = filterService;
+      if (filterWorker !== 'ALL') params.workerId = filterWorker;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      params.limit = 100;
+      params.limit = 200;
 
       const res = await FinanceService.getTransactions(token, params);
-      setTransactions(res.items);
+      let items = res.items || [];
+      if (filterOrigin === 'ENQUIRIES') {
+        items = items.filter((t) => t.enquiryId != null || t.category === 'SERVICE_PAYMENT');
+      } else if (filterOrigin === 'MANUAL') {
+        items = items.filter((t) => t.enquiryId == null && t.category !== 'SERVICE_PAYMENT');
+      }
+      setTransactions(items);
     } catch (err) {
       console.error('Failed to fetch transactions:', err);
     }
-  }, [token, selectedDateStr, dateFilterMode, currentMonthStr, filterType, filterStatus, filterCategory, filterService, searchQuery]);
+  }, [
+    token,
+    selectedDateStr,
+    todayStr,
+    dateFilterMode,
+    currentMonthStr,
+    startDateFilter,
+    endDateFilter,
+    filterType,
+    filterStatus,
+    filterPaymentMethod,
+    filterCategory,
+    filterService,
+    filterWorker,
+    filterOrigin,
+    searchQuery,
+  ]);
+
+  const exportToCSV = () => {
+    if (transactions.length === 0) return;
+    const headers = [
+      'Transaction Number',
+      'Date',
+      'Type',
+      'Category',
+      'Amount',
+      'Payment Method',
+      'Status',
+      'Service Squad',
+      'Customer/Party',
+      'Worker',
+      'Enquiry Tracking',
+      'Reference Number',
+      'Notes',
+    ];
+    const rows = transactions.map((t) => [
+      `"${t.transactionNumber}"`,
+      `"${t.dateString}"`,
+      `"${t.type}"`,
+      `"${t.category}"`,
+      t.amount,
+      `"${t.paymentMethod}"`,
+      `"${t.status}"`,
+      `"${t.serviceType || ''}"`,
+      `"${t.customerName || t.vendorName || ''}"`,
+      `"${t.worker?.name || t.worker?.username || ''}"`,
+      `"${t.enquiry?.trackingNumber || ''}"`,
+      `"${t.referenceNumber || ''}"`,
+      `"${(t.notes || '').replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `KK_Finance_Ledger_${todayStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleSelectEnquiryForTxn = (enqId: string) => {
+    if (!enqId) {
+      setFormData((prev) => ({ ...prev, enquiryId: '' }));
+      return;
+    }
+    const found = enquiries.find((e) => e.id === enqId);
+    if (!found) {
+      setFormData((prev) => ({ ...prev, enquiryId: enqId }));
+      return;
+    }
+    const suggestedAmt =
+      found.totalCalculatedCost ||
+      (found.unitRate && found.completedUnits ? found.unitRate * found.completedUnits : 0) ||
+      found.totalCalculatedWage ||
+      0;
+    setFormData((prev) => ({
+      ...prev,
+      enquiryId: enqId,
+      customerName: found.customerName || prev.customerName,
+      serviceType: found.serviceName || prev.serviceType,
+      workerId: found.workerId || prev.workerId,
+      amount: prev.amount > 0 ? prev.amount : suggestedAmt,
+      referenceNumber: prev.referenceNumber || found.trackingNumber,
+    }));
+  };
 
   // Initial lookup of Enquiries and Workers for dropdowns
   useEffect(() => {
@@ -378,6 +574,16 @@ export default function AdminFinancePage() {
     if (!token) return;
     fetchTransactions();
   }, [token, fetchTransactions]);
+
+  const filteredMetrics = useMemo(() => {
+    let inc = 0;
+    let exp = 0;
+    for (const t of transactions) {
+      if (t.type === 'INCOME') inc += t.amount;
+      else exp += t.amount;
+    }
+    return { income: inc, expense: exp, net: inc - exp };
+  }, [transactions]);
 
   // Calendar calculations
   const calendarDays = useMemo(() => {
@@ -430,7 +636,7 @@ export default function AdminFinancePage() {
   };
 
   const openCreateForDay = (dateStr?: string) => {
-    const targetDate = dateStr || selectedDateStr || '2026-09-26';
+    const targetDate = dateStr || selectedDateStr || todayStr;
     setFormData({
       type: 'INCOME',
       category: 'SERVICE_PAYMENT',
@@ -948,45 +1154,79 @@ export default function AdminFinancePage() {
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by Txn Number, Customer, Vendor, Notes or Ref..."
+                  placeholder="Search by Txn Number, Customer, Worker, Tracking #, Notes, or Ref..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-11 pr-4 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
+                  className={`w-full pl-11 pr-10 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
                     isDark ? 'bg-slate-950 border-gray-800 text-white placeholder-slate-500' : 'bg-slate-50 border-gray-800 text-gray-200 placeholder-slate-400'
                   }`}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
               </div>
 
-              {/* Date Scope Filter */}
-              <div className={`p-1 rounded-2xl border flex items-center ${
+              {/* Date Scope Filter Tabs */}
+              <div className={`p-1 rounded-2xl border flex flex-wrap items-center gap-1 ${
                 isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-100 border-gray-800'
               }`}>
                 <button
-                  onClick={() => setDateFilterMode('selected')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                    dateFilterMode === 'selected'
-                      ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
-                  }`}
-                >
-                  Selected Day ({selectedDateStr || 'Today'})
-                </button>
-                <button
+                  type="button"
                   onClick={() => setDateFilterMode('month')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'month'
-                      ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
+                      ? 'bg-[#2A835F] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   This Month ({monthLabel})
                 </button>
                 <button
+                  type="button"
+                  onClick={() => setDateFilterMode('today')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    dateFilterMode === 'today'
+                      ? 'bg-[#2A835F] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Today ({todayStr})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDateFilterMode('range')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    dateFilterMode === 'range'
+                      ? 'bg-[#2A835F] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Custom Range
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDateFilterMode('selected')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    dateFilterMode === 'selected'
+                      ? 'bg-[#2A835F] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  Selected Day ({selectedDateStr || todayStr})
+                </button>
+                <button
+                  type="button"
                   onClick={() => setDateFilterMode('all')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'all'
-                      ? 'bg-[#2A835F] text-white'
-                      : isDark ? 'text-gray-400' : 'text-gray-400'
+                      ? 'bg-[#2A835F] text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   All Dates
@@ -995,8 +1235,45 @@ export default function AdminFinancePage() {
 
             </div>
 
-            {/* Dropdown Filters using AdminDropdown */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* Custom Date Range Picker inputs when range mode active */}
+            {dateFilterMode === 'range' && (
+              <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 animate-in fade-in">
+                <span className="text-xs font-bold text-gray-300">Custom Date Range:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 font-semibold">From:</span>
+                  <input
+                    type="date"
+                    value={startDateFilter}
+                    onChange={(e) => setStartDateFilter(e.target.value)}
+                    className="bg-slate-950 border border-gray-750 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-400 font-semibold">To:</span>
+                  <input
+                    type="date"
+                    value={endDateFilter}
+                    onChange={(e) => setEndDateFilter(e.target.value)}
+                    className="bg-slate-950 border border-gray-750 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                {(startDateFilter || endDateFilter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStartDateFilter('');
+                      setEndDateFilter('');
+                    }}
+                    className="text-xs text-gray-400 hover:text-white underline cursor-pointer"
+                  >
+                    Reset Range
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Comprehensive Dropdown Filters Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
               {/* Type Filter */}
               <div>
                 <AdminDropdown
@@ -1021,12 +1298,24 @@ export default function AdminFinancePage() {
                 />
               </div>
 
-              {/* Category Filter */}
+              {/* Payment Method Filter */}
               <div>
                 <AdminDropdown
-                  options={filterCategoryOptions}
-                  value={filterCategory}
-                  onChange={(val) => setFilterCategory(val)}
+                  options={filterPaymentMethodOptions}
+                  value={filterPaymentMethod}
+                  onChange={(val) => setFilterPaymentMethod(val)}
+                  variant="emerald"
+                  theme="dark"
+                  size="md"
+                />
+              </div>
+
+              {/* Worker / Field Operative Filter */}
+              <div>
+                <AdminDropdown
+                  options={filterWorkerOptions}
+                  value={filterWorker}
+                  onChange={(val) => setFilterWorker(val)}
                   variant="emerald"
                   theme="dark"
                   size="md"
@@ -1034,7 +1323,19 @@ export default function AdminFinancePage() {
                 />
               </div>
 
-              {/* Service Unit Filter */}
+              {/* Entry Source / Origin Filter */}
+              <div>
+                <AdminDropdown
+                  options={filterOriginOptions}
+                  value={filterOrigin}
+                  onChange={(val) => setFilterOrigin(val)}
+                  variant="emerald"
+                  theme="dark"
+                  size="md"
+                />
+              </div>
+
+              {/* Service Squad Filter */}
               <div>
                 <AdminDropdown
                   options={filterServiceOptions}
@@ -1048,37 +1349,75 @@ export default function AdminFinancePage() {
               </div>
             </div>
 
-            {/* View Mode Toggle Header */}
-            <div className="flex items-center justify-between pt-2 border-t border-gray-800 dark:border-gray-800">
-              <span className="text-xs font-semibold text-gray-400">
-                Found {transactions.length} transactions
-              </span>
+            {/* Category Filter & Metrics Bar Header */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-gray-800">
+              {/* Left: Summary Metrics for Filtered Set */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold text-gray-400">
+                  Showing <strong className="text-white">{transactions.length}</strong> records
+                </span>
+                <span className="text-gray-600">•</span>
+                <span className="text-emerald-400 font-mono font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                  Income: +₹{filteredMetrics.income.toLocaleString('en-IN')}
+                </span>
+                <span className="text-rose-400 font-mono font-bold bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                  Expense: -₹{filteredMetrics.expense.toLocaleString('en-IN')}
+                </span>
+                <span className="text-white font-mono font-bold bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                  Net: ₹{filteredMetrics.net.toLocaleString('en-IN')}
+                </span>
+              </div>
 
-              <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1">
+              {/* Right: Controls (Clear Filters, Export CSV, View Toggle) */}
+              <div className="flex items-center gap-2.5">
+                {activeFiltersCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold border border-rose-500/30 transition-all cursor-pointer shadow-sm"
+                  >
+                    <X className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Clear All ({activeFiltersCount})</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setTxnViewMode('grid')}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    txnViewMode === 'grid'
-                      ? 'bg-[#7B4DFF] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                  title="Card Grid View"
+                  onClick={exportToCSV}
+                  disabled={transactions.length === 0}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2A835F]/20 hover:bg-[#2A835F] text-emerald-300 hover:text-white border border-[#2A835F]/40 text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-40"
+                  title="Export filtered records to CSV"
                 >
-                  <LayoutGrid className="w-4 h-4" />
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Export CSV</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setTxnViewMode('table')}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    txnViewMode === 'table'
-                      ? 'bg-[#7B4DFF] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-gray-200'
-                  }`}
-                  title="Table View"
-                >
-                  <List className="w-4 h-4" />
-                </button>
+
+                <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1">
+                  <button
+                    type="button"
+                    onClick={() => setTxnViewMode('grid')}
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      txnViewMode === 'grid'
+                        ? 'bg-[#2A835F] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                    title="Card Grid View"
+                  >
+                    <LayoutGrid className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTxnViewMode('table')}
+                    className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                      txnViewMode === 'table'
+                        ? 'bg-[#2A835F] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-200'
+                    }`}
+                    title="Table View"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -1213,6 +1552,34 @@ export default function AdminFinancePage() {
                                 {txn.paymentMethod}
                               </span>
                             </div>
+
+                            {txn.worker && (
+                              <div className="flex items-center justify-between text-gray-400">
+                                <span className="flex items-center gap-1.5">
+                                  <HardHat className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Field Worker</span>
+                                </span>
+                                <span className="text-emerald-400 font-semibold truncate max-w-[150px]">
+                                  {txn.worker.name || txn.worker.username}
+                                </span>
+                              </div>
+                            )}
+
+                            {txn.enquiry && (
+                              <div className="flex items-center justify-between text-gray-400">
+                                <span className="flex items-center gap-1.5">
+                                  <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                                  <span>Enquiry Ticket</span>
+                                </span>
+                                <Link
+                                  href={`/admin/operations/enquiries/${txn.enquiry.id}`}
+                                  className="text-blue-400 hover:text-blue-300 font-mono font-bold truncate max-w-[150px] underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {txn.enquiry.trackingNumber}
+                                </Link>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1327,6 +1694,12 @@ export default function AdminFinancePage() {
                                 >
                                   Ticket: {txn.enquiry.trackingNumber}
                                 </Link>
+                              </div>
+                            )}
+                            {txn.worker && (
+                              <div className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
+                                <HardHat className="w-3 h-3 shrink-0" />
+                                <span>Worker: {txn.worker.name || txn.worker.username}</span>
                               </div>
                             )}
                           </td>
@@ -1856,7 +2229,7 @@ export default function AdminFinancePage() {
                 <ComboboxDropdown
                   options={modalEnquiryOptions}
                   value={formData.enquiryId || ''}
-                  onChange={(val) => setFormData({ ...formData, enquiryId: val || undefined })}
+                  onChange={handleSelectEnquiryForTxn}
                   placeholder="Link to enquiry ticket..."
                   align="end"
                   searchable

@@ -206,6 +206,10 @@ export class FinanceRepository {
         { vendorName: { contains: q, mode: 'insensitive' } },
         { notes: { contains: q, mode: 'insensitive' } },
         { serviceType: { contains: q, mode: 'insensitive' } },
+        { enquiry: { trackingNumber: { contains: q, mode: 'insensitive' } } },
+        { enquiry: { customerPhone: { contains: q, mode: 'insensitive' } } },
+        { worker: { name: { contains: q, mode: 'insensitive' } } },
+        { worker: { username: { contains: q, mode: 'insensitive' } } },
       ];
     }
 

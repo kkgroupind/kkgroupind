@@ -82,7 +82,7 @@ export function WorkerAvailabilityModal({
             </span>
           </div>
 
-          {/* Title with Bilingual Typography */}
+          {/* Title Typography */}
           <div className="space-y-1 mb-4">
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
               {targetStatus === 'AVAILABLE'
@@ -91,8 +91,8 @@ export function WorkerAvailabilityModal({
             </h2>
             <p className="text-sm font-semibold text-[#2A835F]">
               {targetStatus === 'AVAILABLE'
-                ? 'ഫീൽഡ് ജോലികൾക്കായി താങ്കൾ ലഭ്യമാണോ?'
-                : 'അവധി രേഖപ്പെടുത്താൻ താങ്കൾ ഉറപ്പാണോ? (On Leave)'}
+                ? 'Ready for incoming assignments and field dispatch'
+                : 'Confirm temporary off-duty standby status'}
             </p>
           </div>
 
@@ -156,8 +156,8 @@ export function WorkerAvailabilityModal({
               )}
               <span>
                 {targetStatus === 'AVAILABLE'
-                  ? 'Confirm Available / ലഭ്യമാണ്'
-                  : 'Confirm Off Duty / അവധി രേഖപ്പെടുത്തുക'}
+                  ? 'Confirm Available'
+                  : 'Confirm Off Duty'}
               </span>
             </button>
 
@@ -167,7 +167,7 @@ export function WorkerAvailabilityModal({
               disabled={isLoading}
               className="w-full sm:w-auto py-3.5 px-5 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-semibold text-xs sm:text-sm transition-all cursor-pointer"
             >
-              Cancel / റദ്ദാക്കുക
+              Cancel
             </button>
           </div>
         </div>

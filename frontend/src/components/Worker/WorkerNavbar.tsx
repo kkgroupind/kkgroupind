@@ -77,9 +77,7 @@ export function WorkerNavbar({
   const handleReload = onReload || workerCtx?.reloadAll;
   const isSyncing = isReloading !== undefined ? isReloading : workerCtx?.isReloading;
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const langMenuRef = useRef<HTMLDivElement>(null);
 
   // Compute active tab dynamically from pathname if not explicitly passed
   const currentTab =
@@ -102,12 +100,6 @@ export function WorkerNavbar({
         !profileMenuRef.current.contains(event.target as Node)
       ) {
         setIsProfileMenuOpen(false);
-      }
-      if (
-        langMenuRef.current &&
-        !langMenuRef.current.contains(event.target as Node)
-      ) {
-        setIsLangMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -199,7 +191,7 @@ export function WorkerNavbar({
                 </span>
               </div>
               <span className="text-[10px] font-semibold text-[#A3E5C7] tracking-wider mt-0.5 truncate max-w-[110px] sm:max-w-none">
-                {userName} • {language === 'en' ? 'Kerala' : language === 'ml' ? 'കേരളം' : 'केरल'}
+                {userName} • Kerala
               </span>
             </div>
           </div>
@@ -241,7 +233,7 @@ export function WorkerNavbar({
               type="button"
               onClick={handleReload}
               disabled={isSyncing}
-              title="Reload Live Orders & Telemetry / വിവരങ്ങൾ പുതുക്കുക"
+              title="Reload Live Orders & Telemetry"
               aria-label="Reload field data"
               className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 active:scale-95 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none disabled:opacity-50"
             >
@@ -254,64 +246,6 @@ export function WorkerNavbar({
                 {isSyncing ? 'Syncing...' : 'Reload'}
               </span>
             </button>
-
-            {/* 1. Language Switcher Dropdown (EN / ML / HI) */}
-            <div className="relative" ref={langMenuRef}>
-              <button
-                type="button"
-                onClick={() => setIsLangMenuOpen((prev) => !prev)}
-                className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all cursor-pointer border border-white/15 shadow-xs focus:outline-none"
-                title="Switch Language / ഭാഷ മാറ്റുക / भाषा बदलें"
-                aria-expanded={isLangMenuOpen}
-              >
-                <Globe className="w-3.5 h-3.5 text-[#88B793]" />
-                <span className="uppercase text-[11px] font-black">
-                  {language}
-                </span>
-                <ChevronDown
-                  className={`w-3 h-3 text-[#88B793] transition-transform duration-200 ${
-                    isLangMenuOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
-
-              {/* Language Selection Menu */}
-              {isLangMenuOpen && (
-                <div className="absolute right-0 mt-2.5 w-44 bg-[#14161D] rounded-2xl border border-gray-800 shadow-[0_20px_50px_rgba(0,0,0,0.6)] py-1.5 text-gray-200 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800/80">
-                    Select Language
-                  </div>
-                  <div className="p-1 space-y-0.5">
-                    {WORKER_LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        type="button"
-                        onClick={() => {
-                          setLanguage(lang.code);
-                          setIsLangMenuOpen(false);
-                        }}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors cursor-pointer text-left ${
-                          language === lang.code
-                            ? 'bg-[#2A835F] text-white font-bold'
-                            : 'text-gray-300 hover:text-white hover:bg-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm">{lang.flag}</span>
-                          <div className="flex flex-col leading-tight">
-                            <span className="font-semibold">{lang.nativeName}</span>
-                            <span className="text-[10px] opacity-70">{lang.name}</span>
-                          </div>
-                        </div>
-                        {language === lang.code && (
-                          <Check className="w-3.5 h-3.5 text-white" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
             {/* Quick Duty Status Pill Toggle */}
             <button
@@ -416,7 +350,7 @@ export function WorkerNavbar({
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-200">{t('profile')}</span>
                         <span className="text-[10px] text-gray-500">
-                          {language === 'hi' ? 'कार्यकर्ता विवरण' : language === 'ml' ? 'തൊഴിലാളി വിവരങ്ങൾ' : 'Operative Credentials'}
+                          'Operative Credentials'
                         </span>
                       </div>
                     </button>
@@ -433,7 +367,7 @@ export function WorkerNavbar({
                       <div className="flex flex-col">
                         <span className="font-semibold text-gray-200">{t('settings')}</span>
                         <span className="text-[10px] text-gray-500">
-                          {language === 'hi' ? 'पासवर्ड एवं सुरक्षा' : language === 'ml' ? 'പാസ്‌വേഡ് & സുരക്ഷ' : 'Password & Security'}
+                          'Password & Security'
                         </span>
                       </div>
                     </button>
@@ -456,7 +390,7 @@ export function WorkerNavbar({
                       <div className="flex flex-col">
                         <span className="font-semibold">{t('signOut')}</span>
                         <span className="text-[10px] text-rose-500/70">
-                          {language === 'hi' ? 'साइन आउट करें' : language === 'ml' ? 'പുറത്തുകടക്കുക' : 'Exit Portal'}
+                          'Exit Portal'
                         </span>
                       </div>
                     </button>

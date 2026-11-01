@@ -114,6 +114,7 @@ export function WorkerShell({
         isOpen={isJobModalOpen}
         onClose={closeJobModal}
         onUpdateStatus={updateJobStatus}
+        onJobUpdated={reloadAll}
         isActing={actionLoadingId === selectedJob?.id}
       />
 

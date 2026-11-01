@@ -210,10 +210,47 @@ export const EnquiryService = {
   async confirmPaymentReceived(
     enquiryId: string,
     token: string,
+    data?: {
+      amount: number;
+      paymentMethod: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+      referenceNumber?: string;
+      notes?: string;
+    },
+  ): Promise<{ message: string; enquiry: ServiceEnquiry; transaction?: any }> {
+    return request<{ message: string; enquiry: ServiceEnquiry; transaction?: any }>(
+      `/enquiries/worker/${enquiryId}/confirm-payment`,
+      {
+        method: 'PATCH',
+        body: data ? JSON.stringify(data) : undefined,
+      },
+      token,
+    );
+  },
+
+  // Worker: Feed work metrics / manual correction (tree count, time worked, break minutes, payment)
+  async feedWorkMetrics(
+    enquiryId: string,
+    data: {
+      completedUnits?: number;
+      workDurationMinutes?: number;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      totalBreakMinutes?: number;
+      specificationDetails?: any;
+      notes?: string;
+      paymentAmount?: number;
+      paymentMethod?: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+      paymentReference?: string;
+      confirmPayment?: boolean;
+    },
+    token: string,
   ): Promise<{ message: string; enquiry: ServiceEnquiry }> {
     return request<{ message: string; enquiry: ServiceEnquiry }>(
-      `/enquiries/worker/${enquiryId}/confirm-payment`,
-      { method: 'PATCH' },
+      `/enquiries/worker/${enquiryId}/feed-metrics`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
       token,
     );
   },

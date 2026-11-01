@@ -159,12 +159,12 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
       setIsAvailabilityModalOpen(false);
       if (isAvailable) {
         toast.success(
-          'ഡ്യൂട്ടി ലഭ്യമാണ് / Available for Work',
+          'Available for Work',
           'You are now marked Available for new field dispatches.'
         );
       } else {
         toast.info(
-          'അവധിയാണ് / On Leave / Off Duty',
+          'On Leave / Off Duty',
           'You are now marked Off Duty. No new dispatches will be assigned to you.'
         );
       }
@@ -229,7 +229,7 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
         token
       );
       toast.success(
-        'ജോലി സ്വീകരിച്ചു / Work Accepted',
+        'Work Accepted',
         'Work order accepted. Proceed to work site.'
       );
       await refreshJobs();
@@ -251,7 +251,7 @@ export function WorkerProvider({ children }: { children: React.ReactNode }) {
         notes || 'Operative arrived at customer work site'
       );
       toast.success(
-        'സൈറ്റിൽ എത്തി / Arrived at Site',
+        'Arrived at Site',
         'Work site arrival recorded. Timer and work tools unlocked.'
       );
       await refreshJobs();

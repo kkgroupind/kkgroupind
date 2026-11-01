@@ -19,6 +19,7 @@ import {
   Layers,
   Timer,
   RefreshCw,
+  Pencil,
 } from 'lucide-react';
 import { useWorker } from '@/context/worker-context';
 import { useWorkerLanguage } from '@/context/worker-language-context';
@@ -188,7 +189,7 @@ export default function WorkerJobsPage() {
               type="button"
               onClick={() => reloadAll()}
               disabled={isReloading || loadingJobs}
-              title="Reload Work Orders / വിവരങ്ങൾ പുതുക്കുക"
+              title="Reload Work Orders"
               aria-label="Reload work orders"
               className="shrink-0 whitespace-nowrap px-2.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 hover:text-[#2A835F] text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
@@ -273,8 +274,6 @@ export default function WorkerJobsPage() {
                         sName.includes('tree') ||
                         sName.includes('plucking') ||
                         sName.includes('harvest') ||
-                        sName.includes('തെങ്ങ്') ||
-                        sName.includes('കയറ്റം') ||
                         sName.includes('thengu') ||
                         sName.includes('kayattam');
                       const isMachinery =
@@ -282,9 +281,7 @@ export default function WorkerJobsPage() {
                         (sName.includes('jcb') ||
                         sName.includes('excavat') ||
                         sName.includes('loader') ||
-                        sName.includes('crane') ||
-                        sName.includes('ജെസിബി') ||
-                        sName.includes('എസ്കവേറ്റർ'));
+                        sName.includes('crane'));
 
                       const wageType = isTreeService
                         ? 'PER_TREE'
@@ -362,8 +359,8 @@ export default function WorkerJobsPage() {
                             return (
                               <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 bg-slate-100 px-2 sm:px-2.5 py-0.5 rounded-md border border-slate-200">
                                 {job.status === 'COMPLETED'
-                                  ? (language === 'ml' ? 'വേതനം: ഓഫീസ് അനുമതിക്കായി കാത്തിരിക്കുന്നു' : 'Payout: Awaiting approval')
-                                  : (language === 'ml' ? 'വേതനം: ജോലിക്ക് ശേഷം' : 'Payout: Set after completion')}
+                                  ? 'Payout: Awaiting approval'
+                                  : 'Payout: Set after completion'}
                               </span>
                             );
                           })()}
@@ -447,7 +444,7 @@ export default function WorkerJobsPage() {
                             onClick={() => acceptJob(job.id)}
                             className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer text-center justify-center flex items-center"
                           >
-                            {actionLoadingId === job.id ? 'Accepting...' : (language === 'ml' ? 'ജോലി സ്വീകരിക്കുക' : 'Accept Work')}
+                            {actionLoadingId === job.id ? 'Accepting...' : 'Accept Work'}
                           </button>
                         ) : job.workerAcceptance === 'ACCEPTED' ? (
                           <button
@@ -456,7 +453,7 @@ export default function WorkerJobsPage() {
                             onClick={() => markReachedSite(job.id)}
                             className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer text-center justify-center flex items-center"
                           >
-                            {actionLoadingId === job.id ? 'Recording...' : (language === 'ml' ? 'സൈറ്റിൽ എത്തി' : 'Reached Site')}
+                            {actionLoadingId === job.id ? 'Recording...' : 'Reached Site'}
                           </button>
                         ) : (
                           <button
@@ -465,7 +462,7 @@ export default function WorkerJobsPage() {
                             onClick={() => updateJobStatus(job.id, 'IN_PROGRESS')}
                             className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-sm cursor-pointer text-center justify-center flex items-center"
                           >
-                            {actionLoadingId === job.id ? t('starting') : (language === 'ml' ? 'ജോലി ആരംഭിക്കുക' : 'Start Work')}
+                            {actionLoadingId === job.id ? t('starting') : 'Start Work'}
                           </button>
                         )}
                       </>
@@ -483,10 +480,23 @@ export default function WorkerJobsPage() {
                     )}
 
                     {isCompleted && (
-                      <span className="inline-flex items-center justify-center sm:justify-start gap-1 text-xs font-bold text-emerald-600 py-1">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>{t('done')}</span>
-                      </span>
+                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                          <CheckCircle2 className="w-4 h-4" />
+                          <span>
+                            {(job.specificationDetails as any)?.paymentConfirmed ? 'Completed & Paid' : 'Completed'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openJobModal(job)}
+                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 hover:text-amber-800 border border-amber-500/30 text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center gap-1.5 active:scale-95"
+                          title="Edit tree counts, work duration, error notes, or payment details"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>Edit Finished Work</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

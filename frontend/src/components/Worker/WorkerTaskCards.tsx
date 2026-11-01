@@ -163,8 +163,6 @@ export function WorkerTaskCards({
                   sName.includes('tree') ||
                   sName.includes('plucking') ||
                   sName.includes('harvest') ||
-                  sName.includes('തെങ്ങ്') ||
-                  sName.includes('കയറ്റം') ||
                   task.job.wageType === 'PER_TREE';
 
                 const isMachinery =
@@ -172,9 +170,7 @@ export function WorkerTaskCards({
                   (sName.includes('jcb') ||
                   sName.includes('excavat') ||
                   sName.includes('loader') ||
-                  sName.includes('crane') ||
-                  sName.includes('ജെസിബി') ||
-                  sName.includes('എസ്കവേറ്റർ'));
+                  sName.includes('crane'));
 
                 const isTimer = !isCococare && (isMachinery || task.job.wageType === 'HOURLY');
                 const isTimerActive = isTimer && task.job.timerStartedAt && !task.job.timerStoppedAt && !task.job.isTimerPaused;

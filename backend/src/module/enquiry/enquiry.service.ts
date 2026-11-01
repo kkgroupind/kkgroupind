@@ -21,6 +21,8 @@ import {
   ReachedSiteDto,
   UpdateJobPayDto,
   AddExtraTreesDto,
+  ConfirmPaymentDto,
+  FeedWorkMetricsDto,
 } from './dto';
 import { ENQUIRY_MESSAGES, SECURITY_CONSTANTS, normalizePhoneNumber } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
@@ -570,46 +572,146 @@ export class EnquiryService {
     };
   }
 
-  async confirmPaymentReceived(enquiryId: string, workerId: string) {
+  async confirmPaymentReceived(
+    enquiryId: string,
+    workerId: string,
+    dto: ConfirmPaymentDto,
+    userRole?: Role,
+  ) {
     const enquiry = await this.enquiryRepo.findById(enquiryId);
     if (!enquiry) {
       throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
     }
-    if (enquiry.workerId !== workerId) {
-      throw new ForbiddenException('Not assigned to this job');
-    }
-    if (!enquiry.totalCalculatedWage) {
-      throw new BadRequestException('Payment has not been finalized by office yet');
+
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
     }
 
     const currentSpec = (enquiry.specificationDetails as any) || {};
-    
-    if (currentSpec.paymentReceivedAt) {
-      throw new BadRequestException('Payment already marked as received');
+    if (currentSpec.paymentConfirmed && !isAdminOrStaff) {
+      throw new BadRequestException(ENQUIRY_MESSAGES.PAYMENT_ALREADY_CONFIRMED);
     }
 
-    const updatedSpec = {
-      ...currentSpec,
-      paymentReceivedAt: new Date().toISOString(),
-      paymentReceivedBy: workerId,
-    };
+    const effectiveWorkerId = enquiry.workerId || workerId;
 
-    const updated = await this.enquiryRepo.saveDraftTransaction(enquiryId, {
-      specificationDetails: updatedSpec,
-    });
+    const result = await this.enquiryRepo.confirmPaymentReceivedTransaction(
+      enquiryId,
+      effectiveWorkerId,
+      dto,
+    );
 
-    this.auditService.recordLog({
-      action: 'WORKER_PAYMENT_RECEIVED',
-      entityType: 'SERVICE_ENQUIRY',
-      entityId: enquiryId,
-      details: JSON.stringify({
-        workerId,
-        amount: enquiry.totalCalculatedWage,
-      }),
-    }).catch(() => {});
+    if (!result) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    // Notify admins and staff that payment was collected and recorded in finance
+    this.notificationService
+      .notifyAdminsAndStaff({
+        title: `Payment Confirmed: ₹${dto.amount} (${enquiry.trackingNumber})`,
+        message: `Field payment of ₹${dto.amount} was confirmed via ${dto.paymentMethod} for "${enquiry.serviceName}" (${enquiry.customerName}). Automatically booked in finance.`,
+        type: NotificationType.FINANCE,
+        link: '/admin/finance',
+        metadata: {
+          enquiryId,
+          trackingNumber: enquiry.trackingNumber,
+          amount: dto.amount,
+          paymentMethod: dto.paymentMethod,
+          transactionId: result.transaction.id,
+          transactionNumber: result.transaction.transactionNumber,
+        },
+      })
+      .catch(() => {});
+
+    // Notify customer if customer account is linked
+    if (enquiry.customerId) {
+      this.notificationService
+        .notifyUser({
+          userId: enquiry.customerId,
+          title: 'Payment Received',
+          message: `Payment of ₹${dto.amount} for "${enquiry.serviceName}" has been received via ${dto.paymentMethod}. Thank you for choosing KK Group!`,
+          type: NotificationType.SUCCESS,
+          link: '/dashboard',
+          metadata: {
+            enquiryId,
+            trackingNumber: enquiry.trackingNumber,
+            amount: dto.amount,
+          },
+        })
+        .catch(() => {});
+    }
+
+    this.auditService
+      .recordLog({
+        userId: workerId,
+        userRole: userRole || Role.WORKER,
+        action: 'WORKER_PAYMENT_CONFIRMED',
+        entityType: 'SERVICE_ENQUIRY',
+        entityId: enquiryId,
+        details: JSON.stringify({
+          workerId: effectiveWorkerId,
+          amount: dto.amount,
+          paymentMethod: dto.paymentMethod,
+          transactionNumber: result.transaction.transactionNumber,
+          referenceNumber: dto.referenceNumber,
+        }),
+      })
+      .catch(() => {});
 
     return {
-      message: 'Payment receipt confirmed successfully',
+      message: ENQUIRY_MESSAGES.PAYMENT_CONFIRMED_SUCCESS,
+      enquiry: result.enquiry,
+      transaction: result.transaction,
+    };
+  }
+
+  async feedWorkMetrics(
+    enquiryId: string,
+    workerId: string,
+    dto: FeedWorkMetricsDto,
+    userRole?: Role,
+  ) {
+    const enquiry = await this.enquiryRepo.findById(enquiryId);
+    if (!enquiry) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    const isAdminOrStaff = userRole === Role.SUPER_ADMIN || userRole === Role.OFFICE_STAFF;
+    if (!isAdminOrStaff && !this.isWorkerAssignedToJob(enquiry, workerId)) {
+      throw new ForbiddenException(ENQUIRY_MESSAGES.NOT_ASSIGNED_TO_JOB);
+    }
+
+    const effectiveWorkerId = enquiry.workerId || workerId;
+
+    const updated = await this.enquiryRepo.feedWorkMetricsTransaction(
+      enquiryId,
+      effectiveWorkerId,
+      dto,
+    );
+
+    if (!updated) {
+      throw new NotFoundException(ENQUIRY_MESSAGES.ENQUIRY_NOT_FOUND);
+    }
+
+    this.auditService
+      .recordLog({
+        userId: workerId,
+        userRole: userRole || Role.WORKER,
+        action: 'WORK_METRICS_MANUAL_FEED',
+        entityType: 'SERVICE_ENQUIRY',
+        entityId: enquiryId,
+        details: JSON.stringify({
+          completedUnits: updated.completedUnits,
+          workDurationMinutes: updated.workDurationMinutes,
+          totalCalculatedWage: updated.totalCalculatedWage,
+          totalCalculatedCost: updated.totalCalculatedCost,
+          notes: dto.notes,
+        }),
+      })
+      .catch(() => {});
+
+    return {
+      message: ENQUIRY_MESSAGES.WORK_METRICS_UPDATED_SUCCESS,
       enquiry: updated,
     };
   }

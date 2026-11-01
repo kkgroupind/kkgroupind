@@ -75,6 +75,8 @@ export const VALIDATION_MESSAGES = {
     'Username can only contain letters, numbers, underscores, and dashes',
   ROLE_INVALID_STAFF: 'Role must be either WORKER or OFFICE_STAFF',
   PORTAL_ROLE_INVALID: 'portalRole must be WORKER or OFFICE_STAFF',
+  PAYMENT_AMOUNT_POSITIVE: 'Payment amount must be greater than zero',
+  PAYMENT_METHOD_REQUIRED: 'Valid payment method (CASH, UPI, BANK_TRANSFER, CHEQUE) is required',
 } as const;
 
 export const DASHBOARD_MESSAGES = {
@@ -132,6 +134,9 @@ export const ENQUIRY_MESSAGES = {
   PAY_UPDATED_SUCCESS: 'Worker payout updated successfully',
   NOT_ASSIGNED_TO_JOB: 'You are not assigned to this work order',
   PAYMENT_ONLY_AFTER_COMPLETION: 'Payment can only be assigned after work is completed by workers',
+  PAYMENT_CONFIRMED_SUCCESS: 'Payment receipt confirmed and recorded in finance ledger successfully',
+  WORK_METRICS_UPDATED_SUCCESS: 'Work metrics and payout auto-calculated successfully',
+  PAYMENT_ALREADY_CONFIRMED: 'Payment receipt has already been confirmed for this job',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {

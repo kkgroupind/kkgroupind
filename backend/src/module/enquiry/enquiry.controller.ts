@@ -27,6 +27,8 @@ import {
   ReachedSiteDto,
   UpdateJobPayDto,
   AddExtraTreesDto,
+  ConfirmPaymentDto,
+  FeedWorkMetricsDto,
 } from './dto';
 
 @Throttle({ default: RATE_LIMITS.OPERATIONS })
@@ -111,13 +113,24 @@ export class EnquiryController {
     return this.enquiryService.updateJobPay(id, dto, user.id);
   }
 
-  @Roles(Role.WORKER)
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
   @Patch('worker/:id/confirm-payment')
   async confirmPaymentReceived(
     @Param('id') id: string,
-    @CurrentUser('id') workerId: string,
+    @Body() dto: ConfirmPaymentDto,
+    @CurrentUser() user: { id: string; role: Role },
   ) {
-    return this.enquiryService.confirmPaymentReceived(id, workerId);
+    return this.enquiryService.confirmPaymentReceived(id, user.id, dto, user.role);
+  }
+
+  @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Patch('worker/:id/feed-metrics')
+  async feedWorkMetrics(
+    @Param('id') id: string,
+    @Body() dto: FeedWorkMetricsDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.enquiryService.feedWorkMetrics(id, user.id, dto, user.role);
   }
 
   @Roles(Role.WORKER, Role.SUPER_ADMIN, Role.OFFICE_STAFF)

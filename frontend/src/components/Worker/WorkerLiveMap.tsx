@@ -117,7 +117,7 @@ export function WorkerLiveMap({
           <button
             type="button"
             onClick={handleOpenSettings}
-            title="Map Settings (ശൈലി / ക്രമീകരണങ്ങൾ)"
+            title="Map Settings"
             className="p-1.5 rounded-lg bg-slate-100 hover:bg-[#EAF4EE] text-slate-600 hover:text-[#2A835F] transition-colors cursor-pointer"
           >
             <Sliders className="w-3.5 h-3.5" />

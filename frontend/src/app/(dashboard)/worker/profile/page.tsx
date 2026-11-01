@@ -347,12 +347,12 @@ export default function WorkerProfilePage() {
 
       if (targetStatus === 'AVAILABLE') {
         toast.success(
-          'ഡ്യൂട്ടി ലഭ്യമാണ് / Available for Work',
+          'Available for Work',
           'You are now marked Available for new field dispatches.',
         );
       } else {
         toast.info(
-          'അവധിയാണ് / On Leave / Off Duty',
+          'On Leave / Off Duty',
           'You are now marked Off Duty.',
         );
       }
@@ -392,7 +392,7 @@ export default function WorkerProfilePage() {
       <div className="min-h-screen bg-[#F4F7F9] flex flex-col items-center justify-center text-slate-500">
         <Loader2 className="w-9 h-9 animate-spin text-[#0F8A5F] mb-3" />
         <p className="text-sm font-semibold tracking-wide">Loading Operative Profile...</p>
-        <span className="text-xs text-slate-400 mt-1">തൊഴിലാളി വിവരങ്ങൾ</span>
+        <span className="text-xs text-slate-400 mt-1">Field Operative Account</span>
       </div>
     );
   }

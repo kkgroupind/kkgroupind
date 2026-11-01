@@ -1,5 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService, Role, ServiceStatus, WorkerStatus } from '../../database';
+import {
+  FinancialStatus,
+  FinancialTransaction,
+  PaymentMethod,
+  PrismaService,
+  Role,
+  ServiceStatus,
+  TransactionCategory,
+  TransactionType,
+  WorkerStatus,
+} from '../../database';
+import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
 import { normalizePhoneNumber, extractCorePhone } from '../../common';
 
 @Injectable()
@@ -481,17 +492,19 @@ export class EnquiryRepository {
         }
       }
 
-      // Automatically calculate wage and billing cost from agreed rates if not already set manually
+      // Automatically calculate wage and billing cost from agreed rates or standard catalog
+      const defaultSpec = resolveServiceSpec(enquiry.serviceName);
+      const effectiveWorkerWage = enquiry.workerUnitWage ?? defaultSpec.baseWorkerWage;
+      const effectiveCustomerRate = enquiry.unitRate ?? defaultSpec.baseCustomerRate;
+
       const computedWage =
-        enquiry.totalCalculatedWage ??
-        (enquiry.workerUnitWage != null && finalCompletedUnits > 0
-          ? Number((enquiry.workerUnitWage * finalCompletedUnits).toFixed(2))
-          : null);
+        (effectiveWorkerWage != null && finalCompletedUnits > 0
+          ? Number((effectiveWorkerWage * finalCompletedUnits).toFixed(2))
+          : (enquiry.totalCalculatedWage ?? null));
       const computedCost =
-        enquiry.totalCalculatedCost ??
-        (enquiry.unitRate != null && finalCompletedUnits > 0
-          ? Number((enquiry.unitRate * finalCompletedUnits).toFixed(2))
-          : null);
+        (effectiveCustomerRate != null && finalCompletedUnits > 0
+          ? Number((effectiveCustomerRate * finalCompletedUnits).toFixed(2))
+          : (enquiry.totalCalculatedCost ?? null));
 
       const updated = await tx.serviceEnquiry.update({
         where: { id: enquiryId },
@@ -583,17 +596,19 @@ export class EnquiryRepository {
         if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
           finalCompletedUnits = enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1;
         }
-        // Automatically calculate wage and billing cost from agreed rates if not already set manually
+        // Automatically calculate wage and billing cost from agreed rates or standard catalog
+        const defaultSpec = resolveServiceSpec(enquiry.serviceName);
+        const effectiveWorkerWage = enquiry.workerUnitWage ?? defaultSpec.baseWorkerWage;
+        const effectiveCustomerRate = enquiry.unitRate ?? defaultSpec.baseCustomerRate;
+
         computedWage =
-          enquiry.totalCalculatedWage ??
-          (enquiry.workerUnitWage != null && finalCompletedUnits > 0
-            ? Number((enquiry.workerUnitWage * finalCompletedUnits).toFixed(2))
-            : null);
+          (effectiveWorkerWage != null && finalCompletedUnits > 0
+            ? Number((effectiveWorkerWage * finalCompletedUnits).toFixed(2))
+            : (enquiry.totalCalculatedWage ?? null));
         computedCost =
-          enquiry.totalCalculatedCost ??
-          (enquiry.unitRate != null && finalCompletedUnits > 0
-            ? Number((enquiry.unitRate * finalCompletedUnits).toFixed(2))
-            : null);
+          (effectiveCustomerRate != null && finalCompletedUnits > 0
+            ? Number((effectiveCustomerRate * finalCompletedUnits).toFixed(2))
+            : (enquiry.totalCalculatedCost ?? null));
       }
 
       const isStartingWork =
@@ -991,5 +1006,303 @@ export class EnquiryRepository {
     if (maxOverlap > 0) return bestMatch;
 
     return null;
+  }
+
+  async feedWorkMetricsTransaction(
+    enquiryId: string,
+    workerId: string,
+    data: {
+      completedUnits?: number;
+      workDurationMinutes?: number;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      totalBreakMinutes?: number;
+      specificationDetails?: any;
+      notes?: string;
+      paymentAmount?: number;
+      paymentMethod?: PaymentMethod;
+      paymentReference?: string;
+      confirmPayment?: boolean;
+    },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const enquiry = await tx.serviceEnquiry.findUnique({
+        where: { id: enquiryId },
+      });
+
+      if (!enquiry) {
+        return null;
+      }
+
+      const defaultSpec = resolveServiceSpec(enquiry.serviceName);
+      const effectiveWorkerWage = enquiry.workerUnitWage ?? defaultSpec.baseWorkerWage;
+      const effectiveCustomerRate = enquiry.unitRate ?? defaultSpec.baseCustomerRate;
+
+      let effectiveStart = enquiry.workStartedAt;
+      if (data.workStartedAt) {
+        const d = new Date(data.workStartedAt);
+        if (!isNaN(d.getTime())) effectiveStart = d;
+      }
+
+      let effectiveEnd = enquiry.workEndedAt;
+      if (data.workEndedAt) {
+        const d = new Date(data.workEndedAt);
+        if (!isNaN(d.getTime())) effectiveEnd = d;
+      }
+
+      let actualWorkMinutes = data.workDurationMinutes ?? enquiry.workDurationMinutes;
+      if (actualWorkMinutes === undefined && effectiveStart && effectiveEnd) {
+        const diffMs = effectiveEnd.getTime() - effectiveStart.getTime();
+        const gross = Math.max(1, Math.round(diffMs / 60000));
+        const breaks = data.totalBreakMinutes ?? (enquiry.specificationDetails as any)?.totalBreakMinutes ?? 0;
+        actualWorkMinutes = Math.max(1, gross - breaks);
+      }
+
+      let finalCompletedUnits = data.completedUnits;
+      if (finalCompletedUnits === undefined || finalCompletedUnits === null) {
+        if (enquiry.wageType === 'HOURLY' || enquiry.isHourlyCalculated) {
+          finalCompletedUnits = actualWorkMinutes
+            ? Math.round((actualWorkMinutes / 60) * 10) / 10
+            : (enquiry.completedUnits ?? 0);
+        } else {
+          finalCompletedUnits = enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1;
+        }
+      }
+
+      const computedWage = (effectiveWorkerWage != null && finalCompletedUnits > 0)
+        ? Number((effectiveWorkerWage * finalCompletedUnits).toFixed(2))
+        : (enquiry.totalCalculatedWage ?? null);
+
+      const computedCost = (effectiveCustomerRate != null && finalCompletedUnits > 0)
+        ? Number((effectiveCustomerRate * finalCompletedUnits).toFixed(2))
+        : (enquiry.totalCalculatedCost ?? null);
+
+      const existingSpec = (enquiry.specificationDetails as any) || {};
+      const shouldConfirmPayment = Boolean(data.confirmPayment || data.paymentAmount !== undefined);
+      const isPaymentAlreadyConfirmed = Boolean(existingSpec.paymentConfirmed || shouldConfirmPayment);
+
+      const updatedSpec = {
+        ...existingSpec,
+        ...(data.specificationDetails || {}),
+        ...(actualWorkMinutes !== undefined ? { actualWorkMinutes } : {}),
+        ...(data.totalBreakMinutes !== undefined ? { totalBreakMinutes: data.totalBreakMinutes } : {}),
+        ...(effectiveStart ? {
+          workStartedAt: effectiveStart.toISOString(),
+          inTime: effectiveStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        } : {}),
+        ...(effectiveEnd ? {
+          workEndedAt: effectiveEnd.toISOString(),
+          outTime: effectiveEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        } : {}),
+        ...(data.paymentMethod ? { paymentMethod: data.paymentMethod } : {}),
+        ...(data.paymentAmount !== undefined ? { paymentAmount: data.paymentAmount } : {}),
+        ...(data.paymentReference !== undefined ? { paymentReference: data.paymentReference } : {}),
+        ...(isPaymentAlreadyConfirmed ? {
+          paymentConfirmed: true,
+          paymentReceivedAt: existingSpec.paymentReceivedAt || new Date().toISOString(),
+          paymentReceivedBy: existingSpec.paymentReceivedBy || workerId,
+        } : {}),
+        lastManualFeedAt: new Date().toISOString(),
+        lastManualFeedBy: workerId,
+      };
+
+      const updated = await tx.serviceEnquiry.update({
+        where: { id: enquiryId },
+        data: {
+          workStartedAt: effectiveStart,
+          workEndedAt: effectiveEnd,
+          workDurationMinutes: actualWorkMinutes,
+          completedUnits: finalCompletedUnits,
+          totalCalculatedWage: computedWage,
+          totalCalculatedCost: computedCost,
+          specificationDetails: updatedSpec,
+          notes: data.notes !== undefined ? data.notes : enquiry.notes,
+        },
+        include: {
+          worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true } },
+          officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+        },
+      });
+
+      // Synchronize FinancialTransaction if already exists or if payment is confirmed
+      const existingTxn = await tx.financialTransaction.findFirst({
+        where: {
+          enquiryId,
+          type: TransactionType.INCOME,
+          category: TransactionCategory.SERVICE_PAYMENT,
+        },
+      });
+
+      const effectivePayAmount = data.paymentAmount !== undefined
+        ? data.paymentAmount
+        : (existingTxn ? (computedCost && existingTxn.amount !== computedCost ? computedCost : existingTxn.amount) : (computedCost ?? 0));
+
+      const effectivePayMethod = data.paymentMethod || existingTxn?.paymentMethod || PaymentMethod.CASH;
+
+      if (existingTxn) {
+        await tx.financialTransaction.update({
+          where: { id: existingTxn.id },
+          data: {
+            amount: effectivePayAmount,
+            paymentMethod: effectivePayMethod,
+            status: FinancialStatus.VERIFIED,
+            referenceNumber: data.paymentReference !== undefined ? data.paymentReference : existingTxn.referenceNumber,
+            notes: data.notes || existingTxn.notes || `Updated via worker work log edit (${effectivePayMethod})`,
+            workerId: enquiry.workerId || workerId,
+          },
+        });
+      } else if (shouldConfirmPayment && effectivePayAmount > 0) {
+        const now = new Date();
+        const dateString = now.toISOString().split('T')[0];
+        const cleanDate = dateString.replace(/-/g, '');
+        const prefix = `TXN-${cleanDate}-`;
+        const count = await tx.financialTransaction.count({
+          where: { transactionNumber: { startsWith: prefix } },
+        });
+        const suffix = (count + 1).toString().padStart(4, '0');
+        const transactionNumber = `${prefix}${suffix}`;
+
+        await tx.financialTransaction.create({
+          data: {
+            transactionNumber,
+            type: TransactionType.INCOME,
+            category: TransactionCategory.SERVICE_PAYMENT,
+            amount: effectivePayAmount,
+            date: now,
+            dateString,
+            paymentMethod: effectivePayMethod,
+            status: FinancialStatus.VERIFIED,
+            referenceNumber: data.paymentReference || enquiry.trackingNumber,
+            serviceType: enquiry.serviceName,
+            customerName: enquiry.customerName,
+            notes: data.notes || `Payment recorded via worker manual edit (${effectivePayMethod})`,
+            enquiryId: enquiry.id,
+            workerId: enquiry.workerId || workerId,
+            recordedById: workerId,
+            verifiedById: workerId,
+          },
+        });
+      }
+
+      return updated;
+    });
+  }
+
+  async confirmPaymentReceivedTransaction(
+    enquiryId: string,
+    workerId: string,
+    data: {
+      amount: number;
+      paymentMethod: PaymentMethod;
+      referenceNumber?: string;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const enquiry = await tx.serviceEnquiry.findUnique({
+        where: { id: enquiryId },
+      });
+
+      if (!enquiry) {
+        return null;
+      }
+
+      const now = new Date();
+      const dateString = now.toISOString().split('T')[0];
+      const currentSpec = (enquiry.specificationDetails as any) || {};
+
+      const updatedSpec = {
+        ...currentSpec,
+        paymentReceivedAt: now.toISOString(),
+        paymentReceivedBy: workerId,
+        paymentMethod: data.paymentMethod,
+        paymentAmount: data.amount,
+        paymentReference: data.referenceNumber || null,
+        paymentNotes: data.notes || null,
+        paymentConfirmed: true,
+      };
+
+      const updateData: any = {
+        specificationDetails: updatedSpec,
+      };
+      if (!enquiry.totalCalculatedCost || enquiry.totalCalculatedCost <= 0) {
+        updateData.totalCalculatedCost = data.amount;
+      }
+      if (enquiry.status !== ServiceStatus.COMPLETED) {
+        updateData.status = ServiceStatus.COMPLETED;
+        updateData.completedAt = now;
+      }
+
+      const updatedEnquiry = await tx.serviceEnquiry.update({
+        where: { id: enquiryId },
+        data: updateData,
+        include: {
+          worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true } },
+          officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+        },
+      });
+
+      // Check for existing transaction
+      const existingTxn = await tx.financialTransaction.findFirst({
+        where: {
+          enquiryId,
+          type: TransactionType.INCOME,
+          category: TransactionCategory.SERVICE_PAYMENT,
+        },
+      });
+
+      let transaction: FinancialTransaction;
+      if (existingTxn) {
+        transaction = await tx.financialTransaction.update({
+          where: { id: existingTxn.id },
+          data: {
+            amount: data.amount,
+            paymentMethod: data.paymentMethod,
+            status: FinancialStatus.VERIFIED,
+            referenceNumber: data.referenceNumber || existingTxn.referenceNumber || enquiry.trackingNumber,
+            notes: data.notes || existingTxn.notes || `Payment confirmed by worker via ${data.paymentMethod}`,
+            date: now,
+            dateString,
+            workerId: enquiry.workerId || workerId,
+            verifiedById: workerId,
+          },
+        });
+      } else {
+        const cleanDate = dateString.replace(/-/g, '');
+        const prefix = `TXN-${cleanDate}-`;
+        const count = await tx.financialTransaction.count({
+          where: {
+            transactionNumber: { startsWith: prefix },
+          },
+        });
+        const suffix = (count + 1).toString().padStart(4, '0');
+        const transactionNumber = `${prefix}${suffix}`;
+
+        transaction = await tx.financialTransaction.create({
+          data: {
+            transactionNumber,
+            type: TransactionType.INCOME,
+            category: TransactionCategory.SERVICE_PAYMENT,
+            amount: data.amount,
+            date: now,
+            dateString,
+            paymentMethod: data.paymentMethod,
+            status: FinancialStatus.VERIFIED,
+            referenceNumber: data.referenceNumber || enquiry.trackingNumber,
+            serviceType: enquiry.serviceName,
+            customerName: enquiry.customerName,
+            notes: data.notes || `Customer payment collected on site by worker via ${data.paymentMethod}`,
+            enquiryId: enquiry.id,
+            workerId: enquiry.workerId || workerId,
+            recordedById: workerId,
+            verifiedById: workerId,
+          },
+        });
+      }
+
+      return { enquiry: updatedEnquiry, transaction };
+    });
   }
 }

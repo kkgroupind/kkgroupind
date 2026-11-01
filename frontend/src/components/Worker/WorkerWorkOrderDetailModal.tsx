@@ -114,7 +114,7 @@ export function WorkerWorkOrderDetailModal({
   const wageRateText = totalEarned && totalEarned > 0
     ? `₹${Number(totalEarned).toLocaleString('en-IN')} (Calculated Payout)`
     : wageRate
-    ? `₹${Number(wageRate).toLocaleString('en-IN')} per ${isCoconut ? 'Tree (തെങ്ങ്)' : isHourly ? 'Hour (മണിക്കൂർ)' : job.unitLabel || 'Unit'}`
+    ? `₹${Number(wageRate).toLocaleString('en-IN')} per ${isCoconut ? 'Tree' : isHourly ? 'Hour' : job.unitLabel || 'Unit'}`
     : 'Standard Field Operative Scale';
 
   // Google Maps query URL

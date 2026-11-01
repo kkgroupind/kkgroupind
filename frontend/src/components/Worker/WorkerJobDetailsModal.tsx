@@ -36,6 +36,12 @@ import {
   AlertTriangle,
   Save,
   ChevronDown,
+  QrCode,
+  Banknote,
+  CreditCard,
+  FileText,
+  Sliders,
+  Pencil,
 } from 'lucide-react';
 import { ServiceEnquiry, EnquiryService } from '@/services';
 import { useAuth } from '@/context/auth-context';
@@ -104,6 +110,28 @@ export function WorkerJobDetailsModal({
   const [lastDraftSavedTime, setLastDraftSavedTime] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
+  // Payment Confirmation Modal States
+  const [isPaymentConfirmModalOpen, setIsPaymentConfirmModalOpen] = useState(false);
+  const [paymentAmountInput, setPaymentAmountInput] = useState<number>(0);
+  const [paymentMethodInput, setPaymentMethodInput] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('UPI');
+  const [paymentRefInput, setPaymentRefInput] = useState<string>('');
+  const [paymentNotesInput, setPaymentNotesInput] = useState<string>('');
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
+  // Manual Work Feed & Correction Modal States
+  const [isManualWorkFeedModalOpen, setIsManualWorkFeedModalOpen] = useState(false);
+  const [manualFeedUnits, setManualFeedUnits] = useState<number>(10);
+  const [manualFeedWorkMinutes, setManualFeedWorkMinutes] = useState<number>(120);
+  const [manualFeedBreakMinutes, setManualFeedBreakMinutes] = useState<number>(0);
+  const [manualFeedInTime, setManualFeedInTime] = useState<string>('08:00');
+  const [manualFeedOutTime, setManualFeedOutTime] = useState<string>('12:00');
+  const [manualFeedNotes, setManualFeedNotes] = useState<string>('');
+  const [isSubmittingManualFeed, setIsSubmittingManualFeed] = useState(false);
+  const [manualFeedPaymentAmount, setManualFeedPaymentAmount] = useState<number>(0);
+  const [manualFeedPaymentMethod, setManualFeedPaymentMethod] = useState<'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE'>('UPI');
+  const [manualFeedPaymentRef, setManualFeedPaymentRef] = useState<string>('');
+  const [manualFeedConfirmPayment, setManualFeedConfirmPayment] = useState<boolean>(false);
+
   // Worker Manual Timing Setup States
   const [manualInTime, setManualInTime] = useState<string>('08:00');
   const [manualOutTime, setManualOutTime] = useState<string>('14:00');
@@ -133,6 +161,18 @@ export function WorkerJobDetailsModal({
     const netMins = Math.max(1, diffMins - totalBreakM);
     setManualWorkHours(Math.floor(netMins / 60));
     setManualWorkMins(netMins % 60);
+  };
+
+  const recalculateManualFeedDuration = (inT: string, outT: string, breakM: number) => {
+    if (!inT || !outT) return;
+    const [inH, inM] = inT.split(':').map(Number);
+    const [outH, outM] = outT.split(':').map(Number);
+    if (isNaN(inH) || isNaN(inM) || isNaN(outH) || isNaN(outM)) return;
+    
+    let grossMins = (outH * 60 + outM) - (inH * 60 + inM);
+    if (grossMins < 0) grossMins += 24 * 60;
+    const netM = Math.max(1, grossMins - (breakM || 0));
+    setManualFeedWorkMinutes(netM);
   };
 
   const handleRecalculateWorkDuration = (inT: string, outT: string, breakM: number) => {
@@ -213,8 +253,6 @@ export function WorkerJobDetailsModal({
         sName.includes('tree') ||
         sName.includes('plucking') ||
         sName.includes('harvest') ||
-        sName.includes('തെങ്ങ്') ||
-        sName.includes('കയറ്റം') ||
         sName.includes('thengu') ||
         sName.includes('kayattam');
 
@@ -226,11 +264,7 @@ export function WorkerJobDetailsModal({
         sName.includes('earthmoving') ||
         sName.includes('trench') ||
         sName.includes('grader') ||
-        sName.includes('loader') ||
-        sName.includes('ജെസിബി') ||
-        sName.includes('എസ്കവേറ്റർ') ||
-        sName.includes('ക്രെയിൻ') ||
-        sName.includes('മണ്ണെടുക്കൽ'));
+        sName.includes('loader') ||false);
       const jobIsHourly = !isTree && (job.wageType === 'HOURLY' || isMach);
 
       // Initialize timer ONLY for hourly machinery jobs (Coconut tree plucking strictly uses Tree Counter HUD, NEVER a timer)
@@ -266,8 +300,6 @@ export function WorkerJobDetailsModal({
       sName.includes('tree') ||
       sName.includes('plucking') ||
       sName.includes('harvest') ||
-      sName.includes('തെങ്ങ്') ||
-      sName.includes('കയറ്റം') ||
       sName.includes('thengu') ||
       sName.includes('kayattam');
 
@@ -307,8 +339,6 @@ export function WorkerJobDetailsModal({
       sName.includes('tree') ||
       sName.includes('plucking') ||
       sName.includes('harvest') ||
-      sName.includes('തെങ്ങ്') ||
-      sName.includes('കയറ്റം') ||
       sName.includes('thengu') ||
       sName.includes('kayattam');
 
@@ -353,8 +383,6 @@ export function WorkerJobDetailsModal({
     sName.includes('tree') ||
     sName.includes('plucking') ||
     sName.includes('harvest') ||
-    sName.includes('തെങ്ങ്') ||
-    sName.includes('കയറ്റം') ||
     sName.includes('thengu') ||
     sName.includes('kayattam');
   const isMachinery =
@@ -365,36 +393,27 @@ export function WorkerJobDetailsModal({
     sName.includes('earthmoving') ||
     sName.includes('trench') ||
     sName.includes('grader') ||
-    sName.includes('loader') ||
-    sName.includes('ജെസിബി') ||
-    sName.includes('എസ്കവേറ്റർ') ||
-    sName.includes('ക്രെയിൻ') ||
-    sName.includes('മണ്ണെടുക്കൽ'));
+    sName.includes('loader') ||false);
   const isPaintOrTile =
     sName.includes('paint') ||
     sName.includes('putty') ||
     sName.includes('tile') ||
     sName.includes('marble') ||
-    sName.includes('granite') ||
-    sName.includes('പെയിന്റിംഗ്') ||
-    sName.includes('ടൈൽ');
+    sName.includes('granite') ||false;
   const isElectrical =
     sName.includes('electr') ||
     sName.includes('wire') ||
     sName.includes('wiring') ||
-    sName.includes('kseb') ||
-    sName.includes('ഇലക്ട്രിക്കൽ');
+    sName.includes('kseb') ||false;
   const isBorewell =
     sName.includes('bore') ||
     sName.includes('drill') ||
-    sName.includes('piling') ||
-    sName.includes('കുഴൽക്കിണർ');
+    sName.includes('piling') ||false;
   const isMasonry =
     sName.includes('mason') ||
     sName.includes('brick') ||
     sName.includes('concrete') ||
-    sName.includes('plaster') ||
-    sName.includes('മേസ്തിരി');
+    sName.includes('plaster') ||false;
 
   const wageType = isTreeService
     ? 'PER_TREE'
@@ -747,19 +766,111 @@ export function WorkerJobDetailsModal({
     }
   };
 
-  // 7. Worker confirms receipt of finalized payout
-  const handleConfirmPayment = async () => {
+  // Open Payment Confirmation Modal with auto-calculated suggested amount
+  const openPaymentConfirmModal = () => {
+    if (!localJob) return;
+    const currentUnits = localJob.completedUnits ?? unitCount;
+    const autoCost = localJob.totalCalculatedCost ??
+      (localJob.unitRate ? Math.round(localJob.unitRate * currentUnits) : null);
+    const autoWage = localJob.totalCalculatedWage ??
+      (localJob.workerUnitWage ? Math.round(localJob.workerUnitWage * currentUnits) : null);
+    const initialAmount = autoCost || autoWage || 0;
+
+    setPaymentAmountInput(initialAmount);
+    setPaymentMethodInput('UPI');
+    setPaymentRefInput('');
+    setPaymentNotesInput('');
+    setIsPaymentConfirmModalOpen(true);
+  };
+
+  // Submit Worker Payment Confirmation
+  const handleConfirmPaymentSubmit = async () => {
     if (!token || !localJob) return;
-    setIsSubmittingAction(true);
+    if (!paymentAmountInput || Number(paymentAmountInput) <= 0) {
+      setActionError('Please enter a valid payment amount greater than zero');
+      return;
+    }
+    setIsSubmittingPayment(true);
     setActionError(null);
     try {
-      const res = await EnquiryService.confirmPaymentReceived(localJob.id, token);
+      const res = await EnquiryService.confirmPaymentReceived(localJob.id, token, {
+        amount: Number(paymentAmountInput),
+        paymentMethod: paymentMethodInput,
+        referenceNumber: paymentRefInput.trim() || undefined,
+        notes: paymentNotesInput.trim() || undefined,
+      });
       setLocalJob(res.enquiry);
+      setIsPaymentConfirmModalOpen(false);
       onJobUpdated?.();
     } catch (err: any) {
       setActionError(err?.message || 'Failed to confirm payment receipt');
     } finally {
-      setIsSubmittingAction(false);
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  // Open Manual Work Feed & Correction Modal
+  const openManualWorkFeedModal = () => {
+    if (!localJob) return;
+    const spec = (localJob.specificationDetails as any) || {};
+    const currentUnits = localJob.completedUnits ?? unitCount ?? 1;
+    const currentMins = localJob.workDurationMinutes ?? spec.actualWorkMinutes ?? 120;
+    const currentBreaks = spec.totalBreakMinutes ?? 0;
+
+    const rateCost = localJob.unitRate || 120;
+    const expectedBill = currentUnits * rateCost;
+    const recordedPayment = spec.paymentAmount || localJob.totalCalculatedCost || expectedBill;
+
+    setManualFeedUnits(currentUnits);
+    setManualFeedWorkMinutes(currentMins);
+    setManualFeedBreakMinutes(currentBreaks);
+    setManualFeedInTime(spec.inTime || '08:00');
+    setManualFeedOutTime(spec.outTime || '12:00');
+    setManualFeedNotes('');
+    setManualFeedPaymentAmount(recordedPayment);
+    setManualFeedPaymentMethod(spec.paymentMethod || 'UPI');
+    setManualFeedPaymentRef(spec.paymentReference || '');
+    setManualFeedConfirmPayment(Boolean(spec.paymentConfirmed || spec.paymentReceivedAt));
+    setIsManualWorkFeedModalOpen(true);
+  };
+
+  // Submit Manual Work Feed / Correction
+  const handleManualWorkFeedSubmit = async () => {
+    if (!token || !localJob) return;
+    setIsSubmittingManualFeed(true);
+    setActionError(null);
+    try {
+      const spec = (localJob.specificationDetails as any) || {};
+      const isPayConfirmed = manualFeedConfirmPayment || Boolean(spec.paymentConfirmed || spec.paymentReceivedAt);
+
+      const res = await EnquiryService.feedWorkMetrics(
+        localJob.id,
+        {
+          completedUnits: Number(manualFeedUnits),
+          workDurationMinutes: Number(manualFeedWorkMinutes),
+          totalBreakMinutes: Number(manualFeedBreakMinutes),
+          specificationDetails: {
+            inTime: manualFeedInTime,
+            outTime: manualFeedOutTime,
+            actualWorkMinutes: Number(manualFeedWorkMinutes),
+            totalBreakMinutes: Number(manualFeedBreakMinutes),
+          },
+          notes: manualFeedNotes.trim() || undefined,
+          paymentAmount: isPayConfirmed ? Number(manualFeedPaymentAmount) : undefined,
+          paymentMethod: isPayConfirmed ? manualFeedPaymentMethod : undefined,
+          paymentReference: isPayConfirmed && manualFeedPaymentRef.trim() ? manualFeedPaymentRef.trim() : undefined,
+          confirmPayment: isPayConfirmed,
+        },
+        token,
+      );
+      setLocalJob(res.enquiry);
+      setUnitCount(res.enquiry.completedUnits ?? manualFeedUnits);
+      setIsManualWorkFeedModalOpen(false);
+      onJobUpdated?.();
+    } catch (err: any) {
+      setActionError(err?.message || 'Failed to update work log');
+    } finally {
+      setIsSubmittingManualFeed(false);
     }
   };
 
@@ -803,7 +914,7 @@ export function WorkerJobDetailsModal({
                   🌴 Cococare Tree Count Mode
                 </span>
                 <span className="text-[11px] text-emerald-200/70 block">
-                  തെങ്ങ് കയറ്റം &amp; വിളവെടുപ്പ് • Log harvested palms &amp; plant care.
+                  Palm Tree Care &amp; Harvesting • Log harvested palms &amp; plant care.
                 </span>
               </div>
             </div>
@@ -1024,19 +1135,19 @@ export function WorkerJobDetailsModal({
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-violet-300">
-                        {language === 'ml' ? 'സഹപ്രവർത്തകർ' : 'Squad Co-Workers'}
+                        'Squad Co-Workers'
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-violet-500/30 text-violet-200 border border-violet-500/40 text-[10px] font-bold">
-                        {squadMembers.length} {language === 'ml' ? 'പേർ' : 'Workers'}
+                        {squadMembers.length} Workers
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-400 block truncate">
-                      {language === 'ml' ? 'ഗ്രൂപ്പ് വർക്ക് • സഹപ്രവർത്തകരെ കാണുക' : 'Group Work • Tap to view all co-workers'}
+                      'Group Work • Tap to view all co-workers'
                     </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 text-xs font-bold text-violet-300 shrink-0">
-                  <span>{isSquadDropdownOpen ? (language === 'ml' ? 'മറയ്ക്കുക' : 'Hide') : (language === 'ml' ? 'കാണുക' : 'View All')}</span>
+                  <span>{isSquadDropdownOpen ? 'Hide' : 'View All'}</span>
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSquadDropdownOpen ? 'rotate-180' : ''}`} />
                 </div>
               </button>
@@ -1057,7 +1168,7 @@ export function WorkerJobDetailsModal({
                                 <span className="text-xs font-semibold text-white block truncate">{member.name}</span>
                                 {isCurrentUser && (
                                   <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-violet-500/30 text-violet-200 border border-violet-500/40">
-                                    {language === 'ml' ? 'നിങ്ങൾ' : 'You'}
+                                    'You'
                                   </span>
                                 )}
                               </div>
@@ -1097,7 +1208,7 @@ export function WorkerJobDetailsModal({
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                     Coconut Palm Harvesting
                   </h4>
-                  <span className="text-[11px] text-slate-400">ഈന്തപ്പന വിളവെടുക്കൽ • തെങ്ങ് കയറ്റം</span>
+                  <span className="text-[11px] text-slate-400">Palm Tree Care &amp; Harvesting</span>
                 </div>
               </div>
 
@@ -1141,14 +1252,14 @@ export function WorkerJobDetailsModal({
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-orange-300">
                         {activeBreak.reason === 'LUNCH'
-                          ? '🍱 Lunch Break (ഉച്ചഭക്ഷണം)'
+                          ? '🍱 Lunch Break'
                           : activeBreak.reason === 'BREAKFAST'
-                          ? '☕ Breakfast / Tea (പ്രാതൽ)'
+                          ? '☕ Breakfast / Tea'
                           : activeBreak.reason === 'TEA'
-                          ? '🫖 Evening Tea (ചായ കുടി)'
+                          ? '🫖 Evening Tea'
                           : activeBreak.reason === 'WEATHER'
-                          ? '🌧️ Rain Delay (മഴ തടസ്സം)'
-                          : '⏸️ Rest Break (വിശ്രമം)'}
+                          ? '🌧️ Rain Delay'
+                          : '⏸️ Rest Break'}
                       </span>
                       <span className="text-[10px] px-2 py-0.2 rounded-full bg-orange-500/30 text-orange-200 border border-orange-500/40 font-bold">
                         Paused
@@ -1172,7 +1283,7 @@ export function WorkerJobDetailsModal({
                   className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-md disabled:opacity-60 active:scale-95"
                 >
                   <Play className="w-3.5 h-3.5 fill-white" />
-                  <span>Resume Plucking (പണി തുടരുക)</span>
+                  <span>Resume Plucking</span>
                 </button>
               </div>
             )}
@@ -1180,7 +1291,7 @@ export function WorkerJobDetailsModal({
             {/* Tree Count Counter HUD */}
             <div className="bg-slate-900/90 border border-slate-750 rounded-2xl p-4 flex flex-col items-center gap-3">
               <span className="text-[11px] font-semibold text-slate-300">
-                Number of Coconut Trees Plucked (കയറിയ തെങ്ങുകൾ)
+                Number of Coconut Trees Plucked
               </span>
 
               <div className="flex items-center gap-4">
@@ -1236,7 +1347,7 @@ export function WorkerJobDetailsModal({
               <div className="w-full mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs px-1">
                 <span className="text-[11px] text-emerald-400 font-bold flex items-center gap-1">
                   <IndianRupee className="w-3.5 h-3.5" />
-                  <span>Earned Wage (വേതനം):</span>
+                  <span>Earned Wage:</span>
                 </span>
                 <span className="font-mono text-sm font-black text-emerald-300">
                   ₹{(unitCount * (localJob.workerUnitWage || 80)).toLocaleString('en-IN')}{' '}
@@ -1289,7 +1400,7 @@ export function WorkerJobDetailsModal({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[11px] font-bold transition-all cursor-pointer"
                   >
                     <Coffee className="w-3.5 h-3.5" />
-                    <span>Take Break (ബ്രേക്ക് എടുക്കുക)</span>
+                    <span>Take Break</span>
                   </button>
                 ) : (
                   <button
@@ -1331,11 +1442,11 @@ export function WorkerJobDetailsModal({
 
               const getBreakBadge = (reason: string) => {
                 const r = (reason || '').toUpperCase();
-                if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
-                if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
-                if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
-                if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain Delay (മഴ തടസ്സം)', icon: '🌧️' };
-                return { label: reason || 'Break (വിശ്രമം)', icon: '⏸️' };
+                if (r.includes('LUNCH') ) return { label: 'Lunch Break', icon: '🍱' };
+                if (r.includes('BREAKFAST') ) return { label: 'Tea / Breakfast', icon: '☕' };
+                if (r.includes('TEA') ) return { label: 'Tea Break', icon: '🫖' };
+                if (r.includes('RAIN')  || r.includes('WEATHER')) return { label: 'Rain Delay', icon: '🌧️' };
+                return { label: reason || 'Break', icon: '⏸️' };
               };
 
               return (
@@ -1473,7 +1584,7 @@ export function WorkerJobDetailsModal({
                     <span className="font-mono text-sm sm:text-base font-black text-white">
                       {isTimerRunning && !activeBreak ? formatTimer(timerSeconds) : `${actualWorkMins}m`}
                     </span>
-                    <span className="text-[9px] text-emerald-300/60 block mt-0.5">യഥാർത്ഥ ജോലി</span>
+                    <span className="text-[9px] text-emerald-300/60 block mt-0.5">Active Work</span>
                   </div>
 
                   <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
@@ -1495,7 +1606,7 @@ export function WorkerJobDetailsModal({
                     <span className="font-mono text-sm sm:text-base font-black text-slate-200">
                       {grossMins}m
                     </span>
-                    <span className="text-[9px] text-slate-500 block mt-0.5">ആകെ സമയം</span>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Total Time</span>
                   </div>
                 </div>
               );
@@ -1535,7 +1646,7 @@ export function WorkerJobDetailsModal({
             <div className="flex items-center justify-between text-xs bg-slate-900/90 px-3 py-2 rounded-xl border border-amber-500/30">
               <span className="text-[11px] text-amber-300 font-bold flex items-center gap-1">
                 <IndianRupee className="w-3.5 h-3.5" />
-                <span>Earned Wage (കണക്കാക്കിയ വേതനം):</span>
+                <span>Earned Wage:</span>
               </span>
               <span className="font-mono text-sm font-black text-amber-300">
                 ₹{(() => {
@@ -1564,7 +1675,7 @@ export function WorkerJobDetailsModal({
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-98"
               >
                 <Pause className="w-3.5 h-3.5" />
-                <span>Pause Timer for Break (ബ്രേക്ക് എടുക്കുക)</span>
+                <span>Pause Timer for Break</span>
               </button>
             )}
 
@@ -1576,7 +1687,7 @@ export function WorkerJobDetailsModal({
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black transition-all cursor-pointer shadow-md shadow-blue-600/30 active:scale-98"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Resume Work Timer (പണി പുനരാരംഭിക്കുക)</span>
+                <span>Resume Work Timer</span>
               </button>
             )}
 
@@ -1588,12 +1699,12 @@ export function WorkerJobDetailsModal({
 
               const getBreakBadge = (reason: string) => {
                 const r = (reason || '').toUpperCase();
-                if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
-                if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
-                if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
-                if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain / Weather (മഴ തടസ്സം)', icon: '🌧️' };
-                if (r.includes('FUEL') || r.includes('REPAIR') || r.includes('കേടുപാട്')) return { label: 'Refuel / Repair (അറ്റകുറ്റപ്പണി)', icon: '⛽' };
-                return { label: reason || 'Break (ബ്രേക്ക്)', icon: '⏸️' };
+                if (r.includes('LUNCH') ) return { label: 'Lunch Break', icon: '🍱' };
+                if (r.includes('BREAKFAST') ) return { label: 'Tea / Breakfast', icon: '☕' };
+                if (r.includes('TEA') ) return { label: 'Tea Break', icon: '🫖' };
+                if (r.includes('RAIN')  || r.includes('WEATHER')) return { label: 'Rain / Weather Delay', icon: '🌧️' };
+                if (r.includes('FUEL') || r.includes('REPAIR') ) return { label: 'Refuel / Repair', icon: '⛽' };
+                return { label: reason || 'Break', icon: '⏸️' };
               };
 
               return (
@@ -1720,12 +1831,12 @@ export function WorkerJobDetailsModal({
 
           const getBreakBadge = (reason: string) => {
             const r = (reason || '').toUpperCase();
-            if (r.includes('LUNCH') || r.includes('ഊണ്')) return { label: 'Lunch Break (ഉച്ചഭക്ഷണം)', icon: '🍱' };
-            if (r.includes('BREAKFAST') || r.includes('പ്രാതൽ')) return { label: 'Tea / Breakfast (പ്രാതൽ)', icon: '☕' };
-            if (r.includes('TEA') || r.includes('ചായ')) return { label: 'Tea Break (ചായ കുടി)', icon: '🫖' };
-            if (r.includes('RAIN') || r.includes('മഴ') || r.includes('WEATHER')) return { label: 'Rain / Weather (മഴ തടസ്സം)', icon: '🌧️' };
-            if (r.includes('FUEL') || r.includes('REPAIR') || r.includes('കേടുപാട്')) return { label: 'Refuel / Repair (അറ്റകുറ്റപ്പണി)', icon: '⛽' };
-            return { label: reason || 'Break (ബ്രേക്ക്)', icon: '⏸️' };
+            if (r.includes('LUNCH') ) return { label: 'Lunch Break', icon: '🍱' };
+            if (r.includes('BREAKFAST') ) return { label: 'Tea / Breakfast', icon: '☕' };
+            if (r.includes('TEA') ) return { label: 'Tea Break', icon: '🫖' };
+            if (r.includes('RAIN')  || r.includes('WEATHER')) return { label: 'Rain / Weather Delay', icon: '🌧️' };
+            if (r.includes('FUEL') || r.includes('REPAIR') ) return { label: 'Refuel / Repair', icon: '⛽' };
+            return { label: reason || 'Break', icon: '⏸️' };
           };
 
           return (
@@ -1739,7 +1850,7 @@ export function WorkerJobDetailsModal({
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                       Field Time &amp; Break Records
                     </h4>
-                    <span className="text-[10px] text-slate-400">സമയവും ബ്രേക്ക് രേഖകളും</span>
+                    <span className="text-[10px] text-slate-400">Work Timeline &amp; Breaks</span>
                   </div>
                 </div>
 
@@ -1757,7 +1868,7 @@ export function WorkerJobDetailsModal({
                   <span className="font-mono text-sm sm:text-base font-black text-white">
                     {actualWorkMins > 0 ? `${actualWorkMins}m` : (timerSeconds > 0 ? formatTimer(timerSeconds) : '—')}
                   </span>
-                  <span className="text-[9px] text-emerald-300/60 block mt-0.5">യഥാർത്ഥ ജോലി</span>
+                  <span className="text-[9px] text-emerald-300/60 block mt-0.5">Active Work</span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-slate-900/90 border border-amber-500/30">
@@ -1779,7 +1890,7 @@ export function WorkerJobDetailsModal({
                   <span className="font-mono text-sm sm:text-base font-black text-slate-200">
                     {grossMins > 0 ? `${grossMins}m` : '—'}
                   </span>
-                  <span className="text-[9px] text-slate-500 block mt-0.5">ആകെ സമയം</span>
+                  <span className="text-[9px] text-slate-500 block mt-0.5">Total Time</span>
                 </div>
               </div>
 
@@ -1872,6 +1983,13 @@ export function WorkerJobDetailsModal({
               : unitRateWage && finalUnits
               ? Math.round(unitRateWage * finalUnits)
               : null;
+          const unitRateCost = localJob.unitRate || (isCoconut ? 120 : isHourly ? 1600 : null);
+          const finalCost =
+            localJob.totalCalculatedCost && localJob.totalCalculatedCost > 0
+              ? localJob.totalCalculatedCost
+              : unitRateCost && finalUnits
+              ? Math.round(unitRateCost * finalUnits)
+              : null;
 
           return (
             <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-950/60 to-slate-900/80 border border-emerald-500/40 space-y-2.5">
@@ -1881,7 +1999,7 @@ export function WorkerJobDetailsModal({
                 </span>
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 block">
-                    Your Completed Work Payout (വേതനം)
+                    Your Completed Work Payout
                   </span>
                   <span className="text-[11px] text-emerald-200/60">
                     {finalWage ? `Earned Pay for ${localJob.serviceName}` : 'Finalizing Payout'}
@@ -1935,7 +2053,7 @@ export function WorkerJobDetailsModal({
                       className="text-[11px] font-bold text-emerald-300 hover:text-white bg-emerald-600/30 hover:bg-emerald-600 px-2.5 py-1 rounded-lg border border-emerald-500/40 transition-all flex items-center gap-1 cursor-pointer active:scale-95 shadow-sm"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add Extra Trees (+ തെങ്ങുകൾ)</span>
+                      <span>Add Extra Trees</span>
                     </button>
                   </div>
 
@@ -1987,24 +2105,73 @@ export function WorkerJobDetailsModal({
 
               <div className="mt-3 pt-3 border-t border-emerald-500/20">
                 {spec.paymentReceivedAt ? (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 justify-center">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Payment Received</span>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300">
+                      <div className="flex items-center gap-2 justify-between">
+                        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-emerald-400">
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                          Payment Confirmed &amp; Recorded
+                        </span>
+                        <span className="text-[10px] text-emerald-400/80 font-mono">
+                          {spec.paymentReceivedAt ? new Date(spec.paymentReceivedAt).toLocaleDateString() : 'Verified'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-emerald-500/20 text-slate-300">
+                        <span>Amount Received:</span>
+                        <strong className="font-mono text-emerald-400 text-sm">
+                          ₹{(spec.paymentAmount || finalCost || finalWage || 0).toLocaleString('en-IN')}
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Method:</span>
+                        <span className="font-bold text-white uppercase bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+                          {spec.paymentMethod || 'Cash'}
+                        </span>
+                      </div>
+                      {spec.paymentReference && (
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
+                          <span>Ref / UTR:</span>
+                          <span className="font-mono text-slate-300">{spec.paymentReference}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={openManualWorkFeedModal}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 text-xs font-bold border border-amber-500/30 transition-all cursor-pointer active:scale-95 shadow-sm"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Edit Finished Work &amp; Adjust Payment</span>
+                    </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleConfirmPayment}
-                    disabled={isSubmittingAction}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-md disabled:opacity-60"
-                  >
-                    {isSubmittingAction ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4" />
-                    )}
-                    <span>Confirm Payment Received (വേതനം ലഭിച്ചു)</span>
-                  </button>
+                  <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={openManualWorkFeedModal}
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all cursor-pointer active:scale-95 shadow-sm"
+                      >
+                        <Sliders className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Feed / Correct Work Log</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={openPaymentConfirmModal}
+                        disabled={isSubmittingPayment}
+                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all cursor-pointer shadow-md disabled:opacity-60 active:scale-95"
+                      >
+                        {isSubmittingPayment ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        )}
+                        <span>Confirm Payment Received</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -2078,7 +2245,7 @@ export function WorkerJobDetailsModal({
                 className="bg-amber-600 hover:bg-amber-500 text-slate-950 px-3.5 py-2 rounded-xl text-xs font-black transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
                 <Coffee className="w-3.5 h-3.5" />
-                <span>{isCoconut ? 'Take Break (ബ്രേക്ക്)' : 'Pause Break'}</span>
+                <span>{isCoconut ? 'Take Break' : 'Pause Break'}</span>
               </button>
             )}
 
@@ -2125,6 +2292,17 @@ export function WorkerJobDetailsModal({
               </button>
             )}
 
+            {isCompleted && (
+              <button
+                type="button"
+                onClick={openManualWorkFeedModal}
+                className="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95"
+              >
+                <Sliders className="w-3.5 h-3.5 text-amber-400" />
+                <span>Edit Finished Work</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}
@@ -2145,12 +2323,12 @@ export function WorkerJobDetailsModal({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white">
-                    {isCoconut ? 'Take a Break (ബ്രേക്ക് സമയം)' : 'Pause Timer for Break?'}
+                    {isCoconut ? 'Take a Break' : 'Pause Timer for Break?'}
                   </h3>
                   <p className="text-xs text-amber-300/80">
                     {isCoconut
-                      ? 'ബ്രേക്കിന് മുൻപുള്ള തെങ്ങുകളുടെ എണ്ണം രേഖപ്പെടുത്തുക'
-                      : 'ബ്രേക്ക് സമയം രേഖപ്പെടുത്തുക'}
+                      ? 'Record number of coconut trees plucked before break'
+                      : 'Record break details and pause timer'}
                   </p>
                 </div>
               </div>
@@ -2162,7 +2340,7 @@ export function WorkerJobDetailsModal({
                     <span className="text-xs font-bold text-emerald-300">
                       Trees Plucked Before Break:
                     </span>
-                    <span className="text-[10px] text-slate-400">ബ്രേക്കിന് മുൻപ് കയറിയത്</span>
+                    <span className="text-[10px] text-slate-400">Plucked Before Break</span>
                   </div>
 
                   <div className="flex items-center justify-center gap-3 pt-1">
@@ -2212,13 +2390,13 @@ export function WorkerJobDetailsModal({
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { key: 'BREAKFAST', icon: '☕', label: 'Breakfast / Tea', ml: 'രാവിലത്തെ ചായ' },
-                    { key: 'LUNCH', icon: '🍱', label: 'Lunch Break', ml: 'ഉച്ചഭക്ഷണം' },
-                    { key: 'TEA', icon: '🫖', label: 'Evening Tea', ml: 'വൈകുന്നേരത്തെ ചായ' },
-                    { key: 'WEATHER', icon: '🌧️', label: 'Rain / Site Delay', ml: 'മഴ / കാലാവസ്ഥ' },
-                    { key: 'MAINTENANCE', icon: '⛽', label: isCoconut ? 'Rest / Fatigue' : 'Refuel / Repair', ml: isCoconut ? 'വിശ്രമം' : 'ഇന്ധനം / മെഷീൻ' },
-                    { key: 'OTHER', icon: '❓', label: 'Other Reason', ml: 'മറ്റ് കാരണങ്ങൾ' },
-                  ].map(({ key, icon, label, ml }) => (
+                    { key: 'BREAKFAST', icon: '☕', label: 'Breakfast / Tea' },
+                    { key: 'LUNCH', icon: '🍱', label: 'Lunch Break' },
+                    { key: 'TEA', icon: '🫖', label: 'Evening Tea' },
+                    { key: 'WEATHER', icon: '🌧️', label: 'Rain / Site Delay' },
+                    { key: 'MAINTENANCE', icon: '⛽', label: isCoconut ? 'Rest / Fatigue' : 'Refuel / Repair' },
+                    { key: 'OTHER', icon: '❓', label: 'Other Reason' },
+                  ].map(({ key, icon, label }) => (
                     <button
                       key={key}
                       type="button"
@@ -2232,7 +2410,6 @@ export function WorkerJobDetailsModal({
                       <span className="text-lg">{icon}</span>
                       <div className="min-w-0">
                         <span className="text-xs font-bold block truncate">{label}</span>
-                        <span className="text-[10px] text-slate-400 block truncate">{ml}</span>
                       </div>
                     </button>
                   ))}
@@ -2293,8 +2470,8 @@ export function WorkerJobDetailsModal({
                   </h3>
                   <p className="text-xs text-emerald-300/80">
                     {isCoconut
-                      ? 'പണി പുനരാരംഭിക്കുക — ബാക്കി തെങ്ങുകൾ എണ്ണുക'
-                      : 'മെഷീൻ സമയം പുനരാരംഭിക്കുക'}
+                      ? 'Resume work — continue counting remaining palms'
+                      : 'Resume machine operational timer'}
                   </p>
                 </div>
               </div>
@@ -2378,7 +2555,7 @@ export function WorkerJobDetailsModal({
                       Review Work Timing &amp; Submit
                     </h3>
                     <p className="text-xs text-emerald-300/80">
-                      ജോലി സമയവും പൂർത്തീകരണവും സമർപ്പിക്കുക
+                      Review work timing and submit completion
                     </p>
                   </div>
                 </div>
@@ -2390,7 +2567,7 @@ export function WorkerJobDetailsModal({
                       <Clock className="w-3.5 h-3.5" />
                       Shift In-Time &amp; Out-Time
                     </span>
-                    <span className="text-[10px] text-slate-400">സമയ ക്രമീകരണം</span>
+                    <span className="text-[10px] text-slate-400">Timing Review</span>
                   </div>
 
                   {/* In-Time & Out-Time pickers */}
@@ -2536,7 +2713,7 @@ export function WorkerJobDetailsModal({
                     Confirm Work Metrics &amp; Complete
                   </h3>
                   <p className="text-xs text-emerald-300/80">
-                    മൊത്തം തെങ്ങുകൾ, ജോലി സമയം, ഇടവേളകൾ എന്നിവ രേഖപ്പെടുത്തുക
+                    Confirm completed metrics, work time, and breaks
                   </p>
                 </div>
               </div>
@@ -2601,7 +2778,7 @@ export function WorkerJobDetailsModal({
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                        In-Time (തുടങ്ങിയ സമയം):
+                        In-Time:
                       </label>
                       <input
                         type="time"
@@ -2615,7 +2792,7 @@ export function WorkerJobDetailsModal({
                     </div>
                     <div>
                       <label className="text-[10px] font-bold text-slate-400 block mb-1">
-                        Out-Time (കഴിഞ്ഞ സമയം):
+                        Out-Time:
                       </label>
                       <input
                         type="time"
@@ -2634,7 +2811,7 @@ export function WorkerJobDetailsModal({
                 <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-800">
                   <div>
                     <label className="text-[10px] font-bold text-slate-300 block mb-1">
-                      Time Worked (ജോലി സമയം):
+                      Time Worked:
                     </label>
                     <div className="flex items-center gap-1">
                       <input
@@ -2659,7 +2836,7 @@ export function WorkerJobDetailsModal({
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-amber-400 block mb-1">
-                      Time Paused (ഇടവേള):
+                      Time Paused:
                     </label>
                     <div className="flex items-center gap-1">
                       <input
@@ -2760,7 +2937,7 @@ export function WorkerJobDetailsModal({
                   </div>
                   <div>
                     <h3 className="font-bold text-sm text-white">Add Extra Coconut Trees</h3>
-                    <span className="text-[10px] text-emerald-400/80">കൂടുതൽ തെങ്ങുകൾ ചേർക്കുക</span>
+                    <span className="text-[10px] text-emerald-400/80">Add Extra Trees</span>
                   </div>
                 </div>
                 <button
@@ -2792,7 +2969,7 @@ export function WorkerJobDetailsModal({
 
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-200 block">
-                  Extra Trees Plucked to Add (അധികമായി കയറിയ തെങ്ങുകൾ):
+                  Extra Trees Plucked to Add:
                 </label>
                 <div className="flex items-center gap-3">
                   <button
@@ -2911,6 +3088,494 @@ export function WorkerJobDetailsModal({
             </div>
           </div>
         )}
+        {/* Modal: Confirm Customer Payment */}
+        {/* Modal: Confirm Customer Payment (Clean Normal White Modal) */}
+        {isPaymentConfirmModalOpen && (
+          <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in select-none">
+            <div
+              className="fixed inset-0"
+              onClick={() => !isSubmittingPayment && setIsPaymentConfirmModalOpen(false)}
+            />
+            <div className="relative w-full max-w-md bg-white rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col gap-4 text-slate-800 z-10 max-h-[92vh] overflow-y-auto">
+              {/* Mobile drag handle */}
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto sm:hidden -mt-1 mb-1" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2A835F] flex items-center justify-center font-bold">
+                    <IndianRupee className="w-5 h-5 text-[#2A835F]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      Confirm Customer Payment
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Record client payment received on site
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentConfirmModalOpen(false)}
+                  disabled={isSubmittingPayment}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Order & Auto-Decided Pay Overview */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col gap-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-600">Customer:</span>
+                  <span className="font-bold text-slate-900">{localJob.customerName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-slate-600">Work Done:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {localJob.completedUnits ?? unitCount} {localJob.unitLabel || 'Units'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-t border-slate-200/80 pt-2">
+                  <span className="font-bold text-slate-700">Auto-Calculated Bill:</span>
+                  <span className="text-base font-black text-slate-900 font-mono">
+                    ₹{(localJob.totalCalculatedCost ?? (localJob.unitRate ? Math.round(localJob.unitRate * (localJob.completedUnits ?? unitCount)) : 0)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Amount Input */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <span>Amount Received (₹) <span className="text-rose-500">*</span></span>
+                  <span className="text-[10px] text-slate-400 font-normal">Exact collected amount</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={paymentAmountInput}
+                    onChange={(e) => setPaymentAmountInput(Number(e.target.value))}
+                    className="w-full bg-white border border-slate-200 rounded-xl pl-8 pr-3 py-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                    placeholder="Enter amount"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Payment Method <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'CASH', label: 'Cash In Hand', icon: Banknote },
+                    { id: 'UPI', label: 'GPay / UPI', icon: QrCode },
+                    { id: 'BANK_TRANSFER', label: 'Bank Transfer', icon: CreditCard },
+                    { id: 'CHEQUE', label: 'Cheque', icon: FileText },
+                  ].map((m) => {
+                    const Icon = m.icon;
+                    const isSelected = paymentMethodInput === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setPaymentMethodInput(m.id as any)}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-emerald-50 border-[#2A835F] text-[#134B4C] shadow-xs'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 shrink-0 ${isSelected ? 'text-[#2A835F]' : 'text-slate-400'}`} />
+                        <span>{m.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Reference / UTR Number */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 block">
+                  Transaction Ref / UPI UTR (Optional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. UPI Ref / GPay Transaction ID / Cheque #"
+                  value={paymentRefInput}
+                  onChange={(e) => setPaymentRefInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2A835F] font-mono"
+                />
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 block">
+                  Notes (Optional):
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paid in full to field operative"
+                  value={paymentNotesInput}
+                  onChange={(e) => setPaymentNotesInput(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#2A835F]"
+                />
+              </div>
+
+              <div className="text-[11px] text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-3">
+                ℹ️ Confirming this automatically records the payment in KK Group Finance ledger as Verified.
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentConfirmModalOpen(false)}
+                  disabled={isSubmittingPayment}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmPaymentSubmit}
+                  disabled={isSubmittingPayment || paymentAmountInput <= 0}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingPayment ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  <span>Confirm Payment</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Edit Finished Work Log (Clean Normal White Modal) */}
+        {isManualWorkFeedModalOpen && (
+          <div className="fixed inset-0 z-[10001] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-in fade-in select-none">
+            <div
+              className="fixed inset-0"
+              onClick={() => !isSubmittingManualFeed && setIsManualWorkFeedModalOpen(false)}
+            />
+            <div className="relative w-full max-w-md bg-white rounded-t-[32px] sm:rounded-3xl p-6 shadow-2xl border border-slate-100 flex flex-col gap-4 text-slate-800 z-10 max-h-[92vh] overflow-y-auto">
+              {/* Mobile drag handle */}
+              <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto sm:hidden -mt-1 mb-1" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2A835F] flex items-center justify-center font-bold">
+                    <Pencil className="w-5 h-5 text-[#2A835F]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">
+                      Edit Finished Work
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      Update tree count, work hours, and payment details
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsManualWorkFeedModalOpen(false)}
+                  disabled={isSubmittingManualFeed}
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* 1. Unit / Tree Manual Input Card */}
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3">
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    {isCoconut ? 'Total Coconut Trees Plucked' : `Completed ${unitLabel} Count`}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setManualFeedUnits(Math.max(1, manualFeedUnits - 1))}
+                      className="w-10 h-10 rounded-xl bg-white hover:bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-base border border-slate-300 shadow-sm active:scale-95 cursor-pointer"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-baseline gap-1 px-5 py-2 rounded-xl bg-white border border-slate-300 shadow-inner">
+                      <input
+                        type="number"
+                        min={1}
+                        value={manualFeedUnits}
+                        onChange={(e) => setManualFeedUnits(Math.max(1, Number(e.target.value)))}
+                        className="w-16 bg-transparent text-center font-mono text-2xl font-black text-slate-900 focus:outline-none"
+                      />
+                      <span className="text-xs font-bold text-slate-500">
+                        {isCoconut ? 'Trees' : unitLabel}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setManualFeedUnits(manualFeedUnits + 1)}
+                      className="w-10 h-10 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-base active:scale-95 cursor-pointer shadow-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Quick add */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Quick:</span>
+                    {[5, 10, 15, 20].map((inc) => (
+                      <button
+                        key={inc}
+                        type="button"
+                        onClick={() => setManualFeedUnits(manualFeedUnits + inc)}
+                        className="px-2.5 py-0.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 cursor-pointer shadow-xs"
+                      >
+                        +{inc}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Shift Timings & Time Worked */}
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#2A835F]" />
+                  Shift Timings & Duration
+                </span>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                      Work Started (In-Time):
+                    </label>
+                    <input
+                      type="time"
+                      value={manualFeedInTime}
+                      onChange={(e) => {
+                        setManualFeedInTime(e.target.value);
+                        recalculateManualFeedDuration(e.target.value, manualFeedOutTime, manualFeedBreakMinutes);
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                      Work Ended (Out-Time):
+                    </label>
+                    <input
+                      type="time"
+                      value={manualFeedOutTime}
+                      onChange={(e) => {
+                        setManualFeedOutTime(e.target.value);
+                        recalculateManualFeedDuration(manualFeedInTime, e.target.value, manualFeedBreakMinutes);
+                      }}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                      Time Worked:
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={0}
+                        max={24}
+                        value={Math.floor(manualFeedWorkMinutes / 60)}
+                        onChange={(e) => {
+                          const h = Math.max(0, Number(e.target.value));
+                          const m = manualFeedWorkMinutes % 60;
+                          setManualFeedWorkMinutes(h * 60 + m);
+                        }}
+                        className="w-12 bg-white border border-slate-200 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                      />
+                      <span className="text-xs text-slate-500 font-bold">hrs</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={59}
+                        value={manualFeedWorkMinutes % 60}
+                        onChange={(e) => {
+                          const m = Math.max(0, Math.min(59, Number(e.target.value)));
+                          const h = Math.floor(manualFeedWorkMinutes / 60);
+                          setManualFeedWorkMinutes(h * 60 + m);
+                        }}
+                        className="w-12 bg-white border border-slate-200 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                      />
+                      <span className="text-xs text-slate-500 font-bold">min</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                      Break / Paused:
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={0}
+                        value={manualFeedBreakMinutes}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value));
+                          setManualFeedBreakMinutes(val);
+                          recalculateManualFeedDuration(manualFeedInTime, manualFeedOutTime, val);
+                        }}
+                        className="w-16 bg-white border border-slate-200 rounded-lg px-2 py-1 text-center font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                      />
+                      <span className="text-xs text-slate-500 font-bold">mins</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Live Payout & Customer Bill Strip */}
+              {(() => {
+                const rateWage = localJob.workerUnitWage || (isCoconut ? 80 : 100);
+                const rateCost = localJob.unitRate || (isCoconut ? 120 : 150);
+                const computedWage = manualFeedUnits * rateWage;
+                const computedCost = manualFeedUnits * rateCost;
+                return (
+                  <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-3.5 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Worker Payout</span>
+                      <strong className="text-[#134B4C] font-mono text-base font-black">
+                        ₹{computedWage.toLocaleString('en-IN')}
+                      </strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">Customer Bill</span>
+                      <strong className="text-slate-900 font-mono text-base font-black">
+                        ₹{computedCost.toLocaleString('en-IN')}
+                      </strong>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 4. Payment Collection Section */}
+              {(() => {
+                const rateCost = localJob.unitRate || (isCoconut ? 120 : 150);
+                const computedCost = manualFeedUnits * rateCost;
+                return (
+                  <div className="bg-slate-50 rounded-2xl border border-slate-200/80 p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <IndianRupee className="w-4 h-4 text-[#2A835F]" />
+                        Payment Collected
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setManualFeedPaymentAmount(computedCost)}
+                        className="text-[11px] text-[#2A835F] hover:underline font-bold cursor-pointer"
+                      >
+                        Match Bill (₹{computedCost.toLocaleString('en-IN')})
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          Amount Received (₹):
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={manualFeedPaymentAmount}
+                            onChange={(e) => setManualFeedPaymentAmount(Math.max(0, Number(e.target.value)))}
+                            className="w-full bg-white border border-slate-200 rounded-xl pl-7 pr-3 py-2 font-mono text-xs font-bold text-slate-900 focus:outline-none focus:border-[#2A835F]"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          Payment Mode:
+                        </label>
+                        <select
+                          value={manualFeedPaymentMethod}
+                          onChange={(e) => setManualFeedPaymentMethod(e.target.value as any)}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#2A835F] cursor-pointer"
+                        >
+                          <option value="CASH">Cash In Hand</option>
+                          <option value="UPI">GPay / UPI</option>
+                          <option value="BANK_TRANSFER">Bank Transfer</option>
+                          <option value="CHEQUE">Cheque</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                        Reference / UTR / Cheque (Optional):
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. UPI Ref / Cheque No"
+                        value={manualFeedPaymentRef}
+                        onChange={(e) => setManualFeedPaymentRef(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#2A835F] font-mono"
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* 5. Remarks */}
+              <div>
+                <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                  Correction Remarks (Optional):
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Corrected tree count after final field recount."
+                  value={manualFeedNotes}
+                  onChange={(e) => setManualFeedNotes(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#2A835F] resize-none"
+                />
+              </div>
+
+              {/* 6. Action Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsManualWorkFeedModalOpen(false)}
+                  disabled={isSubmittingManualFeed}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleManualWorkFeedSubmit}
+                  disabled={isSubmittingManualFeed}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isSubmittingManualFeed ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -60,7 +60,7 @@ export function WorkerMapSettingsModal() {
                 Field Map Settings
               </h3>
               <span className="text-xs text-slate-400">
-                React Leaflet & GPS Telemetry &bull; കേരളം
+                React Leaflet & GPS Telemetry &bull; Kerala Ops
               </span>
             </div>
           </div>
@@ -78,7 +78,7 @@ export function WorkerMapSettingsModal() {
         <div className="space-y-2.5">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Layers className="w-3.5 h-3.5 text-[#2A835F]" />
-            <span>Map Tile Imagery (മാപ്പ് ശൈലി)</span>
+            <span>Map Tile Imagery</span>
           </label>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -110,7 +110,7 @@ export function WorkerMapSettingsModal() {
                   </div>
                   <div>
                     <div className="text-xs font-bold">{tile.name.split(' ')[0]}</div>
-                    <div className="text-[10px] opacity-75">{tile.mlName.split(' ')[0]}</div>
+                    
                   </div>
                 </div>
               );
@@ -122,7 +122,7 @@ export function WorkerMapSettingsModal() {
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-[#2A835F]" />
-            <span>Base Operating District (പ്രവർത്തന ജില്ല)</span>
+            <span>Base Operating District</span>
           </label>
 
           <select
@@ -132,7 +132,7 @@ export function WorkerMapSettingsModal() {
           >
             {Object.values(KERALA_DISTRICTS).map((d) => (
               <option key={d.name} value={d.name}>
-                {d.name} &bull; {d.mlName}
+                {d.name}
               </option>
             ))}
           </select>
@@ -187,7 +187,7 @@ export function WorkerMapSettingsModal() {
         <div className="space-y-3">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Eye className="w-3.5 h-3.5 text-blue-400" />
-            <span>Map Layers & Overlays (ലെയറുകൾ)</span>
+            <span>Map Layers & Overlays</span>
           </label>
 
           <div className="space-y-2 text-xs">
