@@ -32,6 +32,7 @@ import {
   IndianRupee,
   BarChart3,
   CalendarClock,
+  Zap,
 } from 'lucide-react';
 
 interface SidebarIndicators {
@@ -77,6 +78,11 @@ const buildMenuData = (indicators: SidebarIndicators) => [
         badgeLabel: `${indicators.pendingPayoutCount} completed ${
           indicators.pendingPayoutCount === 1 ? 'work order' : 'work orders'
         } awaiting worker payout`,
+      },
+      {
+        name: 'Direct Work Entry',
+        icon: Zap,
+        href: '/admin/operations/direct-entry',
       },
       {
         name: 'Job Orders',

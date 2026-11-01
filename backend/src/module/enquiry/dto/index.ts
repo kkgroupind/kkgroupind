@@ -9,3 +9,4 @@ export * from './update-job-pay.dto';
 export * from './add-extra-trees.dto';
 export * from './confirm-payment.dto';
 export * from './feed-work-metrics.dto';
+export * from './direct-work-entry.dto';

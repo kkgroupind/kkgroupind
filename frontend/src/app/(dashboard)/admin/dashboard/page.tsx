@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar, ChevronDown, Sparkles, Settings, Globe, MapPin, Layers, IndianRupee, ArrowRight } from 'lucide-react';
+import { Calendar, ChevronDown, Sparkles, Settings, Globe, MapPin, Layers, IndianRupee, ArrowRight, Zap } from 'lucide-react';
 import { StatCard } from '@/components/Admin/stat-card';
 import { PerformanceChart } from '@/components/Admin/performance-chart';
 import { AttendanceChart } from '@/components/Admin/attendance-chart';
@@ -48,6 +48,14 @@ export default function AdminDashboardPage() {
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/admin/operations/direct-entry"
+            className="flex items-center gap-2 bg-[#2A835F] hover:bg-[#236D4F] text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-md active:scale-95"
+          >
+            <Zap className="w-4 h-4 fill-white" />
+            <span>Direct Work Entry</span>
+          </Link>
+
           <Link
             href="/admin/settings?tab=site"
             className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#252830] border border-gray-800 hover:border-gray-700 px-4 py-2 rounded-xl text-sm font-medium text-gray-200 hover:text-white transition-all shadow-xs"

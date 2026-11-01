@@ -29,6 +29,7 @@ import {
   AddExtraTreesDto,
   ConfirmPaymentDto,
   FeedWorkMetricsDto,
+  DirectWorkEntryDto,
 } from './dto';
 
 @Throttle({ default: RATE_LIMITS.OPERATIONS })
@@ -222,5 +223,15 @@ export class EnquiryController {
   @Get(':id')
   async getEnquiryById(@Param('id') id: string) {
     return this.enquiryService.getEnquiryById(id);
+  }
+
+  @Roles(Role.SUPER_ADMIN, Role.OFFICE_STAFF)
+  @Post('direct-entry')
+  @HttpCode(HttpStatus.CREATED)
+  async directWorkEntry(
+    @Body() dto: DirectWorkEntryDto,
+    @CurrentUser() user: { id: string; role: Role },
+  ) {
+    return this.enquiryService.directWorkEntry(dto, user.id, user.role);
   }
 }

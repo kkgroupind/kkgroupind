@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DirectWorkEntryDto } from './dto';
 import {
   FinancialStatus,
   FinancialTransaction,
@@ -1303,6 +1304,166 @@ export class EnquiryRepository {
       }
 
       return { enquiry: updatedEnquiry, transaction };
+    });
+  }
+
+  async directWorkEntryTransaction(
+    creatorId: string,
+    creatorRole: Role,
+    data: DirectWorkEntryDto,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const now = new Date();
+      const dateString = now.toISOString().split('T')[0];
+      const cleanDate = dateString.replace(/-/g, '');
+
+      // Generate tracking number
+      const prefix = `ENQ-${cleanDate}-`;
+      const count = await tx.serviceEnquiry.count({
+        where: { trackingNumber: { startsWith: prefix } },
+      });
+      const suffix = (count + 1).toString().padStart(4, '0');
+      const trackingNumber = `${prefix}${suffix}`;
+
+      const targetStatus = data.targetStatus || ServiceStatus.COMPLETED;
+      const isCompleted = targetStatus === ServiceStatus.COMPLETED;
+      const isInProgress = targetStatus === ServiceStatus.IN_PROGRESS;
+      const isAssigned = Boolean(data.workerId || targetStatus === ServiceStatus.ASSIGNED || isCompleted || isInProgress);
+
+      const defaultSpec = resolveServiceSpec(data.serviceName);
+      const effectiveWorkerWage = data.workerUnitWage ?? defaultSpec.baseWorkerWage;
+      const effectiveCustomerRate = data.unitRate ?? defaultSpec.baseCustomerRate;
+      const effectiveWageType = data.wageType || defaultSpec.wageType;
+      const effectiveUnitLabel = data.unitLabel || defaultSpec.unitLabel;
+
+      let effectiveStart: Date | null = null;
+      if (data.workStartedAt) {
+        const d = new Date(data.workStartedAt);
+        if (!isNaN(d.getTime())) effectiveStart = d;
+      } else if (isCompleted || isInProgress) {
+        const mins = data.workDurationMinutes || 120;
+        effectiveStart = new Date(now.getTime() - mins * 60000);
+      }
+
+      let effectiveEnd: Date | null = null;
+      if (data.workEndedAt) {
+        const d = new Date(data.workEndedAt);
+        if (!isNaN(d.getTime())) effectiveEnd = d;
+      } else if (isCompleted) {
+        effectiveEnd = now;
+      }
+
+      const actualWorkMinutes = data.workDurationMinutes ?? (isCompleted ? 120 : undefined);
+      const finalCompletedUnits = data.completedUnits ?? (isCompleted ? 10 : undefined);
+
+      const computedWage = (effectiveWorkerWage != null && finalCompletedUnits && finalCompletedUnits > 0)
+        ? Number((effectiveWorkerWage * finalCompletedUnits).toFixed(2))
+        : null;
+
+      const computedCost = (effectiveCustomerRate != null && finalCompletedUnits && finalCompletedUnits > 0)
+        ? Number((effectiveCustomerRate * finalCompletedUnits).toFixed(2))
+        : (data.paymentAmount ?? null);
+
+      const isPaymentConfirmed = Boolean(data.recordPayment || data.paymentAmount !== undefined);
+      const paymentAmount = data.paymentAmount ?? (computedCost || 0);
+      const paymentMethod = data.paymentMethod || PaymentMethod.CASH;
+
+      const specDetails = {
+        ...(data.specificationDetails || {}),
+        inTime: data.inTime || (effectiveStart ? effectiveStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined),
+        outTime: data.outTime || (effectiveEnd ? effectiveEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : undefined),
+        actualWorkMinutes,
+        totalBreakMinutes: data.totalBreakMinutes ?? 0,
+        directEntry: true,
+        directEntryBy: creatorId,
+        directEntryAt: now.toISOString(),
+        ...(isPaymentConfirmed && isCompleted ? {
+          paymentConfirmed: true,
+          paymentReceivedAt: now.toISOString(),
+          paymentReceivedBy: data.workerId || creatorId,
+          paymentMethod,
+          paymentAmount,
+          paymentReference: data.paymentReference || null,
+          paymentNotes: data.paymentNotes || 'Direct entry payment confirmed',
+        } : {}),
+      };
+
+      const enquiry = await tx.serviceEnquiry.create({
+        data: {
+          trackingNumber,
+          serviceName: data.serviceName,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          customerEmail: data.customerEmail || null,
+          state: data.state || 'Kerala',
+          district: data.district || 'Kasaragod',
+          city: data.city || null,
+          location: data.location || null,
+          mapUrl: data.mapUrl || null,
+          locationRemarks: data.locationRemarks || null,
+          preferredDate: data.preferredDate ? new Date(data.preferredDate) : now,
+          deadline: data.deadline ? new Date(data.deadline) : null,
+          message: data.message || `Direct administrative work order: ${data.serviceName} for ${data.customerName}`,
+          notes: data.notes || null,
+          status: targetStatus,
+          createdByRole: creatorRole,
+          createdById: creatorId,
+          workerId: data.workerId || null,
+          workerAcceptance: isAssigned ? 'ACCEPTED' : null,
+          assignedAt: isAssigned ? now : null,
+          completedAt: isCompleted ? (effectiveEnd || now) : null,
+          workStartedAt: effectiveStart,
+          workEndedAt: effectiveEnd,
+          workDurationMinutes: actualWorkMinutes,
+          wageType: effectiveWageType,
+          unitLabel: effectiveUnitLabel,
+          workerUnitWage: effectiveWorkerWage,
+          unitRate: effectiveCustomerRate,
+          estimatedUnits: data.completedUnits ?? 1,
+          completedUnits: finalCompletedUnits,
+          totalCalculatedWage: computedWage,
+          totalCalculatedCost: computedCost,
+          specificationDetails: specDetails,
+        },
+        include: {
+          worker: { select: { id: true, name: true, phone: true, workerStatus: true } },
+          customer: { select: { id: true, name: true, phone: true, email: true } },
+          officeStaff: { select: { id: true, name: true, username: true, phone: true } },
+        },
+      });
+
+      let transaction: FinancialTransaction | null = null;
+      if (isCompleted && isPaymentConfirmed && paymentAmount > 0) {
+        const txnPrefix = `TXN-${cleanDate}-`;
+        const txnCount = await tx.financialTransaction.count({
+          where: { transactionNumber: { startsWith: txnPrefix } },
+        });
+        const txnSuffix = (txnCount + 1).toString().padStart(4, '0');
+        const transactionNumber = `${txnPrefix}${txnSuffix}`;
+
+        transaction = await tx.financialTransaction.create({
+          data: {
+            transactionNumber,
+            type: TransactionType.INCOME,
+            category: TransactionCategory.SERVICE_PAYMENT,
+            amount: paymentAmount,
+            date: now,
+            dateString,
+            paymentMethod,
+            status: FinancialStatus.VERIFIED,
+            referenceNumber: data.paymentReference || enquiry.trackingNumber,
+            serviceType: enquiry.serviceName,
+            customerName: enquiry.customerName,
+            notes: data.paymentNotes || `Direct entry service payment via ${paymentMethod}`,
+            enquiryId: enquiry.id,
+            workerId: enquiry.workerId || creatorId,
+            recordedById: creatorId,
+            verifiedById: creatorId,
+          },
+        });
+      }
+
+      return { enquiry, transaction };
     });
   }
 }

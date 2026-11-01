@@ -137,6 +137,7 @@ export const ENQUIRY_MESSAGES = {
   PAYMENT_CONFIRMED_SUCCESS: 'Payment receipt confirmed and recorded in finance ledger successfully',
   WORK_METRICS_UPDATED_SUCCESS: 'Work metrics and payout auto-calculated successfully',
   PAYMENT_ALREADY_CONFIRMED: 'Payment receipt has already been confirmed for this job',
+  DIRECT_WORK_ENTRY_SUCCESS: 'Work record created and processed directly without workflow constraints',
 } as const;
 
 export const ATTENDANCE_MESSAGES = {

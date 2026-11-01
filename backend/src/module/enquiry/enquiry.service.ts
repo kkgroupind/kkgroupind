@@ -23,6 +23,7 @@ import {
   AddExtraTreesDto,
   ConfirmPaymentDto,
   FeedWorkMetricsDto,
+  DirectWorkEntryDto,
 } from './dto';
 import { ENQUIRY_MESSAGES, SECURITY_CONSTANTS, normalizePhoneNumber } from '../../common';
 import { resolveServiceSpec } from '../../common/constants/service-specs.constant';
@@ -1248,5 +1249,42 @@ export class EnquiryService {
         cleanEmail || undefined,
       );
     }
+  }
+
+  async directWorkEntry(
+    dto: DirectWorkEntryDto,
+    creatorId: string,
+    creatorRole: Role,
+  ) {
+    const result = await this.enquiryRepo.directWorkEntryTransaction(
+      creatorId,
+      creatorRole,
+      dto,
+    );
+
+    this.auditService
+      .recordLog({
+        userId: creatorId,
+        userRole: creatorRole,
+        action: 'DIRECT_WORK_ENTRY',
+        entityType: 'SERVICE_ENQUIRY',
+        entityId: result.enquiry.id,
+        details: JSON.stringify({
+          trackingNumber: result.enquiry.trackingNumber,
+          customerName: result.enquiry.customerName,
+          serviceName: result.enquiry.serviceName,
+          status: result.enquiry.status,
+          totalCalculatedWage: result.enquiry.totalCalculatedWage,
+          totalCalculatedCost: result.enquiry.totalCalculatedCost,
+          transactionId: result.transaction?.id || null,
+        }),
+      })
+      .catch(() => {});
+
+    return {
+      message: ENQUIRY_MESSAGES.DIRECT_WORK_ENTRY_SUCCESS,
+      enquiry: result.enquiry,
+      transaction: result.transaction,
+    };
   }
 }

@@ -48,6 +48,7 @@ import {
   FileText,
   Eye,
   Edit2,
+  Zap,
   Trash2,
   X,
   Check,
@@ -815,8 +816,17 @@ export default function AdminFinancePage() {
           </p>
         </div>
 
-        {/* Quick Header Actions: Only Record Transaction & Reload */}
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        {/* Quick Header Actions: Record Transaction, Direct Work Entry & Reload */}
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          <Link
+            href="/admin/operations/direct-entry"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-white font-bold text-xs sm:text-sm transition-all"
+            title="Supreme Data Feeding: Create, assign, complete, and sync work orders directly to Finance"
+          >
+            <Zap className="w-4 h-4 fill-emerald-400 text-emerald-400" />
+            <span>Direct Work Entry</span>
+          </Link>
+
           <button
             onClick={() => openCreateForDay()}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"

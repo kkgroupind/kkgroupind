@@ -430,4 +430,53 @@ export const EnquiryService = {
       token,
     );
   },
+
+  // Admin & Office Staff: Supreme Direct Work Entry (feeds all data in one shot without workflow friction)
+  async directWorkEntry(
+    data: {
+      serviceName: string;
+      customerName: string;
+      customerPhone: string;
+      customerEmail?: string;
+      state?: string;
+      district?: string;
+      city?: string;
+      location?: string;
+      mapUrl?: string;
+      locationRemarks?: string;
+      preferredDate?: string;
+      deadline?: string;
+      message?: string;
+      notes?: string;
+      targetStatus?: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+      workerId?: string;
+      wageType?: string;
+      unitLabel?: string;
+      workerUnitWage?: number;
+      unitRate?: number;
+      completedUnits?: number;
+      workDurationMinutes?: number;
+      workStartedAt?: string;
+      workEndedAt?: string;
+      totalBreakMinutes?: number;
+      inTime?: string;
+      outTime?: string;
+      specificationDetails?: any;
+      recordPayment?: boolean;
+      paymentAmount?: number;
+      paymentMethod?: 'CASH' | 'UPI' | 'BANK_TRANSFER' | 'CHEQUE';
+      paymentReference?: string;
+      paymentNotes?: string;
+    },
+    token: string,
+  ): Promise<{ message: string; enquiry: ServiceEnquiry; transaction?: any }> {
+    return request<{ message: string; enquiry: ServiceEnquiry; transaction?: any }>(
+      '/enquiries/direct-entry',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      token,
+    );
+  },
 };
