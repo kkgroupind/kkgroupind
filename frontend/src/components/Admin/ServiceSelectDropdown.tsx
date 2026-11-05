@@ -1,17 +1,15 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import Image from 'next/image';
 import {
   ChevronDown,
   Search,
   Check,
-  TreePalm,
   CalendarClock,
-  Sparkles,
   Layers,
 } from 'lucide-react';
 import { ReminderFrequency } from '@/services/reminder.service';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export interface ServiceSelectOption {
   id: string;
@@ -98,32 +96,25 @@ export function getMalayalamLabel(serviceName: string): string | null {
   if (lower.includes('jcb') || lower.includes('excavat') || lower.includes('മണ്ണുമാന്തി')) {
     return 'ജെസിബി & മണ്ണുമാന്തി';
   }
-  if (lower.includes('plaster') || lower.includes('പ്ലാസ്റ്ററിംഗ്')) {
-    return 'പ്ലാസ്റ്ററിംഗ്';
-  }
-  if (lower.includes('tile') || lower.includes('granite') || lower.includes('ടൈൽ')) {
-    return 'ടൈലിംഗ് വർക്ക്';
-  }
-  if (lower.includes('mason') || lower.includes('brick') || lower.includes('മേസൻ')) {
-    return 'മേസൺ വർക്ക്';
-  }
   return null;
 }
 
 export function formatFrequencyShort(freq?: ReminderFrequency, days?: number | null): string {
   switch (freq) {
     case 'EVERY_3_MONTHS':
-      return 'Every 3 Months';
+      return 'Every 3 Mos';
     case 'EVERY_6_MONTHS':
-      return 'Every 6 Months';
+      return 'Every 6 Mos';
     case 'EVERY_2_MONTHS':
-      return 'Every 2 Months';
+      return 'Every 2 Mos';
     case 'MONTHLY':
       return 'Monthly';
     case 'YEARLY':
-      return 'Yearly';
+      return 'Annual';
     case 'CUSTOM_DAYS':
-      return `Every ${days || 30}d`;
+      return `${days || 90} Days`;
+    case 'ONCE':
+      return 'One-Time';
     default:
       return '3 Months';
   }
@@ -132,12 +123,11 @@ export function formatFrequencyShort(freq?: ReminderFrequency, days?: number | n
 const QUICK_FILTER_TAGS = [
   { label: 'All', value: '' },
   { label: '🌴 Coconut', value: 'coco' },
-  { label: '💧 Well', value: 'well' },
+  { label: '💧 Well / Bore', value: 'well' },
+  { label: '🚜 JCB & Plant', value: 'jcb' },
   { label: '⚡ Electrical', value: 'electr' },
   { label: '🔧 Plumbing', value: 'plumb' },
-  { label: '🎨 Painting', value: 'paint' },
-  { label: '🚜 JCB', value: 'jcb' },
-  { label: '🌿 Garden', value: 'grass' },
+  { label: '🧱 Plaster/Civil', value: 'plaster' },
 ];
 
 export function ServiceSelectDropdown({
@@ -145,78 +135,71 @@ export function ServiceSelectDropdown({
   selectedServiceId,
   onSelect,
   label,
-  placeholder = 'Select service...',
+  placeholder = 'Select Service...',
   includeAllOption = false,
-  allOptionLabel = 'All Services',
+  allOptionLabel = 'All Services Catalog',
   showFrequencyBadge = true,
   showClientCount = false,
   className = '',
 }: ServiceSelectDropdownProps) {
+  const { isDark } = useAdminTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Close on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
-
-  // Focus search input when dropdown opens
-  useEffect(() => {
-    if (isOpen && searchInputRef.current) {
-      setTimeout(() => searchInputRef.current?.focus(), 60);
-    }
-  }, [isOpen]);
-
   const selectedService = useMemo(() => {
-    return services.find((s) => s.id === selectedServiceId || s.name === selectedServiceId);
+    return services.find(
+      (s) => s.id === selectedServiceId || s.name === selectedServiceId,
+    );
   }, [services, selectedServiceId]);
 
+  const isAllSelected = selectedServiceId === 'ALL';
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearchTerm('');
+      setSelectedTag('');
+    }
+  }, [isOpen]);
+
   const filteredServices = useMemo(() => {
-    let result = services;
+    return services.filter((svc) => {
+      const matchSearch =
+        !searchTerm.trim() ||
+        svc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (svc.category && svc.category.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    if (selectedTag) {
-      const tagLower = selectedTag.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(tagLower) ||
-          (s.category && s.category.toLowerCase().includes(tagLower)),
-      );
-    }
+      const matchTag =
+        !selectedTag ||
+        svc.name.toLowerCase().includes(selectedTag.toLowerCase()) ||
+        (svc.category && svc.category.toLowerCase().includes(selectedTag.toLowerCase()));
 
-    const term = searchTerm.trim().toLowerCase();
-    if (term) {
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(term) ||
-          (s.category && s.category.toLowerCase().includes(term)),
-      );
-    }
-
-    return result;
+      return matchSearch && matchTag;
+    });
   }, [services, searchTerm, selectedTag]);
 
-  const isAllSelected = includeAllOption && (selectedServiceId === 'ALL' || !selectedServiceId);
   const selectedMalayalam = selectedService ? getMalayalamLabel(selectedService.name) : null;
 
   return (
-    <div className={`relative ${className}`} ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={containerRef}>
       {label && (
-        <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-[#7B4DFF]" />
-          <span>{label}</span>
+        <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+          {label}
         </label>
       )}
 
@@ -224,19 +207,27 @@ export function ServiceSelectDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full bg-[#1A1C23] border hover:border-gray-700/80 rounded-2xl p-2 sm:p-2.5 transition-all duration-200 text-left flex items-center justify-between gap-3 group shadow-sm ${
-          isOpen
-            ? 'border-[#7B4DFF] shadow-[0_0_20px_rgba(123,77,255,0.25)] ring-1 ring-[#7B4DFF]/50'
-            : 'border-gray-800 hover:bg-[#1C1F28]'
+        className={`w-full p-2.5 sm:p-3 rounded-2xl border flex items-center justify-between text-left transition-all duration-200 group cursor-pointer ${
+          isDark
+            ? isOpen
+              ? 'bg-[#181A20] border-[#FF5C38] shadow-[0_0_20px_rgba(255,92,56,0.15)]'
+              : 'bg-[#181A20] border-white/[0.08] hover:border-white/[0.14]'
+            : isOpen
+            ? 'bg-white border-[#FF5C38] ring-2 ring-[#FF5C38]/15 shadow-sm'
+            : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs'
         }`}
       >
         <div className="flex items-center gap-3 min-w-0">
           {isAllSelected ? (
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#7B4DFF]/20 to-[#14151A] border border-[#7B4DFF]/30 flex items-center justify-center shrink-0 shadow-sm">
-              <Layers className="w-5 h-5 text-[#7B4DFF]" />
+            <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 shadow-sm ${
+              isDark ? 'bg-[#FF5C38]/10 border-[#FF5C38]/20 text-[#FF5C38]' : 'bg-[#FF5C38]/10 border-[#FF5C38]/20 text-[#FF5C38]'
+            }`}>
+              <Layers className="w-5 h-5" />
             </div>
           ) : selectedService ? (
-            <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-gray-700/70 shadow-md bg-gray-950 group-hover:border-[#7B4DFF]/60 transition-colors">
+            <div className={`relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border shadow-xs ${
+              isDark ? 'border-white/[0.08] bg-zinc-900' : 'border-slate-200 bg-slate-100'
+            }`}>
               <img
                 src={getServiceImage(selectedService.name, selectedService.image)}
                 alt={selectedService.name}
@@ -248,27 +239,31 @@ export function ServiceSelectDropdown({
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             </div>
           ) : (
-            <div className="w-11 h-11 rounded-xl bg-[#14151A] border border-gray-800 flex items-center justify-center shrink-0">
-              <CalendarClock className="w-5 h-5 text-gray-500" />
+            <div className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${
+              isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-400'
+            }`}>
+              <CalendarClock className="w-5 h-5" />
             </div>
           )}
 
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-gray-100 text-xs sm:text-sm truncate block group-hover:text-white">
+              <span className={`font-bold text-xs sm:text-sm truncate block group-hover:text-[#FF5C38] transition-colors ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
                 {isAllSelected
                   ? allOptionLabel
                   : selectedService?.name || placeholder}
               </span>
 
               {selectedMalayalam && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 hidden md:inline-block">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0 hidden md:inline-block">
                   {selectedMalayalam}
                 </span>
               )}
 
               {selectedService && showFrequencyBadge && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#7B4DFF]/15 text-[#A580FF] border border-[#7B4DFF]/30 shrink-0 hidden sm:inline-block">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-[#FF5C38]/10 text-[#FF5C38] border border-[#FF5C38]/20 shrink-0 hidden sm:inline-block">
                   {formatFrequencyShort(
                     selectedService.reminderFrequency,
                     selectedService.reminderIntervalDays,
@@ -277,7 +272,7 @@ export function ServiceSelectDropdown({
               )}
             </div>
 
-            <div className="text-[11px] text-gray-400 flex items-center gap-2 truncate mt-0.5">
+            <div className={`text-[11px] flex items-center gap-2 truncate mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               <span>
                 {isAllSelected
                   ? `Showing all (${services.length} services)`
@@ -286,9 +281,9 @@ export function ServiceSelectDropdown({
 
               {selectedService?.hasReminder && (
                 <>
-                  <span className="text-gray-700">•</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>•</span>
+                  <span className="text-emerald-500 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>Auto-Schedule ON</span>
                   </span>
                 </>
@@ -296,8 +291,8 @@ export function ServiceSelectDropdown({
 
               {showClientCount && selectedService?.activeReminderCount !== undefined && (
                 <>
-                  <span className="text-gray-700">•</span>
-                  <span className="text-[#A580FF] font-mono font-bold">
+                  <span className={isDark ? 'text-zinc-600' : 'text-slate-300'}>•</span>
+                  <span className="text-[#FF5C38] font-mono font-bold">
                     {selectedService.activeReminderCount} active
                   </span>
                 </>
@@ -306,10 +301,12 @@ export function ServiceSelectDropdown({
           </div>
         </div>
 
-        <div className="p-1.5 rounded-xl bg-[#14151A] border border-gray-800 text-gray-400 group-hover:text-gray-200 shrink-0 transition-colors">
+        <div className={`p-1.5 rounded-xl border transition-colors ${
+          isDark ? 'bg-white/[0.04] border-white/[0.08] text-zinc-400 group-hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-500 group-hover:text-slate-900'
+        }`}>
           <ChevronDown
             className={`w-4 h-4 transition-transform duration-300 ${
-              isOpen ? 'rotate-180 text-[#7B4DFF]' : ''
+              isOpen ? 'rotate-180 text-[#FF5C38]' : ''
             }`}
           />
         </div>
@@ -317,24 +314,30 @@ export function ServiceSelectDropdown({
 
       {/* Flyout Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-2 rounded-2xl bg-[#14151A]/95 border border-gray-700/70 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(123,77,255,0.15)] backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div
+          className={`absolute z-50 left-0 right-0 mt-2 rounded-3xl border shadow-2xl backdrop-blur-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 ${
+            isDark ? 'bg-[#181A20] border-white/[0.1] text-white' : 'bg-white border-slate-200 text-slate-900'
+          }`}
+        >
           {/* Search Bar inside Dropdown */}
-          <div className="p-3 border-b border-gray-800/80 bg-[#1A1C23]/90 space-y-2">
+          <div className={`p-3 border-b space-y-2 ${isDark ? 'bg-[#14151B] border-white/[0.06]' : 'bg-slate-50 border-slate-100'}`}>
             <div className="relative">
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search services (Coconut, Well, JCB, Solar, Electrical...)"
-                className="w-full bg-[#14151A] border border-gray-800 focus:border-[#7B4DFF] rounded-xl pl-8.5 pr-8 py-2 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-[#7B4DFF]/40 transition-all"
+                className={`w-full rounded-xl pl-8.5 pr-8 py-2 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+                }`}
               />
               {searchTerm && (
                 <button
                   type="button"
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 text-xs px-1"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-xs px-1"
                 >
                   ✕
                 </button>
@@ -350,10 +353,12 @@ export function ServiceSelectDropdown({
                     key={tag.label}
                     type="button"
                     onClick={() => setSelectedTag(tag.value)}
-                    className={`px-2 py-1 rounded-lg font-medium whitespace-nowrap transition-all ${
+                    className={`px-2.5 py-1 rounded-full font-medium whitespace-nowrap transition-all cursor-pointer ${
                       isActive
-                        ? 'bg-[#7B4DFF] text-white shadow-sm'
-                        : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800 hover:border-gray-700'
+                        ? 'bg-[#FF5C38] text-white shadow-xs'
+                        : isDark
+                        ? 'bg-white/[0.04] text-zinc-400 hover:text-white border border-white/[0.06]'
+                        : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
                     }`}
                   >
                     {tag.label}
@@ -364,7 +369,7 @@ export function ServiceSelectDropdown({
           </div>
 
           {/* List of Options */}
-          <div className="max-h-72 overflow-y-auto custom-scrollbar p-2 space-y-1.5">
+          <div className="max-h-72 overflow-y-auto custom-scrollbar p-2 space-y-1">
             {includeAllOption && !searchTerm && !selectedTag && (
               <button
                 type="button"
@@ -372,28 +377,32 @@ export function ServiceSelectDropdown({
                   onSelect('ALL');
                   setIsOpen(false);
                 }}
-                className={`w-full p-2.5 rounded-xl transition-all flex items-center justify-between text-left group ${
+                className={`w-full p-2.5 rounded-2xl transition-all flex items-center justify-between text-left group cursor-pointer ${
                   isAllSelected
-                    ? 'bg-gradient-to-r from-[#7B4DFF]/20 via-[#7B4DFF]/10 to-transparent border border-[#7B4DFF]/40 text-white'
-                    : 'hover:bg-[#1A1C23] text-gray-300 border border-transparent hover:border-gray-800'
+                    ? 'bg-[#FF5C38]/15 border border-[#FF5C38]/30 text-[#FF5C38]'
+                    : isDark
+                    ? 'hover:bg-white/[0.04] text-zinc-300'
+                    : 'hover:bg-slate-50 text-slate-700'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center shrink-0 group-hover:border-[#7B4DFF]/40 transition-colors">
-                    <Layers className="w-5 h-5 text-[#7B4DFF]" />
+                  <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${
+                    isDark ? 'bg-white/[0.04] border-white/[0.08] text-[#FF5C38]' : 'bg-slate-100 border-slate-200 text-[#FF5C38]'
+                  }`}>
+                    <Layers className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-gray-100 group-hover:text-white">
+                    <div className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {allOptionLabel}
                     </div>
-                    <div className="text-[10px] text-gray-500">
+                    <div className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                       Show reminders across all {services.length} services
                     </div>
                   </div>
                 </div>
 
                 {isAllSelected && (
-                  <div className="w-5 h-5 rounded-full bg-[#7B4DFF] flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_rgba(123,77,255,0.5)]">
+                  <div className="w-5 h-5 rounded-full bg-[#FF5C38] flex items-center justify-center text-white shrink-0 shadow-sm">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </div>
                 )}
@@ -401,10 +410,10 @@ export function ServiceSelectDropdown({
             )}
 
             {filteredServices.length === 0 ? (
-              <div className="py-8 text-center text-xs text-gray-500 flex flex-col items-center gap-1.5">
-                <Search className="w-5 h-5 text-gray-600 mb-1" />
+              <div className="py-8 text-center text-xs text-zinc-400 flex flex-col items-center gap-1.5">
+                <Search className="w-5 h-5 text-zinc-500 mb-1" />
                 <span>No services found matching your search.</span>
-                <span className="text-[10px] text-gray-600">Try clearing the search or tag filters</span>
+                <span className="text-[10px] text-zinc-500">Try clearing the search or tag filters</span>
               </div>
             ) : (
               filteredServices.map((svc) => {
@@ -420,15 +429,18 @@ export function ServiceSelectDropdown({
                       onSelect(svc.id);
                       setIsOpen(false);
                     }}
-                    className={`w-full p-2.5 rounded-xl transition-all duration-150 flex items-center justify-between text-left group ${
+                    className={`w-full p-2.5 rounded-2xl transition-all duration-150 flex items-center justify-between text-left group cursor-pointer ${
                       isSelected
-                        ? 'bg-gradient-to-r from-[#7B4DFF]/25 via-[#7B4DFF]/15 to-[#1A1C23]/60 border border-[#7B4DFF]/50 text-white shadow-sm'
-                        : 'hover:bg-[#1A1C23] text-gray-300 border border-transparent hover:border-gray-800'
+                        ? 'bg-[#FF5C38]/15 border border-[#FF5C38]/30 text-white'
+                        : isDark
+                        ? 'hover:bg-white/[0.04] text-zinc-300 border border-transparent'
+                        : 'hover:bg-slate-50 text-slate-700 border border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      {/* Thumbnail Image with Banner Preview */}
-                      <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-gray-800 group-hover:border-[#7B4DFF]/50 shadow-md bg-gray-950 transition-all">
+                      <div className={`relative w-11 h-11 rounded-2xl overflow-hidden shrink-0 border shadow-xs ${
+                        isDark ? 'border-white/[0.08] bg-zinc-900' : 'border-slate-200 bg-slate-100'
+                      }`}>
                         <img
                           src={imageSrc}
                           alt={svc.name}
@@ -442,28 +454,28 @@ export function ServiceSelectDropdown({
 
                       <div className="min-w-0 flex-1 pr-2">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold text-gray-100 group-hover:text-white truncate">
+                          <span className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                             {svc.name}
                           </span>
 
                           {malayalamBadge && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                            <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
                               {malayalamBadge}
                             </span>
                           )}
                         </div>
 
-                        <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-1 flex-wrap">
-                          <span className="text-gray-500 truncate">{svc.category || 'General'}</span>
-                          <span className="text-gray-700">•</span>
-                          <span className="text-[#A580FF] font-mono font-medium">
+                        <div className={`flex items-center gap-2 text-[10px] mt-1 flex-wrap ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                          <span className="truncate">{svc.category || 'General'}</span>
+                          <span>•</span>
+                          <span className="text-[#FF5C38] font-mono font-medium">
                             {formatFrequencyShort(svc.reminderFrequency, svc.reminderIntervalDays)}
                           </span>
 
                           {svc.hasReminder && (
                             <>
-                              <span className="text-gray-700">•</span>
-                              <span className="text-emerald-400 font-medium">
+                              <span>•</span>
+                              <span className="text-emerald-500 font-medium">
                                 Auto
                               </span>
                             </>
@@ -471,8 +483,8 @@ export function ServiceSelectDropdown({
 
                           {showClientCount && svc.activeReminderCount !== undefined && svc.activeReminderCount > 0 && (
                             <>
-                              <span className="text-gray-700">•</span>
-                              <span className="text-emerald-400 font-semibold font-mono bg-emerald-500/10 px-1 rounded">
+                              <span>•</span>
+                              <span className="text-emerald-500 font-semibold font-mono bg-emerald-500/10 px-1.5 rounded-full">
                                 {svc.activeReminderCount} booked
                               </span>
                             </>
@@ -482,11 +494,11 @@ export function ServiceSelectDropdown({
                     </div>
 
                     {isSelected ? (
-                      <div className="w-5 h-5 rounded-full bg-[#7B4DFF] flex items-center justify-center text-white shrink-0 shadow-[0_0_10px_rgba(123,77,255,0.6)] ml-2">
+                      <div className="w-5 h-5 rounded-full bg-[#FF5C38] flex items-center justify-center text-white shrink-0 shadow-sm ml-2">
                         <Check className="w-3 h-3 stroke-[3]" />
                       </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border border-gray-700/60 group-hover:border-gray-500 shrink-0 ml-2 transition-colors" />
+                      <div className={`w-5 h-5 rounded-full border shrink-0 ml-2 ${isDark ? 'border-zinc-700' : 'border-slate-300'}`} />
                     )}
                   </button>
                 );

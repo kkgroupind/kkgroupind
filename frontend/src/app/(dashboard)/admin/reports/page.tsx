@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { FinanceService, FinancialTransaction } from '@/services';
 import { 
   FileSpreadsheet, 
@@ -32,6 +33,7 @@ const MONTH_NAMES = [
 
 export default function AdminReportsPage() {
   const { token } = useAuth();
+  const { isDark } = useAdminTheme();
   const [transactions, setTransactions] = useState<FinancialTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [reportMonth, setReportMonth] = useState(
@@ -68,7 +70,7 @@ export default function AdminReportsPage() {
 
   const handlePrevMonth = () => {
     let year = selectedYear;
-    let monthIdx = parseInt(selectedMonthVal, 10) - 1; // 0-based
+    let monthIdx = parseInt(selectedMonthVal, 10) - 1;
     if (monthIdx === 0) {
       monthIdx = 11;
       year -= 1;
@@ -81,7 +83,7 @@ export default function AdminReportsPage() {
 
   const handleNextMonth = () => {
     let year = selectedYear;
-    let monthIdx = parseInt(selectedMonthVal, 10) - 1; // 0-based
+    let monthIdx = parseInt(selectedMonthVal, 10) - 1;
     if (monthIdx === 11) {
       monthIdx = 0;
       year += 1;
@@ -120,10 +122,8 @@ export default function AdminReportsPage() {
   const downloadCSV = () => {
     if (transactions.length === 0) return alert('No data to export');
     
-    // Create CSV headers
     let csvContent = 'Date,Txn Number,Type,Category,Amount,Payment Method,Status,Notes\n';
     
-    // Add rows
     transactions.forEach(t => {
       const safeNotes = (t.notes || '').replace(/,/g, ';').replace(/\n/g, ' ');
       csvContent += `${t.dateString},${t.transactionNumber},${t.type},${t.category},${t.amount},${t.paymentMethod},${t.status},${safeNotes}\n`;
@@ -144,28 +144,39 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D0E12] text-gray-200 p-3 sm:p-6 lg:p-8">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Header Banner */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-8 mb-4 sm:mb-8 border border-gray-800 bg-[#14151A] shadow-xl">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-radial from-[#2A835F]/20 to-transparent pointer-events-none rounded-full blur-3xl -mr-20 -mt-20" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+      <div
+        className={`p-6 sm:p-8 rounded-[28px] border relative overflow-hidden transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
           <div>
-            <h1 className="text-xl sm:text-3xl font-black text-white flex items-center gap-2 sm:gap-3">
-              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-[#2A835F]" />
-              Reports &amp; Analytics Export
+            <h1 className={`text-xl sm:text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <div
+                className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                  isDark ? 'bg-[#161922] border-white/[0.06] text-[#6366F1]' : 'bg-slate-50 border-slate-200 text-[#6366F1]'
+                }`}
+              >
+                <Activity className="w-5 h-5" />
+              </div>
+              Business &amp; Finance Reports
             </h1>
-            <p className="text-gray-400 mt-1 sm:mt-2 text-xs sm:text-sm max-w-2xl">
-              Generate comprehensive financial reports, export to Excel (CSV), or print as PDF documents. Data is pulled directly from the Operations Command Center.
+            <p className={`mt-1.5 text-xs sm:text-sm max-w-2xl ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Monthly reports of completed jobs, income, and worker wages. Download easy Excel spreadsheets with one click.
             </p>
           </div>
 
-          {/* Premium Calendar Month Picker */}
+          {/* Calendar Month Picker */}
           <div className="relative shrink-0" ref={calendarRef}>
-            <div className="flex items-center gap-1 sm:gap-2 bg-[#0D0E12] border border-gray-800 hover:border-gray-700 p-1 sm:p-1.5 rounded-2xl shadow-inner transition-colors">
+            <div className={`flex items-center gap-1.5 p-1 rounded-full border ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'}`}>
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
                 title="Previous Month"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -174,17 +185,21 @@ export default function AdminReportsPage() {
               <button
                 type="button"
                 onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800/80 text-white font-semibold text-xs sm:text-sm active:scale-95 transition-all"
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-800 shadow-xs'
+                }`}
               >
-                <CalendarIcon className="w-4 h-4 text-[#2A835F]" />
+                <CalendarIcon className="w-3.5 h-3.5 text-[#FF5C38]" />
                 <span className="whitespace-nowrap">{displayLabel}</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isCalendarOpen ? 'rotate-180 text-[#2A835F]' : ''}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isCalendarOpen ? 'rotate-180 text-[#FF5C38]' : isDark ? 'text-zinc-400' : 'text-slate-400'}`} />
               </button>
 
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white hover:bg-white/5' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-200/60'
+                }`}
                 title="Next Month"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -193,78 +208,51 @@ export default function AdminReportsPage() {
 
             {/* Interactive Month-Year Calendar Popover */}
             {isCalendarOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-[#14151A] border border-gray-800/90 rounded-2xl shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 backdrop-blur-xl">
-                {/* Year Controller */}
-                <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-800">
+              <div
+                className={`absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-3xl border shadow-2xl p-4 z-50 animate-in fade-in zoom-in-95 backdrop-blur-xl ${
+                  isDark ? 'bg-[#181A20] border-white/[0.1]' : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className={`flex items-center justify-between mb-3 pb-3 border-b ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
                   <button
                     type="button"
                     onClick={() => setViewYear(y => y - 1)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+                    className="p-1.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/5"
                     title="Previous Year"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-sm font-bold text-white tracking-wide">{viewYear}</span>
+                  <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{viewYear}</span>
                   <button
                     type="button"
                     onClick={() => setViewYear(y => y + 1)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all"
+                    className="p-1.5 rounded-full text-zinc-400 hover:text-white hover:bg-white/5"
                     title="Next Year"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* 12 Months Grid */}
                 <div className="grid grid-cols-3 gap-2">
                   {MONTH_NAMES.map((m) => {
                     const isSelected = selectedYear === viewYear && selectedMonthVal === m.val;
-                    const now = new Date();
-                    const isCurrentCalMonth = now.getFullYear() === viewYear && String(now.getMonth() + 1).padStart(2, '0') === m.val;
-
                     return (
                       <button
                         key={m.val}
                         type="button"
                         onClick={() => selectMonth(m.val)}
-                        className={`py-2 px-2.5 rounded-xl text-xs font-semibold transition-all relative flex flex-col items-center justify-center ${
+                        className={`py-2 px-2.5 rounded-2xl text-xs font-semibold transition-all flex flex-col items-center justify-center cursor-pointer ${
                           isSelected
-                            ? 'bg-[#2A835F] text-white shadow-lg shadow-[#2A835F]/20 font-bold'
-                            : 'bg-[#0D0E12] border border-gray-800/70 text-gray-300 hover:text-white hover:border-gray-700 hover:bg-[#1A1C23]'
+                            ? 'bg-[#FF5C38] text-white shadow-md font-bold'
+                            : isDark
+                            ? 'bg-[#121318] border border-white/[0.04] text-zinc-300 hover:text-white hover:bg-[#1E2028]'
+                            : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'
                         }`}
                       >
                         <span>{m.short}</span>
-                        {isCurrentCalMonth && !isSelected && (
-                          <span className="w-1 h-1 rounded-full bg-[#2A835F] mt-0.5" />
-                        )}
                       </button>
                     );
                   })}
-                </div>
-
-                {/* Quick Shortcuts */}
-                <div className="mt-3 pt-3 border-t border-gray-800 flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const now = new Date();
-                      const y = now.getFullYear();
-                      const mm = String(now.getMonth() + 1).padStart(2, '0');
-                      setViewYear(y);
-                      setReportMonth(`${y}-${mm}`);
-                      setIsCalendarOpen(false);
-                    }}
-                    className="text-[11px] font-semibold text-[#2A835F] hover:text-[#38a97b] transition-colors"
-                  >
-                    Jump to Current Month
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsCalendarOpen(false)}
-                    className="text-[11px] text-gray-500 hover:text-gray-300 transition-colors"
-                  >
-                    Close
-                  </button>
                 </div>
               </div>
             )}
@@ -272,104 +260,119 @@ export default function AdminReportsPage() {
         </div>
       </div>
 
-      {/* Export Options: Single row on mobile (grid-cols-2) */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-6 mb-4 sm:mb-8 print:hidden">
+      {/* Export Options */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 print:hidden">
         {/* Excel / CSV Box */}
-        <div className="p-3 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#14151A] border border-gray-800 shadow-lg flex flex-col items-center justify-center text-center gap-2 sm:gap-4 group hover:border-[#2A835F]/50 transition-colors">
-          <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-            <FileSpreadsheet className="w-5 h-5 sm:w-8 sm:h-8" />
+        <div
+          className={`p-6 rounded-3xl border flex flex-col items-center justify-center text-center gap-3 transition-all ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <FileSpreadsheet className="w-6 h-6" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-xs sm:text-lg font-bold text-white truncate">Excel / CSV</h3>
-            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5 hidden sm:block">Download raw financial tabular data</p>
+          <div>
+            <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Excel / CSV</h3>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Download raw financial tabular data</p>
           </div>
           <button 
             onClick={downloadCSV}
             disabled={loading || transactions.length === 0}
-            className="w-full mt-1 sm:mt-2 px-2.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-[11px] sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full max-w-xs px-5 py-2.5 rounded-full bg-[#FF5C38] hover:bg-[#FF6B4A] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#FF5C38]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
-            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Download Excel</span>
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Download Excel</span>
           </button>
         </div>
 
         {/* PDF Box */}
-        <div className="p-3 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#14151A] border border-gray-800 shadow-lg flex flex-col items-center justify-center text-center gap-2 sm:gap-4 group hover:border-purple-500/50 transition-colors">
-          <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-purple-500/10 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-            <FileText className="w-5 h-5 sm:w-8 sm:h-8" />
+        <div
+          className={`p-6 rounded-3xl border flex flex-col items-center justify-center text-center gap-3 transition-all ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className={`w-12 h-12 rounded-full border flex items-center justify-center ${isDark ? 'bg-[#121318] border-white/[0.06] text-[#FF5C38]' : 'bg-slate-50 border-slate-200 text-[#FF5C38]'}`}>
+            <FileText className="w-6 h-6" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-xs sm:text-lg font-bold text-white truncate">PDF Report</h3>
-            <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5 hidden sm:block">Print formatted summary report</p>
+          <div>
+            <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>PDF Document</h3>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Print formatted summary report</p>
           </div>
           <button 
             onClick={handlePrintPDF}
             disabled={loading || transactions.length === 0}
-            className="w-full mt-1 sm:mt-2 px-2.5 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-[#7B4DFF] hover:bg-[#6840d8] text-white font-bold text-[11px] sm:text-sm flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className={`w-full max-w-xs px-5 py-2.5 rounded-full border font-semibold text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+              isDark
+                ? 'bg-[#121318] hover:bg-[#1E2028] border-white/[0.08] text-white'
+                : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-800'
+            }`}
           >
-            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Print PDF</span>
+            <FileText className="w-4 h-4 shrink-0" />
+            <span>Print PDF</span>
           </button>
         </div>
       </div>
 
       {/* Report Preview */}
-      <div className="bg-[#14151A] rounded-2xl sm:rounded-3xl border border-gray-800 p-3 sm:p-6 shadow-xl print:shadow-none print:border-none print:p-0">
-        <div className="flex items-center justify-between mb-4 sm:mb-6">
-          <h2 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
+      <div
+        className={`rounded-3xl border p-5 sm:p-6 shadow-sm print:shadow-none print:border-none print:p-0 ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             Data Preview ({transactions.length} records)
           </h2>
-          {loading && <span className="text-xs text-gray-400 animate-pulse">Loading data...</span>}
+          {loading && <span className={`text-xs animate-pulse ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Loading data...</span>}
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="border-b border-gray-800 text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">
-                <th className="p-2 sm:p-3">Date</th>
-                <th className="p-2 sm:p-3">Txn #</th>
-                <th className="p-2 sm:p-3">Type</th>
-                <th className="p-2 sm:p-3">Category</th>
-                <th className="p-2 sm:p-3 text-right">Amount</th>
-                <th className="p-2 sm:p-3">Method</th>
+              <tr className={`border-b text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'border-white/[0.06] text-zinc-400' : 'border-slate-100 text-slate-500'}`}>
+                <th className="py-3 px-3">Date</th>
+                <th className="py-3 px-3">Txn #</th>
+                <th className="py-3 px-3">Type</th>
+                <th className="py-3 px-3">Category</th>
+                <th className="py-3 px-3 text-right">Amount</th>
+                <th className="py-3 px-3">Method</th>
               </tr>
             </thead>
-            <tbody className="text-xs sm:text-sm">
+            <tbody className={`divide-y ${isDark ? 'divide-white/[0.04]' : 'divide-slate-100'}`}>
               {transactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-gray-500 italic">
+                  <td colSpan={6} className={`p-8 text-center italic ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
                     No transactions found for {displayLabel}
                   </td>
                 </tr>
               ) : (
                 transactions.slice(0, 15).map(t => (
-                  <tr key={t.id} className="border-b border-gray-800/50 hover:bg-white/5 transition-colors">
-                    <td className="p-2 sm:p-3 text-gray-300 whitespace-nowrap">{t.dateString}</td>
-                    <td className="p-2 sm:p-3 font-mono text-[10px] sm:text-xs text-[#7B4DFF] whitespace-nowrap">{t.transactionNumber}</td>
-                    <td className="p-2 sm:p-3">
-                      <span className={`px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                  <tr key={t.id} className={isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'}>
+                    <td className="py-3 px-3 whitespace-nowrap font-mono">{t.dateString}</td>
+                    <td className="py-3 px-3 font-mono text-[11px] font-semibold text-[#FF5C38] whitespace-nowrap">{t.transactionNumber}</td>
+                    <td className="py-3 px-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'}`}>
                         {t.type}
                       </span>
                     </td>
-                    <td className="p-2 sm:p-3 text-gray-400 text-[11px] sm:text-xs whitespace-nowrap">{t.category}</td>
-                    <td className={`p-2 sm:p-3 text-right font-bold whitespace-nowrap ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <td className="py-3 px-3 whitespace-nowrap">{t.category}</td>
+                    <td className={`py-3 px-3 text-right font-bold whitespace-nowrap ${t.type === 'INCOME' ? 'text-emerald-400' : 'text-rose-400'}`}>
                       ₹{t.amount.toLocaleString()}
                     </td>
-                    <td className="p-2 sm:p-3 text-gray-400 text-[11px] sm:text-xs whitespace-nowrap">{t.paymentMethod}</td>
+                    <td className="py-3 px-3 whitespace-nowrap font-mono">{t.paymentMethod}</td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
           {transactions.length > 15 && (
-            <div className="p-3 sm:p-4 text-center text-xs text-gray-500 italic print:hidden">
+            <div className={`p-3 text-center text-xs italic print:hidden ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
               Showing 15 out of {transactions.length} records. Export to view all.
             </div>
           )}
         </div>
       </div>
-
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { useRouter } from 'next/navigation';
 import {
   Activity,
@@ -20,6 +21,7 @@ import { AttendanceService, AttendanceOverviewResponse, EnquiryService, WorkerWi
 
 export default function AdminAvailabilityPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [attendance, setAttendance] = useState<AttendanceOverviewResponse | null>(null);
@@ -86,82 +88,124 @@ export default function AdminAvailabilityPage() {
   }, [workers]);
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <Activity className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Activity className="w-5 h-5" />
             </div>
-            Live Workforce Availability
+            Worker Availability
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Real-time operational readiness radar of field technicians and workforce capacity
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            See which workers are ready to work today, busy on jobs, or off duty
           </p>
         </div>
 
         <button
           onClick={() => loadData(true)}
           disabled={isRefreshing || isLoading}
-          className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+            isDark
+              ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+          }`}
         >
           <RefreshCw
-            className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
           />
           <span>{isRefreshing ? 'Refreshing...' : 'Reload Availability'}</span>
         </button>
       </div>
 
-      {/* Metrics Row: Double row on mobile */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Ready for Dispatch</span>
-          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">{counts.available}</div>
-          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Available today</span>
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div
+          className={`p-4 sm:p-5 rounded-[24px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Available Today
+          </span>
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-2">{counts.available}</div>
+          <span className="text-[11px] text-emerald-400 mt-1.5">Ready for new jobs</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Active on Job</span>
-          <div className="text-lg sm:text-2xl font-bold text-blue-400 mt-0.5 sm:mt-1">{counts.busy}</div>
-          <span className="text-[10px] sm:text-xs text-blue-400/80 mt-1 block truncate">Engaged on-site</span>
+        <div
+          className={`p-4 sm:p-5 rounded-[24px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Working on Site
+          </span>
+          <div className="text-xl sm:text-2xl font-bold text-blue-400 mt-2">{counts.busy}</div>
+          <span className="text-[11px] text-blue-400 mt-1.5">Currently on jobs</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Off Duty / Away</span>
-          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">{counts.offDuty}</div>
-          <span className="text-[10px] sm:text-xs text-amber-500/80 mt-1 block truncate">Unavailable today</span>
+        <div
+          className={`p-4 sm:p-5 rounded-[24px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Off Duty / Away
+          </span>
+          <div className="text-xl sm:text-2xl font-bold text-amber-400 mt-2">{counts.offDuty}</div>
+          <span className="text-[11px] text-amber-400 mt-1.5">Not available today</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Registered Force</span>
-          <div className="text-lg sm:text-2xl font-bold text-gray-100 mt-0.5 sm:mt-1">{counts.total}</div>
-          <span className="text-[10px] sm:text-xs text-gray-500 mt-1 block truncate">Total technicians</span>
+        <div
+          className={`p-4 sm:p-5 rounded-[24px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Total Workers
+          </span>
+          <div className={`text-xl sm:text-2xl font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{counts.total}</div>
+          <span className={`text-[11px] mt-1.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Total registered crew</span>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#14151A] border border-gray-800">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+      <div
+        className={`p-4 rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
+        <div className="relative flex-1 max-w-md">
+          <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
             placeholder="Search worker name, username, phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0D0E12] border border-gray-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-gray-700"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+            }`}
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           {(['ALL', 'AVAILABLE', 'BUSY', 'OFF_DUTY'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 statusFilter === s
-                  ? 'bg-[#1A1C23] text-white border border-gray-700'
-                  : 'bg-[#0D0E12] text-gray-400 hover:text-white border border-gray-800'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark
+                  ? 'bg-[#121318] hover:bg-[#1E2028] text-zinc-400 hover:text-white border border-white/[0.06]'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200'
               }`}
             >
               {s === 'ALL' ? 'All Status' : s}
@@ -179,63 +223,59 @@ export default function AdminAvailabilityPage() {
           return (
             <div
               key={w.id}
-              className={`p-4 rounded-xl border transition-colors flex flex-col justify-between gap-3 ${
-                isAvail
-                  ? 'bg-[#14151A] border-emerald-500/30'
-                  : isBusy
-                  ? 'bg-[#14151A] border-blue-500/30'
-                  : 'bg-[#14151A] border-gray-800 opacity-60'
-              }`}
+              className={`p-5 rounded-3xl border transition-all flex flex-col justify-between gap-3 ${
+                isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+              } ${!isAvail && !isBusy ? 'opacity-65' : ''}`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                    className={`w-10 h-10 rounded-full border flex items-center justify-center font-bold text-xs ${
                       isAvail
-                        ? 'bg-emerald-500/20 text-emerald-400'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                         : isBusy
-                        ? 'bg-blue-500/20 text-blue-400'
-                        : 'bg-gray-800 text-gray-400'
+                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                        : isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-400' : 'bg-slate-100 border-slate-200 text-slate-500'
                     }`}
                   >
                     {w.name ? w.name.charAt(0).toUpperCase() : 'W'}
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-100">
+                    <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {w.name || w.username}
                     </h3>
-                    <span className="text-[11px] text-gray-500 font-mono">
+                    <span className={`text-[11px] font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
                       @{w.username}
                     </span>
                   </div>
                 </div>
 
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                     isAvail
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                       : isBusy
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                   }`}
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      isAvail ? 'bg-emerald-500' : isBusy ? 'bg-blue-500' : 'bg-amber-500'
+                      isAvail ? 'bg-emerald-400' : isBusy ? 'bg-blue-400' : 'bg-amber-400'
                     }`}
                   />
                   {w.workerStatus}
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-gray-800/80 space-y-1.5 text-xs text-gray-400">
+              <div className={`pt-3 border-t space-y-1.5 text-xs ${isDark ? 'border-white/[0.06] text-zinc-400' : 'border-slate-100 text-slate-600'}`}>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Mobile:</span>
-                  <span className="text-gray-300">{w.phone || 'No phone'}</span>
+                  <span>Mobile:</span>
+                  <span className={`font-mono ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>{w.phone || 'No phone'}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-500">Completed Assignments:</span>
-                  <span className="text-gray-200 font-medium">
+                  <span>Completed Assignments:</span>
+                  <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {w._count?.workerAssignments ?? 0}
                   </span>
                 </div>

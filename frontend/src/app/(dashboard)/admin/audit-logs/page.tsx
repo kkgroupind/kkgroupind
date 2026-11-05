@@ -1,73 +1,30 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import { useAdminTheme } from '@/context/admin-theme-context';
+import { AuditService, AuditLogItem, AuditStats } from '@/services';
 import {
-  AuditService,
-  AuditLogItem,
-  AuditStats,
-} from '@/services';
-import {
-  ShieldCheck,
-  Shield,
+  Activity,
   Search,
-  Filter,
   RefreshCw,
   User,
   Clock,
-  Activity,
-  Layers,
-  FileText,
+  Shield,
+  Briefcase,
+  HardHat,
+  UserCircle,
   Calendar,
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
-  Code,
-  HardHat,
-  Briefcase,
-  UserCircle,
+  Eye,
+  X,
   CheckCircle2,
-  LayoutGrid,
-  List,
+  Filter,
+  Layers,
+  ArrowRight,
 } from 'lucide-react';
-import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
-
-const AUDIT_ROLE_OPTIONS: AdminDropdownOption[] = [
-  { value: 'ALL', label: 'All Roles' },
-  {
-    value: 'SUPER_ADMIN',
-    label: 'Super Admin',
-    badge: 'Admin',
-    badgeColor: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  },
-  {
-    value: 'OFFICE_STAFF',
-    label: 'Office Staff',
-    badge: 'Staff',
-    badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-  },
-  {
-    value: 'WORKER',
-    label: 'Worker',
-    badge: 'Field',
-    badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-  },
-  {
-    value: 'CUSTOMER',
-    label: 'Customer',
-    badge: 'Client',
-    badgeColor: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  },
-];
-
-const AUDIT_ENTITY_OPTIONS: AdminDropdownOption[] = [
-  { value: 'ALL', label: 'All Entities' },
-  { value: 'FINANCE', label: 'Finance & Cashbook' },
-  { value: 'SERVICE_ENQUIRY', label: 'Service Enquiries' },
-  { value: 'USER', label: 'User & Profile' },
-  { value: 'ATTENDANCE', label: 'Attendance & Duty' },
-];
 
 export default function AdminAuditLogsPage() {
   const { token } = useAuth();
@@ -76,599 +33,481 @@ export default function AdminAuditLogsPage() {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [stats, setStats] = useState<AuditStats | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 25, totalPages: 1 });
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
 
-  // Filters
+  // Simplified filters
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [entityFilter, setEntityFilter] = useState('ALL');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
   const [page, setPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-
-  // Selected Log for details modal
   const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
 
   const fetchLogs = useCallback(async () => {
+    if (!token) return;
     setIsLoading(true);
     try {
-      const params: any = { page, limit: 25 };
+      const params: any = { page, limit: 20 };
       if (search.trim()) params.search = search.trim();
       if (roleFilter !== 'ALL') params.userRole = roleFilter;
       if (entityFilter !== 'ALL') params.entityType = entityFilter;
-      if (startDate) params.startDate = startDate;
-      if (endDate) params.endDate = endDate;
 
-      const [logRes, statRes] = await Promise.all([
+      const [logRes, statRes] = await Promise.allSettled([
         AuditService.getLogs(token, params),
         AuditService.getStats(token),
       ]);
 
-      setLogs(logRes.items);
-      setMeta(logRes.meta);
-      setStats(statRes);
+      if (logRes.status === 'fulfilled' && logRes.value) {
+        setLogs(logRes.value.items || []);
+        setMeta(logRes.value.meta || { total: 0, page: 1, limit: 20, totalPages: 1 });
+      }
+
+      if (statRes.status === 'fulfilled' && statRes.value) {
+        setStats(statRes.value);
+      }
     } catch (err) {
-      console.error('Failed to fetch audit logs:', err);
+      console.error('Failed to fetch activity logs:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [token, page, search, roleFilter, entityFilter, startDate, endDate]);
+  }, [token, page, search, roleFilter, entityFilter]);
 
   useEffect(() => {
-    if (token) {
-      fetchLogs();
-    }
-  }, [token, fetchLogs]);
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const getRoleBadge = (role?: string | null) => {
-    switch (role) {
-      case 'SUPER_ADMIN':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-            <Shield className="w-3 h-3" />
-            Super Admin
-          </span>
-        );
-      case 'OFFICE_STAFF':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-            <Briefcase className="w-3 h-3" />
-            Office Staff
-          </span>
-        );
-      case 'WORKER':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-            <HardHat className="w-3 h-3" />
-            Worker
-          </span>
-        );
-      case 'CUSTOMER':
-        return (
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <UserCircle className="w-3 h-3" />
-            Customer
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400">
-            System
-          </span>
-        );
-    }
+  // Plain-English Action Formatter for Non-Tech Users
+  const formatActionTitle = (action: string, entityType: string) => {
+    const act = action.toUpperCase();
+    if (act.includes('LOGIN')) return 'Logged into the system';
+    if (act.includes('LOGOUT')) return 'Logged out';
+    if (act.includes('CREATE') && entityType === 'SERVICE_ENQUIRY') return 'Created a new work request';
+    if (act.includes('ASSIGN') || act.includes('DISPATCH')) return 'Assigned worker to job';
+    if (act.includes('COMPLETE')) return 'Marked job as completed';
+    if (act.includes('START')) return 'Started job work timer';
+    if (act.includes('PAUSE')) return 'Paused work timer';
+    if (act.includes('RESUME')) return 'Resumed work timer';
+    if (act.includes('PAY') || act.includes('FINANCE')) return 'Recorded financial payment';
+    if (act.includes('VERIFY')) return 'Verified payment record';
+    if (act.includes('UPDATE')) return 'Updated account details';
+    if (act.includes('DELETE')) return 'Removed record';
+    return action.replace(/_/g, ' ').toLowerCase();
   };
 
-  const getActionColor = (action: string) => {
-    if (action.includes('CREATE')) return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-    if (action.includes('VERIFY') || action.includes('APPROVE')) return 'text-blue-500 bg-blue-500/10 border-blue-500/20';
-    if (action.includes('DELETE') || action.includes('REJECT')) return 'text-rose-500 bg-rose-500/10 border-rose-500/20';
-    if (action.includes('UPDATE')) return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-    return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
-  };
+  const rolePills = [
+    { id: 'ALL', label: 'All People' },
+    { id: 'WORKER', label: 'Workers' },
+    { id: 'OFFICE_STAFF', label: 'Office Staff' },
+    { id: 'CUSTOMER', label: 'Customers' },
+    { id: 'SUPER_ADMIN', label: 'Super Admins' },
+  ];
+
+  const categoryPills = [
+    { id: 'ALL', label: 'All Activities' },
+    { id: 'SERVICE_ENQUIRY', label: 'Job Orders' },
+    { id: 'FINANCE', label: 'Payments & Money' },
+    { id: 'ATTENDANCE', label: 'Daily Attendance' },
+    { id: 'USER', label: 'Profiles' },
+  ];
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
-      
-      {/* Header Banner */}
-      <div className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 mb-8 border shadow-xl ${
-        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200/80'
-      }`}>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-radial from-purple-500/10 to-transparent pointer-events-none rounded-full blur-3xl -mr-20 -mt-20" />
-        
-        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Immutable Audit Trail
-              </span>
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                System Security & Governance
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight flex items-center gap-3">
-              <span>Universal Audit Logs</span>
-              <span className="text-lg sm:text-2xl font-bold text-purple-500 opacity-90 hidden sm:inline">
-                ഓഡിറ്റ് ലോഗുകൾ
-              </span>
-            </h1>
-            <p className={`mt-2 text-sm max-w-2xl ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-              Complete real-time ledger of actions executed across Super Admin, Office Staff, Field Workers, and Customers — financial entries, verification signatures, ticket assignments, and logins.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => fetchLogs()}
-              disabled={isLoading}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border font-bold text-xs transition-all ${
-                isDark ? 'border-slate-800 bg-slate-800 hover:bg-slate-700 text-slate-300' : 'border-slate-200 bg-slate-100 hover:bg-slate-200 text-slate-700'
+    <div className="space-y-6 max-w-[1600px] mx-auto pb-12 select-none">
+      {/* 1. Header: Simple, Clean, Non-Tech Friendly */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1
+              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
+                isDark ? 'text-white' : 'text-slate-900'
               }`}
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-purple-500' : ''}`} />
-              <span>Refresh Log</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-        
-        <div className={`p-6 rounded-3xl border transition-all ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Total Recorded Events
-            </span>
-            <Activity className="w-5 h-5 text-purple-500" />
-          </div>
-          <div className="text-3xl font-black text-purple-500">
-            {stats?.totalAllTime || meta.total || 0}
-          </div>
-          <div className="text-xs text-slate-400 mt-1">Across all users & subsystems</div>
-        </div>
-
-        <div className={`p-6 rounded-3xl border transition-all ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Today&apos;s Operations
-            </span>
-            <Clock className="w-5 h-5 text-[#2A835F]" />
-          </div>
-          <div className="text-3xl font-black text-[#2A835F]">
-            {stats?.totalToday || 0}
-          </div>
-          <div className="text-xs text-slate-400 mt-1">Events logged today in Kerala time</div>
-        </div>
-
-        <div className={`p-6 rounded-3xl border transition-all ${
-          isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Active Stakeholders
-            </span>
-            <User className="w-5 h-5 text-blue-500" />
-          </div>
-          <div className="text-3xl font-black text-blue-500">
-            4 Roles
-          </div>
-          <div className="text-xs text-slate-400 mt-1">Admin, Staff, Worker & Customer</div>
-        </div>
-
-      </div>
-
-      {/* Filter Toolbar */}
-      <div className={`rounded-3xl border shadow-xl p-6 mb-8 ${
-        isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
-      }`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          
-          {/* Search text */}
-          <div className="relative sm:col-span-2">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search user, action, details, IP..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 ${
-                isDark ? 'bg-slate-950 border-slate-800 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              Activity History
+            </h1>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
+                isDark ? 'bg-white/10 text-white' : 'bg-slate-200 text-slate-800'
               }`}
-            />
+            >
+              {meta.total} Total Actions
+            </span>
           </div>
+          <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+            See everything happening in your business: who did what, when, and on which job
+          </p>
+        </div>
 
-          {/* Role filter */}
+        <button
+          onClick={() => fetchLogs()}
+          disabled={isLoading}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold border transition-all cursor-pointer ${
+            isDark
+              ? 'bg-[#12141A] hover:bg-[#181B24] border-white/[0.08] text-gray-300 hover:text-white'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+          }`}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isLoading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      {/* 2. Top Metric Cards: 3 Simple, Clear Highlights */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div
+          className={`p-5 rounded-[26px] border flex items-center justify-between transition-all ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
           <div>
-            <AdminDropdown
-              options={AUDIT_ROLE_OPTIONS}
-              value={roleFilter}
-              onChange={(val) => setRoleFilter(val)}
-              variant="purple"
-              size="md"
-            />
-          </div>
-
-          {/* Entity filter */}
-          <div>
-            <AdminDropdown
-              options={AUDIT_ENTITY_OPTIONS}
-              value={entityFilter}
-              onChange={(val) => setEntityFilter(val)}
-              variant="purple"
-              size="md"
-            />
-          </div>
-
-          {/* Date Picker & View Toggle */}
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className={`flex-1 px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none ${
-                isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}
-              title="Filter from Date"
-            />
-            <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-[#7B4DFF] text-white shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200'
-                }`}
-                title="Card Grid View"
-              >
-                <LayoutGrid className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'table'
-                    ? 'bg-[#7B4DFF] text-white shadow-sm'
-                    : 'text-gray-400 hover:text-gray-200'
-                }`}
-                title="Table View"
-              >
-                <List className="w-4 h-4" />
-              </button>
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              All Actions Recorded
+            </span>
+            <div
+              className={`text-2xl font-black mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}
+            >
+              {stats?.totalAllTime || meta.total || 0}
             </div>
+            <p className="text-[10px] text-gray-400 mt-0.5">Complete history since day one</p>
           </div>
+          <div className="w-10 h-10 rounded-2xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center text-[#6366F1]">
+            <Activity className="w-5 h-5" />
+          </div>
+        </div>
 
+        <div
+          className={`p-5 rounded-[26px] border flex items-center justify-between transition-all ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div>
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              Today&apos;s Actions
+            </span>
+            <div className="text-2xl font-black text-emerald-400 mt-1">
+              {stats?.totalToday || 0}
+            </div>
+            <p className="text-[10px] text-gray-400 mt-0.5">Happened today</p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <Clock className="w-5 h-5" />
+          </div>
+        </div>
+
+        <div
+          className={`p-5 rounded-[26px] border flex items-center justify-between transition-all ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div>
+            <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              Active Crew &amp; Clients
+            </span>
+            <div className="text-2xl font-black text-[#FF6442] mt-1">
+              4 Roles
+            </div>
+            <p className="text-[10px] text-gray-400 mt-0.5">Admins, Office, Workers, Clients</p>
+          </div>
+          <div className="w-10 h-10 rounded-2xl bg-[#FF6442]/10 border border-[#FF6442]/20 flex items-center justify-center text-[#FF6442]">
+            <User className="w-5 h-5" />
+          </div>
         </div>
       </div>
 
-      {/* Audit Log Content: Default Bento Cards or Table */}
-      {viewMode === 'grid' ? (
-        <div className="space-y-6">
-          {logs.length === 0 ? (
-            <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
-              <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
-                <Shield className="w-7 h-7 text-gray-500" />
-              </div>
-              <h3 className="text-gray-200 font-semibold text-base mb-1">No Audit Records Found</h3>
-              <p className="text-gray-500 text-xs max-w-sm">
-                No events match your current filter and search parameters.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {logs.map((log) => {
-                const dateObj = new Date(log.createdAt);
-                const timeFormatted = dateObj.toLocaleTimeString('en-IN', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                });
-                const dateFormatted = dateObj.toLocaleDateString('en-IN', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                });
+      {/* 3. Filter Toolbar: Intuitive Search & Role Pills */}
+      <div
+        className={`p-4 sm:p-5 rounded-[28px] border space-y-3.5 transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search by person name, job order, payment note..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            className={`w-full pl-11 pr-4 py-2.5 rounded-full text-xs sm:text-sm font-medium transition-all focus:outline-none ${
+              isDark
+                ? 'bg-[#181B24] border border-white/[0.08] text-white placeholder-gray-500 focus:border-[#6366F1]'
+                : 'bg-slate-100 border border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white focus:border-[#6366F1]'
+            }`}
+          />
+        </div>
 
-                return (
-                  <div
-                    key={log.id}
-                    className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
-                  >
-                    {/* Top ambient glow line */}
-                    <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/40 to-transparent group-hover:via-[#7B4DFF]/80 transition-all duration-300" />
+        {/* Filter Pills Row */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 pt-1 border-t border-white/[0.05]">
+          {/* Role Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full md:w-auto">
+            {rolePills.map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => {
+                  setRoleFilter(pill.id);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  roleFilter === pill.id
+                    ? 'bg-[#6366F1] text-white shadow-xs'
+                    : isDark
+                    ? 'bg-[#181B24] text-gray-400 hover:text-white border border-white/[0.06]'
+                    : 'bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
 
-                    <div>
-                      {/* Header: Avatar, Actor, Role Badge */}
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="relative shrink-0">
-                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 p-[2px] shadow-sm">
-                              <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-xs text-gray-100">
-                                <ShieldCheck className="w-5 h-5 text-[#7B4DFF]" />
-                              </div>
-                            </div>
-                          </div>
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full md:w-auto">
+            {categoryPills.map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => {
+                  setEntityFilter(pill.id);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  entityFilter === pill.id
+                    ? 'bg-white/20 text-white font-bold'
+                    : isDark
+                    ? 'text-gray-400 hover:text-white'
+                    : 'text-slate-500 hover:text-slate-900'
+                }`}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-                          <div className="min-w-0">
-                            <h4 className="font-semibold text-gray-100 text-sm truncate">
-                              {log.userName || log.userEmail || 'System Process'}
-                            </h4>
-                            <div className="mt-1">{getRoleBadge(log.userRole)}</div>
-                          </div>
-                        </div>
+      {/* 4. Activity Stream: Simple, Clean Cards */}
+      <div
+        className={`rounded-[28px] border overflow-hidden transition-all ${
+          isDark ? 'bg-[#0D0E12] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+        }`}
+      >
+        <div className="p-4 sm:p-5 border-b border-white/[0.06] flex items-center justify-between">
+          <h3
+            className={`font-bold text-sm sm:text-base ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}
+          >
+            Live Activity Stream
+          </h3>
+          <span className="text-xs text-gray-500">
+            Page {meta.page} of {meta.totalPages}
+          </span>
+        </div>
 
+        {isLoading ? (
+          <div className="p-16 text-center">
+            <RefreshCw className="w-6 h-6 animate-spin text-[#6366F1] mx-auto mb-2" />
+            <p className="text-xs text-gray-400">Loading activity stream...</p>
+          </div>
+        ) : logs.length === 0 ? (
+          <div className="p-16 text-center text-gray-400 text-xs">
+            No activity matches your search or filter.
+          </div>
+        ) : (
+          <div className="divide-y divide-white/[0.04]">
+            {logs.map((log) => {
+              const roleColor =
+                log.userRole === 'WORKER'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                  : log.userRole === 'OFFICE_STAFF'
+                  ? 'bg-[#6366F1]/10 text-[#818cf8] border-[#6366F1]/20'
+                  : log.userRole === 'CUSTOMER'
+                  ? 'bg-[#FF6442]/10 text-[#FF6442] border-[#FF6442]/20'
+                  : 'bg-amber-500/10 text-amber-300 border-amber-500/20';
+
+              const roleIcon =
+                log.userRole === 'WORKER' ? (
+                  <HardHat className="w-3.5 h-3.5" />
+                ) : log.userRole === 'OFFICE_STAFF' ? (
+                  <Briefcase className="w-3.5 h-3.5" />
+                ) : (
+                  <User className="w-3.5 h-3.5" />
+                );
+
+              const timeStr = new Date(log.createdAt).toLocaleString('en-IN', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              const personName =
+                log.userName || log.userEmail || 'System';
+
+              return (
+                <div
+                  key={log.id}
+                  onClick={() => setSelectedLog(log)}
+                  className={`p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 transition-colors cursor-pointer ${
+                    isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                    {/* User Avatar Circle */}
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#6366F1] to-[#FF6442] p-[1.5px] shrink-0">
+                      <div
+                        className={`w-full h-full rounded-[14px] flex items-center justify-center font-bold text-xs uppercase ${
+                          isDark ? 'bg-[#12141A] text-white' : 'bg-white text-indigo-600'
+                        }`}
+                      >
+                        {personName.charAt(0)}
+                      </div>
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className={`inline-block px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold border shrink-0 ${getActionColor(
-                            log.action,
-                          )}`}
+                          className={`font-bold text-xs sm:text-sm ${
+                            isDark ? 'text-white' : 'text-slate-900'
+                          }`}
                         >
-                          {log.action}
+                          {personName}
+                        </span>
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${roleColor}`}
+                        >
+                          {roleIcon}
+                          <span>{log.userRole ? log.userRole.replace('_', ' ') : 'System'}</span>
                         </span>
                       </div>
 
-                      {/* Details Box */}
-                      <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
-                        <div className="flex items-center justify-between text-gray-400">
-                          <span className="flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-gray-500" />
-                            <span>Logged</span>
-                          </span>
-                          <span className="text-gray-300 font-medium">
-                            {dateFormatted}, {timeFormatted}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between text-gray-400">
-                          <span className="flex items-center gap-1.5">
-                            <Layers className="w-3.5 h-3.5 text-gray-500" />
-                            <span>Target Entity</span>
-                          </span>
-                          <span className="text-[#7B4DFF] font-semibold">{log.entityType}</span>
-                        </div>
-
-                        {log.details && (
-                          <p className="text-[11px] text-gray-400 italic bg-[#1A1C23] p-2.5 rounded-xl border border-gray-800/80 truncate">
-                            &ldquo;{log.details}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedLog(log)}
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all cursor-pointer"
-                      >
-                        <Code className="w-3.5 h-3.5 text-[#7B4DFF]" />
-                        <span>Inspect Payload Details</span>
-                      </button>
+                      <p className="text-xs text-gray-300 dark:text-gray-400 mt-0.5 line-clamp-1">
+                        <strong className="text-white capitalize">
+                          {formatActionTitle(log.action, log.entityType)}
+                        </strong>
+                        {log.details ? ` — ${log.details}` : ''}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Alternative Table View */
-        <div className={`rounded-3xl border shadow-xl overflow-hidden ${
-          isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white border-slate-200'
-        }`}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm">
-              <thead className={`border-b text-xs font-bold uppercase tracking-wider ${
-                isDark ? 'bg-slate-950/80 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'
-              }`}>
-                <tr>
-                  <th className="py-4 px-4 sm:px-6">Timestamp</th>
-                  <th className="py-4 px-4">Actor & Role</th>
-                  <th className="py-4 px-4">Action</th>
-                  <th className="py-4 px-4">Entity</th>
-                  <th className="py-4 px-4">Details</th>
-                  <th className="py-4 px-4 text-right">View</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                {logs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-400">
-                      No audit records matching your criteria.
-                    </td>
-                  </tr>
-                ) : (
-                  logs.map((log) => {
-                    const dateObj = new Date(log.createdAt);
-                    const timeFormatted = dateObj.toLocaleTimeString('en-IN', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit',
-                    });
-                    const dateFormatted = dateObj.toLocaleDateString('en-IN', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    });
 
-                    return (
-                      <tr key={log.id} className="hover:bg-slate-500/5 transition-colors">
-                        <td className="py-4 px-4 sm:px-6 whitespace-nowrap">
-                          <div className="font-semibold">{dateFormatted}</div>
-                          <div className="text-[11px] text-slate-400 font-mono">{timeFormatted}</div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <div className="font-bold text-slate-800 dark:text-slate-200">
-                            {log.userName || log.userEmail || 'System Process'}
-                          </div>
-                          <div className="mt-1">
-                            {getRoleBadge(log.userRole)}
-                          </div>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <span className={`inline-block px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${getActionColor(log.action)}`}>
-                            {log.action}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-4">
-                          <div className="font-semibold text-slate-700 dark:text-slate-300">
-                            {log.entityType}
-                          </div>
-                          {log.entityId && (
-                            <div className="text-[10px] font-mono text-slate-400 truncate max-w-[120px]">
-                              {log.entityId}
-                            </div>
-                          )}
-                        </td>
-
-                        <td className="py-4 px-4 max-w-xs truncate">
-                          <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                            {log.details || '—'}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => setSelectedLog(log)}
-                            className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold hover:bg-purple-500/10 hover:text-purple-500 transition-colors"
-                          >
-                            Inspect
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                  {/* Time & View Details Button */}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[11px] text-gray-400 whitespace-nowrap font-medium">
+                      {timeStr}
+                    </span>
+                    <button
+                      type="button"
+                      className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-gray-400 hover:text-white border border-white/[0.06] transition-colors"
+                      title="View Details"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
 
-        {/* Pagination */}
+        {/* Pagination Footer */}
         {meta.totalPages > 1 && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-semibold">
-            <span className="text-slate-400">
-              Showing page {meta.page} of {meta.totalPages} ({meta.total} events)
+          <div
+            className={`p-4 border-t flex justify-between items-center ${
+              isDark ? 'border-white/[0.06] bg-[#0A0B0E]' : 'border-slate-100 bg-slate-50'
+            }`}
+          >
+            <span className="text-xs text-gray-400 font-medium">
+              Showing page {meta.page} of {meta.totalPages}
             </span>
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40"
+                onClick={() => setPage(page - 1)}
+                className="px-3 py-1.5 rounded-full border border-white/[0.08] text-xs font-semibold disabled:opacity-40 transition-colors cursor-pointer"
               >
-                <ChevronLeft className="w-4 h-4" />
+                Previous
               </button>
               <button
                 disabled={page >= meta.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="p-2 rounded-xl border border-slate-200 dark:border-slate-800 disabled:opacity-40"
+                onClick={() => setPage(page + 1)}
+                className="px-3 py-1.5 rounded-full border border-white/[0.08] text-xs font-semibold disabled:opacity-40 transition-colors cursor-pointer"
               >
-                <ChevronRight className="w-4 h-4" />
+                Next
               </button>
             </div>
           </div>
         )}
+      </div>
 
-      {/* INSPECT LOG MODAL */}
+      {/* 5. Simplified Activity Detail Dialog */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="fixed inset-0" onClick={() => setSelectedLog(null)} />
-          <div className="relative w-full max-w-xl max-h-[90vh] flex flex-col bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 z-10 text-gray-200">
-            <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14151A] shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#1A1C23] border border-gray-800 rounded-xl text-purple-400">
-                  <ShieldCheck className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-in fade-in">
+          <div
+            className={`w-full max-w-lg rounded-[28px] border shadow-2xl p-6 space-y-4 ${
+              isDark ? 'bg-[#12141A] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-900'
+            }`}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center font-bold">
+                  <Activity className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-purple-400 block">
-                    Security Audit Inspection
-                  </span>
-                  <h3 className="text-sm font-mono font-bold text-gray-100 mt-0.5 truncate max-w-xs">
-                    Log #{selectedLog.id}
-                  </h3>
+                  <h3 className="text-sm font-bold">Action Details</h3>
+                  <p className="text-[11px] text-gray-400">Recorded system event</p>
                 </div>
               </div>
               <button
                 onClick={() => setSelectedLog(null)}
-                className="p-2 text-gray-400 hover:text-gray-200 transition-colors bg-[#1A1C23] hover:bg-[#232630] rounded-xl border border-gray-800"
+                className="p-1.5 rounded-full hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs sm:text-sm overflow-y-auto custom-scrollbar">
-              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-500/10">
-                <div>
-                  <div className="text-xs text-slate-400 uppercase font-bold">Action</div>
-                  <div className="font-mono font-bold mt-1 text-purple-400">{selectedLog.action}</div>
-                </div>
-                <div>
-                  <div className="text-xs text-slate-400 uppercase font-bold">Timestamp</div>
-                  <div className="font-semibold mt-1">{new Date(selectedLog.createdAt).toLocaleString('en-IN')}</div>
-                </div>
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex justify-between">
+                <span className="text-gray-400 font-medium">Person:</span>
+                <span className="font-bold">
+                  {selectedLog.userName || selectedLog.userEmail || 'System'}
+                </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Actor</div>
-                  <div className="font-semibold mt-0.5">{selectedLog.userName || 'System'}</div>
-                  <div className="text-xs text-slate-400">{selectedLog.userEmail}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Actor Role</div>
-                  <div className="mt-1">{getRoleBadge(selectedLog.userRole)}</div>
-                </div>
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex justify-between">
+                <span className="text-gray-400 font-medium">Role:</span>
+                <span className="font-bold">{selectedLog.userRole || 'System'}</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Entity Type</div>
-                  <div className="font-semibold mt-0.5">{selectedLog.entityType}</div>
-                </div>
-                <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Entity ID</div>
-                  <div className="font-mono text-xs mt-0.5">{selectedLog.entityId || 'N/A'}</div>
-                </div>
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex justify-between">
+                <span className="text-gray-400 font-medium">Action:</span>
+                <span className="font-bold capitalize text-[#6366F1]">
+                  {formatActionTitle(selectedLog.action, selectedLog.entityType)}
+                </span>
               </div>
 
-              {selectedLog.ipAddress && (
-                <div>
-                  <div className="text-slate-400 uppercase text-[11px] font-bold">Client IP Address</div>
-                  <div className="font-mono text-xs mt-0.5">{selectedLog.ipAddress}</div>
+              <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] flex justify-between">
+                <span className="text-gray-400 font-medium">Time:</span>
+                <span className="font-bold font-mono">
+                  {new Date(selectedLog.createdAt).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {selectedLog.details && (
+                <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.05] space-y-1">
+                  <span className="text-gray-400 font-medium block">Details:</span>
+                  <p className="text-gray-200">{selectedLog.details}</p>
                 </div>
               )}
-
-              <div>
-                <div className="text-slate-400 uppercase text-[11px] font-bold mb-1.5">Full Payload Details</div>
-                <pre className={`p-4 rounded-2xl font-mono text-xs overflow-x-auto border ${
-                  isDark ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-800'
-                }`}>
-                  {(() => {
-                    try {
-                      return JSON.stringify(JSON.parse(selectedLog.details || '{}'), null, 2);
-                    } catch {
-                      return selectedLog.details || 'No details payload recorded';
-                    }
-                  })()}
-                </pre>
-              </div>
-
             </div>
+
+            <button
+              onClick={() => setSelectedLog(null)}
+              className="w-full py-2.5 rounded-full bg-[#6366F1] hover:bg-[#5E5CE6] text-white font-bold text-xs transition-all shadow-md"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -40,6 +40,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { api, User } from '@/services';
 import { EditPersonModal } from './edit-person-modal';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 interface PersonDetailViewProps {
   username: string;
@@ -55,6 +56,7 @@ export function PersonDetailView({
   categoryLabel,
 }: PersonDetailViewProps) {
   const { token, user: currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [person, setPerson] = useState<User | null>(null);

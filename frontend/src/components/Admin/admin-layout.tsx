@@ -17,13 +17,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div
       className={`flex h-screen overflow-hidden transition-colors duration-200 ${
-        isDark ? 'bg-[#0D0E12] text-slate-100' : 'bg-[#F8FAFC] text-slate-900'
+        isDark ? 'bg-[#0A0B0E] text-slate-100' : 'bg-[#F4F5F8] text-slate-900'
       }`}
     >
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-xs z-40 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
@@ -45,7 +45,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <Navbar onMenuClick={() => setIsSidebarOpen(true)} />
         <main
           className={`flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar transition-colors duration-200 ${
-            isDark ? 'bg-[#0D0E12]' : 'bg-[#F8FAFC]'
+            isDark ? 'bg-[#0A0B0E]' : 'bg-[#F4F5F8]'
           }`}
         >
           {children}

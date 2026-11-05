@@ -45,9 +45,11 @@ import { SetupReminderModal } from '@/components/Admin/SetupReminderModal';
 import { ConfigureServiceRuleModal } from '@/components/Admin/ConfigureServiceRuleModal';
 import { ServiceSelectDropdown } from '@/components/Admin/ServiceSelectDropdown';
 import { ConfirmationModal } from '@/components/Admin/confirmation-modal';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export default function AdminRemindersPage() {
   const { token, user: authUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [reminders, setReminders] = useState<ServiceReminder[]>([]);
@@ -288,8 +290,8 @@ export default function AdminRemindersPage() {
   if (authLoading) {
     return (
       <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#7B4DFF] mb-3" />
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#6366F1] mb-3" />
           <p className="text-sm font-semibold text-gray-300">Loading service reminders...</p>
         </div>
       </div>
@@ -300,7 +302,7 @@ export default function AdminRemindersPage() {
     <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-20 right-6 z-50 p-4 rounded-[24px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-semibold shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -309,32 +311,40 @@ export default function AdminRemindersPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <CalendarClock className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <CalendarClock className="w-5 h-5" />
             </div>
-            Service Reminders &amp; Recurring Maintenance
+            Automatic Service Reminders
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Automate periodic maintenance cycles like coconut plucking every 3 months with one-tap client outreach
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Automatically remind customers when seasonal services like tree harvesting are due
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-          {/* Refetch Button */}
+          {/* Reload Button */}
           <button
             type="button"
             onClick={handleReload}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Reload reminders"
           >
             <RefreshCw
-              className={`w-4 h-4 text-[#7B4DFF] ${
+              className={`w-4 h-4 text-[#6366F1] ${
                 isRefreshing ? 'animate-spin' : ''
               }`}
             />
-            <span>{isRefreshing ? 'Refetching...' : 'Reload'}</span>
+            <span>{isRefreshing ? 'Reloading...' : 'Reload'}</span>
           </button>
 
           {/* Configure Service Automation Rule Button */}
@@ -344,11 +354,15 @@ export default function AdminRemindersPage() {
               setRuleServiceId(null);
               setIsRuleModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Configure service recurrence rules"
           >
-            <Settings2 className="w-4 h-4" />
-            <span>Configure Service Rules</span>
+            <Settings2 className="w-4 h-4 text-[#6366F1]" />
+            <span>Reminder Rules</span>
           </button>
 
           {/* Manual Reminder Button */}
@@ -358,11 +372,11 @@ export default function AdminRemindersPage() {
               setEditingReminder(null);
               setIsSetupModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-md shadow-[#6366F1]/20 transition-all cursor-pointer"
             title="Manually create a client reminder"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Manual Reminder</span>
+            <span>New Reminder</span>
           </button>
         </div>
       </div>
@@ -370,20 +384,20 @@ export default function AdminRemindersPage() {
       {/* Top 5 Metrics Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {/* Total Reminders */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-4">
           <div className="text-xs text-gray-500 font-medium">Total Reminders</div>
           <div className="text-2xl font-bold text-gray-100 mt-1">{stats.total}</div>
           <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-            <CalendarClock className="w-3 h-3 text-[#7B4DFF]" />
+            <CalendarClock className="w-3 h-3 text-[#6366F1]" />
             <span>Recurring setups</span>
           </div>
         </div>
 
         {/* Overdue */}
-        <div className={`rounded-2xl border p-4 transition-all ${
+        <div className={`rounded-[24px] border p-4 transition-all ${
           stats.overdue > 0
             ? 'bg-rose-500/10 border-rose-500/20'
-            : 'bg-[#14151A] border-gray-800/80'
+            : 'bg-[#12141A] border-white/[0.06]'
         }`}>
           <div className="text-xs text-rose-400 font-medium flex items-center justify-between">
             <span>Overdue</span>
@@ -394,21 +408,21 @@ export default function AdminRemindersPage() {
         </div>
 
         {/* Due Soon / Today */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-4">
           <div className="text-xs text-amber-400 font-medium">Due in 3 Days</div>
           <div className="text-2xl font-bold text-amber-300 mt-1">{stats.due}</div>
           <div className="text-[11px] text-gray-500 mt-1">Ready for dispatch</div>
         </div>
 
         {/* Upcoming */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-4">
           <div className="text-xs text-blue-400 font-medium">Upcoming Cycles</div>
           <div className="text-2xl font-bold text-blue-300 mt-1">{stats.upcoming}</div>
           <div className="text-[11px] text-gray-500 mt-1">Future target dates</div>
         </div>
 
         {/* Completed */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4 col-span-2 sm:col-span-1">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-4 col-span-2 sm:col-span-1">
           <div className="text-xs text-emerald-400 font-medium">Completed Cycles</div>
           <div className="text-2xl font-bold text-emerald-300 mt-1">{stats.completed}</div>
           <div className="text-[11px] text-gray-500 mt-1">Rolled over to next</div>
@@ -416,15 +430,15 @@ export default function AdminRemindersPage() {
       </div>
 
       {/* Main Section Switcher: Scheduled Client Reminders vs Service Automation Setup */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-gray-800 pb-3">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-white/[0.06] pb-3">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setActiveSection('CLIENT_REMINDERS')}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
               activeSection === 'CLIENT_REMINDERS'
-                ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-                : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+                ? 'bg-[#6366F1] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
+                : 'bg-[#12141A] text-gray-400 hover:text-gray-200 border border-white/[0.06]'
             }`}
           >
             <CalendarClock className="w-4 h-4" />
@@ -436,8 +450,8 @@ export default function AdminRemindersPage() {
             onClick={() => setActiveSection('SERVICE_RULES')}
             className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all ${
               activeSection === 'SERVICE_RULES'
-                ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-                : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+                ? 'bg-[#6366F1] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
+                : 'bg-[#12141A] text-gray-400 hover:text-gray-200 border border-white/[0.06]'
             }`}
           >
             <Settings2 className="w-4 h-4" />
@@ -457,9 +471,9 @@ export default function AdminRemindersPage() {
         /* ================= SERVICE AUTOMATION RULES VIEW ================= */
         <div className="space-y-5">
           {/* Explanatory Banner */}
-          <div className="p-4 rounded-2xl bg-[#14151A] border border-gray-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 rounded-[24px] bg-[#12141A] border border-white/[0.06] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-[#7B4DFF]/10 border border-[#7B4DFF]/20 flex items-center justify-center text-[#7B4DFF] shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center text-[#6366F1] shrink-0">
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
@@ -479,7 +493,7 @@ export default function AdminRemindersPage() {
                 setRuleServiceId(null);
                 setIsRuleModalOpen(true);
               }}
-              className="px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white text-xs font-bold rounded-xl shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all shrink-0 flex items-center gap-2"
+              className="px-4 py-2 bg-[#6366F1] hover:bg-[#6A3DEE] text-white text-xs font-bold rounded-xl shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all shrink-0 flex items-center gap-2"
             >
               <Settings2 className="w-3.5 h-3.5" />
               <span>Modify Service Rule</span>
@@ -496,23 +510,23 @@ export default function AdminRemindersPage() {
               return (
                 <div
                   key={svc.id}
-                  className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+                  className="group bg-[#12141A] rounded-[24px] border border-white/[0.06] hover:border-white/[0.12] p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
                 >
                   {/* Subtle top ambient glow */}
-                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#6366F1]/60 transition-all duration-300" />
 
                   <div>
                     {/* Header: Service Icon, Name, Category */}
                     <div className="flex items-start gap-3 mb-3">
                       <div className="relative shrink-0">
-                        <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${
-                          isEnabled ? 'from-[#7B4DFF] to-emerald-500' : 'from-gray-700 to-gray-800'
+                        <div className={`w-11 h-11 rounded-[24px] bg-gradient-to-br ${
+                          isEnabled ? 'from-[#6366F1] to-emerald-500' : 'from-gray-700 to-gray-800'
                         } p-[2px] shadow-sm`}>
-                          <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-gray-100 overflow-hidden">
+                          <div className="w-full h-full bg-[#161922] rounded-[14px] flex items-center justify-center font-bold text-gray-100 overflow-hidden">
                             {isCoconut ? (
                               <TreePalm className="w-5 h-5 text-emerald-400" />
                             ) : (
-                              <CalendarClock className="w-5 h-5 text-[#7B4DFF]" />
+                              <CalendarClock className="w-5 h-5 text-[#6366F1]" />
                             )}
                           </div>
                         </div>
@@ -520,21 +534,21 @@ export default function AdminRemindersPage() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-mono font-semibold text-[#7B4DFF] block uppercase tracking-wider">
+                          <span className="text-[10px] font-mono font-semibold text-[#6366F1] block uppercase tracking-wider">
                             {svc.category || 'Service'}
                           </span>
 
                           <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border ${
                             isEnabled
                               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                              : 'bg-gray-800 text-gray-500 border-gray-700'
+                              : 'bg-gray-800 text-gray-500 border-white/[0.12]'
                           }`}>
                             {isEnabled ? 'Auto-Schedule ON' : 'Disabled'}
                           </span>
                         </div>
 
                         <h4
-                          className="font-bold text-gray-100 hover:text-[#7B4DFF] transition-colors truncate block text-sm mt-0.5"
+                          className="font-bold text-gray-100 hover:text-[#6366F1] transition-colors truncate block text-sm mt-0.5"
                           title={svc.name}
                         >
                           {svc.name}
@@ -543,10 +557,10 @@ export default function AdminRemindersPage() {
                     </div>
 
                     {/* Recurrence Rule Card Details */}
-                    <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs bg-[#1A1C23]/60 rounded-xl p-3">
+                    <div className="space-y-2 py-3 border-y border-white/[0.06] my-3 text-xs bg-[#161922]/60 rounded-xl p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-gray-400 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                          <Clock className="w-3.5 h-3.5 text-[#6366F1]" />
                           <span>Recurrence Cycle:</span>
                         </span>
                         <span className="font-semibold text-gray-200">
@@ -564,7 +578,7 @@ export default function AdminRemindersPage() {
                         </span>
                       </div>
 
-                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-gray-800/40">
+                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1 border-t border-white/[0.06]/40">
                         <span>Trigger:</span>
                         <span className="text-gray-300">On Job Order COMPLETED</span>
                       </div>
@@ -579,9 +593,9 @@ export default function AdminRemindersPage() {
                         setRuleServiceId(svc.id);
                         setIsRuleModalOpen(true);
                       }}
-                      className="w-full py-2 px-3 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-200 hover:text-white border border-gray-800 text-xs font-medium transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2 px-3 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-200 hover:text-white border border-white/[0.06] text-xs font-medium transition-all flex items-center justify-center gap-2"
                     >
-                      <Settings2 className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                      <Settings2 className="w-3.5 h-3.5 text-[#6366F1]" />
                       <span>Configure Service Rule</span>
                     </button>
                   </div>
@@ -594,7 +608,7 @@ export default function AdminRemindersPage() {
         /* ================= CLIENT REMINDERS VIEW ================= */
         <>
           {/* Search, Filters and View Toggle */}
-      <div className="bg-[#14151A] p-4 rounded-2xl border border-gray-800 space-y-3">
+      <div className="bg-[#12141A] p-4 rounded-[24px] border border-white/[0.06] space-y-3">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="relative flex-1 min-w-[240px]">
@@ -604,7 +618,7 @@ export default function AdminRemindersPage() {
               placeholder="Search by client, phone, coconut, well, address..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-[#1A1C23] border border-gray-800 rounded-xl text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-[#161922] border border-white/[0.06] rounded-xl text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#6366F1] transition-colors"
             />
           </div>
 
@@ -632,13 +646,13 @@ export default function AdminRemindersPage() {
             </span>
 
             {/* View Mode Toggle */}
-            <div className="flex items-center bg-[#1A1C23] border border-gray-800 p-1 rounded-xl">
+            <div className="flex items-center bg-[#161922] border border-white/[0.06] p-1 rounded-xl">
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-[#7B4DFF] text-white shadow-sm'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
                 title="Grid View"
@@ -650,7 +664,7 @@ export default function AdminRemindersPage() {
                 onClick={() => setViewMode('table')}
                 className={`p-1.5 rounded-lg transition-all ${
                   viewMode === 'table'
-                    ? 'bg-[#7B4DFF] text-white shadow-sm'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
                     : 'text-gray-400 hover:text-gray-200'
                 }`}
                 title="Table View"
@@ -662,7 +676,7 @@ export default function AdminRemindersPage() {
         </div>
 
         {/* Status Filter Tabs */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-gray-800/60">
+        <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-white/[0.06]">
           {[
             { id: 'ALL', label: `All (${stats.total})` },
             { id: 'OVERDUE', label: `Overdue (${stats.overdue})` },
@@ -677,8 +691,8 @@ export default function AdminRemindersPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'bg-[#1A1C23] text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-gray-800/80'
+                  ? 'bg-[#6366F1] text-white shadow-sm'
+                  : 'bg-[#161922] text-gray-400 hover:text-gray-200 hover:bg-gray-800 border border-white/[0.06]'
               }`}
             >
               {tab.label}
@@ -689,14 +703,14 @@ export default function AdminRemindersPage() {
 
       {/* Main Content: Cards Grid or Table */}
       {isLoading && !isRefreshing ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#7B4DFF] mb-3" />
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#6366F1] mb-3" />
           <p className="text-sm font-semibold text-gray-300">Loading service reminders...</p>
         </div>
       ) : reminders.length === 0 ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center flex flex-col items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
-            <TreePalm className="w-7 h-7 text-[#7B4DFF]" />
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-center text-gray-500 mb-4">
+            <TreePalm className="w-7 h-7 text-[#6366F1]" />
           </div>
           <h3 className="text-gray-200 font-semibold text-base mb-1">No service reminders found</h3>
           <p className="text-gray-500 text-sm max-w-sm mb-4">
@@ -710,7 +724,7 @@ export default function AdminRemindersPage() {
               setEditingReminder(null);
               setIsSetupModalOpen(true);
             }}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Setup New Reminder</span>
@@ -729,22 +743,22 @@ export default function AdminRemindersPage() {
             return (
               <div
                 key={reminder.id}
-                className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+                className="group bg-[#12141A] rounded-[24px] border border-white/[0.06] hover:border-white/[0.12] p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
               >
                 {/* Subtle top ambient glow */}
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
+                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#6366F1]/60 transition-all duration-300" />
 
                 <div>
                   {/* Header: Service Icon, Service Name, Badges placed cleanly below title */}
                   <div className="flex items-start gap-3 mb-3">
                     {/* Service Icon with gradient ring */}
                     <div className="relative shrink-0">
-                      <div className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${relative.ring} p-[2px] shadow-sm`}>
-                        <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-gray-100 overflow-hidden">
+                      <div className={`w-11 h-11 rounded-[24px] bg-gradient-to-br ${relative.ring} p-[2px] shadow-sm`}>
+                        <div className="w-full h-full bg-[#161922] rounded-[14px] flex items-center justify-center font-bold text-gray-100 overflow-hidden">
                           {isCoconut ? (
                             <TreePalm className="w-5 h-5 text-emerald-400" />
                           ) : (
-                            <CalendarClock className="w-5 h-5 text-[#7B4DFF]" />
+                            <CalendarClock className="w-5 h-5 text-[#6366F1]" />
                           )}
                         </div>
                       </div>
@@ -752,7 +766,7 @@ export default function AdminRemindersPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-mono font-semibold text-[#7B4DFF] block uppercase tracking-wider">
+                        <span className="text-[10px] font-mono font-semibold text-[#6366F1] block uppercase tracking-wider">
                           {isCoconut ? 'Palm / Coconut' : 'Cyclic Service'}
                         </span>
                         {reminder.status === 'OVERDUE' && (
@@ -764,7 +778,7 @@ export default function AdminRemindersPage() {
                       </div>
 
                       <h4
-                        className="font-semibold text-gray-100 hover:text-[#7B4DFF] transition-colors truncate block text-sm mt-0.5"
+                        className="font-semibold text-gray-100 hover:text-[#6366F1] transition-colors truncate block text-sm mt-0.5"
                         title={reminder.serviceName}
                       >
                         {reminder.serviceName}
@@ -781,8 +795,8 @@ export default function AdminRemindersPage() {
                         </span>
 
                         {/* Frequency Pill */}
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-[#1A1C23] text-gray-300 border border-gray-800 shrink-0">
-                          <Clock className="w-3 h-3 text-[#7B4DFF] shrink-0" />
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-[#161922] text-gray-300 border border-white/[0.06] shrink-0">
+                          <Clock className="w-3 h-3 text-[#6366F1] shrink-0" />
                           <span>{getFrequencyLabel(reminder.frequency, reminder.customIntervalDays)}</span>
                         </span>
 
@@ -802,7 +816,7 @@ export default function AdminRemindersPage() {
                   </div>
 
                   {/* Details List (matching People cards) */}
-                  <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
+                  <div className="space-y-2 py-3 border-y border-white/[0.06] my-3 text-xs">
                     {/* Client Name */}
                     <div className="flex items-center justify-between text-gray-400 gap-2">
                       <span className="flex items-center gap-2 text-gray-300 font-medium truncate">
@@ -835,7 +849,7 @@ export default function AdminRemindersPage() {
                     {/* Scheduled Due Date */}
                     <div className="flex items-center justify-between text-gray-400 pt-1">
                       <span className="flex items-center gap-1.5 text-gray-400">
-                        <Calendar className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                        <Calendar className="w-3.5 h-3.5 text-[#6366F1]" />
                         <span>Next Scheduled:</span>
                       </span>
                       <span className="font-semibold text-gray-200">
@@ -867,7 +881,7 @@ export default function AdminRemindersPage() {
 
                   {/* Notes snippet */}
                   {reminder.notes && (
-                    <p className="text-xs text-gray-500 line-clamp-2 italic bg-[#1A1C23] p-2.5 rounded-xl border border-gray-800/80 mb-3">
+                    <p className="text-xs text-gray-500 line-clamp-2 italic bg-[#161922] p-2.5 rounded-xl border border-white/[0.06] mb-3">
                       "{reminder.notes}"
                     </p>
                   )}
@@ -890,9 +904,9 @@ export default function AdminRemindersPage() {
                     {/* Call Button */}
                     <a
                       href={`tel:${reminder.customerPhone}`}
-                      className="py-2 px-3 rounded-xl bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 text-gray-200 hover:text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+                      className="py-2 px-3 rounded-xl bg-[#161922] hover:bg-gray-800 border border-white/[0.06] text-gray-200 hover:text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5"
                     >
-                      <Phone className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                      <Phone className="w-3.5 h-3.5 text-[#6366F1]" />
                       <span>Call Client</span>
                     </a>
                   </div>
@@ -917,7 +931,7 @@ export default function AdminRemindersPage() {
                         setEditingReminder(reminder);
                         setIsSetupModalOpen(true);
                       }}
-                      className="p-2 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors"
+                      className="p-2 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors"
                       title="Modify reminder setup"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -940,10 +954,10 @@ export default function AdminRemindersPage() {
         </div>
       ) : (
         /* TABLE VIEW: Same structure and styling as people-table */
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 overflow-hidden">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] overflow-hidden">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full text-sm text-left text-gray-400">
-              <thead className="text-xs text-gray-500 bg-[#1A1C23] border-b border-gray-800/50">
+              <thead className="text-xs text-gray-500 bg-[#161922] border-b border-white/[0.06]/50">
                 <tr>
                   <th scope="col" className="px-6 py-4 font-medium">Service / Task</th>
                   <th scope="col" className="px-6 py-4 font-medium">Client / Contact</th>
@@ -964,16 +978,16 @@ export default function AdminRemindersPage() {
                   return (
                     <tr
                       key={reminder.id}
-                      className="hover:bg-[#1A1C23] transition-colors border-b border-gray-800/30 last:border-0"
+                      className="hover:bg-[#161922] transition-colors border-b border-white/[0.06]/30 last:border-0"
                     >
                       {/* Service */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
+                          <div className="w-9 h-9 rounded-xl bg-[#161922] border border-white/[0.06] flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">
                             {isCoconut ? (
                               <TreePalm className="w-4 h-4 text-emerald-400" />
                             ) : (
-                              <CalendarClock className="w-4 h-4 text-[#7B4DFF]" />
+                              <CalendarClock className="w-4 h-4 text-[#6366F1]" />
                             )}
                           </div>
                           <div className="min-w-0">
@@ -1041,10 +1055,10 @@ export default function AdminRemindersPage() {
                           </a>
                           <a
                             href={`tel:${reminder.customerPhone}`}
-                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 transition-colors"
+                            className="p-1.5 rounded-lg bg-[#161922] hover:bg-gray-800 text-gray-300 hover:text-white border border-white/[0.06] transition-colors"
                             title="Call Client"
                           >
-                            <Phone className="w-4 h-4 text-[#7B4DFF]" />
+                            <Phone className="w-4 h-4 text-[#6366F1]" />
                           </a>
                           <button
                             type="button"
@@ -1061,7 +1075,7 @@ export default function AdminRemindersPage() {
                               setEditingReminder(reminder);
                               setIsSetupModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors"
+                            className="p-1.5 rounded-lg bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors"
                             title="Modify Reminder"
                           >
                             <Pencil className="w-4 h-4" />

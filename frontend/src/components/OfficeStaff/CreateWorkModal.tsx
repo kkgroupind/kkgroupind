@@ -20,6 +20,7 @@ import {
   Search,
   ChevronDown,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import {
   EnquiryService,
@@ -29,6 +30,7 @@ import { CountryCodeSelect } from '@/components/Common/CountryCodeSelect';
 import { KeralaLocationSelect } from '@/components/Common/KeralaLocationSelect';
 import { sanitizePhoneInput } from '@/validations';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export interface CreateWorkModalProps {
   isOpen: boolean;
@@ -119,6 +121,8 @@ export function CreateWorkModal({
   token,
   workers = [],
 }: CreateWorkModalProps) {
+  const { isDark } = useAdminTheme();
+
   const [serviceName, setServiceName] = useState(SERVICES_CATALOG[0].title);
   const [isServicePickerOpen, setIsServicePickerOpen] = useState(false);
   const [serviceSearch, setServiceSearch] = useState('');
@@ -221,25 +225,37 @@ export function CreateWorkModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
     >
       <div className="fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative w-full max-w-2xl bg-white border border-[#7692FF]/30 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10 text-slate-800">
-        {/* Top subtle glow line matching brand palette */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#1B2CC1]/50 to-transparent" />
+      <div
+        className={`relative w-full max-w-2xl border rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] z-10 transition-colors ${
+          isDark ? 'bg-[#12141A] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-800'
+        }`}
+      >
+        {/* Top subtle glow line matching ORBITAL palette */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#6366F1]/50 to-transparent" />
 
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-slate-50 shrink-0">
+        <div
+          className={`flex items-center justify-between p-5 sm:p-6 border-b shrink-0 ${
+            isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1B2CC1]/10 border border-[#1B2CC1]/20 flex items-center justify-center text-[#1B2CC1]">
+            <div
+              className={`w-10 h-10 rounded-2xl border flex items-center justify-center text-[#6366F1] ${
+                isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200 shadow-xs'
+              }`}
+            >
               <Briefcase className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#091540]">
+              <h2 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Create &amp; Dispatch Work Order
               </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 Log direct client enquiry and optionally assign field personnel
               </p>
             </div>
@@ -248,16 +264,24 @@ export function CreateWorkModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-[#091540] bg-white hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+            className={`p-2 rounded-full transition-colors cursor-pointer ${
+              isDark
+                ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                : 'text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar text-xs">
+        <form
+          onSubmit={handleSubmit}
+          data-radix-scroll-lock-ignore="true"
+          className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar text-xs"
+        >
           {error && (
-            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 text-xs flex items-center gap-2.5 animate-in fade-in">
+            <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2.5 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span className="font-medium">{error}</span>
             </div>
@@ -266,10 +290,10 @@ export function CreateWorkModal({
           {/* Service Selection with Images */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="font-bold text-slate-700">
-                Service Catalog *
+              <label className={`font-semibold text-xs ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                Service Catalog <span className="text-[#FF5C38]">*</span>
               </label>
-              <span className="text-[11px] text-slate-400 font-medium">
+              <span className={`text-[11px] font-medium ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
                 Kasaragod operational squads
               </span>
             </div>
@@ -277,10 +301,18 @@ export function CreateWorkModal({
             {/* Selected Service Card */}
             <div
               onClick={() => setIsServicePickerOpen(!isServicePickerOpen)}
-              className="p-3 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 hover:border-[#1B2CC1]/50 rounded-2xl transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs"
+              className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 shadow-xs ${
+                isDark
+                  ? 'bg-[#181A20] hover:bg-[#1C1F27] border-white/[0.08] hover:border-[#6366F1]/50'
+                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200 hover:border-[#6366F1]/50'
+              }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-slate-200 bg-white shadow-xs">
+                <div
+                  className={`relative w-14 h-14 rounded-xl overflow-hidden shrink-0 border ${
+                    isDark ? 'border-white/[0.08] bg-black/40' : 'border-slate-200 bg-white shadow-xs'
+                  }`}
+                >
                   <Image
                     src={selectedServiceObj.image}
                     alt={selectedServiceObj.title}
@@ -290,20 +322,32 @@ export function CreateWorkModal({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#1B2CC1]/10 text-[#1B2CC1] border border-[#1B2CC1]/20">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        isDark
+                          ? 'bg-[#6366F1]/15 text-[#A5B4FC] border-[#6366F1]/30'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                      }`}
+                    >
                       {selectedServiceObj.category}
                     </span>
                   </div>
-                  <h4 className="text-xs font-bold text-[#091540] truncate mt-1">
+                  <h4 className={`text-xs font-bold truncate mt-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {selectedServiceObj.title}
                   </h4>
-                  <p className="text-[11px] text-slate-500 truncate font-medium">
+                  <p className={`text-[11px] truncate font-medium ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                     {selectedServiceObj.titleMl}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs text-[#1B2CC1] font-bold shrink-0 px-2.5 py-1 rounded-lg bg-white border border-slate-200">
+              <div
+                className={`flex items-center gap-1.5 text-xs font-semibold shrink-0 px-3 py-1.5 rounded-xl border ${
+                  isDark
+                    ? 'text-[#A5B4FC] bg-white/[0.04] border-white/[0.08]'
+                    : 'text-indigo-600 bg-white border-slate-200 shadow-xs'
+                }`}
+              >
                 <span>Change</span>
                 <ChevronDown
                   className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -315,20 +359,37 @@ export function CreateWorkModal({
 
             {/* Expanded Service Selection List with Images */}
             {isServicePickerOpen && (
-              <div className="mt-2 p-3 bg-white border border-slate-200 rounded-2xl shadow-xl space-y-3 animate-in fade-in zoom-in-95 duration-150">
+              <div
+                data-radix-scroll-lock-ignore="true"
+                className={`mt-2 p-3.5 rounded-2xl border shadow-xl space-y-3 animate-in fade-in zoom-in-95 duration-150 ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200'
+                }`}
+              >
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <Search
+                    className={`w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 ${
+                      isDark ? 'text-zinc-500' : 'text-slate-400'
+                    }`}
+                  />
                   <input
                     type="text"
                     placeholder="Search service by English or Malayalam (e.g. തെങ്ങ്, JCB, Electrical)..."
                     value={serviceSearch}
                     onChange={(e) => setServiceSearch(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1]"
+                    className={`w-full rounded-xl pl-8 pr-3 py-2 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 transition-all ${
+                      isDark
+                        ? 'bg-[#12141A] border-white/[0.08] text-white placeholder-zinc-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400'
+                    }`}
                     autoFocus
                   />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1">
+                <div
+                  data-radix-scroll-lock-ignore="true"
+                  onWheel={(e) => e.stopPropagation()}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto custom-scrollbar pr-1"
+                >
                   {SERVICES_CATALOG.filter((s) => {
                     if (!serviceSearch.trim()) return true;
                     const q = serviceSearch.toLowerCase();
@@ -347,13 +408,21 @@ export function CreateWorkModal({
                           setIsServicePickerOpen(false);
                           setServiceSearch('');
                         }}
-                        className={`p-2 rounded-xl border transition-all cursor-pointer flex items-center gap-2.5 ${
+                        className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center gap-2.5 ${
                           isSelected
-                            ? 'bg-[#1B2CC1]/10 border-[#1B2CC1] shadow-xs'
+                            ? isDark
+                              ? 'bg-[#6366F1]/20 border-[#6366F1] shadow-xs'
+                              : 'bg-indigo-50/80 border-[#6366F1] shadow-xs'
+                            : isDark
+                            ? 'bg-[#12141A] hover:bg-white/[0.04] border-white/[0.06] hover:border-white/[0.12]'
                             : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 hover:border-slate-300'
                         }`}
                       >
-                        <div className="relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border border-slate-200 bg-white">
+                        <div
+                          className={`relative w-11 h-11 rounded-lg overflow-hidden shrink-0 border ${
+                            isDark ? 'border-white/[0.08] bg-black/40' : 'border-slate-200 bg-white'
+                          }`}
+                        >
                           <Image
                             src={service.image}
                             alt={service.title}
@@ -363,17 +432,21 @@ export function CreateWorkModal({
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-1">
-                            <span className="text-[9px] font-bold text-[#1B2CC1] uppercase tracking-wider truncate">
+                            <span className="text-[9px] font-bold text-[#6366F1] uppercase tracking-wider truncate">
                               {service.category}
                             </span>
                             {isSelected && (
-                              <Check className="w-3.5 h-3.5 text-[#1B2CC1] shrink-0" />
+                              <Check className="w-3.5 h-3.5 text-[#6366F1] shrink-0" />
                             )}
                           </div>
-                          <h5 className="text-[11px] font-bold text-[#091540] truncate leading-tight">
+                          <h5
+                            className={`text-[11px] font-bold truncate leading-tight ${
+                              isDark ? 'text-white' : 'text-slate-900'
+                            }`}
+                          >
                             {service.title}
                           </h5>
-                          <p className="text-[10px] text-slate-500 truncate">
+                          <p className={`text-[10px] truncate ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                             {service.titleMl}
                           </p>
                         </div>
@@ -388,8 +461,8 @@ export function CreateWorkModal({
           {/* Customer Details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1.5 font-bold text-slate-700">
-                Customer Name *
+              <label className={`block mb-1.5 text-xs font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                Customer Name <span className="text-[#FF5C38]">*</span>
               </label>
               <input
                 type="text"
@@ -397,18 +470,23 @@ export function CreateWorkModal({
                 placeholder="Full Name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 transition-all ${
+                  isDark
+                    ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block mb-1.5 font-bold text-slate-700">
-                Mobile Number *
+              <label className={`block mb-1.5 text-xs font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                Mobile Number <span className="text-[#FF5C38]">*</span>
               </label>
               <div className="flex items-center gap-1.5">
                 <CountryCodeSelect
                   value={countryCode}
                   onChange={setCountryCode}
+                  theme={isDark ? 'dark' : 'light'}
                   variant="blue"
                 />
                 <input
@@ -417,7 +495,11 @@ export function CreateWorkModal({
                   placeholder={countryCode === '+91' ? '9876543210' : 'Mobile number'}
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(sanitizePhoneInput(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
+                  className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 transition-all ${
+                    isDark
+                      ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
               </div>
             </div>
@@ -429,13 +511,18 @@ export function CreateWorkModal({
             city={city}
             onDistrictChange={setDistrict}
             onCityChange={setCity}
+            theme={isDark ? 'dark' : 'light'}
           />
 
           {/* Map URL & Deadline */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
-                <Navigation className="w-3.5 h-3.5 text-[#1B2CC1]" />
+              <label
+                className={`block mb-1.5 text-xs font-semibold flex items-center gap-1.5 ${
+                  isDark ? 'text-zinc-300' : 'text-slate-700'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5 text-[#6366F1]" />
                 <span>Google Maps URL / Coordinates (Optional)</span>
               </label>
               <input
@@ -443,13 +530,21 @@ export function CreateWorkModal({
                 placeholder="https://maps.app.goo.gl/..."
                 value={mapUrl}
                 onChange={(e) => setMapUrl(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] transition-all"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 transition-all ${
+                  isDark
+                    ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                }`}
               />
             </div>
 
             <div>
-              <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#1B2CC1]" />
+              <label
+                className={`block mb-1.5 text-xs font-semibold flex items-center gap-1.5 ${
+                  isDark ? 'text-zinc-300' : 'text-slate-700'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 text-[#6366F1]" />
                 <span>Target Deadline (Optional)</span>
               </label>
               <input
@@ -457,15 +552,19 @@ export function CreateWorkModal({
                 min={new Date().toISOString().split('T')[0]}
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] focus:outline-none focus:border-[#1B2CC1] transition-all"
+                className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 transition-all ${
+                  isDark
+                    ? 'bg-[#181A20] border-white/[0.08] text-white'
+                    : 'bg-slate-50 border-slate-200 text-slate-900'
+                }`}
               />
             </div>
           </div>
 
           {/* Message / Scope of Work */}
           <div>
-            <label className="block mb-1.5 font-bold text-slate-700">
-              Work Description / Scope *
+            <label className={`block mb-1.5 text-xs font-semibold ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+              Work Description / Scope <span className="text-[#FF5C38]">*</span>
             </label>
             <textarea
               rows={3}
@@ -473,14 +572,22 @@ export function CreateWorkModal({
               placeholder="Scope of work, special tools or requirements..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-[#091540] placeholder-slate-400 focus:outline-none focus:border-[#1B2CC1] resize-none transition-all"
+              className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 resize-none transition-all ${
+                isDark
+                  ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500'
+                  : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              }`}
             />
           </div>
 
           {/* Assign Worker Now (Optional) */}
           <div className="pt-2">
-            <label className="block mb-1.5 font-bold text-slate-700 flex items-center gap-1.5">
-              <HardHat className="w-3.5 h-3.5 text-[#1B2CC1]" />
+            <label
+              className={`block mb-1.5 text-xs font-semibold flex items-center gap-1.5 ${
+                isDark ? 'text-zinc-300' : 'text-slate-700'
+              }`}
+            >
+              <HardHat className="w-3.5 h-3.5 text-[#6366F1]" />
               <span>Assign to Field Operative (Optional)</span>
             </label>
             <AdminDropdown
@@ -490,7 +597,9 @@ export function CreateWorkModal({
                   value: w.id,
                   label: `${w.name || w.username} (Available)`,
                   badge: 'Available',
-                  badgeColor: 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20',
+                  badgeColor: isDark
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-emerald-500/10 text-emerald-700 border border-emerald-500/20',
                 })),
               ]}
               value={selectedWorkerId}
@@ -502,12 +611,20 @@ export function CreateWorkModal({
           </div>
         </form>
 
-        {/* Pinned Footer matching brand styling */}
-        <div className="p-6 border-t border-slate-200 bg-slate-50 shrink-0 flex items-center justify-end gap-3">
+        {/* Pinned Footer matching ORBITAL aesthetic */}
+        <div
+          className={`p-5 sm:p-6 border-t shrink-0 flex items-center justify-end gap-3 ${
+            isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition-colors cursor-pointer"
+            className={`px-5 py-2.5 rounded-full border text-xs font-semibold transition-colors cursor-pointer ${
+              isDark
+                ? 'border-white/[0.08] text-zinc-300 hover:text-white hover:bg-white/[0.06]'
+                : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+            }`}
           >
             Cancel
           </button>
@@ -519,7 +636,7 @@ export function CreateWorkModal({
               if (form) form.requestSubmit();
             }}
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl bg-[#1B2CC1] hover:bg-[#15239E] text-white text-sm font-bold shadow-md shadow-[#1B2CC1]/25 hover:shadow-[#1B2CC1]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="px-6 py-2.5 rounded-full bg-[#6366F1] hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-[#6366F1]/25 hover:shadow-[#6366F1]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isSubmitting ? (
               <>

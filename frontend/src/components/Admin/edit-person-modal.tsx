@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { api, User, UpdatePersonData } from '@/services';
 import { AdminDropdown, AdminDropdownOption } from './admin-dropdown';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 const ROLE_OPTIONS: AdminDropdownOption[] = [
   {
@@ -31,13 +32,13 @@ const ROLE_OPTIONS: AdminDropdownOption[] = [
     value: 'OFFICE_STAFF',
     label: 'Office Staff (Coordinator)',
     badge: 'Office',
-    badgeColor: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    badgeColor: 'bg-[#6366F1]/10 text-[#818CF8] border border-[#6366F1]/20',
   },
   {
     value: 'CUSTOMER',
     label: 'Customer (Client)',
     badge: 'Client',
-    badgeColor: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    badgeColor: 'bg-[#FF5C38]/10 text-[#FF5C38] border border-[#FF5C38]/20',
   },
 ];
 
@@ -56,6 +57,8 @@ export function EditPersonModal({
   token,
   onSuccess,
 }: EditPersonModalProps) {
+  const { isDark } = useAdminTheme();
+
   const [name, setName] = useState('');
   const [mobileNumber, setMobileNumber] = useState('');
   const [email, setEmail] = useState('');
@@ -231,27 +234,43 @@ export function EditPersonModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-[#14151A] border border-gray-800 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      <div
+        className={`w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar rounded-[28px] border ${
+          isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 bg-[#1A1C23] sticky top-0 z-10">
+        <div
+          className={`flex items-center justify-between px-6 py-5 border-b sticky top-0 z-10 ${
+            isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#7B4DFF]/10 border border-[#7B4DFF]/20 flex items-center justify-center text-[#7B4DFF]">
+            <div
+              className={`w-10 h-10 rounded-2xl border flex items-center justify-center text-[#FF5C38] ${
+                isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200 shadow-xs'
+              }`}
+            >
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-100">
+              <h2 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Modify User Profile
               </h2>
-              <p className="text-xs text-gray-400">
+              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 Editing credentials & settings for{' '}
-                <span className="font-mono text-gray-200">@{person.username}</span>
+                <span className="font-mono font-medium text-[#FF5C38]">@{person.username}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-gray-400 hover:text-gray-200 hover:bg-gray-800 rounded-lg transition-colors"
+            className={`p-2 rounded-full transition-colors ${
+              isDark
+                ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                : 'text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
@@ -260,23 +279,31 @@ export function EditPersonModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {successMessage && (
-            <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {/* User Profile Card Preview */}
-          <div className="flex items-center gap-3.5 p-3.5 bg-[#1A1C23] border border-gray-800/80 rounded-2xl">
-            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-tr from-[#7B4DFF] to-sky-500 p-[2px] shrink-0 shadow-sm">
-              <div className="w-full h-full bg-[#14151A] rounded-[10px] flex items-center justify-center font-bold text-sm text-gray-100 overflow-hidden">
+          <div
+            className={`flex items-center gap-3.5 p-4 rounded-2xl border ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}
+          >
+            <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5C38] to-[#FF8A65] p-[2px] shrink-0 shadow-sm">
+              <div
+                className={`w-full h-full rounded-[14px] flex items-center justify-center font-bold text-sm overflow-hidden ${
+                  isDark ? 'bg-[#181A20] text-white' : 'bg-white text-slate-900'
+                }`}
+              >
                 {person.avatar ? (
                   <img
                     src={person.avatar}
@@ -296,14 +323,14 @@ export function EditPersonModal({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-gray-100 text-sm truncate">
+                <span className={`font-semibold text-sm truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                   {person.name || `@${person.username}`}
                 </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#7B4DFF]/15 text-[#A78BFA] border border-[#7B4DFF]/30 uppercase">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FF5C38]/10 text-[#FF5C38] border border-[#FF5C38]/20 uppercase">
                   {person.role.replace('_', ' ')}
                 </span>
               </div>
-              <p className="text-xs text-gray-500 font-mono mt-0.5">
+              <p className={`text-xs font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 @{person.username} &bull; {person.phone || 'No phone'}
               </p>
             </div>
@@ -311,23 +338,27 @@ export function EditPersonModal({
 
           {/* Primary Identity Section */}
           <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <h3 className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               Profile & Contact Info
             </h3>
 
             {/* Name */}
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 Full Name
               </label>
               <div className="relative">
-                <UserIcon className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <UserIcon className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] focus:ring-1 focus:ring-[#7B4DFF] transition-all"
+                  className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-all border focus:outline-none focus:border-[#FF5C38] focus:ring-1 focus:ring-[#FF5C38]/20 ${
+                    isDark
+                      ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                   required
                 />
               </div>
@@ -335,67 +366,79 @@ export function EditPersonModal({
 
             {/* Username & Check */}
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 Username
               </label>
               <div className="relative">
-                <AtSign className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <AtSign className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
                   placeholder="e.g. rahul_s"
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] focus:ring-1 focus:ring-[#7B4DFF] font-mono transition-all"
+                  className={`w-full rounded-xl pl-10 pr-10 py-2.5 text-sm font-mono transition-all border focus:outline-none focus:border-[#FF5C38] focus:ring-1 focus:ring-[#FF5C38]/20 ${
+                    isDark
+                      ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                   required
                 />
                 <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                   {usernameStatus === 'checking' && (
-                    <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                    <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
                   )}
                   {usernameStatus === 'available' && (
                     <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                   )}
                   {usernameStatus === 'taken' && (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <AlertCircle className="w-4 h-4 text-rose-500" />
                   )}
                 </div>
               </div>
               {usernameStatus === 'taken' && (
-                <p className="text-[11px] text-red-400 mt-1">Username is already taken by another account.</p>
+                <p className="text-[11px] text-rose-400 mt-1">Username is already taken by another account.</p>
               )}
             </div>
 
             {/* Mobile & Email in grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Mobile Number
                 </label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Phone className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="tel"
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value)}
                     placeholder="e.g. 9876543210"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] focus:ring-1 focus:ring-[#7B4DFF] transition-all"
+                    className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm font-mono transition-all border focus:outline-none focus:border-[#FF5C38] focus:ring-1 focus:ring-[#FF5C38]/20 ${
+                      isDark
+                        ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Email Address {role === 'CUSTOMER' ? '*' : '(Optional)'}
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Mail className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="e.g. user@kkgroup.com"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] focus:ring-1 focus:ring-[#7B4DFF] transition-all"
+                    className={`w-full rounded-xl pl-10 pr-4 py-2.5 text-sm transition-all border focus:outline-none focus:border-[#FF5C38] focus:ring-1 focus:ring-[#FF5C38]/20 ${
+                      isDark
+                        ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                   />
                 </div>
               </div>
@@ -403,43 +446,43 @@ export function EditPersonModal({
           </div>
 
           {/* Role & Status Section */}
-          <div className="space-y-4 pt-3 border-t border-gray-800/80">
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <div className={`space-y-4 pt-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-slate-200'}`}>
+            <h3 className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               Role & Account Status
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   System Role
                 </label>
                 <AdminDropdown
                   options={ROLE_OPTIONS}
                   value={role}
                   onChange={(val) => setRole(val as any)}
-                  variant="purple"
+                  variant="coral"
                   size="md"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Account Status
                 </label>
                 <button
                   type="button"
                   onClick={() => setIsActive(!isActive)}
-                  className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl text-sm font-medium border transition-all ${
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
                     isActive
                       ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
                   }`}
                 >
                   <span className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400' : 'bg-rose-400'}`} />
                     {isActive ? 'Account Active' : 'Account Suspended'}
                   </span>
-                  <span className="text-xs opacity-75 underline">Toggle</span>
+                  <span className="text-xs opacity-75 font-semibold">Toggle</span>
                 </button>
               </div>
             </div>
@@ -447,7 +490,7 @@ export function EditPersonModal({
             {/* Operational status options if Worker or Staff */}
             {role === 'WORKER' && (
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Worker Availability Status
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -456,10 +499,12 @@ export function EditPersonModal({
                       key={s}
                       type="button"
                       onClick={() => setWorkerStatus(s)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
                         workerStatus === s
-                          ? 'bg-[#7B4DFF]/20 border-[#7B4DFF] text-white'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200'
+                          ? 'bg-[#FF5C38]/15 border-[#FF5C38] text-[#FF6B4A] font-semibold'
+                          : isDark
+                          ? 'bg-[#121318] border-white/[0.06] text-zinc-400 hover:text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {s.replace('_', ' ')}
@@ -471,7 +516,7 @@ export function EditPersonModal({
 
             {role === 'OFFICE_STAFF' && (
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Office Duty Status
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -480,10 +525,12 @@ export function EditPersonModal({
                       key={s}
                       type="button"
                       onClick={() => setStaffStatus(s)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                      className={`px-3 py-2 rounded-xl text-xs font-medium border transition-all ${
                         staffStatus === s
-                          ? 'bg-[#7B4DFF]/20 border-[#7B4DFF] text-white'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200'
+                          ? 'bg-[#FF5C38]/15 border-[#FF5C38] text-[#FF6B4A] font-semibold'
+                          : isDark
+                          ? 'bg-[#121318] border-white/[0.06] text-zinc-400 hover:text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
                       }`}
                     >
                       {s.replace('_', ' ')}
@@ -495,11 +542,11 @@ export function EditPersonModal({
           </div>
 
           {/* Password Reset Section */}
-          <div className="space-y-3 pt-3 border-t border-gray-800/80">
+          <div className={`space-y-3 pt-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-slate-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-[#7B4DFF]" />
-                <h3 className="text-xs font-semibold text-gray-200">
+                <KeyRound className="w-4 h-4 text-[#FF5C38]" />
+                <h3 className={`text-xs font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                   Reset User Password
                 </h3>
               </div>
@@ -509,10 +556,12 @@ export function EditPersonModal({
                   setChangePassword(!changePassword);
                   if (changePassword) setNewPassword('');
                 }}
-                className={`text-xs px-2.5 py-1 rounded-md border transition-all ${
+                className={`text-xs px-3 py-1 rounded-full border transition-all ${
                   changePassword
-                    ? 'bg-[#7B4DFF]/20 border-[#7B4DFF] text-white'
-                    : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200'
+                    ? 'bg-[#FF5C38]/20 border-[#FF5C38] text-[#FF5C38] font-semibold'
+                    : isDark
+                    ? 'bg-white/[0.04] border-white/[0.08] text-zinc-400 hover:text-white'
+                    : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {changePassword ? 'Cancel Reset' : 'Change Password'}
@@ -520,24 +569,30 @@ export function EditPersonModal({
             </div>
 
             {changePassword && (
-              <div className="p-4 bg-[#1A1C23] rounded-xl border border-gray-800 space-y-3 animate-in fade-in duration-150">
+              <div
+                className={`p-4 rounded-2xl border space-y-3 animate-in fade-in duration-150 ${
+                  isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                }`}
+              >
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                  <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                     New Password
                   </label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new strong password"
-                      className="w-full bg-[#14151A] border border-gray-700/60 rounded-xl pl-10 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                      className={`w-full rounded-xl pl-10 pr-10 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
                     >
                       {showPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -546,7 +601,7 @@ export function EditPersonModal({
                       )}
                     </button>
                   </div>
-                  <p className="text-[11px] text-gray-500 mt-1.5">
+                  <p className={`text-[11px] mt-1.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                     Requires min 8 characters, uppercase, lowercase, number, and special symbol.
                   </p>
                 </div>
@@ -555,18 +610,22 @@ export function EditPersonModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+          <div className={`flex items-center justify-end gap-3 pt-4 border-t ${isDark ? 'border-white/[0.06]' : 'border-slate-200'}`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23] rounded-xl transition-colors"
+              className={`px-5 py-2.5 text-xs font-semibold rounded-full transition-colors ${
+                isDark
+                  ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                  : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+              }`}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading || usernameStatus === 'taken'}
-              className="flex items-center gap-2 px-5 py-2 text-xs font-medium text-white bg-[#7B4DFF] hover:bg-[#683bdf] rounded-xl transition-all disabled:opacity-50 shadow-md shadow-[#7B4DFF]/20"
+              className="flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-[#FF5C38] hover:bg-[#FF6B4A] rounded-full transition-all disabled:opacity-50 shadow-lg shadow-[#FF5C38]/25 cursor-pointer"
             >
               {isLoading ? (
                 <>

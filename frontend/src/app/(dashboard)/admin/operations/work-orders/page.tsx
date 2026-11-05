@@ -32,12 +32,14 @@ import {
   Minus,
 } from 'lucide-react';
 import { EnquiryService, ServiceEnquiry, WorkerWithAvailability } from '@/services';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
 import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
 
 export default function AdminWorkOrdersPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [workOrders, setWorkOrders] = useState<ServiceEnquiry[]>([]);
@@ -375,45 +377,45 @@ export default function AdminWorkOrdersPage() {
   const statusPills = [
     {
       value: 'PENDING',
-      label: 'Pending Assignment',
+      label: 'Needs Worker',
       badge: `${workOrders.filter((w) => w.status === 'PENDING').length}`,
       icon: Clock,
-      activeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+      activeColor: 'bg-[#6366F1] text-white shadow-sm border-transparent',
     },
     {
       value: 'PENDING_PAYOUT',
-      label: 'Payout Pending',
+      label: 'Payout Due',
       badge: `${metrics.pendingPayout}`,
       icon: IndianRupee,
-      activeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+      activeColor: 'bg-amber-500 text-white shadow-sm border-transparent',
     },
     {
       value: 'IN_PROGRESS',
-      label: 'In Execution',
+      label: 'Working on Site',
       badge: `${metrics.inProgress}`,
       icon: Sparkles,
-      activeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.25)]',
+      activeColor: 'bg-blue-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'ASSIGNED',
-      label: 'Squad Assigned',
+      label: 'Worker Assigned',
       badge: `${metrics.assigned}`,
       icon: HardHat,
-      activeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
+      activeColor: 'bg-purple-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'COMPLETED',
-      label: 'Completed Works',
+      label: 'Completed',
       badge: `${metrics.completed}`,
       icon: CheckCircle2,
-      activeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.25)]',
+      activeColor: 'bg-emerald-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'ALL',
-      label: 'All Work Orders',
+      label: 'All Jobs',
       badge: `${metrics.total}`,
       icon: Briefcase,
-      activeColor: 'bg-[#7B4DFF]/20 text-[#9E7BFF] border-[#7B4DFF]/50 shadow-[0_0_15px_rgba(123,77,255,0.25)]',
+      activeColor: 'bg-zinc-800 text-white shadow-sm border-transparent',
     },
   ];
 
@@ -441,7 +443,7 @@ export default function AdminWorkOrdersPage() {
           text: 'text-purple-400',
           border: 'border-purple-500/20',
           ring: 'from-purple-500 to-indigo-600',
-          glow: 'group-hover:via-[#7B4DFF]/60',
+          glow: 'group-hover:via-[#6366F1]/60',
         };
       case 'PENDING':
       default:
@@ -456,18 +458,22 @@ export default function AdminWorkOrdersPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2.5 bg-[#14151A] border border-gray-800 rounded-2xl shadow-sm">
-              <Briefcase className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Briefcase className="w-5 h-5" />
             </div>
-            Active Work Orders
+            All Work Orders
           </h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1">
-            Dispatch, track, and manage ongoing field execution orders across Kerala regions
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Track ongoing jobs, review completed work, and release worker payments
           </p>
         </div>
 
@@ -475,17 +481,21 @@ export default function AdminWorkOrdersPage() {
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
           >
             <RefreshCw
-              className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span>{isRefreshing ? 'Refreshing...' : 'Reload'}</span>
           </button>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6839EF] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0 cursor-pointer"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-md shadow-[#6366F1]/20 transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Create Work Order</span>
@@ -494,85 +504,95 @@ export default function AdminWorkOrdersPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-gray-500/60 transition-all duration-300" />
-          <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
-            Total Work Orders
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent" />
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider block ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Total Jobs
           </span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{metrics.total}</div>
-          <span className="text-[11px] text-gray-500 mt-1 block">Lifecycle portfolio</span>
+          <div className={`text-xl sm:text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{metrics.total}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>All recorded jobs</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent group-hover:via-purple-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-purple-400 font-semibold uppercase tracking-wider">
-            Assigned Jobs
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-purple-400 font-semibold uppercase tracking-wider block">
+            Worker Assigned
           </span>
-          <div className="text-2xl font-bold text-purple-400 mt-1">{metrics.assigned}</div>
-          <span className="text-[11px] text-purple-400/70 mt-1 block">Squad allocated</span>
+          <div className="text-xl sm:text-2xl font-bold text-purple-400 mt-1">{metrics.assigned}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Worker on schedule</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent group-hover:via-blue-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-blue-400 font-semibold uppercase tracking-wider">
-            In Execution
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-blue-400 font-semibold uppercase tracking-wider block">
+            Working on Site
           </span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
-          <span className="text-[11px] text-blue-400/70 mt-1 block">On-field active progress</span>
+          <div className="text-xl sm:text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Currently working</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent group-hover:via-emerald-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
-            Completed Works
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-emerald-400 font-semibold uppercase tracking-wider block">
+            Completed
           </span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.completed}</div>
-          <span className="text-[11px] text-emerald-400/70 mt-1 block">Closed &amp; fulfilled</span>
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">{metrics.completed}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Finished jobs</span>
         </div>
 
         <div
           onClick={() => setStatusFilter(statusFilter === 'PENDING_PAYOUT' ? 'ALL' : 'PENDING_PAYOUT')}
-          className={`group p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden shadow-sm cursor-pointer ${
+          className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden cursor-pointer ${
             metrics.pendingPayout > 0
               ? 'bg-amber-500/10 border-amber-500/30 hover:border-amber-500/60'
-              : 'bg-[#14151A] border-gray-800/80 hover:border-gray-700/80'
+              : isDark
+              ? 'bg-[#12141A] border-white/[0.06] hover:border-white/[0.12]'
+              : 'bg-white border-slate-200/80 shadow-xs'
           }`}
         >
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent group-hover:via-amber-500/80 transition-all duration-300" />
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
-              Payout Pending
+            <span className="text-[10px] sm:text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+              Payout Due
             </span>
             {metrics.pendingPayout > 0 && (
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             )}
           </div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.pendingPayout}</div>
-          <span className="text-[11px] text-amber-400/70 mt-1 block">Awaiting wage finalization</span>
+          <div className="text-xl sm:text-2xl font-bold text-amber-400 mt-1">{metrics.pendingPayout}</div>
+          <span className="text-[11px] text-amber-400/80 mt-1 block">Awaiting worker payment</span>
         </div>
       </div>
 
       {/* Finished Works Awaiting Payout Section */}
       {pendingPayoutOrders.length > 0 && (
-        <div className="p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 shadow-lg flex flex-col gap-4 relative overflow-hidden">
+        <div className="p-5 rounded-[28px] bg-amber-500/10 border border-amber-500/30 shadow-md flex flex-col gap-4 relative overflow-hidden">
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500 to-transparent" />
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shrink-0">
                 <IndianRupee className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-gray-100">
-                    {pendingPayoutOrders.length} Completed {pendingPayoutOrders.length === 1 ? 'Work' : 'Works'} Awaiting Worker Payout
+                  <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {pendingPayoutOrders.length} Completed {pendingPayoutOrders.length === 1 ? 'Job' : 'Jobs'} Waiting for Worker Payment
                   </h3>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-                    Action Required
+                    Action Needed
                   </span>
                 </div>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  Finished field tasks with unfinalized payouts. Review completed units and assign worker wages directly.
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  These jobs are done. Please review the completed units and enter the worker payout.
                 </p>
               </div>
             </div>
@@ -580,9 +600,9 @@ export default function AdminWorkOrdersPage() {
             <button
               type="button"
               onClick={() => setStatusFilter('PENDING_PAYOUT')}
-              className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
             >
-              <span>View All Pending ({pendingPayoutOrders.length})</span>
+              <span>View All ({pendingPayoutOrders.length})</span>
             </button>
           </div>
 
@@ -591,31 +611,33 @@ export default function AdminWorkOrdersPage() {
             {pendingPayoutOrders.slice(0, 3).map((order) => (
               <div
                 key={order.id}
-                className="bg-[#14151A] rounded-xl p-4 border border-amber-500/30 hover:border-amber-500/60 shadow-md flex flex-col justify-between gap-3 transition-all"
+                className={`rounded-[20px] p-4 border border-amber-500/30 hover:border-amber-500/60 shadow-sm flex flex-col justify-between gap-3 transition-all ${
+                  isDark ? 'bg-[#12141A]' : 'bg-white'
+                }`}
               >
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-xs font-bold text-[#7B4DFF]">
+                    <span className="font-mono text-xs font-bold text-[#6366F1]">
                       {order.trackingNumber}
                     </span>
-                    <span className="text-[10px] text-gray-400">
+                    <span className={`text-[10px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                       {new Date(order.completedAt || order.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
-                  <div className="text-xs font-bold text-gray-200 truncate">
+                  <div className={`text-xs font-bold truncate ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                     {order.serviceName}
                   </div>
-                  <div className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <User className="w-3 h-3 text-gray-500" />
+                  <div className={`text-[11px] flex items-center gap-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    <User className="w-3 h-3 opacity-70" />
                     <span className="truncate">{order.customerName}</span>
                   </div>
                   <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
                     <HardHat className="w-3 h-3 text-emerald-400" />
-                    <span>{order.worker?.name || order.worker?.username || 'Field Operative'}</span>
+                    <span>{order.worker?.name || order.worker?.username || 'Worker'}</span>
                   </div>
                   {order.completedUnits ? (
-                    <div className="text-[11px] text-gray-400">
-                      Units Logged: <strong className="text-gray-200">{order.completedUnits} {order.unitLabel || 'Units'}</strong>
+                    <div className={`text-[11px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      Units Done: <strong className={isDark ? 'text-zinc-200' : 'text-slate-800'}>{order.completedUnits} {order.unitLabel || 'Units'}</strong>
                     </div>
                   ) : null}
                 </div>
@@ -626,10 +648,10 @@ export default function AdminWorkOrdersPage() {
                     setPayOrder(order);
                     setIsPayModalOpen(true);
                   }}
-                  className="w-full py-2 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                  className="w-full py-2 px-3 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                 >
                   <IndianRupee className="w-3.5 h-3.5" />
-                  <span>Finalize Payment</span>
+                  <span>Enter Worker Payment</span>
                 </button>
               </div>
             ))}
@@ -638,7 +660,11 @@ export default function AdminWorkOrdersPage() {
       )}
 
       {/* Pill Navigation & Search Controls */}
-      <div className="flex flex-col gap-3.5 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
+      <div
+        className={`flex flex-col gap-4 p-4 rounded-3xl border transition-all ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
         {/* Top: Status Pill Navs */}
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
@@ -650,19 +676,23 @@ export default function AdminWorkOrdersPage() {
                   key={pill.value}
                   type="button"
                   onClick={() => setStatusFilter(pill.value)}
-                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer select-none border ${
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer select-none border ${
                     isActive
                       ? pill.activeColor
-                      : 'bg-[#1A1C23] text-gray-400 hover:text-gray-200 border-gray-800/80 hover:border-gray-700/80 hover:bg-[#20232C]'
+                      : isDark
+                      ? 'bg-[#121318] text-zinc-400 hover:text-white border-white/[0.06] hover:bg-[#1E2028]'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-200/70'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? '' : 'text-gray-500'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? '' : isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <span>{pill.label}</span>
                   <span
                     className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border transition-colors ${
                       isActive
-                        ? 'bg-black/30 border-current'
-                        : 'bg-black/20 text-gray-500 border-gray-800'
+                        ? 'bg-black/20 border-white/20 text-white'
+                        : isDark
+                        ? 'bg-black/30 text-zinc-500 border-white/[0.06]'
+                        : 'bg-slate-200 text-slate-600 border-slate-300'
                     }`}
                   >
                     {pill.badge}
@@ -673,14 +703,14 @@ export default function AdminWorkOrdersPage() {
           </div>
 
           {/* View Mode Toggle (Desktop) */}
-          <div className="hidden md:flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+          <div className={`hidden md:flex items-center p-1 rounded-full border shrink-0 ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Card Grid View"
             >
@@ -689,10 +719,10 @@ export default function AdminWorkOrdersPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -704,25 +734,29 @@ export default function AdminWorkOrdersPage() {
         {/* Bottom: Search Input & Mobile View Toggle */}
         <div className="flex items-center gap-2.5">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
             <input
               type="text"
               placeholder="Search by code, customer, service, phone..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
+              className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+                isDark
+                  ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                  : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+              }`}
             />
           </div>
 
           {/* View Mode Toggle (Mobile) */}
-          <div className="md:hidden flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+          <div className={`md:hidden flex items-center p-1 rounded-full border shrink-0 ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Card Grid View"
             >
@@ -731,10 +765,10 @@ export default function AdminWorkOrdersPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -746,14 +780,14 @@ export default function AdminWorkOrdersPage() {
 
       {/* Main Content View */}
       {isLoading ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#7B4DFF] mb-3" />
+        <div className="bg-[#12141A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#6366F1] mb-3" />
           <h3 className="text-gray-200 font-semibold text-base mb-1">Loading Work Orders...</h3>
           <p className="text-gray-500 text-xs">Fetching registered field execution tasks</p>
         </div>
       ) : filteredOrders.length === 0 ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
+        <div className="bg-[#12141A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#161922] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
             <Briefcase className="w-7 h-7 text-gray-500" />
           </div>
           <h3 className="text-gray-200 font-semibold text-base mb-1">No Work Orders Found</h3>
@@ -777,7 +811,11 @@ export default function AdminWorkOrdersPage() {
             return (
               <div
                 key={order.id}
-                className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+                className={`group rounded-[28px] border p-5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden ${
+                  isDark
+                    ? 'bg-[#12141A] border-white/[0.06] hover:border-white/[0.14]'
+                    : 'bg-white border-slate-200/80 hover:border-slate-300 shadow-xs'
+                }`}
               >
                 <div
                   className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent ${theme.glow} transition-all duration-300`}
@@ -791,17 +829,17 @@ export default function AdminWorkOrdersPage() {
                         <div
                           className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${theme.ring} p-[2px] shadow-sm`}
                         >
-                          <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
+                          <div className="w-full h-full bg-[#161922] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
                             <Briefcase className="w-5 h-5 text-gray-200" />
                           </div>
                         </div>
                       </div>
 
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-gray-100 hover:text-[#7B4DFF] transition-colors truncate block text-base">
+                        <h4 className="font-semibold text-gray-100 hover:text-[#6366F1] transition-colors truncate block text-base">
                           {order.serviceName}
                         </h4>
-                        <span className="font-mono text-xs font-semibold text-[#7B4DFF]">
+                        <span className="font-mono text-xs font-semibold text-[#6366F1]">
                           {order.trackingNumber}
                         </span>
                       </div>
@@ -824,7 +862,7 @@ export default function AdminWorkOrdersPage() {
                   {/* Wage Model Tag */}
                   {order.wageType && (
                     <div className="mb-3 flex items-center gap-2">
-                      <span className="text-[10px] font-bold bg-[#1A1C23] text-gray-300 px-2 py-0.5 rounded-lg border border-gray-800">
+                      <span className="text-[10px] font-bold bg-[#161922] text-gray-300 px-2 py-0.5 rounded-lg border border-gray-800">
                         {order.wageType === 'PER_TREE'
                           ? '🌴 Tree Count Basis'
                           : order.wageType === 'HOURLY'
@@ -1021,7 +1059,7 @@ export default function AdminWorkOrdersPage() {
                     const initialTrees = specs.initialTreeCount ?? (extraTrees ? totalTrees - extraTrees : totalTrees);
 
                     return (
-                      <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="mb-3 p-2.5 rounded-xl bg-[#161922] border border-emerald-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
                         <div className="flex items-center gap-2">
                           <TreePalm className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           <span className="text-gray-300 font-medium">
@@ -1052,7 +1090,7 @@ export default function AdminWorkOrdersPage() {
                   if (actualMins === 0 && breakMins === 0) return null;
 
                   return (
-                    <div className="mb-3 p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between text-xs">
+                    <div className="mb-3 p-2.5 rounded-xl bg-[#161922] border border-white/[0.06] flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <Clock className="w-3.5 h-3.5 text-emerald-400" />
                         <span className="text-gray-300 font-medium">
@@ -1103,7 +1141,7 @@ export default function AdminWorkOrdersPage() {
                         setSelectedOrder(order);
                         setIsAssignModalOpen(true);
                       }}
-                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF] hover:bg-[#6839EF] text-white shadow-[0_0_15px_rgba(123,77,255,0.25)] transition-all cursor-pointer"
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[#6366F1] hover:bg-[#6839EF] text-white shadow-[0_0_15px_rgba(123,77,255,0.25)] transition-all cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Assign Worker</span>
@@ -1176,7 +1214,7 @@ export default function AdminWorkOrdersPage() {
                               setSelectedOrder(order);
                               setIsAssignModalOpen(true);
                             }}
-                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#161922] hover:bg-[#252834] text-gray-300 hover:text-white border border-gray-800 transition-all cursor-pointer"
                           >
                             <HardHat className="w-3.5 h-3.5 text-emerald-400" />
                             <span>Squad</span>
@@ -1194,7 +1232,7 @@ export default function AdminWorkOrdersPage() {
                               ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30'
                               : order.status === 'COMPLETED'
                               ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 animate-pulse'
-                              : 'bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800'
+                              : 'bg-[#161922] hover:bg-[#252834] text-gray-300 border border-gray-800'
                           }`}
                         >
                           <IndianRupee className="w-3.5 h-3.5" />
@@ -1210,7 +1248,7 @@ export default function AdminWorkOrdersPage() {
         </div>
       ) : (
         /* Alternative Table View */
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+        <div className="bg-[#12141A] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-gray-300">
               <thead className="bg-[#0D0E12] text-gray-400 font-semibold border-b border-gray-800">
@@ -1228,8 +1266,8 @@ export default function AdminWorkOrdersPage() {
                 {filteredOrders.map((order) => {
                   const theme = getStatusTheme(order.status);
                   return (
-                    <tr key={order.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                      <td className="py-3 px-4 font-mono font-semibold text-[#7B4DFF]">
+                    <tr key={order.id} className="hover:bg-[#161922]/60 transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-[#6366F1]">
                         {order.trackingNumber}
                       </td>
                       <td className="py-3 px-4 text-gray-100 font-medium">{order.serviceName}</td>
@@ -1267,7 +1305,7 @@ export default function AdminWorkOrdersPage() {
                               const total = order.completedUnits ?? order.estimatedUnits ?? 1;
                               const extra = specs.extraTreeCount;
                               return (
-                                <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#14151A] border border-emerald-500/30 text-emerald-300">
+                                <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#12141A] border border-emerald-500/30 text-emerald-300">
                                   <TreePalm className="w-3 h-3 text-emerald-400" />
                                   <span>{total} Trees Harvested</span>
                                   {extra && extra > 0 ? (
@@ -1288,7 +1326,7 @@ export default function AdminWorkOrdersPage() {
                             if (actualMins === 0 && breakMins === 0) return null;
 
                             return (
-                              <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#14151A] border border-gray-800 text-gray-300">
+                              <div className="mt-0.5 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#12141A] border border-gray-800 text-gray-300">
                                 <span className="text-emerald-400 font-bold">{actualMins}m work</span>
                                 {breakMins > 0 && (
                                   <span className="text-amber-300">• ☕ {breakMins}m</span>
@@ -1365,7 +1403,7 @@ export default function AdminWorkOrdersPage() {
                               setSelectedOrder(order);
                               setIsAssignModalOpen(true);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-sm"
+                            className="px-2.5 py-1 rounded-lg bg-[#6366F1] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-sm"
                           >
                             Assign
                           </button>

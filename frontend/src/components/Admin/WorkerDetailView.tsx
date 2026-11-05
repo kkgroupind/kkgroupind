@@ -55,6 +55,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { api, User, AttendanceRecord, ServiceEnquiry, EnquiryService } from '@/services';
 import { EditPersonModal } from './edit-person-modal';
 import { ModifyWorkerJobModal } from './modify-worker-job-modal';
@@ -73,6 +74,7 @@ export function WorkerDetailView({
   categoryLabel = 'Workers',
 }: WorkerDetailViewProps) {
   const { token, user: currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [person, setPerson] = useState<User | null>(null);
@@ -474,11 +476,11 @@ export function WorkerDetailView({
   if (authLoading || (isLoading && !person)) {
     return (
       <div className="max-w-[1550px] mx-auto space-y-6 pb-12 animate-pulse">
-        <div className="h-10 w-48 bg-[#14151A] rounded-xl border border-gray-800" />
-        <div className="h-28 bg-[#14151A] rounded-3xl border border-gray-800" />
+        <div className="h-10 w-48 bg-[#12141A] rounded-xl border border-white/[0.06]" />
+        <div className="h-28 bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 h-[600px] bg-[#14151A] rounded-3xl border border-gray-800" />
-          <div className="lg:col-span-8 h-[600px] bg-[#14151A] rounded-3xl border border-gray-800" />
+          <div className="lg:col-span-4 h-[600px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
+          <div className="lg:col-span-8 h-[600px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         </div>
       </div>
     );
@@ -495,8 +497,8 @@ export function WorkerDetailView({
           Back to {categoryLabel}
         </NextLink>
 
-        <div className="bg-[#14151A] rounded-3xl border border-gray-800 p-12 text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
+        <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-12 text-center flex flex-col items-center">
+          <div className="w-14 h-14 rounded-[24px] bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
             <AlertTriangle className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold text-gray-100 mb-2">Worker Not Found</h2>
@@ -506,14 +508,14 @@ export function WorkerDetailView({
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-[#161922] hover:bg-gray-800 text-gray-300 rounded-xl border border-white/[0.06] text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               Try Again
             </button>
             <NextLink
               href={backHref}
-              className="px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-[#6366F1] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
             >
               Return to {categoryLabel}
             </NextLink>
@@ -538,7 +540,7 @@ export function WorkerDetailView({
         <div className="flex items-center gap-3">
           <NextLink
             href={backHref}
-            className="p-2.5 rounded-2xl bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-white border border-gray-800 transition-all shadow-sm"
+            className="p-2.5 rounded-[24px] bg-[#12141A] hover:bg-[#161922] text-gray-400 hover:text-white border border-white/[0.06] transition-all shadow-sm"
             title="Back to Workers List"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -569,7 +571,7 @@ export function WorkerDetailView({
           <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#6366F1]/15 hover:bg-[#6366F1]/25 border border-[#6366F1]/30 text-[#A78BFA] hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
           >
             <Pencil className="w-3.5 h-3.5" />
             <span>Modify Account</span>
@@ -579,9 +581,9 @@ export function WorkerDetailView({
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#12141A] hover:bg-[#161922] border border-white/[0.06] text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync Data'}</span>
           </button>
 
@@ -605,17 +607,21 @@ export function WorkerDetailView({
             LEFT COLUMN: THE PROFILE HERO CARD (KEPT RIGHT HERE)
         ======================================================== */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-4">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 overflow-hidden shadow-xl relative group">
+          <div className={`rounded-[28px] border overflow-hidden shadow-xl relative group ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+          }`}>
             {/* Top decorative gradient banner */}
             <div className="h-32 bg-gradient-to-br from-emerald-600/35 via-teal-950/40 to-transparent relative p-4 flex justify-between items-start">
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-gray-200 border border-white/10 shadow-xs">
-                OPERATIVE ID
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-md shadow-xs border ${
+                isDark ? 'bg-black/50 text-gray-200 border-white/10' : 'bg-white/80 text-slate-800 border-slate-200'
+              }`}>
+                WORKER ID
               </span>
               <div
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold shadow-xs ${
                   person.isActive
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
-                    : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                    : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
                 }`}
               >
                 <span
@@ -630,8 +636,10 @@ export function WorkerDetailView({
             <div className="px-5 pb-5 -mt-16 relative">
               {/* Avatar with Gradient Squircle Frame */}
               <div className="relative inline-block mb-3">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-[#7B4DFF] p-[3px] shadow-[0_8px_25px_rgba(42,131,95,0.35)]">
-                  <div className="w-full h-full bg-[#1A1C23] rounded-[21px] flex items-center justify-center text-3xl font-black text-white overflow-hidden">
+                <div className="w-24 h-24 rounded-[28px] bg-gradient-to-tr from-emerald-500 via-teal-400 to-[#6366F1] p-[3px] shadow-[0_8px_25px_rgba(42,131,95,0.35)]">
+                  <div className={`w-full h-full rounded-[21px] flex items-center justify-center text-3xl font-black overflow-hidden ${
+                    isDark ? 'bg-[#161922] text-white' : 'bg-white text-slate-900'
+                  }`}>
                     {person.avatar ? (
                       <img
                         src={person.avatar}
@@ -648,21 +656,23 @@ export function WorkerDetailView({
               </div>
 
               {/* Names & Position */}
-              <h2 className="text-xl font-black text-gray-100 tracking-tight leading-snug">
+              <h2 className={`text-xl font-black tracking-tight leading-snug ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
                 {displayName}
               </h2>
-              <p className="text-xs font-semibold text-gray-400 mt-0.5">
-                Field Operations & Agricultural Services
+              <p className={`text-xs font-semibold mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                Field Worker & Services Crew
               </p>
               <p className="text-xs text-emerald-400 font-mono mt-1">@{person.username}</p>
 
               {/* Field Duty / Operational Status Pill */}
-              <div className="mt-4 p-3 rounded-2xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between shadow-xs">
+              <div className={`mt-4 p-3 rounded-[24px] border flex items-center justify-between shadow-xs ${
+                isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+              }`}>
                 <div className="flex flex-col">
-                  <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                    Field Duty Status
+                  <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                    Availability Today
                   </span>
-                  <span className="text-xs font-extrabold text-white mt-0.5 flex items-center gap-1.5">
+                  <span className={`text-xs font-extrabold mt-0.5 flex items-center gap-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <span
                       className={`w-2 h-2 rounded-full ${
                         workerStatus === 'BUSY'
@@ -674,9 +684,9 @@ export function WorkerDetailView({
                     />
                     <span>
                       {workerStatus === 'BUSY'
-                        ? 'On Ongoing Job'
+                        ? 'Working on Job'
                         : workerStatus === 'AVAILABLE'
-                        ? 'Available for Dispatch'
+                        ? 'Ready for Work'
                         : 'Off Duty / On Leave'}
                     </span>
                   </span>
@@ -687,7 +697,7 @@ export function WorkerDetailView({
                       ? 'bg-amber-500'
                       : workerStatus === 'AVAILABLE'
                       ? 'bg-emerald-600'
-                      : 'bg-gray-800 text-gray-400'
+                      : isDark ? 'bg-gray-800 text-gray-400' : 'bg-slate-200 text-slate-600'
                   }`}
                 >
                   <HardHat className="w-4 h-4" />
@@ -697,7 +707,9 @@ export function WorkerDetailView({
               {/* Contact Snapshot */}
               <div className="mt-4 space-y-2 text-xs">
                 {person.email && (
-                  <div className="flex items-center gap-2.5 text-gray-300 bg-[#1A1C23] p-2.5 rounded-xl border border-gray-800/60">
+                  <div className={`flex items-center gap-2.5 p-2.5 rounded-xl border ${
+                    isDark ? 'text-gray-300 bg-[#161922] border-white/[0.06]' : 'text-slate-700 bg-slate-50 border-slate-200'
+                  }`}>
                     <Mail className="w-4 h-4 text-gray-500 shrink-0" />
                     <span className="truncate">{person.email}</span>
                   </div>
@@ -705,22 +717,26 @@ export function WorkerDetailView({
                 {person.phone && (
                   <a
                     href={`tel:${person.phone}`}
-                    className="flex items-center gap-2.5 text-gray-300 hover:text-white bg-[#1A1C23] hover:bg-gray-800/80 p-2.5 rounded-xl border border-gray-800/60 transition-colors"
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border transition-colors ${
+                      isDark
+                        ? 'text-gray-300 hover:text-white bg-[#161922] hover:bg-gray-800/80 border-white/[0.06]'
+                        : 'text-slate-700 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border-slate-200'
+                    }`}
                   >
-                    <Phone className="w-4 h-4 text-gray-500 shrink-0" />
+                    <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
                     <span>{person.phone}</span>
                   </a>
                 )}
               </div>
 
               {/* Quick Details Snapshot */}
-              <div className="mt-4 pt-4 border-t border-gray-800/60 space-y-2 text-xs text-gray-400">
+              <div className={`mt-4 pt-4 border-t space-y-2 text-xs ${isDark ? 'border-white/[0.06] text-gray-400' : 'border-slate-200 text-slate-500'}`}>
                 <div className="flex justify-between items-center py-1">
-                  <span>UUID</span>
+                  <span>Worker ID</span>
                   <button
                     type="button"
                     onClick={() => handleCopyId(person.id)}
-                    className="inline-flex items-center gap-1 font-mono text-gray-300 hover:text-white cursor-pointer"
+                    className={`inline-flex items-center gap-1 font-mono cursor-pointer ${isDark ? 'text-gray-300 hover:text-white' : 'text-slate-700 hover:text-slate-900'}`}
                   >
                     <span>{person.id.slice(0, 8)}...</span>
                     {copiedId ? (
@@ -730,19 +746,19 @@ export function WorkerDetailView({
                     )}
                   </button>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className={`flex justify-between items-center py-1 border-t ${isDark ? 'border-white/[0.06]/40' : 'border-slate-100'}`}>
                   <span>Completed Jobs</span>
-                  <span className="font-extrabold text-emerald-400">{completedJobsCount} Orders</span>
+                  <span className="font-extrabold text-emerald-400">{completedJobsCount} Jobs</span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className={`flex justify-between items-center py-1 border-t ${isDark ? 'border-white/[0.06]/40' : 'border-slate-100'}`}>
                   <span>Total Assigned</span>
-                  <span className="font-bold text-gray-200">
-                    {person._count?.workerAssignments || person.workerAssignments?.length || 0} Orders
+                  <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
+                    {person._count?.workerAssignments || person.workerAssignments?.length || 0} Jobs
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className={`flex justify-between items-center py-1 border-t ${isDark ? 'border-white/[0.06]/40' : 'border-slate-100'}`}>
                   <span>Attendance Records</span>
-                  <span className="font-bold text-gray-200">
+                  <span className={`font-bold ${isDark ? 'text-gray-200' : 'text-slate-800'}`}>
                     {person._count?.attendances || person.attendances?.length || 0} Days
                   </span>
                 </div>
@@ -758,15 +774,17 @@ export function WorkerDetailView({
           {/* ====================================================
               TOP PILL NAVIGATION BAR
           ==================================================== */}
-          <div className="bg-[#14151A] rounded-2xl sm:rounded-3xl p-2 border border-gray-800/80 shadow-lg flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+          <div className={`rounded-[24px] sm:rounded-[28px] p-2 border shadow-sm flex items-center justify-between gap-2 overflow-x-auto scrollbar-none ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('current-work')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'current-work'
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Activity className="w-4 h-4" />
@@ -779,16 +797,16 @@ export function WorkerDetailView({
               <button
                 type="button"
                 onClick={() => setActiveTab('activities')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'activities'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Calendar className="w-4 h-4" />
-                <span>Activities & Calendar</span>
+                <span>Daily Attendance</span>
                 {person.attendances && person.attendances.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white text-[10px] font-black">
+                  <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold">
                     {person.attendances.length}
                   </span>
                 )}
@@ -797,16 +815,16 @@ export function WorkerDetailView({
               <button
                 type="button"
                 onClick={() => setActiveTab('history')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'history'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Briefcase className="w-4 h-4" />
-                <span>Work Orders</span>
+                <span>Work History</span>
                 {person.workerAssignments && person.workerAssignments.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[10px] font-black">
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
                     {person.workerAssignments.length}
                   </span>
                 )}
@@ -815,32 +833,34 @@ export function WorkerDetailView({
               <button
                 type="button"
                 onClick={() => setActiveTab('profile')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'profile'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <UserIcon className="w-4 h-4" />
-                <span>Profile Details</span>
+                <span>Profile &amp; Phone</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('security')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'security'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Shield className="w-4 h-4" />
-                <span>Security</span>
+                <span>Reset Password</span>
               </button>
             </div>
 
             {/* Quick date indicator badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1C23] border border-gray-800 text-[11px] text-gray-400">
+            <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] ${
+              isDark ? 'bg-[#161922] border-white/[0.06] text-zinc-400' : 'bg-slate-100 border-slate-200 text-slate-600'
+            }`}>
               <Clock className="w-3.5 h-3.5 text-emerald-400" />
               <span>Today: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
@@ -852,14 +872,14 @@ export function WorkerDetailView({
           {activeTab === 'current-work' && (
             <div className="space-y-6">
               {ongoingJob ? (
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 sm:p-7 shadow-xl space-y-6 relative overflow-hidden">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 sm:p-7 shadow-xl space-y-6 relative overflow-hidden">
                   {/* Subtle decorative glow */}
                   <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
 
                   {/* Top Status Banner */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-gray-800/80">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-5 border-b border-white/[0.06]">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
+                      <div className="w-12 h-12 rounded-[24px] bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
                         <Activity className="w-6 h-6 animate-pulse" />
                       </div>
                       <div>
@@ -966,7 +986,7 @@ export function WorkerDetailView({
                           const activeBreak = spec.activeBreak;
 
                           return (
-                            <div className="p-4 sm:p-5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-950/70 via-[#102e22] to-[#0c231a] shadow-lg flex flex-col gap-3 text-white">
+                            <div className="p-4 sm:p-5 rounded-[24px] border border-emerald-500/40 bg-gradient-to-r from-emerald-950/70 via-[#102e22] to-[#0c231a] shadow-lg flex flex-col gap-3 text-white">
                               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-500/20 pb-2.5">
                                 <div className="flex items-center gap-2.5">
                                   <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
@@ -1056,7 +1076,7 @@ export function WorkerDetailView({
                         {/* Live Counting Chronometer Hero Banner (Machinery Only) */}
                         {ongoingJob.status === 'IN_PROGRESS' && !isOrderTreePlucking(ongoingJob) && timerData && (
                           <div
-                            className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-lg ${
+                            className={`p-4 rounded-[24px] border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all shadow-lg ${
                               timerData.isOnBreak
                                 ? 'bg-gradient-to-r from-amber-950/40 via-amber-900/20 to-purple-950/40 border-amber-500/30'
                                 : 'bg-gradient-to-r from-emerald-950/40 via-emerald-900/20 to-teal-950/40 border-emerald-500/30'
@@ -1064,7 +1084,7 @@ export function WorkerDetailView({
                           >
                             <div className="flex items-center gap-3.5">
                               <div
-                                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                                className={`w-11 h-11 rounded-[24px] flex items-center justify-center shrink-0 border ${
                                   timerData.isOnBreak
                                     ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
                                     : 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
@@ -1127,9 +1147,9 @@ export function WorkerDetailView({
                           </div>
                         )}
 
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]">
                           {/* Site Arrival */}
-                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                          <div className="p-3 rounded-xl bg-[#12141A] border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
                               <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                               <span>Site Arrival</span>
@@ -1149,7 +1169,7 @@ export function WorkerDetailView({
                           </div>
 
                           {/* Work Started / Trees Harvested */}
-                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                          <div className="p-3 rounded-xl bg-[#12141A] border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
                               {isOrderTreePlucking(ongoingJob) ? (
                                 <TreePalm className="w-3.5 h-3.5 text-emerald-400" />
@@ -1177,7 +1197,7 @@ export function WorkerDetailView({
                           </div>
 
                           {/* Break Status */}
-                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                          <div className="p-3 rounded-xl bg-[#12141A] border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
                               <Coffee className="w-3.5 h-3.5 text-purple-400" />
                               <span>Break Status</span>
@@ -1214,7 +1234,7 @@ export function WorkerDetailView({
                           </div>
 
                           {/* Units Logged / Wage Scheme */}
-                          <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60">
+                          <div className="p-3 rounded-xl bg-[#12141A] border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-400 flex items-center gap-1.5">
                               <Activity className="w-3.5 h-3.5 text-sky-400" />
                               <span>{isOrderTreePlucking(ongoingJob) ? 'Wage Scheme' : 'Completed / Draft'}</span>
@@ -1237,7 +1257,7 @@ export function WorkerDetailView({
 
                         {/* Squad Members Assigned */}
                         {squadMembers.length > 1 && (
-                          <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-2">
+                          <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-2">
                             <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                               <Users className="w-3.5 h-3.5 text-amber-400" />
                               <span>Squad Teammates ({squadMembers.length} Workers Assigned)</span>
@@ -1246,7 +1266,7 @@ export function WorkerDetailView({
                               {squadMembers.map((m: any) => (
                                 <div
                                   key={m.id}
-                                  className="px-3 py-1.5 rounded-xl bg-[#14151A] border border-gray-800 text-xs flex items-center gap-2"
+                                  className="px-3 py-1.5 rounded-xl bg-[#12141A] border border-white/[0.06] text-xs flex items-center gap-2"
                                 >
                                   <span className="font-bold text-gray-200">{m.name}</span>
                                   {m.isLeader && (
@@ -1281,7 +1301,7 @@ export function WorkerDetailView({
                           if (breaks.length === 0 && !timerData?.isOnBreak && totalBreakMins === 0) return null;
 
                           return (
-                            <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                            <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-3">
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider flex items-center gap-1.5">
                                   <Coffee className="w-3.5 h-3.5 text-amber-400" />
@@ -1311,7 +1331,7 @@ export function WorkerDetailView({
                                   return (
                                     <div
                                       key={bIdx}
-                                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#14151A] border border-gray-800/80 text-xs"
+                                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#12141A] border border-white/[0.06] text-xs"
                                     >
                                       <div className="flex items-center gap-2 min-w-0">
                                         <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
@@ -1346,9 +1366,9 @@ export function WorkerDetailView({
                   })()}
 
                   {/* Location & GPS Navigation Banner */}
-                  <div className="p-5 rounded-2xl bg-gradient-to-r from-[#1A1C23] via-[#1E202A] to-[#1A1C23] border border-gray-800/80 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+                  <div className="p-5 rounded-[24px] bg-gradient-to-r from-[#161922] via-[#1E202A] to-[#161922] border border-white/[0.06] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#A78BFA] shrink-0 mt-0.5">
+                      <div className="w-10 h-10 rounded-[24px] bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[#A78BFA] shrink-0 mt-0.5">
                         <MapPin className="w-5 h-5 text-emerald-400" />
                       </div>
                       <div>
@@ -1371,7 +1391,7 @@ export function WorkerDetailView({
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer"
+                      className="px-4 py-2.5 rounded-[24px] bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer"
                     >
                       <Navigation className="w-4 h-4 fill-white rotate-45" />
                       <span>Open in Google Maps</span>
@@ -1382,7 +1402,7 @@ export function WorkerDetailView({
                   {/* Detailed Information Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     {/* Customer Details Box */}
-                    <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                    <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                           <Users className="w-3.5 h-3.5 text-sky-400" />
@@ -1413,7 +1433,7 @@ export function WorkerDetailView({
                     </div>
 
                     {/* Dispatch Coordinator Box */}
-                    <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                    <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-3">
                       <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                         <Building className="w-3.5 h-3.5 text-[#A78BFA]" />
                         <span>Office Coordinator</span>
@@ -1439,7 +1459,7 @@ export function WorkerDetailView({
 
                   {/* Message & Special Instructions */}
                   {ongoingJob.message && (
-                    <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-1 text-xs">
+                    <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-1 text-xs">
                       <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
                         Work Order Requirements &amp; Notes
                       </span>
@@ -1448,7 +1468,7 @@ export function WorkerDetailView({
                   )}
 
                   {/* Timestamps & Action Footer */}
-                  <div className="pt-3 border-t border-gray-800/60 flex flex-wrap items-center justify-between text-xs text-gray-400 gap-3">
+                  <div className="pt-3 border-t border-white/[0.06] flex flex-wrap items-center justify-between text-xs text-gray-400 gap-3">
                     <div className="flex flex-wrap items-center gap-3">
                       <span>
                         Order Initiated:{' '}
@@ -1487,7 +1507,7 @@ export function WorkerDetailView({
 
                       <NextLink
                         href={`/admin/operations/enquiries/${ongoingJob.id}`}
-                        className="px-4 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-[#6366F1] hover:bg-[#6839EF] text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
                       >
                         <span>Full Work Order Command Center</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -1497,8 +1517,8 @@ export function WorkerDetailView({
                 </div>
               ) : (
                 /* Standby Operational State */
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-8 sm:p-12 text-center shadow-xl flex flex-col items-center justify-center space-y-4">
-                  <div className="w-16 h-16 rounded-3xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-md">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-8 sm:p-12 text-center shadow-xl flex flex-col items-center justify-center space-y-4">
+                  <div className="w-16 h-16 rounded-[28px] bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 shadow-md">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <div className="max-w-md">
@@ -1517,14 +1537,14 @@ export function WorkerDetailView({
                     <button
                       type="button"
                       onClick={() => setActiveTab('history')}
-                      className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 text-xs font-bold transition-colors border border-gray-800 cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 text-xs font-bold transition-colors border border-white/[0.06] cursor-pointer"
                     >
                       View Past Work Orders
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveTab('activities')}
-                      className="px-4 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
+                      className="px-4 py-2 rounded-xl bg-[#6366F1] hover:bg-[#6A3DEE] text-white text-xs font-bold transition-all shadow-md cursor-pointer"
                     >
                       Check Shift Activities
                     </button>
@@ -1541,10 +1561,10 @@ export function WorkerDetailView({
             <div className="space-y-6">
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
                 {/* CALENDAR WIDGET (span 7) */}
-                <div className="xl:col-span-7 bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 sm:p-6 shadow-xl space-y-5">
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+                <div className="xl:col-span-7 bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 sm:p-6 shadow-xl space-y-5">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#7B4DFF]/15 border border-[#7B4DFF]/30 flex items-center justify-center text-[#A78BFA]">
+                      <div className="w-10 h-10 rounded-[24px] bg-[#6366F1]/15 border border-[#6366F1]/30 flex items-center justify-center text-[#A78BFA]">
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div>
@@ -1563,8 +1583,8 @@ export function WorkerDetailView({
                         onClick={handleJumpToToday}
                         className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border shadow-xs ${
                           isSelectedDateToday
-                            ? 'bg-[#7B4DFF] text-white border-[#7B4DFF]'
-                            : 'bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border-gray-800'
+                            ? 'bg-[#6366F1] text-white border-[#6366F1]'
+                            : 'bg-[#161922] hover:bg-gray-800 text-gray-300 border-white/[0.06]'
                         }`}
                       >
                         Today
@@ -1574,7 +1594,7 @@ export function WorkerDetailView({
                         type="button"
                         onClick={handlePrevMonth}
                         aria-label="Previous Month"
-                        className="w-8 h-8 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 hover:text-white border border-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -1583,7 +1603,7 @@ export function WorkerDetailView({
                         type="button"
                         onClick={handleNextMonth}
                         aria-label="Next Month"
-                        className="w-8 h-8 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 hover:text-white border border-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -1604,7 +1624,7 @@ export function WorkerDetailView({
                   {/* Month Days Matrix */}
                   <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                     {Array.from({ length: startDayOffset }).map((_, idx) => (
-                      <div key={`empty-${idx}`} className="h-12 sm:h-14 rounded-2xl opacity-20 pointer-events-none" />
+                      <div key={`empty-${idx}`} className="h-12 sm:h-14 rounded-[24px] opacity-20 pointer-events-none" />
                     ))}
 
                     {Array.from({ length: daysInMonth }).map((_, idx) => {
@@ -1622,12 +1642,12 @@ export function WorkerDetailView({
                           key={dayStr}
                           type="button"
                           onClick={() => setSelectedDateStr(dayStr)}
-                          className={`h-12 sm:h-14 rounded-2xl p-1.5 sm:p-2 flex flex-col items-center justify-between transition-all cursor-pointer relative group ${
+                          className={`h-12 sm:h-14 rounded-[24px] p-1.5 sm:p-2 flex flex-col items-center justify-between transition-all cursor-pointer relative group ${
                             isSelected
                               ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/40 ring-2 ring-emerald-300 scale-105 z-10'
                               : isToday
-                              ? 'bg-[#1A1C23] text-emerald-400 ring-2 ring-emerald-500/50 hover:bg-[#20222D]'
-                              : 'bg-[#1A1C23]/60 text-gray-300 hover:bg-[#1A1C23] hover:text-white border border-gray-800/40'
+                              ? 'bg-[#161922] text-emerald-400 ring-2 ring-emerald-500/50 hover:bg-[#20222D]'
+                              : 'bg-[#161922]/60 text-gray-300 hover:bg-[#161922] hover:text-white border border-white/[0.06]/40'
                           }`}
                         >
                           <span
@@ -1654,7 +1674,7 @@ export function WorkerDetailView({
                             {hasJobs && (
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${
-                                  isSelected ? 'bg-purple-200' : 'bg-[#7B4DFF]'
+                                  isSelected ? 'bg-purple-200' : 'bg-[#6366F1]'
                                 }`}
                                 title="Jobs Assigned"
                               />
@@ -1666,14 +1686,14 @@ export function WorkerDetailView({
                   </div>
 
                   {/* Calendar Legend */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-800/60 text-[11px] text-gray-400">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-[11px] text-gray-400">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400" />
                         <span>Present Shift</span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#7B4DFF]" />
+                        <span className="w-2 h-2 rounded-full bg-[#6366F1]" />
                         <span>Job Assigned</span>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1687,8 +1707,8 @@ export function WorkerDetailView({
 
                 {/* INSPECTOR: ACTIVITIES ON SELECTED DATE (span 5) */}
                 <div className="xl:col-span-5 space-y-4">
-                  <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-xl space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                  <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                       <div>
                         <span className="text-[10px] uppercase font-black text-emerald-400 tracking-wider">
                           {isSelectedDateToday ? "TODAY'S OPERATIVE ACTIVITY" : 'DATE INSPECTION'}
@@ -1697,13 +1717,13 @@ export function WorkerDetailView({
                           {formattedSelectedDate}
                         </h4>
                       </div>
-                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-xl bg-[#1A1C23] text-gray-300 border border-gray-800">
+                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-xl bg-[#161922] text-gray-300 border border-white/[0.06]">
                         {selectedDateStr}
                       </span>
                     </div>
 
                     {/* Attendance on that day */}
-                    <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                    <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <HardHat className="w-4 h-4 text-emerald-400" />
@@ -1728,7 +1748,7 @@ export function WorkerDetailView({
 
                       {selectedAttendance ? (
                         <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                          <div className="bg-[#14151A] p-2.5 rounded-xl border border-gray-800/60">
+                          <div className="bg-[#12141A] p-2.5 rounded-xl border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-500 block">Check In</span>
                             <span className="font-mono font-bold text-gray-200 text-xs mt-0.5 block">
                               {new Date(selectedAttendance.checkInAt).toLocaleTimeString('en-US', {
@@ -1737,7 +1757,7 @@ export function WorkerDetailView({
                               })}
                             </span>
                           </div>
-                          <div className="bg-[#14151A] p-2.5 rounded-xl border border-gray-800/60">
+                          <div className="bg-[#12141A] p-2.5 rounded-xl border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-500 block">Check Out</span>
                             <span className="font-mono font-bold text-gray-200 text-xs mt-0.5 block">
                               {selectedAttendance.checkOutAt
@@ -1756,7 +1776,7 @@ export function WorkerDetailView({
                       )}
 
                       {selectedAttendance?.notes && (
-                        <div className="text-[11px] text-gray-400 pt-1 border-t border-gray-800/60">
+                        <div className="text-[11px] text-gray-400 pt-1 border-t border-white/[0.06]">
                           <span className="font-bold text-gray-300">Notes:</span> {selectedAttendance.notes}
                         </div>
                       )}
@@ -1780,7 +1800,7 @@ export function WorkerDetailView({
                             return (
                               <div
                                 key={job.id}
-                                className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-emerald-500/30 transition-all space-y-2"
+                                className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] hover:border-emerald-500/30 transition-all space-y-2"
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <NextLink
@@ -1861,7 +1881,7 @@ export function WorkerDetailView({
                           })}
                         </div>
                       ) : (
-                        <div className="py-6 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-2xl border border-gray-800/50">
+                        <div className="py-6 text-center text-xs text-gray-500 bg-[#161922]/40 rounded-[24px] border border-white/[0.06]/50">
                           No work orders dispatched on this date.
                         </div>
                       )}
@@ -1869,16 +1889,16 @@ export function WorkerDetailView({
                   </div>
 
                   {/* Hourly Chronological Timeline on this Date */}
-                  <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-xl space-y-3.5">
+                  <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-xl space-y-3.5">
                     <h5 className="text-xs font-black text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
                       <Clock className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Shift &amp; Operations Timeline</span>
                     </h5>
 
-                    <div className="space-y-3 relative pl-4 border-l border-gray-800">
+                    <div className="space-y-3 relative pl-4 border-l border-white/[0.06]">
                       {selectedAttendance ? (
                         <div className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#14151A]" />
+                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#12141A]" />
                           <div className="text-xs font-bold text-gray-200">Field Check-in Logged</div>
                           <div className="text-[11px] text-gray-500 font-mono mt-0.5">
                             {new Date(selectedAttendance.checkInAt).toLocaleTimeString('en-US', {
@@ -1898,7 +1918,7 @@ export function WorkerDetailView({
                         return (
                           <React.Fragment key={job.id}>
                             <div className="relative">
-                              <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#7B4DFF] ring-4 ring-[#14151A]" />
+                              <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#6366F1] ring-4 ring-[#12141A]" />
                               <div className="text-xs font-bold text-gray-200">
                                 Dispatched: {job.serviceName}
                               </div>
@@ -1909,7 +1929,7 @@ export function WorkerDetailView({
 
                             {jSpecs.siteReachedAt && (
                               <div className="relative">
-                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#14151A]" />
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#12141A]" />
                                 <div className="text-xs font-bold text-emerald-400">Reached Work Site</div>
                                 <div className="text-[11px] text-gray-500 font-mono mt-0.5">
                                   {new Date(jSpecs.siteReachedAt).toLocaleTimeString('en-US', {
@@ -1922,7 +1942,7 @@ export function WorkerDetailView({
 
                             {job.workStartedAt && (
                               <div className="relative">
-                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-[#14151A]" />
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-amber-400 ring-4 ring-[#12141A]" />
                                 <div className="text-xs font-bold text-amber-300">Started Work Timer</div>
                                 <div className="text-[11px] text-gray-500 font-mono mt-0.5">
                                   {new Date(job.workStartedAt).toLocaleTimeString('en-US', {
@@ -1935,7 +1955,7 @@ export function WorkerDetailView({
 
                             {jBreaks.map((b: any, bIdx: number) => (
                               <div key={bIdx} className="relative">
-                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-400 ring-4 ring-[#14151A]" />
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-purple-400 ring-4 ring-[#12141A]" />
                                 <div className="text-xs font-bold text-purple-300">
                                   Break: {b.reason || 'Rest'}
                                 </div>
@@ -1951,7 +1971,7 @@ export function WorkerDetailView({
 
                             {(job.completedAt || job.workEndedAt) && (
                               <div className="relative">
-                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-[#14151A]" />
+                                <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-[#12141A]" />
                                 <div className="text-xs font-bold text-emerald-400">Completed Work</div>
                                 <div className="text-[11px] text-gray-500 font-mono mt-0.5">
                                   {new Date(job.completedAt || job.workEndedAt!).toLocaleTimeString('en-US', {
@@ -1968,7 +1988,7 @@ export function WorkerDetailView({
 
                       {selectedAttendance?.checkOutAt ? (
                         <div className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400 ring-4 ring-[#14151A]" />
+                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400 ring-4 ring-[#12141A]" />
                           <div className="text-xs font-bold text-gray-200">Field Check-out Recorded</div>
                           <div className="text-[11px] text-gray-500 font-mono mt-0.5">
                             {new Date(selectedAttendance.checkOutAt).toLocaleTimeString('en-US', {
@@ -1995,8 +2015,8 @@ export function WorkerDetailView({
               TAB 3: WORK ORDERS HISTORY
           ==================================================== */}
           {activeTab === 'history' && (
-            <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-800/80">
+            <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
                 <div>
                   <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-emerald-400" />
@@ -2007,7 +2027,7 @@ export function WorkerDetailView({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-1.5 bg-[#1A1C23] p-1 rounded-2xl border border-gray-800 text-xs font-bold">
+                <div className="flex items-center gap-1.5 bg-[#161922] p-1 rounded-[24px] border border-white/[0.06] text-xs font-bold">
                   {['ALL', 'IN_PROGRESS', 'ASSIGNED', 'COMPLETED', 'PENDING'].map((f) => (
                     <button
                       key={f}
@@ -2033,7 +2053,7 @@ export function WorkerDetailView({
                   placeholder="Search by service, tracking code, client, or site..."
                   value={historySearch}
                   onChange={(e) => setHistorySearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#1A1C23] border border-gray-800 rounded-2xl text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#161922] border border-white/[0.06] rounded-[24px] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-all"
                 />
               </div>
 
@@ -2064,7 +2084,7 @@ export function WorkerDetailView({
                     return (
                           <div
                             key={job.id}
-                            className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-emerald-500/40 transition-all space-y-3"
+                            className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] hover:border-emerald-500/40 transition-all space-y-3"
                           >
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                               <div className="space-y-1 min-w-0">
@@ -2132,7 +2152,7 @@ export function WorkerDetailView({
                             </div>
 
                             {/* Telemetry Strip for Work Order */}
-                            <div className="p-3 rounded-xl bg-[#14151A] border border-gray-800/60 flex flex-wrap items-center justify-between gap-3 text-[11px]">
+                            <div className="p-3 rounded-xl bg-[#12141A] border border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-[11px]">
                               <div className="flex flex-wrap items-center gap-3 text-gray-400">
                                 {jobSpecs.siteReachedAt && (
                                   <span className="flex items-center gap-1 text-emerald-400">
@@ -2219,7 +2239,7 @@ export function WorkerDetailView({
                                 </button>
                                 <NextLink
                                   href={`/admin/operations/enquiries/${job.id}`}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white font-bold transition-all text-xs"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#6366F1]/15 hover:bg-[#6366F1]/25 border border-[#6366F1]/30 text-[#A78BFA] hover:text-white font-bold transition-all text-xs"
                                 >
                                   <span>Full Order Page</span>
                                   <ChevronRight className="w-3.5 h-3.5" />
@@ -2231,7 +2251,7 @@ export function WorkerDetailView({
                       })}
                     </div>
               ) : (
-                <div className="py-12 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-3xl border border-gray-800/50">
+                <div className="py-12 text-center text-xs text-gray-500 bg-[#161922]/40 rounded-[28px] border border-white/[0.06]/50">
                   No work orders found matching the filter.
                 </div>
               )}
@@ -2244,8 +2264,8 @@ export function WorkerDetailView({
           {activeTab === 'profile' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                     <Building className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -2259,8 +2279,8 @@ export function WorkerDetailView({
                   </div>
                 </div>
 
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[#A78BFA] shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-[#A78BFA] shrink-0">
                     <Award className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -2274,8 +2294,8 @@ export function WorkerDetailView({
                   </div>
                 </div>
 
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
                     <Briefcase className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -2291,7 +2311,7 @@ export function WorkerDetailView({
               </div>
 
               {/* Detailed Personal & Professional Record */}
-              <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-lg space-y-6">
+              <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-lg space-y-6">
                 <div>
                   <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
                     <UserIcon className="w-4 h-4 text-emerald-400" />
@@ -2303,27 +2323,27 @@ export function WorkerDetailView({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Legal Name</span>
                     <div className="font-bold text-gray-200 text-sm">{person.name || 'Not Specified'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">System Username</span>
                     <div className="font-mono font-bold text-emerald-400 text-sm">@{person.username}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Registered Email</span>
                     <div className="font-semibold text-gray-200 text-sm truncate">{person.email || 'None'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Phone Hotline</span>
                     <div className="font-semibold text-gray-200 text-sm">{person.phone || 'None'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Registration Date</span>
                     <div className="font-semibold text-gray-300">
                       {new Date(person.createdAt).toLocaleDateString('en-US', {
@@ -2334,7 +2354,7 @@ export function WorkerDetailView({
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Last Ledger Update</span>
                     <div className="font-semibold text-gray-300">
                       {new Date(person.updatedAt).toLocaleDateString('en-US', {
@@ -2353,7 +2373,7 @@ export function WorkerDetailView({
               TAB 5: SECURITY & ACCESS
           ==================================================== */}
           {activeTab === 'security' && (
-            <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
+            <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-6">
               <div>
                 <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
                   <Shield className="w-4 h-4 text-emerald-400" />
@@ -2365,7 +2385,7 @@ export function WorkerDetailView({
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Role Authorization Level</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">
@@ -2377,7 +2397,7 @@ export function WorkerDetailView({
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Email Verification</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">
@@ -2397,7 +2417,7 @@ export function WorkerDetailView({
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Portal Dispatch Account State</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">
@@ -2458,48 +2478,56 @@ export function WorkerDetailView({
       {/* 1. Admin Pause Timer Modal */}
       {isPauseModalOpen && ongoingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
-            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+          <div className={`border rounded-[28px] max-w-lg w-full p-6 shadow-2xl space-y-5 relative ${
+            isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+          }`}>
+            <div className={`flex items-center justify-between border-b pb-4 ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-500">
                   <Pause className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Pause Work Timer</h3>
-                  <p className="text-xs text-gray-400">Select reason for pausing the field timer</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Pause Work Timer</h3>
+                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Select reason for pausing the field timer</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsPauseModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                }`}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="space-y-4">
-              <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-xs">
-                <div className="text-gray-400">Work Order:</div>
-                <div className="font-bold text-gray-100 text-sm mt-0.5">{ongoingJob.serviceName}</div>
-                <div className="text-[11px] font-mono text-purple-300 mt-0.5">{ongoingJob.trackingNumber}</div>
+              <div className={`p-3.5 rounded-2xl border text-xs ${
+                isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className={isDark ? 'text-zinc-400' : 'text-slate-500'}>Work Order:</div>
+                <div className={`font-bold text-sm mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{ongoingJob.serviceName}</div>
+                <div className="text-[11px] font-mono text-[#6366F1] mt-0.5">{ongoingJob.trackingNumber}</div>
               </div>
 
               {isOrderTreePlucking(ongoingJob) && (
-                <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex items-center justify-between text-xs">
-                  <span className="text-emerald-300 font-bold flex items-center gap-1.5">
-                    <TreePalm className="w-4 h-4 text-emerald-400" />
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between text-xs">
+                  <span className="text-emerald-500 font-bold flex items-center gap-1.5">
+                    <TreePalm className="w-4 h-4" />
                     Trees Plucked Before Break:
                   </span>
-                  <span className="font-mono text-base font-black text-emerald-400">
+                  <span className="font-mono text-base font-black text-emerald-500">
                     🌴 {ongoingTreeCount} Trees
                   </span>
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-2">
-                  Select Break Reason <span className="text-rose-400">*</span>
+                <label className={`block text-xs font-bold mb-2 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                  Select Break Reason <span className="text-rose-500">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -2507,8 +2535,8 @@ export function WorkerDetailView({
                     { id: 'Lunch Break', label: 'Lunch Break', icon: '🍱' },
                     { id: 'Evening Tea', label: 'Evening Tea Break', icon: '☕' },
                     { id: 'Equipment Refuel', label: 'Equipment / Fuel', icon: '⛽' },
-                    { id: 'Rain Delay', label: 'Rain / Weather Delay', icon: '🌧️' },
-                    { id: 'Other Break', label: 'Other Operational Break', icon: '🏷️' },
+                    { id: 'Rain Delay', label: 'Rain Delay', icon: '🌧️' },
+                    { id: 'Other Break', label: 'Other Break', icon: '🏷️' },
                   ].map((r) => (
                     <button
                       key={r.id}
@@ -2516,36 +2544,44 @@ export function WorkerDetailView({
                       onClick={() => setAdminPauseReason(r.label)}
                       className={`p-3 rounded-2xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                         adminPauseReason === r.label
-                          ? 'bg-amber-500/20 border-amber-500/50 text-amber-200 shadow-sm'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-700'
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-500 font-bold shadow-xs'
+                          : isDark
+                          ? 'bg-[#181A20] border-white/[0.06] text-zinc-400 hover:text-white'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       <span className="text-lg">{r.icon}</span>
-                      <span className="text-xs font-bold">{r.label}</span>
+                      <span className="text-xs font-semibold">{r.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">
+                <label className={`block text-xs font-bold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Additional Notes (Optional)
                 </label>
                 <textarea
                   rows={2}
                   value={adminPauseNotes}
                   onChange={(e) => setAdminPauseNotes(e.target.value)}
-                  placeholder="e.g. Workers stepped out for noon meal at local mess..."
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-amber-500/50 resize-none"
+                  placeholder="e.g. Worker paused for lunch break..."
+                  className={`w-full px-3.5 py-2.5 rounded-2xl border text-xs focus:outline-none focus:border-[#FF5C38] resize-none ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+            <div className={`flex items-center justify-end gap-3 pt-3 border-t ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => setIsPauseModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+                className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white bg-white/[0.04]' : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                }`}
               >
                 Cancel
               </button>
@@ -2553,7 +2589,7 @@ export function WorkerDetailView({
                 type="button"
                 onClick={handleAdminPauseTimer}
                 disabled={isSubmittingAdminAction}
-                className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-black text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-amber-600/30 cursor-pointer disabled:opacity-50"
+                className="px-6 py-2.5 rounded-full bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingAdminAction ? (
                   <>
@@ -2563,7 +2599,7 @@ export function WorkerDetailView({
                 ) : (
                   <>
                     <Pause className="w-3.5 h-3.5" />
-                    <span>Confirm Pause</span>
+                    <span>Pause Timer</span>
                   </>
                 )}
               </button>
@@ -2575,21 +2611,27 @@ export function WorkerDetailView({
       {/* 2. Admin Resume Timer Modal */}
       {isResumeModalOpen && ongoingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 relative">
-            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+          <div className={`border rounded-[28px] max-w-md w-full p-6 shadow-2xl space-y-5 relative ${
+            isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+          }`}>
+            <div className={`flex items-center justify-between border-b pb-4 ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                  <Play className="w-5 h-5 fill-emerald-400" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-500">
+                  <Play className="w-5 h-5 fill-emerald-500" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Resume Work Timer</h3>
-                  <p className="text-xs text-gray-400">Restart live timer for this work order</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Resume Work</h3>
+                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Restart live timer for this work order</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsResumeModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                }`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2597,41 +2639,47 @@ export function WorkerDetailView({
 
             <div className="space-y-4">
               {isOrderTreePlucking(ongoingJob) ? (
-                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-2">
-                  <div className="text-xs text-emerald-300">Active Break Reason:</div>
-                  <div className="text-sm font-black text-amber-300">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 space-y-1.5">
+                  <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Break Status:</div>
+                  <div className="text-sm font-bold text-amber-500">
                     {(ongoingJob.specificationDetails as any)?.activeBreak?.reason || 'Break in Progress'}
                   </div>
-                  <div className="text-xs font-mono text-emerald-300">
-                    Trees Logged Before Break: <span className="text-emerald-400 font-bold">🌴 {(ongoingJob.specificationDetails as any)?.activeBreak?.unitsBeforeBreak ?? ongoingTreeCount} Trees</span>
+                  <div className={`text-xs font-mono ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                    Trees Logged Before Break: <span className="text-emerald-500 font-bold">🌴 {(ongoingJob.specificationDetails as any)?.activeBreak?.unitsBeforeBreak ?? ongoingTreeCount} Trees</span>
                   </div>
                 </div>
               ) : (
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800 space-y-2">
-                  <div className="text-xs text-gray-400">Active Break Reason:</div>
-                  <div className="text-sm font-black text-amber-300">
+                <div className={`p-4 rounded-2xl border space-y-2 ${
+                  isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <div className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Break Status:</div>
+                  <div className="text-sm font-bold text-amber-500">
                     {getLiveTimerData(ongoingJob)?.activeBreakReason || 'Break in Progress'}
                   </div>
                   {getLiveTimerData(ongoingJob)?.breakTimeFormatted && (
-                    <div className="text-xs font-mono text-gray-300">
-                      Duration: <span className="text-amber-400 font-bold">{getLiveTimerData(ongoingJob)?.breakTimeFormatted}</span>
+                    <div className={`text-xs font-mono ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Duration: <span className="text-amber-500 font-bold">{getLiveTimerData(ongoingJob)?.breakTimeFormatted}</span>
                     </div>
                   )}
                 </div>
               )}
 
-              <p className="text-xs text-gray-400 leading-relaxed">
+              <p className={`text-xs leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 {isOrderTreePlucking(ongoingJob)
-                  ? 'Conclude the current break and resume logging harvested palms directly on site.'
-                  : 'Resuming will conclude the current break log and resume counting on-site labor minutes toward the final ledger.'}
+                  ? 'End the current break and resume counting trees harvested by the worker.'
+                  : 'End the current break and resume counting work minutes.'}
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+            <div className={`flex items-center justify-end gap-3 pt-3 border-t ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => setIsResumeModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+                className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white bg-white/[0.04]' : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                }`}
               >
                 Cancel
               </button>
@@ -2639,7 +2687,7 @@ export function WorkerDetailView({
                 type="button"
                 onClick={handleAdminResumeTimer}
                 disabled={isSubmittingAdminAction}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer disabled:opacity-50"
+                className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingAdminAction ? (
                   <>
@@ -2649,7 +2697,7 @@ export function WorkerDetailView({
                 ) : (
                   <>
                     <Play className="w-3.5 h-3.5 fill-white" />
-                    <span>Confirm Resume</span>
+                    <span>Resume Work</span>
                   </>
                 )}
               </button>
@@ -2661,21 +2709,27 @@ export function WorkerDetailView({
       {/* 3. Admin Complete Work Order Modal */}
       {isCompleteModalOpen && ongoingJob && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 relative">
-            <div className="flex items-center justify-between border-b border-gray-800/80 pb-4">
+          <div className={`border rounded-[28px] max-w-lg w-full p-6 shadow-2xl space-y-5 relative ${
+            isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+          }`}>
+            <div className={`flex items-center justify-between border-b pb-4 ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <div className="w-10 h-10 rounded-2xl bg-[#6366F1]/20 border border-[#6366F1]/30 flex items-center justify-center text-[#818CF8]">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">Complete Work Order</h3>
-                  <p className="text-xs text-gray-400">Finalize on-site execution and record hours</p>
+                  <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Complete Work Order</h3>
+                  <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Record final counts and mark work finished</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsCompleteModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-white rounded-xl hover:bg-gray-800/60 transition-colors cursor-pointer"
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white hover:bg-white/[0.06]' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+                }`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2683,51 +2737,63 @@ export function WorkerDetailView({
 
             <div className="space-y-4">
               {isOrderTreePlucking(ongoingJob) ? (
-                <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-500/40 space-y-2.5">
+                <div className={`p-4 rounded-2xl border space-y-2.5 ${
+                  isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                }`}>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-                      <TreePalm className="w-4 h-4 text-emerald-400" />
-                      Trees Harvested (തെങ്ങ് കയറ്റം)
+                    <span className="text-xs font-bold text-emerald-500 flex items-center gap-1.5">
+                      <TreePalm className="w-4 h-4" />
+                      Total Trees Plucked
                     </span>
-                    <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                      Per-Tree Wage
+                    <span className="text-[10px] font-mono text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+                      Per-Tree
                     </span>
                   </div>
                   <div className="flex items-center justify-center gap-3 py-1">
                     <button
                       type="button"
                       onClick={() => setCompleteUnits(Math.max(1, Number(completeUnits || 1) - 1))}
-                      className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white flex items-center justify-center font-bold text-lg border border-gray-700 transition-all cursor-pointer active:scale-95"
+                      className={`w-10 h-10 rounded-2xl flex items-center justify-center font-bold text-lg border transition-all cursor-pointer active:scale-95 ${
+                        isDark ? 'bg-white/[0.06] border-white/[0.08] text-white hover:bg-white/[0.1]' : 'bg-white border-slate-200 text-slate-900 hover:bg-slate-100 shadow-xs'
+                      }`}
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <div className="flex items-baseline gap-1.5 px-5 py-1.5 rounded-xl bg-black/60 border border-emerald-500/40">
+                    <div className={`flex items-baseline gap-1.5 px-5 py-2 rounded-2xl border ${
+                      isDark ? 'bg-[#12141A] border-emerald-500/30' : 'bg-white border-emerald-500/40 shadow-xs'
+                    }`}>
                       <input
                         type="number"
                         min={1}
                         value={completeUnits}
                         onChange={(e) => setCompleteUnits(Math.max(1, Number(e.target.value)))}
-                        className="w-16 bg-transparent text-center font-mono text-3xl font-black text-white focus:outline-none"
+                        className={`w-16 bg-transparent text-center font-mono text-3xl font-black focus:outline-none ${
+                          isDark ? 'text-white' : 'text-slate-900'
+                        }`}
                       />
-                      <span className="text-xs font-bold text-emerald-400">Trees</span>
+                      <span className="text-xs font-bold text-emerald-500">Trees</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setCompleteUnits(Number(completeUnits || 1) + 1)}
-                      className="w-10 h-10 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer active:scale-95 shadow-md"
+                      className="w-10 h-10 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center font-bold text-lg transition-all cursor-pointer active:scale-95 shadow-md shadow-emerald-600/20"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
                   {/* Quick Add Chips */}
                   <div className="flex items-center justify-center gap-1.5 pt-1">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold">Quick add:</span>
+                    <span className={`text-[10px] uppercase font-bold ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Quick add:</span>
                     {[5, 10, 15, 20].map((inc) => (
                       <button
                         key={inc}
                         type="button"
                         onClick={() => setCompleteUnits(Number(completeUnits || 1) + inc)}
-                        className="px-2.5 py-0.5 rounded-md bg-gray-800 hover:bg-emerald-950 text-[11px] font-bold text-emerald-300 border border-emerald-500/30 cursor-pointer"
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${
+                          isDark
+                            ? 'bg-white/[0.04] hover:bg-emerald-500/10 text-emerald-400 border-white/[0.08]'
+                            : 'bg-white hover:bg-emerald-50 text-emerald-600 border-slate-200 shadow-2xs'
+                        }`}
                       >
                         +{inc}
                       </button>
@@ -2736,21 +2802,23 @@ export function WorkerDetailView({
                 </div>
               ) : (
                 <>
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800 space-y-2">
+                  <div className={`p-4 rounded-2xl border space-y-2 ${
+                    isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                  }`}>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Job:</span>
-                      <span className="font-bold text-gray-200">{ongoingJob.serviceName}</span>
+                      <span className={isDark ? 'text-zinc-400' : 'text-slate-500'}>Job:</span>
+                      <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{ongoingJob.serviceName}</span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-400">Total Work Duration:</span>
-                      <span className="font-mono font-bold text-emerald-400">
+                      <span className={isDark ? 'text-zinc-400' : 'text-slate-500'}>Total Work Duration:</span>
+                      <span className="font-mono font-bold text-emerald-500">
                         {getLiveTimerData(ongoingJob)?.workTimeFormatted || 'Calculating...'}
                       </span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-300 mb-1">
+                    <label className={`block text-xs font-bold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                       Completed Units ({ongoingJob.unitLabel || 'Units'})
                     </label>
                     <input
@@ -2759,31 +2827,39 @@ export function WorkerDetailView({
                       value={completeUnits}
                       onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
                       placeholder={`e.g. ${ongoingJob.estimatedUnits || 10}`}
-                      className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-purple-500/50"
+                      className={`w-full px-3.5 py-2.5 rounded-2xl border text-xs focus:outline-none focus:border-[#FF5C38] ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </>
               )}
 
               <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">
+                <label className={`block text-xs font-bold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Completion Remarks (Optional)
                 </label>
                 <textarea
                   rows={2}
                   value={completeNotes}
                   onChange={(e) => setCompleteNotes(e.target.value)}
-                  placeholder="e.g. Work completed satisfactorily, customer signed off..."
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-gray-200 placeholder-gray-500 text-xs focus:outline-none focus:border-purple-500/50 resize-none"
+                  placeholder="e.g. Work completed satisfactorily, customer approved..."
+                  className={`w-full px-3.5 py-2.5 rounded-2xl border text-xs focus:outline-none focus:border-[#FF5C38] resize-none ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800/80">
+            <div className={`flex items-center justify-end gap-3 pt-3 border-t ${
+              isDark ? 'border-white/[0.06]' : 'border-slate-100'
+            }`}>
               <button
                 type="button"
                 onClick={() => setIsCompleteModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-gray-800 text-xs font-bold text-gray-400 hover:text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+                className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white bg-white/[0.04]' : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                }`}
               >
                 Cancel
               </button>
@@ -2791,7 +2867,7 @@ export function WorkerDetailView({
                 type="button"
                 onClick={handleAdminCompleteWork}
                 disabled={isSubmittingAdminAction}
-                className="px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-purple-600/30 cursor-pointer disabled:opacity-50"
+                className="px-6 py-2.5 rounded-full bg-[#6366F1] hover:bg-indigo-500 text-white text-xs font-bold transition-all flex items-center gap-2 shadow-lg shadow-[#6366F1]/20 cursor-pointer disabled:opacity-50"
               >
                 {isSubmittingAdminAction ? (
                   <>

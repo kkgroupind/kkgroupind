@@ -34,9 +34,11 @@ import {
   FileText,
   Languages,
 } from 'lucide-react';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export default function AdminSettingsPage() {
   const { token, user: authUser, isLoading: authLoading, logout } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<'site' | 'profile' | 'security' | 'preferences'>('site');
@@ -375,12 +377,12 @@ export default function AdminSettingsPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-100 tracking-tight flex items-center gap-3">
             <span>Admin & Site Settings</span>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30">
-              Kasaragod Operations Hub
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#6366F1]/10 text-[#818CF8] border border-[#6366F1]/20">
+              Operations Control
             </span>
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
-            Configure public portal branding, Kasaragod district coverage, contact helplines, security keys, and platform controls.
+          <p className={`text-xs mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Manage public website details, service coverage areas, contact numbers, and login security.
           </p>
         </div>
 
@@ -391,60 +393,70 @@ export default function AdminSettingsPage() {
               fetchSiteSettings();
             }}
             disabled={isFetchingProfile || isSavingSite}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-3.5 py-2 border rounded-full text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#181B24] hover:bg-white/[0.08] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isFetchingProfile || isSavingSite ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isFetchingProfile || isSavingSite ? 'animate-spin' : ''}`} />
             <span>Sync Settings</span>
           </button>
         </div>
       </div>
 
       {/* Profile Overview Ribbon */}
-      <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+      <div className={`rounded-[28px] border p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 transition-all ${
+        isDark ? 'bg-[#12141A] border-white/[0.06] shadow-sm' : 'bg-white border-slate-200 shadow-xs'
+      }`}>
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2A835F] to-emerald-700 p-[2px] shadow-lg shadow-[#2A835F]/20">
-              <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-xl text-white">
+            <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-[#6366F1] to-[#FF5C38] p-[2px] shadow-lg shadow-[#6366F1]/20">
+              <div className={`w-full h-full rounded-[22px] flex items-center justify-center font-bold text-xl ${
+                isDark ? 'bg-[#12141A] text-white' : 'bg-slate-100 text-slate-900'
+              }`}>
                 {username?.charAt(0).toUpperCase() || 'A'}
               </div>
             </div>
-            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[#14151A]" />
+            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 ${
+              isDark ? 'border-[#12141A]' : 'border-white'
+            }`} />
           </div>
 
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-lg font-bold text-gray-100">
+              <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {name || username || 'Administrator'}
               </h2>
-              <span className="text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium">
-                Active Session
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-semibold">
+                Super Admin
               </span>
             </div>
-            <p className="text-xs text-gray-400 font-mono mt-0.5">
+            <p className={`text-xs font-mono mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               @{username || 'admin'} • {email || 'admin@kkgroup.com'}
             </p>
-            <div className="flex items-center gap-3 text-xs text-gray-500 mt-2">
-              <span className="flex items-center gap-1">
-                <Shield className="w-3.5 h-3.5 text-[#2A835F]" />
-                Full Privilege
+            <div className={`flex items-center gap-3 text-xs mt-2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+              <span className="flex items-center gap-1 font-medium">
+                <Shield className="w-3.5 h-3.5 text-[#6366F1]" />
+                Full System Control
               </span>
               <span>•</span>
               <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                Kasaragod Headquarters
+                <MapPin className="w-3.5 h-3.5" />
+                Kerala Hub
               </span>
             </div>
           </div>
         </div>
 
         {/* Tab Navigation Pill */}
-        <div className="flex items-center gap-1 bg-[#1A1C23] p-1.5 rounded-xl border border-gray-800 self-stretch md:self-auto overflow-x-auto custom-scrollbar">
+        <div className={`flex items-center gap-1 p-1 rounded-full border self-stretch md:self-auto overflow-x-auto ${isDark ? 'bg-[#181B24] border-white/[0.08]' : 'bg-slate-100 border-slate-200'}`}>
           <button
             onClick={() => setActiveTab('site')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-1 md:flex-initial cursor-pointer ${
               activeTab === 'site'
-                ? 'bg-[#2A835F] text-white shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -453,10 +465,10 @@ export default function AdminSettingsPage() {
 
           <button
             onClick={() => setActiveTab('profile')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-1 md:flex-initial cursor-pointer ${
               activeTab === 'profile'
-                ? 'bg-[#7B4DFF] text-white shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <UserIcon className="w-3.5 h-3.5" />
@@ -465,22 +477,22 @@ export default function AdminSettingsPage() {
 
           <button
             onClick={() => setActiveTab('security')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-1 md:flex-initial cursor-pointer ${
               activeTab === 'security'
-                ? 'bg-[#7B4DFF] text-white shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Lock className="w-3.5 h-3.5" />
-            <span>Security & Password</span>
+            <span>Security &amp; Password</span>
           </button>
 
           <button
             onClick={() => setActiveTab('preferences')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex-1 md:flex-initial ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap flex-1 md:flex-initial cursor-pointer ${
               activeTab === 'preferences'
-                ? 'bg-[#7B4DFF] text-white shadow-sm'
-                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/50'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -491,17 +503,19 @@ export default function AdminSettingsPage() {
 
       {/* Main Content Area */}
       {isFetchingProfile && activeTab !== 'site' ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center flex flex-col items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2A835F] mb-3" />
-          <p className="text-gray-400 text-sm">Loading admin credentials and security status...</p>
+        <div className={`rounded-[28px] border p-12 text-center flex flex-col items-center justify-center ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+        }`}>
+          <Loader2 className="w-8 h-8 animate-spin text-[#6366F1] mb-3" />
+          <p className={`text-sm ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>Loading settings...</p>
         </div>
       ) : activeTab === 'site' ? (
         /* TAB 0: Site Settings */
         <form onSubmit={handleSiteSettingsSubmit} className="space-y-6">
           {siteSuccess && (
-            <div className="flex items-center gap-2.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm shadow-xs">
+            <div className="flex items-center gap-2.5 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-[28px] text-emerald-500 text-sm shadow-xs">
               <CheckCircle2 className="w-5 h-5 shrink-0" />
-              <span className="font-medium">{siteSuccess}</span>
+              <span className="font-semibold">{siteSuccess}</span>
             </div>
           )}
 
@@ -510,18 +524,22 @@ export default function AdminSettingsPage() {
             <div className="lg:col-span-2 space-y-6">
               
               {/* Bento Card 1: Core Branding & Identity */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              <div className={`rounded-[28px] border p-6 space-y-5 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-white/[0.06]' : 'border-slate-100'
+                }`}>
                   <div>
-                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-[#2A835F]" />
-                      <span>Site Identity & Branding</span>
+                    <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <Globe className="w-4 h-4 text-[#6366F1]" />
+                      <span>Website &amp; Brand Identity</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Public business name, multilingual taglines, and public visitor facing meta details.
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      Company name and taglines shown to customers.
                     </p>
                   </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30 font-semibold">
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#6366F1]/10 text-[#818CF8] border border-[#6366F1]/20 font-bold">
                     Public Portal
                   </span>
                 </div>
@@ -529,110 +547,125 @@ export default function AdminSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Site Name */}
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Website & Business Brand Name
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Website &amp; Business Name
                     </label>
                     <input
                       type="text"
                       value={siteName}
                       onChange={(e) => setSiteName(e.target.value)}
                       placeholder="KK Group"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                       required
                     />
                   </div>
 
                   {/* English Tagline */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Main Tagline (English)
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Tagline (English)
                     </label>
                     <input
                       type="text"
                       value={siteTagline}
                       onChange={(e) => setSiteTagline(e.target.value)}
                       placeholder="Professional Services & Workforce Solutions"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
 
                   {/* Malayalam Tagline */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Main Tagline (മലയാളം)
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Tagline (Malayalam)
                     </label>
                     <input
                       type="text"
                       value={siteTaglineMl}
                       onChange={(e) => setSiteTaglineMl(e.target.value)}
                       placeholder="കാസർഗോഡ് ജില്ലയിലെ വിശ്വസനീയമായ തൊഴിൽ സേവനങ്ങൾ"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Bento Card 2: Regional Coverage (Kasaragod Focus) */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              {/* Bento Card 2: Regional Coverage */}
+              <div className={`rounded-[28px] border p-6 space-y-5 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-white/[0.06]' : 'border-slate-100'
+                }`}>
                   <div>
-                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-[#2A835F]" />
-                      <span>Operational District & Coverage Zones</span>
+                    <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <MapPin className="w-4 h-4 text-[#FF5C38]" />
+                      <span>Service Areas &amp; Locations</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Target coverage region for on-demand workforce deployment and job inquiries.
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      Towns and panchayats covered for worker bookings.
                     </p>
                   </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
-                    Kasaragod Exclusivity
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold">
+                    Kasaragod
                   </span>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Primary Operational District
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Primary District
                     </label>
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="text"
-                        value={primaryDistrict}
-                        onChange={(e) => setPrimaryDistrict(e.target.value)}
-                        className="flex-1 bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F]"
-                      />
-                      
-                    </div>
+                    <input
+                      type="text"
+                      value={primaryDistrict}
+                      onChange={(e) => setPrimaryDistrict(e.target.value)}
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                      }`}
+                    />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Active Coverage Localities & Towns (Kasaragod District)
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Covered Towns &amp; Localities
                     </label>
                     <textarea
                       rows={2}
                       value={operatingAreas}
                       onChange={(e) => setOperatingAreas(e.target.value)}
                       placeholder="Kasaragod, Kanhangad, Nileshwaram, Uppala, Manjeshwar, Cheruvathur, Bekal, Kumbla..."
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] custom-scrollbar"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors resize-none ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      Customers from these regions can select fast dispatch and field technician arrivals.
+                    <p className={`text-[11px] mt-1 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                      Customers selecting these areas will get fast dispatch.
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Bento Card 3: Contact & Hotline Helpdesk */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              {/* Bento Card 3: Contact Details */}
+              <div className={`rounded-[28px] border p-6 space-y-5 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-white/[0.06]' : 'border-slate-100'
+                }`}>
                   <div>
-                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                      <PhoneCall className="w-4 h-4 text-[#2A835F]" />
-                      <span>Contact Details & Helplines</span>
+                    <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <PhoneCall className="w-4 h-4 text-[#6366F1]" />
+                      <span>Contact &amp; Support Info</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Official phone numbers, WhatsApp dispatch, email, and physical office location.
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      Phone numbers, WhatsApp, and office address shown on the website.
                     </p>
                   </div>
                 </div>
@@ -640,191 +673,208 @@ export default function AdminSettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Phone */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Direct Calling Helpline
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Calling Phone Number
                     </label>
                     <input
                       type="text"
                       value={contactPhone}
                       onChange={(e) => setContactPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
 
                   {/* WhatsApp */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      WhatsApp Quick Booking Number
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      WhatsApp Number
                     </label>
                     <input
                       type="text"
                       value={whatsappPhone}
                       onChange={(e) => setWhatsappPhone(e.target.value)}
                       placeholder="+91 98765 43210"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Official Support Email
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Support Email
                     </label>
                     <input
                       type="email"
                       value={supportEmail}
                       onChange={(e) => setSupportEmail(e.target.value)}
                       placeholder="contact@kkgroup.com"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
 
                   {/* Business Hours */}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Operational Business Hours
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Office Working Hours
                     </label>
                     <input
                       type="text"
                       value={businessHours}
                       onChange={(e) => setBusinessHours(e.target.value)}
                       placeholder="08:00 AM - 07:00 PM (Monday - Saturday)"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
 
                   {/* Office Address */}
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Central Office / Hub Address
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Office Address
                     </label>
                     <input
                       type="text"
                       value={officeAddress}
                       onChange={(e) => setOfficeAddress(e.target.value)}
                       placeholder="KK Group Hub, Main Road, Kasaragod, Kerala - 671121"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Bento Card 4: Document Signatory (Quotation & Invoice) */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+              {/* Bento Card 4: Document Signatory */}
+              <div className={`rounded-[28px] border p-6 space-y-5 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <div className={`flex items-center justify-between pb-3 border-b ${
+                  isDark ? 'border-white/[0.06]' : 'border-slate-100'
+                }`}>
                   <div>
-                    <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#2A835F]" />
-                      <span>Document Signatory (Quotation &amp; Invoice)</span>
+                    <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <FileText className="w-4 h-4 text-emerald-400" />
+                      <span>Invoice Signatory Name</span>
                     </h3>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      The official signatory name stamped across all generated Quotations, Tax Invoices, and Statements.
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                      Name that appears on quotations and invoices.
                     </p>
                   </div>
-                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/30 font-semibold">
-                    Finance &amp; Legal Seal
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold">
+                    Official Documents
                   </span>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                      Signed By (Full Name / Authority Title)
+                    <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      Authorized Signer Name
                     </label>
                     <input
                       type="text"
                       value={signedBy}
                       onChange={(e) => setSignedBy(e.target.value)}
-                      placeholder="e.g. K. K. Balakrishnan or Operations Controller"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                      placeholder="e.g. K. K. Balakrishnan or Operations Manager"
+                      className={`w-full rounded-2xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
-                    <p className="text-[11px] text-gray-500 mt-1.5">
-                      This signatory name will automatically appear on all Quotation and Tax Invoice documents.
-                    </p>
                   </div>
                 </div>
               </div>
 
             </div>
 
-            {/* Column 3: Feature Toggles & Announcement Broadcast */}
+            {/* Column 3: Feature Toggles */}
             <div className="space-y-6">
 
               {/* Portal Features Bento Card */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-5">
-                <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-[#2A835F]" />
-                  <span>Public Portal Controls</span>
+              <div className={`rounded-[28px] border p-6 space-y-5 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
+                <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <Sparkles className="w-4 h-4 text-[#FF5C38]" />
+                  <span>Website Controls</span>
                 </h3>
-                <p className="text-xs text-gray-400">
-                  Toggle dynamic features across customer-facing enquiry boxes and navigation.
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  Turn features on or off on your customer website.
                 </p>
 
-                <div className="space-y-4 pt-2 divide-y divide-gray-800/80">
+                <div className={`space-y-4 pt-2 divide-y ${isDark ? 'divide-white/[0.06]' : 'divide-slate-100'}`}>
                   {/* Public Enquiries */}
                   <div className="pt-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-gray-200">Accept Enquiries</p>
-                      <p className="text-[11px] text-gray-500">Allow customers to submit job orders online</p>
+                      <p className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>Accept Online Bookings</p>
+                      <p className={`text-[11px] ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Allow visitors to book jobs online</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={publicEnquiries}
                       onChange={(e) => setPublicEnquiries(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                      className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
                     />
                   </div>
 
                   {/* Emergency Dispatch */}
                   <div className="pt-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-gray-200">Emergency Dispatch</p>
-                      <p className="text-[11px] text-gray-500">24/7 urgent labor assistance badge</p>
+                      <p className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>Emergency Dispatch</p>
+                      <p className={`text-[11px] ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Show 24/7 urgent work tag</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={emergencyDispatch}
                       onChange={(e) => setEmergencyDispatch(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                      className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
                     />
                   </div>
 
                   {/* Multilingual Switcher */}
                   <div className="pt-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs font-semibold text-gray-200">Malayalam & English</p>
-                      <p className="text-[11px] text-gray-500">Enable regional bilingual switcher</p>
+                      <p className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>Malayalam &amp; English</p>
+                      <p className={`text-[11px] ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Show language switcher to visitors</p>
                     </div>
                     <input
                       type="checkbox"
                       checked={multilingualEnabled}
                       onChange={(e) => setMultilingualEnabled(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                      className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Announcement Banner Bento Card */}
-              <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-4">
+              <div className={`rounded-[28px] border p-6 space-y-4 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+              }`}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-[#2A835F]" />
-                    <span>Broadcast Notice</span>
+                  <h3 className={`text-base font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <FileText className="w-4 h-4 text-[#6366F1]" />
+                    <span>Website Notice Banner</span>
                   </h3>
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-400">
-                    <span>Show Banner</span>
+                  <label className={`flex items-center gap-2 cursor-pointer text-xs font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                    <span>Show</span>
                     <input
                       type="checkbox"
                       checked={bannerActive}
                       onChange={(e) => setBannerActive(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#2A835F] bg-[#1A1C23] border-gray-700 focus:ring-[#2A835F]"
+                      className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-400">
-                  Optional banner displayed across public customer pages for notices, offers, or weather advisories in Kasaragod.
+                <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                  Notice displayed across customer pages for announcements or seasonal offers.
                 </p>
 
                 <textarea
@@ -832,40 +882,33 @@ export default function AdminSettingsPage() {
                   value={announcementBanner}
                   onChange={(e) => setAnnouncementBanner(e.target.value)}
                   placeholder="Enter notice banner announcement..."
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] custom-scrollbar"
+                  className={`w-full rounded-2xl px-4 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] transition-colors resize-none ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
-              </div>
-
-              {/* Quick Summary Card */}
-              <div className="bg-gradient-to-br from-[#2A835F]/15 to-transparent border border-[#2A835F]/30 rounded-2xl p-5 space-y-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-semibold text-emerald-400">Kasaragod Operations Engine</span>
-                </div>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  Saving updates your public website configurations, contact hotlines, service dispatch rules, and Malayalam localization parameters immediately.
-                </p>
               </div>
 
             </div>
           </div>
 
           {/* Form Action Footer */}
-          <div className="bg-[#14151A] border border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-xs text-gray-400 flex items-center gap-2">
+          <div className={`rounded-[28px] border p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
+            <div className={`text-xs flex items-center gap-2 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
               <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              <span>All changes automatically sync with client portal and customer enquiry routing.</span>
+              <span>All updates apply immediately to your live customer portal.</span>
             </div>
 
             <button
               type="submit"
               disabled={isSavingSite}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236e4f] text-xs font-semibold text-white transition-all shadow-md shadow-[#2A835F]/25 disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-full bg-[#FF5C38] hover:bg-[#FF6B4A] text-xs font-bold text-white transition-all shadow-md shadow-[#FF5C38]/25 disabled:opacity-50 cursor-pointer"
             >
               {isSavingSite ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Saving Configurations...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
@@ -879,25 +922,27 @@ export default function AdminSettingsPage() {
       ) : activeTab === 'profile' ? (
         /* TAB 1: Profile Information */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-6">
+          <div className={`lg:col-span-2 rounded-[28px] border p-6 space-y-6 ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
             <div>
-              <h3 className="text-base font-semibold text-gray-100 mb-1">
-                Personal & Account Details
+              <h3 className={`text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Personal &amp; Contact Details
               </h3>
-              <p className="text-xs text-gray-400">
-                Update your display name, official email address, username, and emergency contact number.
+              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Update your name, official email address, username, and mobile phone number.
               </p>
             </div>
 
             {profileError && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs">
+              <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{profileError}</span>
               </div>
             )}
 
             {profileSuccess && (
-              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs">
+              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{profileSuccess}</span>
               </div>
@@ -906,17 +951,19 @@ export default function AdminSettingsPage() {
             <form onSubmit={handleProfileSubmit} className="space-y-4">
               {/* Full Name */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Full Name
                 </label>
                 <div className="relative">
-                  <UserIcon className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <UserIcon className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Super Admin Full Name"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                 </div>
@@ -924,76 +971,82 @@ export default function AdminSettingsPage() {
 
               {/* Username */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                  Admin Username (Root Identifier)
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                  Admin Username
                 </label>
                 <div className="relative">
-                  <AtSign className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <AtSign className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value.toLowerCase().trim())}
                     placeholder="admin_username"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] font-mono"
+                    className={`w-full rounded-2xl pl-10 pr-10 py-2.5 text-sm font-mono border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                   <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                     {usernameStatus === 'checking' && (
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
                     )}
                     {usernameStatus === 'available' && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                     )}
                     {usernameStatus === 'taken' && (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
+                      <AlertCircle className="w-4 h-4 text-rose-500" />
                     )}
                   </div>
                 </div>
                 {usernameStatus === 'taken' && (
-                  <p className="text-[11px] text-red-400 mt-1">Username is already taken.</p>
+                  <p className="text-[11px] text-rose-400 mt-1">Username is already taken.</p>
                 )}
               </div>
 
               {/* Email & Phone Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                    Official Email Address
+                  <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                    Email Address
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="admin@kkgroup.com"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                      className={`w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                    Mobile / Phone Number
+                  <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                    Phone Number
                   </label>
                   <div className="relative">
-                    <Phone className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Phone className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+91 9876543210"
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                      className={`w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                        isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                      }`}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-800 flex justify-end">
+              <div className={`pt-4 border-t flex justify-end ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
                 <button
                   type="submit"
                   disabled={isSavingProfile || usernameStatus === 'taken'}
-                  className="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-[#7B4DFF] hover:bg-[#683bdf] rounded-xl transition-all disabled:opacity-50 shadow-md shadow-[#7B4DFF]/20"
+                  className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#FF5C38] hover:bg-[#FF6B4A] rounded-full transition-all disabled:opacity-50 shadow-md shadow-[#FF5C38]/20 cursor-pointer"
                 >
                   {isSavingProfile ? (
                     <>
@@ -1011,48 +1064,58 @@ export default function AdminSettingsPage() {
             </form>
           </div>
 
-          {/* Right Card: Security Status */}
-          <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 flex flex-col justify-between space-y-6">
+          {/* Right Card: Role & Access Overview */}
+          <div className={`rounded-[28px] border p-6 flex flex-col justify-between space-y-6 ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
             <div>
-              <div className="w-10 h-10 rounded-xl bg-[#7B4DFF]/10 border border-[#7B4DFF]/20 text-[#7B4DFF] flex items-center justify-center mb-4">
+              <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center mb-4 ${
+                isDark ? 'bg-[#6366F1]/10 border-[#6366F1]/20 text-[#818CF8]' : 'bg-[#6366F1]/10 border-[#6366F1]/20 text-[#6366F1]'
+              }`}>
                 <Shield className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-semibold text-gray-100 mb-2">
-                Privilege Level & Scope
+              <h3 className={`text-base font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Administrator Access
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                You have unrestricted administrative authority across the KK Group suite, including worker scheduling, attendance, leave overrides, and user management.
+              <p className={`text-xs leading-relaxed mb-4 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                You have full access to manage jobs, workers, customer accounts, cashbook entries, and settings.
               </p>
 
-              <div className="space-y-3 border-t border-gray-800/80 pt-4 text-xs">
-                <div className="flex items-center justify-between text-gray-400">
-                  <span>Role:</span>
-                  <span className="text-[#A78BFA] font-semibold font-mono">SUPER_ADMIN</span>
+              <div className={`space-y-3 border-t pt-4 text-xs ${isDark ? 'border-white/[0.06] text-zinc-400' : 'border-slate-100 text-slate-600'}`}>
+                <div className="flex items-center justify-between">
+                  <span>Account Role:</span>
+                  <span className="text-[#818CF8] font-bold font-mono">SUPER_ADMIN</span>
                 </div>
-                <div className="flex items-center justify-between text-gray-400">
-                  <span>Edge Token Encryption:</span>
-                  <span className="text-emerald-400 font-mono">RS256 / SHA-256</span>
+                <div className="flex items-center justify-between">
+                  <span>Security Connection:</span>
+                  <span className="text-emerald-500 font-semibold">Active &amp; Protected</span>
                 </div>
-                <div className="flex items-center justify-between text-gray-400">
-                  <span>Audit Logging:</span>
-                  <span className="text-emerald-400">Real-Time Active</span>
+                <div className="flex items-center justify-between">
+                  <span>Activity Logs:</span>
+                  <span className="text-emerald-500 font-semibold">Enabled</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#1A1C23] rounded-xl p-4 border border-gray-800/80 text-xs">
-              <span className="text-gray-300 font-medium block mb-1">
-                Fast Action
+            <div className={`rounded-2xl p-4 border text-xs ${
+              isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}>
+              <span className={`font-bold block mb-1 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                Password Update
               </span>
-              <p className="text-gray-500 text-[11px] mb-3">
-                Need to reset your master login credentials?
+              <p className={`text-[11px] mb-3 ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                Want to change your login password?
               </p>
               <button
                 type="button"
                 onClick={() => setActiveTab('security')}
-                className="w-full py-2 bg-[#2A2D35] hover:bg-[#343842] text-gray-200 rounded-lg text-xs font-medium transition-colors"
+                className={`w-full py-2 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                  isDark
+                    ? 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-200'
+                    : 'bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 shadow-xs'
+                }`}
               >
-                Go to Security Tab
+                Go to Password Settings
               </button>
             </div>
           </div>
@@ -1060,25 +1123,27 @@ export default function AdminSettingsPage() {
       ) : activeTab === 'security' ? (
         /* TAB 2: Security & Password */
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-6">
+          <div className={`lg:col-span-2 rounded-[28px] border p-6 space-y-6 ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
             <div>
-              <h3 className="text-base font-semibold text-gray-100 mb-1">
-                Change Master Password
+              <h3 className={`text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Change Password
               </h3>
-              <p className="text-xs text-gray-400">
-                Ensure your account is protected with a strong cryptographic password.
+              <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Enter your current password and pick a new secure password.
               </p>
             </div>
 
             {securityError && (
-              <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs">
+              <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{securityError}</span>
               </div>
             )}
 
             {securitySuccess && (
-              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs">
+              <div className="flex items-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{securitySuccess}</span>
               </div>
@@ -1087,23 +1152,25 @@ export default function AdminSettingsPage() {
             <form onSubmit={handleSecuritySubmit} className="space-y-4">
               {/* Current Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Current Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <input
                     type={showCurrentPassword ? 'text' : 'password'}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Enter current password"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl pl-10 pr-10 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
                   >
                     {showCurrentPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1116,23 +1183,25 @@ export default function AdminSettingsPage() {
 
               {/* New Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   New Password
                 </label>
                 <div className="relative">
-                  <KeyRound className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <KeyRound className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <input
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new strong password"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-10 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl pl-10 pr-10 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword(!showNewPassword)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
                   >
                     {showNewPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -1145,52 +1214,56 @@ export default function AdminSettingsPage() {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-semibold mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Confirm New Password
                 </label>
                 <div className="relative">
-                  <Lock className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat new password"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF]"
+                    placeholder="Re-type new password"
+                    className={`w-full rounded-2xl pl-10 pr-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                     required
                   />
                 </div>
               </div>
 
               {/* Requirements Checklist */}
-              <div className="bg-[#1A1C23] rounded-xl p-4 border border-gray-800/80 space-y-2">
-                <span className="text-xs font-semibold text-gray-300 block">
-                  Password Complexity Guidelines:
+              <div className={`rounded-2xl p-4 border space-y-2 ${
+                isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <span className={`text-xs font-bold block ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                  Password Guidelines:
                 </span>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-400">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${newPassword.length >= 8 ? 'bg-emerald-400' : 'bg-gray-600'}`} />
-                    <span>Minimum 8 characters</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className={`flex items-center gap-1.5 ${newPassword.length >= 8 ? 'text-emerald-500 font-semibold' : isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${newPassword.length >= 8 ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
+                    <span>At least 8 characters</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(newPassword) ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(newPassword) ? 'text-emerald-500 font-semibold' : isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(newPassword) ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                     <span>At least 1 uppercase letter</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${/[0-9]/.test(newPassword) ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <div className={`flex items-center gap-1.5 ${/[0-9]/.test(newPassword) ? 'text-emerald-500 font-semibold' : isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${/[0-9]/.test(newPassword) ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                     <span>At least 1 number</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${/[^A-Za-z0-9]/.test(newPassword) ? 'bg-emerald-400' : 'bg-gray-600'}`} />
+                  <div className={`flex items-center gap-1.5 ${/[^A-Za-z0-9]/.test(newPassword) ? 'text-emerald-500 font-semibold' : isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${/[^A-Za-z0-9]/.test(newPassword) ? 'bg-emerald-500' : 'bg-zinc-600'}`} />
                     <span>At least 1 special character</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-gray-800 flex justify-end">
+              <div className={`pt-4 border-t flex justify-end ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
                 <button
                   type="submit"
                   disabled={isSavingSecurity}
-                  className="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-white bg-[#7B4DFF] hover:bg-[#683bdf] rounded-xl transition-all disabled:opacity-50 shadow-md shadow-[#7B4DFF]/20"
+                  className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#FF5C38] hover:bg-[#FF6B4A] rounded-full transition-all disabled:opacity-50 shadow-md shadow-[#FF5C38]/20 cursor-pointer"
                 >
                   {isSavingSecurity ? (
                     <>
@@ -1209,84 +1282,88 @@ export default function AdminSettingsPage() {
           </div>
 
           {/* Right Card: Security Recommendations */}
-          <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-4">
-            <h3 className="text-base font-semibold text-gray-100">
-              Security Protocol
+          <div className={`rounded-[28px] border p-6 space-y-4 ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+          }`}>
+            <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Account Protection
             </h3>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Super Admin passwords authenticate full platform operations. Changing this password will invalidate active token sessions across other devices.
+            <p className={`text-xs leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Your admin password protects full operations. Changing your password logs out other active sessions for safety.
             </p>
 
-            <div className="space-y-3 pt-3 border-t border-gray-800/80 text-xs text-gray-400">
+            <div className={`space-y-3 pt-3 border-t text-xs ${isDark ? 'border-white/[0.06] text-zinc-400' : 'border-slate-100 text-slate-600'}`}>
               <div className="flex items-start gap-2.5">
                 <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <span>Always use a dedicated password manager to generate cryptographic passwords.</span>
+                <span>Keep your password confidential and don&apos;t share it with anyone.</span>
               </div>
               <div className="flex items-start gap-2.5">
-                <Clock className="w-4 h-4 text-[#7B4DFF] shrink-0 mt-0.5" />
-                <span>Admin passwords automatically expire from cache after token rotation.</span>
+                <Clock className="w-4 h-4 text-[#6366F1] shrink-0 mt-0.5" />
+                <span>Logins remain active securely during your session.</span>
               </div>
             </div>
           </div>
         </div>
       ) : (
         /* TAB 3: Preferences */
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-6">
+        <div className={`rounded-[28px] border p-6 space-y-6 ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+        }`}>
           <div>
-            <h3 className="text-base font-semibold text-gray-100 mb-1">
-              Platform & Dispatch Preferences
+            <h3 className={`text-base font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              System &amp; Notification Preferences
             </h3>
-            <p className="text-xs text-gray-400">
-              Configure system alerts, operational sound notifications, and automatic refresh intervals.
+            <p className={`text-xs ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Configure alerts and daily summaries for your admin workspace.
             </p>
           </div>
 
-          <div className="divide-y divide-gray-800/80">
+          <div className={`divide-y ${isDark ? 'divide-white/[0.06]' : 'divide-slate-100'}`}>
             <div className="py-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-200">
-                  Real-Time Enquiry Alerts
+                <p className={`text-sm font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                  New Enquiry Notifications
                 </p>
-                <p className="text-xs text-gray-500">
-                  Notify immediately when a new customer enquiry is submitted in Kerala region.
+                <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                  Show alert when a customer submits a new service booking request.
                 </p>
               </div>
               <input
                 type="checkbox"
                 defaultChecked
-                className="w-4 h-4 rounded text-[#7B4DFF] bg-[#1A1C23] border-gray-700 focus:ring-[#7B4DFF]"
+                className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
               />
             </div>
 
             <div className="py-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-200">
-                  Worker Availability Anomaly Warnings
+                <p className={`text-sm font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                  Worker Availability Warnings
                 </p>
-                <p className="text-xs text-gray-500">
-                  Flag work tickets when no available worker is within operational radius.
+                <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                  Alert if no worker is available for an assigned job location.
                 </p>
               </div>
               <input
                 type="checkbox"
                 defaultChecked
-                className="w-4 h-4 rounded text-[#7B4DFF] bg-[#1A1C23] border-gray-700 focus:ring-[#7B4DFF]"
+                className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
               />
             </div>
 
             <div className="py-4 flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-200">
-                  Daily Attendance Digest
+                <p className={`text-sm font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                  Daily Morning Summary
                 </p>
-                <p className="text-xs text-gray-500">
-                  Send morning summary of on-duty staff and worker rosters at 09:00 AM IST.
+                <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+                  Summarize daily attendance and work schedules each morning.
                 </p>
               </div>
               <input
                 type="checkbox"
                 defaultChecked
-                className="w-4 h-4 rounded text-[#7B4DFF] bg-[#1A1C23] border-gray-700 focus:ring-[#7B4DFF]"
+                className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
               />
             </div>
           </div>

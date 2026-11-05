@@ -471,13 +471,13 @@ export function AssignWorkerModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-[#091540]">Dispatch Work Order</h2>
+                <h2 className="text-lg font-bold text-[#091540]">Assign Worker to Job</h2>
                 <span className="font-mono text-xs font-bold text-[#1B2CC1] bg-[#1B2CC1]/10 px-2.5 py-0.5 rounded-lg border border-[#1B2CC1]/20">
                   {enquiry.trackingNumber}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Assign operative, review location specifics, and configure wage parameters
+                Assign worker, check job location, and set wage rate
               </p>
             </div>
           </div>

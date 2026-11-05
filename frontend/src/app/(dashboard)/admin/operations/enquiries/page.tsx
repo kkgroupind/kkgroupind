@@ -36,9 +36,11 @@ import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { CreateWorkModal } from '@/components/OfficeStaff/CreateWorkModal';
 import { QuotationModal } from '@/components/Quotation';
 import { InvoiceModal } from '@/components/Invoice';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export default function AdminEnquiriesPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [enquiries, setEnquiries] = useState<ServiceEnquiry[]>([]);
@@ -170,38 +172,38 @@ export default function AdminEnquiriesPage() {
   const statusPills = [
     {
       value: 'PENDING',
-      label: 'Pending Assignment',
+      label: 'Needs Worker',
       badge: `${metrics.pending}`,
       icon: Clock,
-      activeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+      activeColor: 'bg-[#6366F1] text-white shadow-sm border-transparent',
     },
     {
       value: 'IN_PROGRESS',
-      label: 'In Execution',
+      label: 'Working on Site',
       badge: `${enquiries.filter((e) => e.status === 'IN_PROGRESS').length}`,
       icon: Sparkles,
-      activeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.25)]',
+      activeColor: 'bg-blue-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'ASSIGNED',
-      label: 'Squad Assigned',
+      label: 'Worker Assigned',
       badge: `${enquiries.filter((e) => e.status === 'ASSIGNED').length}`,
       icon: HardHat,
-      activeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.25)]',
+      activeColor: 'bg-purple-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'COMPLETED',
-      label: 'Completed & Fulfilled',
+      label: 'Completed',
       badge: `${metrics.completed}`,
       icon: CheckCircle2,
-      activeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.25)]',
+      activeColor: 'bg-emerald-600 text-white shadow-sm border-transparent',
     },
     {
       value: 'ALL',
-      label: 'All Orders',
+      label: 'All Requests',
       badge: `${metrics.total}`,
       icon: Briefcase,
-      activeColor: 'bg-[#7B4DFF]/20 text-[#9E7BFF] border-[#7B4DFF]/50 shadow-[0_0_15px_rgba(123,77,255,0.25)]',
+      activeColor: 'bg-zinc-800 text-white shadow-sm border-transparent',
     },
   ];
 
@@ -229,7 +231,7 @@ export default function AdminEnquiriesPage() {
           text: 'text-purple-400',
           border: 'border-purple-500/20',
           ring: 'from-purple-500 to-indigo-600',
-          glow: 'group-hover:via-[#7B4DFF]/60',
+          glow: 'group-hover:via-[#6366F1]/60',
         };
       case 'PENDING':
       default:
@@ -244,96 +246,120 @@ export default function AdminEnquiriesPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2.5 bg-[#14151A] border border-gray-800 rounded-2xl shadow-sm">
-              <Inbox className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Inbox className="w-5 h-5" />
             </div>
-            Job Orders &amp; Enquiries
+            Customer Job Requests
           </h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1">
-            Centralized operational management for client booking requests, field execution, and worker dispatch
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Review inbound requests from customers, provide quotations, and assign workers
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
           <Link
             href="/admin/operations/assignments"
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all cursor-pointer shadow-sm"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
           >
             <HardHat className="w-4 h-4 text-emerald-400" />
-            <span>Workforce Dispatch</span>
+            <span>Worker Assignments</span>
           </Link>
 
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50 cursor-pointer shadow-sm"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Reload data"
           >
             <RefreshCw
-              className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span>{isRefreshing ? 'Refreshing...' : 'Reload'}</span>
           </button>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6839EF] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white shadow-[0_0_20px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0 cursor-pointer"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold text-white shadow-md shadow-[#6366F1]/20 transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Order</span>
+            <span>New Request</span>
           </button>
         </div>
       </div>
 
       {/* Metric Cards Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-gray-500/60 transition-all duration-300" />
-          <span className="text-[11px] text-gray-400 font-semibold uppercase tracking-wider">
-            Total Enquiries
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent" />
+          <span className={`text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider block ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Total Requests
           </span>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{metrics.total}</div>
-          <span className="text-[11px] text-gray-500 mt-1 block">Registered in Kerala hub</span>
+          <div className={`text-xl sm:text-2xl font-bold mt-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{metrics.total}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>All customer requests</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent group-hover:via-amber-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
-            Pending Assignment
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-amber-400 font-semibold uppercase tracking-wider block">
+            Waiting for Worker
           </span>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.pending}</div>
-          <span className="text-[11px] text-amber-400/70 mt-1 block">Awaiting worker allocation</span>
+          <div className="text-xl sm:text-2xl font-bold text-amber-400 mt-1">{metrics.pending}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Needs assignment</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent group-hover:via-emerald-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-emerald-400 font-semibold uppercase tracking-wider">
-            Ready Workers
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-emerald-400 font-semibold uppercase tracking-wider block">
+            Workers Ready
           </span>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">
+          <div className="text-xl sm:text-2xl font-bold text-emerald-400 mt-1">
             {metrics.availableWorkers}{' '}
-            <span className="text-xs text-gray-400 font-normal">/ {metrics.totalWorkers} total</span>
+            <span className={`text-xs font-normal ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>/ {metrics.totalWorkers} total</span>
           </div>
-          <span className="text-[11px] text-emerald-400/70 mt-1 block">Ready for immediate dispatch</span>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Ready for jobs</span>
         </div>
 
-        <div className="group p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 hover:border-gray-700/80 transition-all duration-300 relative overflow-hidden shadow-sm">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent group-hover:via-blue-500/70 transition-all duration-300" />
-          <span className="text-[11px] text-blue-400 font-semibold uppercase tracking-wider">
-            Active Missions
+        <div className={`group p-4 sm:p-5 rounded-[24px] border transition-all duration-300 relative overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200/80 shadow-xs'
+        }`}>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
+          <span className="text-[10px] sm:text-[11px] text-blue-400 font-semibold uppercase tracking-wider block">
+            Jobs In Progress
           </span>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
-          <span className="text-[11px] text-blue-400/70 mt-1 block">Dispatched or in execution</span>
+          <div className="text-xl sm:text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
+          <span className={`text-[11px] mt-1 block ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Working right now</span>
         </div>
       </div>
 
       {/* Pill Navigation & Search Controls */}
-      <div className="flex flex-col gap-3.5 p-3.5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-sm">
+      <div
+        className={`flex flex-col gap-4 p-4 rounded-[28px] border transition-all ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
         {/* Top: Status Pill Navs */}
         <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pb-1">
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-0.5">
@@ -345,19 +371,23 @@ export default function AdminEnquiriesPage() {
                   key={pill.value}
                   type="button"
                   onClick={() => setStatusFilter(pill.value)}
-                  className={`flex items-center gap-2 px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer select-none border ${
+                  className={`flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer select-none border ${
                     isActive
                       ? pill.activeColor
-                      : 'bg-[#1A1C23] text-gray-400 hover:text-gray-200 border-gray-800/80 hover:border-gray-700/80 hover:bg-[#20232C]'
+                      : isDark
+                      ? 'bg-[#121318] text-zinc-400 hover:text-white border-white/[0.06] hover:bg-[#1E2028]'
+                      : 'bg-slate-100 text-slate-600 hover:text-slate-900 border-slate-200 hover:bg-slate-200/70'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? '' : 'text-gray-500'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? '' : isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
                   <span>{pill.label}</span>
                   <span
                     className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border transition-colors ${
                       isActive
-                        ? 'bg-black/30 border-current'
-                        : 'bg-black/20 text-gray-500 border-gray-800'
+                        ? 'bg-black/20 border-white/20 text-white'
+                        : isDark
+                        ? 'bg-black/30 text-zinc-500 border-white/[0.06]'
+                        : 'bg-slate-200 text-slate-600 border-slate-300'
                     }`}
                   >
                     {pill.badge}
@@ -368,14 +398,14 @@ export default function AdminEnquiriesPage() {
           </div>
 
           {/* View Mode Toggle (Desktop) */}
-          <div className="hidden md:flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+          <div className={`hidden md:flex items-center p-1 rounded-full border shrink-0 ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Card Grid View"
             >
@@ -384,10 +414,10 @@ export default function AdminEnquiriesPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -399,25 +429,29 @@ export default function AdminEnquiriesPage() {
         {/* Bottom: Search Input & Mobile View Toggle */}
         <div className="flex items-center gap-2.5">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500" />
+            <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
             <input
               type="text"
               placeholder="Search code, customer, service, city..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
+              className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+                isDark
+                  ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                  : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+              }`}
             />
           </div>
 
           {/* View Mode Toggle (Mobile) */}
-          <div className="md:hidden flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1 shrink-0">
+          <div className={`md:hidden flex items-center p-1 rounded-full border shrink-0 ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Card Grid View"
             >
@@ -426,10 +460,10 @@ export default function AdminEnquiriesPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -441,14 +475,14 @@ export default function AdminEnquiriesPage() {
 
       {/* Main Content Area: Default Card Grid */}
       {isLoading ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-[#7B4DFF] mb-3" />
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-16 text-center flex flex-col items-center justify-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-[#6366F1] mb-3" />
           <h3 className="text-gray-200 font-semibold text-base mb-1">Loading Enquiries...</h3>
           <p className="text-gray-500 text-xs">Fetching registered Kerala operations tickets</p>
         </div>
       ) : filteredEnquiries.length === 0 ? (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-16 text-center flex flex-col items-center justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-4">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-16 text-center flex flex-col items-center justify-center">
+          <div className="w-14 h-14 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-center text-gray-500 mb-4">
             <Inbox className="w-7 h-7 text-gray-500" />
           </div>
           <h3 className="text-gray-200 font-semibold text-base mb-1">No Enquiries Found</h3>
@@ -472,7 +506,7 @@ export default function AdminEnquiriesPage() {
             return (
               <div
                 key={enquiry.id}
-                className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+                className="group bg-[#12141A] rounded-[24px] border border-white/[0.06] hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
               >
                 {/* Subtle top ambient glow */}
                 <div
@@ -485,20 +519,20 @@ export default function AdminEnquiriesPage() {
                     <div className="flex items-center gap-3.5 min-w-0">
                       <div className="relative shrink-0">
                         <div
-                          className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${theme.ring} p-[2px] shadow-sm`}
+                          className={`w-12 h-12 rounded-[24px] bg-gradient-to-br ${theme.ring} p-[2px] shadow-sm`}
                         >
-                          <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
+                          <div className="w-full h-full bg-[#161922] rounded-[14px] flex items-center justify-center font-bold text-base text-gray-100 overflow-hidden">
                             <Briefcase className="w-5 h-5 text-gray-200" />
                           </div>
                         </div>
                       </div>
 
                       <div className="min-w-0">
-                        <h4 className="font-semibold text-gray-100 hover:text-[#7B4DFF] transition-colors truncate block text-base">
+                        <h4 className="font-semibold text-gray-100 hover:text-[#6366F1] transition-colors truncate block text-base">
                           {enquiry.serviceName}
                         </h4>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="font-mono text-xs font-semibold text-[#7B4DFF]">
+                          <span className="font-mono text-xs font-semibold text-[#6366F1]">
                             {enquiry.trackingNumber}
                           </span>
                         </div>
@@ -537,14 +571,14 @@ export default function AdminEnquiriesPage() {
                     )}
 
                     {enquiry.unitRate ? (
-                      <span className="text-[10px] font-mono text-gray-400 bg-[#1A1C23] px-2 py-0.5 rounded-lg border border-gray-800">
+                      <span className="text-[10px] font-mono text-gray-400 bg-[#161922] px-2 py-0.5 rounded-lg border border-white/[0.06]">
                         ₹{enquiry.unitRate} / {enquiry.unitLabel || 'Unit'}
                       </span>
                     ) : null}
                   </div>
 
                   {/* Details List (Exact PeopleCards Border-y Style) */}
-                  <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
+                  <div className="space-y-2 py-3 border-y border-white/[0.06] my-3 text-xs">
                     {/* Customer */}
                     <div className="flex items-center justify-between text-gray-400 gap-2">
                       <span className="flex items-center gap-2 text-gray-400 truncate">
@@ -627,7 +661,7 @@ export default function AdminEnquiriesPage() {
                       setSelectedEnquiry(enquiry);
                       setIsDetailsModalOpen(true);
                     }}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all group-hover:border-gray-700 cursor-pointer"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-medium bg-[#161922] hover:bg-[#252834] text-gray-200 hover:text-white border border-white/[0.06] transition-all group-hover:border-gray-700 cursor-pointer"
                   >
                     <Eye className="w-3.5 h-3.5 text-gray-400" />
                     <span>Quick View</span>
@@ -663,7 +697,7 @@ export default function AdminEnquiriesPage() {
 
                   <Link
                     href={`/admin/operations/enquiries/${enquiry.id}`}
-                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white transition-all"
+                    className="inline-flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl text-xs font-bold bg-[#6366F1]/15 hover:bg-[#6366F1]/25 border border-[#6366F1]/30 text-[#A78BFA] hover:text-white transition-all"
                     title="Full Work Order Page"
                   >
                     <span>Details</span>
@@ -677,7 +711,7 @@ export default function AdminEnquiriesPage() {
                         setSelectedEnquiry(enquiry);
                         setIsAssignModalOpen(true);
                       }}
-                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#7B4DFF] hover:bg-[#6839EF] text-white shadow-[0_0_15px_rgba(123,77,255,0.25)] transition-all cursor-pointer"
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-[#6366F1] hover:bg-[#6839EF] text-white shadow-[0_0_15px_rgba(123,77,255,0.25)] transition-all cursor-pointer"
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Dispatch</span>
@@ -690,10 +724,10 @@ export default function AdminEnquiriesPage() {
         </div>
       ) : (
         /* Alternative Table View */
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] overflow-hidden shadow-xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-gray-300">
-              <thead className="bg-[#0D0E12] text-gray-400 font-semibold border-b border-gray-800">
+              <thead className="bg-[#0D0E12] text-gray-400 font-semibold border-b border-white/[0.06]">
                 <tr>
                   <th className="py-3.5 px-4">Tracking Code</th>
                   <th className="py-3.5 px-4">Service</th>
@@ -709,8 +743,8 @@ export default function AdminEnquiriesPage() {
                 {filteredEnquiries.map((enquiry) => {
                   const theme = getStatusTheme(enquiry.status);
                   return (
-                    <tr key={enquiry.id} className="hover:bg-[#1A1C23]/60 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-[#7B4DFF] whitespace-nowrap">
+                    <tr key={enquiry.id} className="hover:bg-[#161922]/60 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-[#6366F1] whitespace-nowrap">
                         {enquiry.trackingNumber}
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-gray-100 whitespace-nowrap">
@@ -722,7 +756,7 @@ export default function AdminEnquiriesPage() {
                       </td>
                       <td className="py-3.5 px-4 max-w-[180px] truncate">
                         <div className="flex items-center gap-1 text-gray-200">
-                          <MapPin className="w-3 h-3 text-[#7B4DFF] shrink-0" />
+                          <MapPin className="w-3 h-3 text-[#6366F1] shrink-0" />
                           <span className="truncate">
                             {enquiry.city || enquiry.district || enquiry.location || 'Kerala'}
                           </span>
@@ -788,7 +822,7 @@ export default function AdminEnquiriesPage() {
                           )}
                           <Link
                             href={`/admin/operations/enquiries/${enquiry.id}`}
-                            className="p-1.5 rounded-lg bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 text-[#A78BFA] hover:text-white border border-[#7B4DFF]/30 transition-colors"
+                            className="p-1.5 rounded-lg bg-[#6366F1]/15 hover:bg-[#6366F1]/25 text-[#A78BFA] hover:text-white border border-[#6366F1]/30 transition-colors"
                             title="Open Full Details Page"
                           >
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -799,7 +833,7 @@ export default function AdminEnquiriesPage() {
                               setSelectedEnquiry(enquiry);
                               setIsDetailsModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg bg-[#1A1C23] hover:bg-[#252834] text-gray-300 border border-gray-800 transition-colors"
+                            className="p-1.5 rounded-lg bg-[#161922] hover:bg-[#252834] text-gray-300 border border-white/[0.06] transition-colors"
                             title="Quick View"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -811,7 +845,7 @@ export default function AdminEnquiriesPage() {
                                 setSelectedEnquiry(enquiry);
                                 setIsAssignModalOpen(true);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-[#7B4DFF] hover:bg-[#6839EF] text-white text-[11px] font-bold shadow-sm"
+                              className="px-2.5 py-1 rounded-lg bg-[#6366F1] hover:bg-[#6839EF] text-white text-[11px] font-bold shadow-sm"
                             >
                               Dispatch
                             </button>
@@ -830,20 +864,20 @@ export default function AdminEnquiriesPage() {
       {/* Enquiry Details Modal (100% Matching People Modal Styling) */}
       {isDetailsModalOpen && selectedEnquiry && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-2xl bg-[#12141A] border border-white/[0.06] rounded-[24px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
             {/* Top ambient glow line */}
-            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/60 to-transparent" />
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#6366F1]/60 to-transparent" />
 
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-800 bg-[#14151A]">
+            <div className="flex items-center justify-between p-6 border-b border-white/[0.06] bg-[#12141A]">
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#1A1C23] border border-gray-800 rounded-xl">
-                  <Inbox className="w-5 h-5 text-[#7B4DFF]" />
+                <div className="p-2.5 bg-[#161922] border border-white/[0.06] rounded-xl">
+                  <Inbox className="w-5 h-5 text-[#6366F1]" />
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-gray-100 flex items-center gap-2">
                     <span>Ticket Details</span>
-                    <span className="font-mono text-xs text-[#7B4DFF] px-2 py-0.5 rounded-md bg-[#7B4DFF]/10 border border-[#7B4DFF]/20">
+                    <span className="font-mono text-xs text-[#6366F1] px-2 py-0.5 rounded-md bg-[#6366F1]/10 border border-[#6366F1]/20">
                       {selectedEnquiry.trackingNumber}
                     </span>
                   </h3>
@@ -856,7 +890,7 @@ export default function AdminEnquiriesPage() {
               <button
                 type="button"
                 onClick={() => setIsDetailsModalOpen(false)}
-                className="p-2 text-gray-400 hover:text-gray-200 bg-[#1A1C23] hover:bg-[#232630] rounded-xl border border-gray-800 transition-colors cursor-pointer"
+                className="p-2 text-gray-400 hover:text-gray-200 bg-[#161922] hover:bg-[#232630] rounded-xl border border-white/[0.06] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -866,7 +900,7 @@ export default function AdminEnquiriesPage() {
             <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar">
               {/* Service & Customer Stats Card */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+                <div className="p-4 rounded-xl bg-[#161922] border border-white/[0.06]">
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">
                     Requested Service
                   </span>
@@ -878,7 +912,7 @@ export default function AdminEnquiriesPage() {
                   </span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+                <div className="p-4 rounded-xl bg-[#161922] border border-white/[0.06]">
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">
                     Customer Information
                   </span>
@@ -893,12 +927,12 @@ export default function AdminEnquiriesPage() {
               </div>
 
               {/* Kerala Location Details */}
-              <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80 space-y-2">
+              <div className="p-4 rounded-xl bg-[#161922] border border-white/[0.06] space-y-2">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
                   Location &amp; Coordinates (Kerala Operations)
                 </span>
                 <div className="flex items-center gap-2 text-gray-200 text-xs">
-                  <MapPin className="w-4 h-4 text-[#7B4DFF] shrink-0" />
+                  <MapPin className="w-4 h-4 text-[#6366F1] shrink-0" />
                   <span className="font-medium">
                     {[selectedEnquiry.location, selectedEnquiry.city, selectedEnquiry.district]
                       .filter(Boolean)
@@ -915,13 +949,13 @@ export default function AdminEnquiriesPage() {
 
               {/* Wage Model Box */}
               {selectedEnquiry.wageType && (
-                <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
-                  <div className="flex items-center justify-between border-b border-gray-800/60 pb-2">
+                <div className="p-4 rounded-xl bg-[#161922] border border-white/[0.06] space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
                     <span className="text-xs font-semibold text-gray-200 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                      <Sparkles className="w-3.5 h-3.5 text-[#6366F1]" />
                       <span>Wage &amp; Billing Calculation Model</span>
                     </span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#7B4DFF]/10 text-[#7B4DFF] border border-[#7B4DFF]/20">
+                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-lg bg-[#6366F1]/10 text-[#6366F1] border border-[#6366F1]/20">
                       Unit: {selectedEnquiry.unitLabel || 'Unit'}
                     </span>
                   </div>
@@ -987,7 +1021,7 @@ export default function AdminEnquiriesPage() {
               )}
 
               {/* Message / Requirements */}
-              <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800/80">
+              <div className="p-4 rounded-xl bg-[#161922] border border-white/[0.06]">
                 <span className="text-gray-500 block mb-1 text-[10px] font-bold uppercase tracking-wider">
                   Customer Requirements
                 </span>
@@ -996,7 +1030,7 @@ export default function AdminEnquiriesPage() {
 
               {/* Assigned Worker */}
               {selectedEnquiry.worker && (
-                <div className="p-4 rounded-xl bg-[#1A1C23] border border-emerald-500/30 flex items-center justify-between">
+                <div className="p-4 rounded-xl bg-[#161922] border border-emerald-500/30 flex items-center justify-between">
                   <div>
                     <span className="text-gray-500 block mb-0.5 text-[10px] font-bold uppercase tracking-wider">
                       Assigned Field Operative
@@ -1012,7 +1046,7 @@ export default function AdminEnquiriesPage() {
                   </div>
                   <a
                     href={`tel:${selectedEnquiry.worker.phone}`}
-                    className="text-xs font-mono font-bold text-gray-300 hover:text-white px-3 py-1.5 bg-[#14151A] rounded-lg border border-gray-800"
+                    className="text-xs font-mono font-bold text-gray-300 hover:text-white px-3 py-1.5 bg-[#12141A] rounded-lg border border-white/[0.06]"
                   >
                     {selectedEnquiry.worker.phone || 'No phone'}
                   </a>
@@ -1021,7 +1055,7 @@ export default function AdminEnquiriesPage() {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex items-center justify-between gap-3 p-5 border-t border-gray-800 bg-[#14151A]">
+            <div className="flex items-center justify-between gap-3 p-5 border-t border-white/[0.06] bg-[#12141A]">
               <Link
                 href={`/admin/operations/enquiries/${selectedEnquiry.id}`}
                 className="px-4 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-[#A78BFA] hover:text-white font-bold text-xs border border-purple-500/30 transition-all flex items-center gap-1.5"
@@ -1058,7 +1092,7 @@ export default function AdminEnquiriesPage() {
                 <button
                   type="button"
                   onClick={() => setIsDetailsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-gray-800 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#161922] hover:bg-[#252834] text-gray-300 font-medium text-xs border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Close
                 </button>
@@ -1069,7 +1103,7 @@ export default function AdminEnquiriesPage() {
                       setIsDetailsModalOpen(false);
                       setIsAssignModalOpen(true);
                     }}
-                    className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6839EF] text-white font-bold text-xs shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-[#6366F1] hover:bg-[#6839EF] text-white font-bold text-xs shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
                   >
                     Dispatch to Worker
                   </button>

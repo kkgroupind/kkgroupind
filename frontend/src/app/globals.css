@@ -3,7 +3,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0D0E12;
+  --background: #0A0B0E;
   --foreground: #F8FAFC;
   --font-plus-jakarta: 'Plus Jakarta Sans', var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-jetbrains-mono: 'JetBrains Mono', var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
@@ -132,7 +132,7 @@ html[lang="ml"],
 }
 
 /* ==========================================================================
-   KK Group Admin Light Theme Engine
+   KK Group Admin Light & Dark Theme Engine
    Activates when data-admin-theme="light" or class "admin-light" is present.
    ========================================================================== */
 html[data-admin-theme="light"],
@@ -142,53 +142,102 @@ html.admin-light {
 
 html[data-admin-theme="light"] body,
 html.admin-light body {
-  background-color: #F8FAFC;
+  background-color: #F4F5F8;
   color: #0F172A;
 }
 
 /* Background surfaces */
+html[data-admin-theme="light"] .bg-\[\#0B0E14\],
+html.admin-light .bg-\[\#0B0E14\],
 html[data-admin-theme="light"] .bg-\[\#0D0E12\],
-html.admin-light .bg-\[\#0D0E12\] {
-  background-color: #F8FAFC !important;
+html.admin-light .bg-\[\#0D0E12\],
+html[data-admin-theme="light"] .bg-\[\#0E0F12\],
+html.admin-light .bg-\[\#0E0F12\],
+html[data-admin-theme="light"] .bg-\[\#0E1015\],
+html.admin-light .bg-\[\#0E1015\],
+html[data-admin-theme="light"] .bg-\[\#121317\],
+html.admin-light .bg-\[\#121317\],
+html[data-admin-theme="light"] .bg-slate-950,
+html.admin-light .bg-slate-950 {
+  background-color: #F4F5F8 !important;
 }
 
+/* Card surfaces */
 html[data-admin-theme="light"] .bg-\[\#14151A\],
-html.admin-light .bg-\[\#14151A\] {
+html.admin-light .bg-\[\#14151A\],
+html[data-admin-theme="light"] .bg-\[\#16171D\],
+html.admin-light .bg-\[\#16171D\],
+html[data-admin-theme="light"] .bg-\[\#16181F\],
+html.admin-light .bg-\[\#16181F\],
+html[data-admin-theme="light"] .bg-\[\#181920\],
+html.admin-light .bg-\[\#181920\],
+html[data-admin-theme="light"] .bg-\[\#181A22\],
+html.admin-light .bg-\[\#181A22\],
+html[data-admin-theme="light"] .bg-\[\#161B26\],
+html.admin-light .bg-\[\#161B26\],
+html[data-admin-theme="light"] .bg-\[\#181D29\],
+html.admin-light .bg-\[\#181D29\],
+html[data-admin-theme="light"] .bg-\[\#181A20\],
+html.admin-light .bg-\[\#181A20\],
+html[data-admin-theme="light"] .bg-\[\#141824\],
+html.admin-light .bg-\[\#141824\] {
   background-color: #FFFFFF !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
 }
 
+/* Secondary surfaces & sub-panels */
 html[data-admin-theme="light"] .bg-\[\#16181E\],
-html.admin-light .bg-\[\#16181E\] {
-  background-color: #F8FAFC !important;
-}
-
+html.admin-light .bg-\[\#16181E\],
 html[data-admin-theme="light"] .bg-\[\#1A1C23\],
-html.admin-light .bg-\[\#1A1C23\] {
-  background-color: #F1F5F9 !important;
+html.admin-light .bg-\[\#1A1C23\],
+html[data-admin-theme="light"] .bg-\[\#121318\],
+html.admin-light .bg-\[\#121318\],
+html[data-admin-theme="light"] .bg-\[\#101217\],
+html.admin-light .bg-\[\#101217\],
+html[data-admin-theme="light"] .bg-\[\#14151B\],
+html.admin-light .bg-\[\#14151B\],
+html[data-admin-theme="light"] .bg-\[\#171922\],
+html.admin-light .bg-\[\#171922\],
+html[data-admin-theme="light"] .bg-\[\#241A19\],
+html.admin-light .bg-\[\#241A19\],
+html[data-admin-theme="light"] .bg-slate-900,
+html.admin-light .bg-slate-900 {
+  background-color: #F8F9FA !important;
 }
 
 html[data-admin-theme="light"] .bg-\[\#22252E\],
 html.admin-light .bg-\[\#22252E\],
 html[data-admin-theme="light"] .bg-\[\#2A2D35\],
-html.admin-light .bg-\[\#2A2D35\] {
-  background-color: #E2E8F0 !important;
+html.admin-light .bg-\[\#2A2D35\],
+html[data-admin-theme="light"] .bg-gray-800,
+html.admin-light .bg-gray-800 {
+  background-color: #E5E7EB !important;
 }
 
 /* Hover surfaces */
 html[data-admin-theme="light"] .hover\:bg-\[\#1A1C23\]:hover,
-html.admin-light .hover\:bg-\[\#1A1C23\]:hover {
-  background-color: #F1F5F9 !important;
+html.admin-light .hover\:bg-\[\#1A1C23\]:hover,
+html[data-admin-theme="light"] .hover\:bg-\[\#252830\]:hover,
+html.admin-light .hover\:bg-\[\#252830\]:hover,
+html[data-admin-theme="light"] .hover\:bg-\[\#232630\]:hover,
+html.admin-light .hover\:bg-\[\#232630\]:hover,
+html[data-admin-theme="light"] .hover\:bg-\[\#20222A\]:hover,
+html.admin-light .hover\:bg-\[\#20222A\]:hover,
+html[data-admin-theme="light"] .hover\:bg-slate-900:hover,
+html.admin-light .hover\:bg-slate-900:hover {
+  background-color: #F3F4F6 !important;
 }
 
 html[data-admin-theme="light"] .hover\:bg-\[\#2A2D35\]:hover,
-html.admin-light .hover\:bg-\[\#2A2D35\]:hover {
-  background-color: #E2E8F0 !important;
+html.admin-light .hover\:bg-\[\#2A2D35\]:hover,
+html[data-admin-theme="light"] .hover\:bg-gray-800:hover,
+html.admin-light .hover\:bg-gray-800:hover {
+  background-color: #E5E7EB !important;
 }
 
 html[data-admin-theme="light"] .hover\:bg-\[\#14151A\]:hover,
 html.admin-light .hover\:bg-\[\#14151A\]:hover {
-  background-color: #F8FAFC !important;
+  background-color: #F9FAFB !important;
 }
 
 /* Borders */
@@ -196,75 +245,266 @@ html[data-admin-theme="light"] .border-gray-800,
 html.admin-light .border-gray-800,
 html[data-admin-theme="light"] .border-gray-700,
 html.admin-light .border-gray-700,
-html[data-admin-theme="light"] .border-gray-800\/50,
-html.admin-light .border-gray-800\/50,
-html[data-admin-theme="light"] .border-gray-800\/30,
-html.admin-light .border-gray-800\/30,
-html[data-admin-theme="light"] .border-gray-700\/50,
-html.admin-light .border-gray-700\/50 {
-  border-color: #E2E8F0 !important;
+html[data-admin-theme="light"] .border-slate-800,
+html.admin-light .border-slate-800,
+html[data-admin-theme="light"] .border-slate-700,
+html.admin-light .border-slate-700,
+html[data-admin-theme="light"] [class*="border-gray-800/"],
+html.admin-light [class*="border-gray-800/"],
+html[data-admin-theme="light"] [class*="border-gray-700/"],
+html.admin-light [class*="border-gray-700/"],
+html[data-admin-theme="light"] [class*="border-white/"],
+html.admin-light [class*="border-white/"] {
+  border-color: #E5E7EB !important;
 }
 
-/* Typography high contrast */
+/* ==========================================================================
+   KK Group Admin Light Theme Typography & Color Depth Engine
+   Activates when data-admin-theme="light" or class "admin-light" is present.
+   Provides deep, rich, legible contrast across all admin pages, tables,
+   forms, modals, charts, and navigation elements.
+   ========================================================================== */
+
+/* 1. Primary Headers, Key Metrics, Titles & Deep Dark Text */
+html[data-admin-theme="light"] .text-slate-900,
+html.admin-light .text-slate-900,
+html[data-admin-theme="light"] .text-slate-800,
+html.admin-light .text-slate-800,
+html[data-admin-theme="light"] .text-zinc-900,
+html.admin-light .text-zinc-900,
+html[data-admin-theme="light"] .text-zinc-800,
+html.admin-light .text-zinc-800,
+html[data-admin-theme="light"] .text-gray-900,
+html.admin-light .text-gray-900,
+html[data-admin-theme="light"] .text-gray-800,
+html.admin-light .text-gray-800,
+html[data-admin-theme="light"] .text-zinc-100,
+html.admin-light .text-zinc-100,
+html[data-admin-theme="light"] .text-zinc-200,
+html.admin-light .text-zinc-200,
 html[data-admin-theme="light"] .text-gray-100,
 html.admin-light .text-gray-100,
 html[data-admin-theme="light"] .text-gray-200,
-html.admin-light .text-gray-200 {
+html.admin-light .text-gray-200,
+html[data-admin-theme="light"] .text-slate-100,
+html.admin-light .text-slate-100,
+html[data-admin-theme="light"] .text-slate-200,
+html.admin-light .text-slate-200 {
+  color: #0F172A !important; /* Deep Midnight Ink */
+}
+
+/* 2. Secondary Headings, Form Labels, Strong Navigation, Table Keys */
+html[data-admin-theme="light"] .text-slate-700,
+html.admin-light .text-slate-700,
+html[data-admin-theme="light"] .text-zinc-700,
+html.admin-light .text-zinc-700,
+html[data-admin-theme="light"] .text-gray-700,
+html.admin-light .text-gray-700,
+html[data-admin-theme="light"] .text-zinc-300,
+html.admin-light .text-zinc-300,
+html[data-admin-theme="light"] .text-gray-300,
+html.admin-light .text-gray-300 {
+  color: #1E293B !important; /* Rich Dark Charcoal Slate */
+}
+
+/* 3. Body Text, Descriptions, Subtitles, Card Content */
+html[data-admin-theme="light"] .text-slate-600,
+html.admin-light .text-slate-600,
+html[data-admin-theme="light"] .text-zinc-600,
+html.admin-light .text-zinc-600,
+html[data-admin-theme="light"] .text-gray-600,
+html.admin-light .text-gray-600,
+html[data-admin-theme="light"] .text-zinc-400,
+html.admin-light .text-zinc-400,
+html[data-admin-theme="light"] .text-gray-400,
+html.admin-light .text-gray-400 {
+  color: #334155 !important; /* Crisp Slate 700 with high readability */
+}
+
+/* 4. Captions, Timestamps, Tracking IDs, Helper Text, Badges */
+html[data-admin-theme="light"] .text-slate-500,
+html.admin-light .text-slate-500,
+html[data-admin-theme="light"] .text-zinc-500,
+html.admin-light .text-zinc-500,
+html[data-admin-theme="light"] .text-gray-500,
+html.admin-light .text-gray-500,
+html[data-admin-theme="light"] .text-slate-400,
+html.admin-light .text-slate-400,
+html[data-admin-theme="light"] .text-slate-300,
+html.admin-light .text-slate-300 {
+  color: #475569 !important; /* Solid Slate 600 - never pale or washed out */
+}
+
+/* 5. Deep Saturated Accent Colors in Light Mode */
+/* Electric Periwinkle / Royal Indigo */
+html[data-admin-theme="light"] .text-\[\#6366F1\],
+html.admin-light .text-\[\#6366F1\],
+html[data-admin-theme="light"] .text-indigo-400,
+html.admin-light .text-indigo-400,
+html[data-admin-theme="light"] .text-indigo-500,
+html.admin-light .text-indigo-500,
+html[data-admin-theme="light"] .text-indigo-600,
+html.admin-light .text-indigo-600,
+html[data-admin-theme="light"] .text-\[\#818cf8\],
+html.admin-light .text-\[\#818cf8\],
+html[data-admin-theme="light"] .text-purple-400,
+html.admin-light .text-purple-400,
+html[data-admin-theme="light"] .text-purple-500,
+html.admin-light .text-purple-500 {
+  color: #4338CA !important; /* Royal Indigo 700 */
+}
+
+/* Coral / Crimson / Rose */
+html[data-admin-theme="light"] .text-\[\#FF5C38\],
+html.admin-light .text-\[\#FF5C38\],
+html[data-admin-theme="light"] .text-\[\#FF6442\],
+html.admin-light .text-\[\#FF6442\],
+html[data-admin-theme="light"] .text-rose-400,
+html.admin-light .text-rose-400,
+html[data-admin-theme="light"] .text-rose-500,
+html.admin-light .text-rose-500,
+html[data-admin-theme="light"] .text-red-400,
+html.admin-light .text-red-400,
+html[data-admin-theme="light"] .text-red-500,
+html.admin-light .text-red-500 {
+  color: #C2410C !important; /* Deep Saturated Coral Rust */
+}
+
+/* Emerald / Green */
+html[data-admin-theme="light"] .text-emerald-400,
+html.admin-light .text-emerald-400,
+html[data-admin-theme="light"] .text-emerald-500,
+html.admin-light .text-emerald-500,
+html[data-admin-theme="light"] .text-green-400,
+html.admin-light .text-green-400,
+html[data-admin-theme="light"] .text-green-500,
+html.admin-light .text-green-500 {
+  color: #047857 !important; /* Deep Forest Emerald 700 */
+}
+
+/* Amber / Bronze */
+html[data-admin-theme="light"] .text-amber-300,
+html.admin-light .text-amber-300,
+html[data-admin-theme="light"] .text-amber-400,
+html.admin-light .text-amber-400,
+html[data-admin-theme="light"] .text-amber-500,
+html.admin-light .text-amber-500,
+html[data-admin-theme="light"] .text-yellow-400,
+html.admin-light .text-yellow-400 {
+  color: #B45309 !important; /* Deep Amber 700 */
+}
+
+/* Cyan / Ocean Blue */
+html[data-admin-theme="light"] .text-cyan-400,
+html.admin-light .text-cyan-400,
+html[data-admin-theme="light"] .text-cyan-500,
+html.admin-light .text-cyan-500,
+html[data-admin-theme="light"] .text-sky-400,
+html.admin-light .text-sky-400,
+html[data-admin-theme="light"] .text-blue-400,
+html.admin-light .text-blue-400 {
+  color: #0369A1 !important; /* Deep Sky 700 */
+}
+
+/* 6. Solid Colored Buttons & Active Badges MUST Retain Pure White Text */
+html[data-admin-theme="light"] .bg-\[\#6366F1\],
+html.admin-light .bg-\[\#6366F1\],
+html[data-admin-theme="light"] .bg-\[\#4F46E5\],
+html.admin-light .bg-\[\#4F46E5\],
+html[data-admin-theme="light"] .bg-\[\#2A835F\],
+html.admin-light .bg-\[\#2A835F\],
+html[data-admin-theme="light"] .bg-\[\#7B4DFF\],
+html.admin-light .bg-\[\#7B4DFF\],
+html[data-admin-theme="light"] .bg-\[\#FF5C38\],
+html.admin-light .bg-\[\#FF5C38\],
+html[data-admin-theme="light"] .bg-\[\#FF6442\],
+html.admin-light .bg-\[\#FF6442\],
+html[data-admin-theme="light"] .bg-purple-600,
+html.admin-light .bg-purple-600,
+html[data-admin-theme="light"] .bg-indigo-600,
+html.admin-light .bg-indigo-600,
+html[data-admin-theme="light"] .bg-red-600,
+html.admin-light .bg-red-600,
+html[data-admin-theme="light"] .bg-emerald-600,
+html.admin-light .bg-emerald-600 {
+  color: #FFFFFF !important;
+}
+
+/* 7. Hover Inversion Protection (prevent text becoming invisible white on light backgrounds) */
+html[data-admin-theme="light"] .hover\:text-white:hover,
+html.admin-light .hover\:text-white:hover,
+html[data-admin-theme="light"] .hover\:text-gray-100:hover,
+html.admin-light .hover\:text-gray-100:hover,
+html[data-admin-theme="light"] .hover\:text-gray-200:hover,
+html.admin-light .hover\:text-gray-200:hover,
+html[data-admin-theme="light"] .hover\:text-zinc-100:hover,
+html.admin-light .hover\:text-zinc-100:hover,
+html[data-admin-theme="light"] .hover\:text-zinc-200:hover,
+html.admin-light .hover\:text-zinc-200:hover {
   color: #0F172A !important;
 }
 
-html[data-admin-theme="light"] .text-gray-300,
-html.admin-light .text-gray-300,
-html[data-admin-theme="light"] .text-gray-400,
-html.admin-light .text-gray-400 {
-  color: #334155 !important;
+/* 8. Table Headers, Rows & Cells in Light Mode */
+html[data-admin-theme="light"] thead,
+html.admin-light thead {
+  background-color: #F1F5F9 !important;
+  color: #0F172A !important;
+}
+html[data-admin-theme="light"] thead th,
+html.admin-light thead th {
+  color: #0F172A !important;
+  font-weight: 700 !important;
+  border-color: #E2E8F0 !important;
+}
+html[data-admin-theme="light"] tbody tr,
+html.admin-light tbody tr {
+  background-color: #FFFFFF !important;
+  color: #1E293B !important;
+}
+html[data-admin-theme="light"] tbody tr:hover,
+html.admin-light tbody tr:hover {
+  background-color: #F8FAFC !important;
+}
+html[data-admin-theme="light"] tbody td,
+html.admin-light tbody td {
+  border-color: #F1F5F9 !important;
 }
 
-html[data-admin-theme="light"] .text-gray-500,
-html.admin-light .text-gray-500 {
-  color: #64748B !important;
-}
-
-html[data-admin-theme="light"] .text-gray-600,
-html.admin-light .text-gray-600 {
-  color: #94A3B8 !important;
-}
-
-/* Inputs and Forms */
-html[data-admin-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
-html.admin-light input:not([type="checkbox"]):not([type="radio"]),
+/* 9. Forms, Inputs, Placeholders & Selects */
+html[data-admin-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+html.admin-light input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
 html[data-admin-theme="light"] select,
 html.admin-light select,
 html[data-admin-theme="light"] textarea,
 html.admin-light textarea {
-  color: #0F172A;
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  color: #0F172A !important;
+  font-weight: 500;
 }
 
 html[data-admin-theme="light"] input::placeholder,
 html.admin-light input::placeholder,
 html[data-admin-theme="light"] textarea::placeholder,
 html.admin-light textarea::placeholder {
-  color: #94A3B8;
+  color: #64748B !important; /* Clear Slate 500 placeholder, not washed out */
 }
 
-/* Tables */
-html[data-admin-theme="light"] thead,
-html.admin-light thead {
-  background-color: #F8FAFC !important;
-  color: #64748B !important;
+/* 10. Recharts & Data Visualizations */
+html[data-admin-theme="light"] .recharts-cartesian-axis-tick-value,
+html.admin-light .recharts-cartesian-axis-tick-value,
+html[data-admin-theme="light"] .recharts-text,
+html.admin-light .recharts-text {
+  fill: #334155 !important;
+  font-weight: 600;
+}
+html[data-admin-theme="light"] .recharts-legend-item-text,
+html.admin-light .recharts-legend-item-text {
+  color: #1E293B !important;
+  font-weight: 600;
 }
 
-html[data-admin-theme="light"] tbody tr,
-html.admin-light tbody tr {
-  background-color: #FFFFFF !important;
-}
-
-html[data-admin-theme="light"] tbody tr:hover,
-html.admin-light tbody tr:hover {
-  background-color: #F8FAFC !important;
-}
-
-/* Tooltips in charts */
+/* 11. Tooltips in charts */
 html[data-admin-theme="light"] .recharts-default-tooltip,
 html.admin-light .recharts-default-tooltip {
   background-color: #FFFFFF !important;
@@ -294,6 +534,34 @@ html.admin-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   scrollbar-width: none;
 }
 
+/* ORBITAL Surfaces in Light Mode */
+html[data-admin-theme="light"] .bg-\[\#0A0B0E\],
+html.admin-light .bg-\[\#0A0B0E\],
+html[data-admin-theme="light"] .bg-\[\#0D0E12\],
+html.admin-light .bg-\[\#0D0E12\],
+html[data-admin-theme="light"] .bg-\[\#101217\],
+html.admin-light .bg-\[\#101217\],
+html[data-admin-theme="light"] .bg-\[\#12141A\],
+html.admin-light .bg-\[\#12141A\],
+html[data-admin-theme="light"] .bg-\[\#161922\],
+html.admin-light .bg-\[\#161922\],
+html[data-admin-theme="light"] .bg-\[\#181B24\],
+html.admin-light .bg-\[\#181B24\] {
+  background-color: #FFFFFF !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+}
+
+html[data-admin-theme="light"] .border-white\/\[0\.06\],
+html.admin-light .border-white\/\[0\.06\],
+html[data-admin-theme="light"] .border-white\/\[0\.07\],
+html.admin-light .border-white\/\[0\.07\],
+html[data-admin-theme="light"] .border-white\/\[0\.08\],
+html.admin-light .border-white\/\[0\.08\],
+html[data-admin-theme="light"] .border-white\/\[0\.1\],
+html.admin-light .border-white\/\[0\.1\] {
+  border-color: #E2E8F0 !important;
+}
+
 /* Printable Document & Image Export Root - strictly suppress scrollbars */
 .pdf-document-root,
 .pdf-document-root * {
@@ -305,5 +573,3 @@ html.admin-light .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   width: 0 !important;
   height: 0 !important;
 }
-
-

@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { Search, Filter, ChevronDown } from 'lucide-react';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 const orders = [
   {
@@ -12,7 +15,7 @@ const orders = [
     total: '₹7,890.00',
   },
   {
-    id: '#878909',
+    id: '#878910',
     date: '1 Dec 2026',
     customer: 'Noah James Smith',
     category: 'JCB 3DX Excavator 8h Shift',
@@ -23,76 +26,101 @@ const orders = [
 ];
 
 export function RecentOrdersTable() {
+  const { isDark } = useAdminTheme();
+
   return (
-    <div className="bg-white rounded-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-gray-100 overflow-hidden">
-      <div className="p-6 flex justify-between items-center border-b border-gray-100">
-        <h3 className="font-bold text-gray-900 text-lg">Recent orders</h3>
-        <div className="flex gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+    <div
+      className={`rounded-[28px] border overflow-hidden ${
+        isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+      }`}
+    >
+      <div className={`p-5 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b ${
+        isDark ? 'border-white/[0.06]' : 'border-slate-100'
+      }`}>
+        <h3 className={`font-bold text-base sm:text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>Recent Orders</h3>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
             <input
               type="text"
-              placeholder="Search"
-              className="pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#FF5A36]/50"
+              placeholder="Search orders..."
+              className={`w-full pl-9 pr-4 py-2 rounded-full text-xs sm:text-sm border focus:outline-none focus:border-[#FF5C38] ${
+                isDark ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              }`}
             />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50">
-            <Filter className="w-4 h-4" />
-            Sort by
-            <ChevronDown className="w-4 h-4" />
+          <button
+            className={`flex items-center gap-2 px-4 py-2 border rounded-full text-xs sm:text-sm font-semibold transition-colors ${
+              isDark
+                ? 'border-white/[0.08] bg-white/[0.04] text-zinc-300 hover:text-white'
+                : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span>Sort by</span>
+            <ChevronDown className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-      
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-500">
-          <thead className="text-xs text-gray-400 uppercase bg-white">
+
+      <div className="overflow-x-auto custom-scrollbar">
+        <table className={`w-full text-sm text-left ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+          <thead
+            className={`text-xs uppercase tracking-wider border-b ${
+              isDark ? 'bg-[#14151B] border-white/[0.06] text-zinc-400' : 'bg-slate-50 border-slate-100 text-slate-500'
+            }`}
+          >
             <tr>
-              <th scope="col" className="p-4 rounded-tl-2xl">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-[#FF5A36] bg-gray-100 border-gray-300 rounded focus:ring-[#FF5A36]"
-                  />
-                </div>
+              <th scope="col" className="p-4 pl-6">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[#FF5C38] accent-[#FF5C38] rounded"
+                />
               </th>
-              <th scope="col" className="px-6 py-4 font-medium">Order Id</th>
-              <th scope="col" className="px-6 py-4 font-medium">Date</th>
-              <th scope="col" className="px-6 py-4 font-medium">Customer</th>
-              <th scope="col" className="px-6 py-4 font-medium">Category</th>
-              <th scope="col" className="px-6 py-4 font-medium text-center">Status</th>
-              <th scope="col" className="px-6 py-4 font-medium">Items</th>
-              <th scope="col" className="px-6 py-4 font-medium rounded-tr-2xl">Total</th>
+              <th scope="col" className="px-6 py-4 font-semibold">Order Id</th>
+              <th scope="col" className="px-6 py-4 font-semibold">Date</th>
+              <th scope="col" className="px-6 py-4 font-semibold">Customer</th>
+              <th scope="col" className="px-6 py-4 font-semibold">Category</th>
+              <th scope="col" className="px-6 py-4 font-semibold text-center">Status</th>
+              <th scope="col" className="px-6 py-4 font-semibold">Items</th>
+              <th scope="col" className="px-6 py-4 font-semibold text-right">Total</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className={`divide-y ${isDark ? 'divide-white/[0.04]' : 'divide-slate-100'}`}>
             {orders.map((order, index) => (
-              <tr key={index} className="bg-white hover:bg-gray-50 transition-colors">
-                <td className="w-4 p-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4 text-[#FF5A36] bg-gray-100 border-gray-300 rounded focus:ring-[#FF5A36]"
-                    />
-                  </div>
+              <tr
+                key={index}
+                className={`transition-colors ${isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50/80'}`}
+              >
+                <td className="w-4 p-4 pl-6">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 text-[#FF5C38] accent-[#FF5C38] rounded"
+                  />
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{order.id}</td>
-                <td className="px-6 py-4">{order.date}</td>
-                <td className="px-6 py-4 font-medium text-gray-900">{order.customer}</td>
+                <td className={`px-6 py-4 font-mono font-semibold ${isDark ? 'text-[#FF5C38]' : 'text-[#FF5C38]'}`}>
+                  {order.id}
+                </td>
+                <td className="px-6 py-4 text-xs font-mono">{order.date}</td>
+                <td className={`px-6 py-4 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {order.customer}
+                </td>
                 <td className="px-6 py-4">{order.category}</td>
                 <td className="px-6 py-4 text-center">
                   <span
-                    className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                    className={`px-3 py-1 text-xs font-semibold rounded-full border ${
                       order.status === 'Completed'
-                        ? 'bg-green-50 text-green-600'
-                        : 'bg-red-50 text-red-500'
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                     }`}
                   >
                     {order.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 font-medium text-gray-900">{order.items}</td>
-                <td className="px-6 py-4 font-bold text-gray-900">{order.total}</td>
+                <td className="px-6 py-4 font-medium">{order.items}</td>
+                <td className={`px-6 py-4 font-bold text-right font-mono ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  {order.total}
+                </td>
               </tr>
             ))}
           </tbody>

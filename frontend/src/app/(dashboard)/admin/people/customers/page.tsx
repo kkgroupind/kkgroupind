@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { api, User } from '@/services';
 import { PeopleTable } from '@/components/Admin/people-table';
 import { PeopleCards } from '@/components/Admin/people-cards';
@@ -14,6 +15,7 @@ import { useRouter } from 'next/navigation';
 
 export default function CustomersPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [people, setPeople] = useState<User[]>([]);
@@ -30,7 +32,7 @@ export default function CustomersPage() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 9; // 9 cards fit a 3-column grid nicely
+  const limit = 9;
 
   const loadPeople = useCallback(
     async (search: string, currentPage: number, showRefreshIndicator = false) => {
@@ -59,14 +61,12 @@ export default function CustomersPage() {
     [token, limit],
   );
 
-  // Debounced search
   useEffect(() => {
     const handler = setTimeout(() => {
       if (token && user?.role === 'SUPER_ADMIN') {
         loadPeople(searchTerm, page);
       }
     }, 400);
-
     return () => clearTimeout(handler);
   }, [searchTerm, page, token, user, loadPeople]);
 
@@ -106,48 +106,54 @@ export default function CustomersPage() {
 
   if (authLoading) {
     return (
-      <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
+      <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
         <PeopleSkeleton count={6} viewMode="grid" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <Users className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Users className="w-5 h-5" />
             </div>
-            Customers Management
+            Customers &amp; Clients
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage customer accounts, verify credentials, and view profiles
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Customer accounts, contact numbers, and booked service history
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {/* In-place Refetch Button */}
+          {/* Reload Button */}
           <button
             onClick={handleReload}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Refetch without reloading the full page"
           >
             <RefreshCw
-              className={`w-4 h-4 text-[#7B4DFF] ${
-                isRefreshing ? 'animate-spin' : ''
-              }`}
+              className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
             />
-            <span>{isRefreshing ? 'Refetching...' : 'Reload'}</span>
+            <span>{isRefreshing ? 'Reloading...' : 'Reload'}</span>
           </button>
 
           {/* Add Customer Button */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-md shadow-[#6366F1]/20 transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Customer</span>
@@ -156,37 +162,51 @@ export default function CustomersPage() {
       </div>
 
       {/* Search, Filters and View Toggle */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#14151A] p-4 rounded-2xl border border-gray-800">
+      <div
+        className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-3xl border ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-sm'
+        }`}
+      >
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
-            placeholder="Search by username or email..."
+            placeholder="Search customers by username, name, mobile..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 bg-[#1A1C23] border border-gray-800 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-colors"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border focus:outline-none focus:border-[#FF5C38] transition-colors ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+            }`}
           />
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-3">
           {meta && (
-            <span className="text-xs text-gray-500">
-              Total: <span className="text-gray-300 font-medium">{meta.total}</span>
+            <span className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+              Total Customers: <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{meta.total}</span>
             </span>
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#1A1C23] border border-gray-800 p-1 rounded-xl">
+          <div
+            className={`flex items-center p-1 rounded-full border ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'
+            }`}
+          >
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-2 rounded-full transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-xs'
+                  : isDark
+                  ? 'text-zinc-400 hover:text-white'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Grid View"
             >
@@ -195,10 +215,12 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-2 rounded-full transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-xs'
+                  : isDark
+                  ? 'text-zinc-400 hover:text-white'
+                  : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -254,7 +276,7 @@ export default function CustomersPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Customer Profile"
-        message="Are you sure you want to permanently delete this customer account? All associated customer profile records and access privileges will be revoked."
+        message="Are you sure you want to permanently delete this customer profile? Any associated history and cyclic reminders may be impacted."
         confirmText="Delete Customer"
         variant="danger"
         isLoading={!!isDeleting}
@@ -262,7 +284,7 @@ export default function CustomersPage() {
           deleteTarget
             ? [
                 { label: 'Name', value: deleteTarget.name },
-                { label: 'Email', value: deleteTarget.email || 'N/A' },
+                { label: 'Username', value: `@${deleteTarget.username}` },
                 { label: 'Phone', value: deleteTarget.phone || 'N/A' },
               ]
             : undefined

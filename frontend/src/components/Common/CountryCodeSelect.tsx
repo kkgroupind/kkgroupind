@@ -214,7 +214,9 @@ export function CountryCodeSelect({
 
           {/* List */}
           <div
-            className={`overflow-y-auto max-h-56 divide-y ${
+            data-radix-scroll-lock-ignore="true"
+            onWheel={(e) => e.stopPropagation()}
+            className={`overflow-y-auto max-h-56 divide-y custom-scrollbar ${
               isLight ? 'divide-slate-100' : 'divide-white/[0.03]'
             }`}
           >

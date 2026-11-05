@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { useRouter } from 'next/navigation';
 import {
   Layers,
@@ -11,8 +12,6 @@ import {
   Sparkles,
   CheckCircle2,
   AlertCircle,
-  Filter,
-  SlidersHorizontal,
   FolderSync,
   Tag,
   Hash,
@@ -25,6 +24,7 @@ import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dro
 
 export default function AdminServicesPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -146,14 +146,14 @@ export default function AdminServicesPage() {
     { value: 'ALL', label: 'All Statuses' },
     {
       value: 'ACTIVE',
-      label: 'Active Deployable',
+      label: 'Active',
       badge: 'Active',
       badgeColor: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
     },
     {
       value: 'INACTIVE',
-      label: 'Inactive / Draft',
-      badge: 'Draft',
+      label: 'Inactive',
+      badge: 'Off',
       badgeColor: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
     },
   ], []);
@@ -162,14 +162,14 @@ export default function AdminServicesPage() {
   const inactiveCount = services.length - activeCount;
 
   return (
-    <div className="space-y-6 max-w-[1500px] mx-auto pb-14 text-gray-200">
+    <div className={`space-y-6 max-w-[1500px] mx-auto pb-14 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Feedback Toast */}
       {feedbackMsg && (
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl border shadow-2xl text-xs animate-in slide-in-from-bottom duration-300 ${
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full border shadow-2xl text-xs font-semibold animate-in slide-in-from-bottom duration-300 ${
             feedbackMsg.type === 'success'
-              ? 'bg-[#14151A] border-emerald-500/30 text-emerald-400'
-              : 'bg-[#14151A] border-rose-500/30 text-rose-400'
+              ? isDark ? 'bg-[#181A20] border-emerald-500/30 text-emerald-400' : 'bg-white border-emerald-300 text-emerald-700 shadow-lg'
+              : isDark ? 'bg-[#181A20] border-rose-500/30 text-rose-400' : 'bg-white border-rose-300 text-rose-700 shadow-lg'
           }`}
         >
           {feedbackMsg.type === 'success' ? (
@@ -184,14 +184,18 @@ export default function AdminServicesPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2.5 bg-[#14151A] border border-gray-800 rounded-2xl text-emerald-400 shadow-sm">
-              <Layers className="w-6 h-6" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Layers className="w-5 h-5" />
             </div>
-            Services Management
+            Services &amp; Pricing
           </h1>
-          <p className="text-gray-500 text-xs sm:text-sm mt-1">
-            Maintain the KK Group service catalog with sequential unique identifiers, feature capabilities, and operational parameters
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Manage all services you offer, set customer rates, and configure worker wages
           </p>
         </div>
 
@@ -199,157 +203,173 @@ export default function AdminServicesPage() {
           <button
             onClick={handleSeedCatalog}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Populate standard KK Group services if empty"
           >
-            <FolderSync className={`w-3.5 h-3.5 text-emerald-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>Feed / Sync Catalog</span>
+            <FolderSync className={`w-3.5 h-3.5 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>Sync Standard Services</span>
           </button>
 
           <button
             onClick={() => loadServices(true)}
             disabled={isRefreshing}
-            className="p-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-400 hover:text-white rounded-xl transition-all disabled:opacity-50"
+            className={`p-2.5 rounded-full border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-400 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-600 shadow-xs'
+            }`}
             title="Refresh Services"
           >
-            <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white rounded-xl text-xs font-semibold shadow-[0_0_20px_rgba(123,77,255,0.4)] transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-md shadow-[#6366F1]/20 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Service</span>
+            <span>Add Service</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Bento Cards: Double row on mobile */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        {/* Total Services */}
-        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-[#7B4DFF]/60 transition-all duration-300" />
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
-                Total Registered
-              </div>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF] shrink-0">
-                <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-white mt-1">
-              {services.length}
+      {/* KPI Bento Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Total Registered */}
+        <div
+          className={`p-4 sm:p-5 rounded-3xl border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Total Registered
+            </span>
+            <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDark ? 'bg-[#121318] border-white/[0.06] text-[#FF5C38]' : 'bg-slate-50 border-slate-200 text-[#FF5C38]'}`}>
+              <Layers className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
-            <Hash className="w-3 h-3 text-[#7B4DFF] shrink-0" />
-            <span className="truncate">Sequential Ledger</span>
+          <div className={`text-2xl font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            {services.length}
+          </div>
+          <div className={`text-[11px] mt-1.5 flex items-center gap-1 ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+            <Hash className="w-3 h-3 text-[#FF5C38] shrink-0" />
+            <span>Sequential Catalog Ledger</span>
           </div>
         </div>
 
-        {/* Active Deployments */}
-        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-emerald-500/60 transition-all duration-300" />
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
-                Active Deployable
-              </div>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 mt-1">
-              {activeCount}
+        {/* Active Deployable */}
+        <div
+          className={`p-4 sm:p-5 rounded-3xl border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Active Deployable
+            </span>
+            <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDark ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-600'}`}>
+              <Sparkles className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
+          <div className="text-2xl font-bold mt-2 text-emerald-400">
+            {activeCount}
+          </div>
+          <div className={`text-[11px] mt-1.5 flex items-center gap-1.5 ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
             <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="truncate">Available for booking</span>
+            <span>Available for booking</span>
           </div>
         </div>
 
-        {/* Inactive / Archived */}
-        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-rose-500/60 transition-all duration-300" />
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
-                Inactive / Draft
-              </div>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400 shrink-0">
-                <AlertCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-rose-400 mt-1">
-              {inactiveCount}
+        {/* Inactive / Draft */}
+        <div
+          className={`p-4 sm:p-5 rounded-3xl border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Inactive / Draft
+            </span>
+            <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDark ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-200 text-rose-600'}`}>
+              <AlertCircle className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 truncate">
+          <div className="text-2xl font-bold mt-2 text-rose-400">
+            {inactiveCount}
+          </div>
+          <div className={`text-[11px] mt-1.5 ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
             Hidden from customer portal
           </div>
         </div>
 
         {/* Operational Categories */}
-        <div className="p-3.5 sm:p-5 rounded-2xl bg-[#14151A] border border-gray-800/80 shadow-md relative overflow-hidden group hover:border-gray-700/80 transition-all flex flex-col justify-between">
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gray-700/40 to-transparent group-hover:via-indigo-500/60 transition-all duration-300" />
-          <div>
-            <div className="flex items-center justify-between">
-              <div className="text-[10px] sm:text-[11px] font-semibold text-gray-400 uppercase tracking-wider truncate">
-                Categories
-              </div>
-              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              </div>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-indigo-400 mt-1">
-              {categories.length || '—'}
+        <div
+          className={`p-4 sm:p-5 rounded-3xl border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              Categories
+            </span>
+            <div className={`w-8 h-8 rounded-full border flex items-center justify-center ${isDark ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-600'}`}>
+              <Tag className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-[10px] sm:text-[11px] text-gray-500 mt-1.5 flex items-center gap-1 truncate">
-            <Tag className="w-3 h-3 text-indigo-400 shrink-0" />
-            <span className="truncate">Sector classifications</span>
+          <div className={`text-2xl font-bold mt-2 ${isDark ? 'text-indigo-400' : 'text-indigo-600'}`}>
+            {categories.length || '—'}
+          </div>
+          <div className={`text-[11px] mt-1.5 flex items-center gap-1 ${isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
+            <span>Sector classifications</span>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Ribbon */}
-      <div className="p-4 bg-[#14151A] border border-gray-800 rounded-2xl shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Search Input */}
+      <div
+        className={`p-4 rounded-3xl border flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by name, ID (e.g. KKS-001), or description..."
-            className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+            }`}
           />
         </div>
 
         {/* Category & Status Filters using AdminDropdown */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {/* Category Filter using AdminDropdown */}
           <div className="w-52">
             <AdminDropdown
               options={categoryOptions}
               value={selectedCategory}
               onChange={(val) => setSelectedCategory(val)}
-              variant="purple"
+              variant="coral"
               size="md"
               searchable={categories.length > 5}
             />
           </div>
 
-          {/* Status Filter using AdminDropdown */}
           <div className="w-48">
             <AdminDropdown
               options={statusOptions}
               value={statusFilter}
               onChange={(val) => setStatusFilter(val as any)}
-              variant="purple"
+              variant="coral"
               size="md"
             />
           </div>
@@ -359,33 +379,39 @@ export default function AdminServicesPage() {
       {/* Services Grid */}
       {isLoading ? (
         <div className="py-20 text-center flex flex-col items-center justify-center space-y-3">
-          <RefreshCw className="w-8 h-8 text-[#2A835F] animate-spin" />
-          <p className="text-xs text-gray-500">Loading services catalog...</p>
+          <RefreshCw className="w-8 h-8 text-[#FF5C38] animate-spin" />
+          <p className={`text-xs ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>Loading services catalog...</p>
         </div>
       ) : services.length === 0 ? (
-        <div className="p-12 rounded-3xl bg-[#14151A] border border-gray-800 text-center flex flex-col items-center justify-center space-y-4">
-          <div className="w-14 h-14 rounded-2xl bg-gray-800/60 border border-gray-700/60 flex items-center justify-center text-gray-400">
+        <div
+          className={`p-12 rounded-3xl border text-center flex flex-col items-center justify-center space-y-4 ${
+            isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className={`w-14 h-14 rounded-full border flex items-center justify-center ${isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-400' : 'bg-slate-100 border-slate-200 text-slate-600'}`}>
             <Layers className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-gray-200">
+            <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               No services match your criteria
             </h3>
-            <p className="text-xs text-gray-500 max-w-sm mt-1">
-              You can feed the standard KK Group services with one click or register a new service.
+            <p className={`text-xs max-w-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+              You can feed the standard KK Group services with one click or register a new custom service.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleSeedCatalog}
-              className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-emerald-400 border border-gray-700 text-xs font-medium transition-colors inline-flex items-center gap-2"
+              className={`px-4 py-2 rounded-full border text-xs font-semibold transition-all inline-flex items-center gap-2 cursor-pointer ${
+                isDark ? 'bg-[#121318] hover:bg-[#1E2028] border-white/[0.08] text-white' : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+              }`}
             >
-              <FolderSync className="w-3.5 h-3.5" />
+              <FolderSync className="w-3.5 h-3.5 text-[#FF5C38]" />
               <span>Feed Standard Catalog</span>
             </button>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-medium transition-colors inline-flex items-center gap-2"
+              className="px-5 py-2.5 rounded-full bg-[#FF5C38] hover:bg-[#FF6B4A] text-white text-xs font-semibold transition-all inline-flex items-center gap-2 cursor-pointer shadow-lg shadow-[#FF5C38]/20"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Add Custom Service</span>

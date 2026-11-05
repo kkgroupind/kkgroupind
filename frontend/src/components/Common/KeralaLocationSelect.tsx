@@ -281,7 +281,7 @@ export function KeralaLocationSelect({
                   />
                 </div>
               </div>
-              <div className="overflow-y-auto max-h-48 divide-y divide-slate-100">
+              <div data-radix-scroll-lock-ignore="true" onWheel={(e) => e.stopPropagation()} className="overflow-y-auto max-h-48 divide-y divide-slate-100 custom-scrollbar">
                 {filteredDistricts.map((d) => {
                   const isSelected = d === district;
                   const isKasaragod = d === 'Kasaragod';
@@ -398,7 +398,7 @@ export function KeralaLocationSelect({
                 </div>
               )}
 
-              <div className="overflow-y-auto max-h-48 divide-y divide-slate-100">
+              <div data-radix-scroll-lock-ignore="true" onWheel={(e) => e.stopPropagation()} className="overflow-y-auto max-h-48 divide-y divide-slate-100 custom-scrollbar">
                 {filteredCities.length === 0 ? (
                   <div className="p-3 text-center text-xs text-slate-400">
                     No matching standard city in {district}. You can keep what you typed!

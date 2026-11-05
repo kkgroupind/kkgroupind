@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { useRouter } from 'next/navigation';
 import {
   CalendarCheck,
@@ -11,7 +12,6 @@ import {
   UserCheck,
   HardHat,
   Briefcase,
-  Calendar,
   CheckCircle2,
   AlertCircle,
   Coffee,
@@ -40,6 +40,7 @@ const ATTENDANCE_ROLE_OPTIONS: AdminDropdownOption[] = [
 
 export default function AdminAttendancePage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [data, setData] = useState<AttendanceOverviewResponse | null>(null);
@@ -106,84 +107,129 @@ export default function AdminAttendancePage() {
   }, [allPersonnel, roleFilter, searchTerm]);
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <CalendarCheck className="w-6 h-6 text-[#7B4DFF]" />
-            </div>
-            Daily Attendance Ledger
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Real-time daily presence tracking for office staff and field workforce
+          <div className="flex items-center gap-2.5">
+            <h1 className={`text-2xl sm:text-3xl font-extrabold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <div
+                className={`p-2.5 rounded-2xl border flex items-center justify-center ${
+                  isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+                }`}
+              >
+                <CalendarCheck className="w-5 h-5" />
+              </div>
+              <span>Daily Attendance</span>
+            </h1>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hidden sm:inline">
+              Live Presence
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">
+            See who is on duty, working on site, or on leave today across all teams
           </p>
         </div>
 
         <button
           onClick={() => loadAttendance(true)}
           disabled={isRefreshing || isLoading}
-          className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+            isDark
+              ? 'bg-[#12141A] hover:bg-[#181B24] border-white/[0.08] text-gray-300 hover:text-white'
+              : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+          }`}
         >
           <RefreshCw
-            className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+            className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
           />
           <span>{isRefreshing ? 'Refreshing...' : 'Reload Attendance'}</span>
         </button>
       </div>
 
-      {/* Metrics Row: Double row on mobile */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Office Staff Present</span>
-          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">
+      {/* Metrics Row */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div
+          className={`p-4 sm:p-5 rounded-[26px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Office Staff Present
+          </span>
+          <div className="text-xl sm:text-2xl font-black text-emerald-400 mt-2">
             {data?.counts?.officeStaff?.available ?? 0}
-            <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-1">
+            <span className={`text-xs font-normal ml-1.5 ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
               / {data?.counts?.officeStaff?.total ?? 0}
             </span>
           </div>
-          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Active on desk</span>
+          <span className="text-[11px] text-emerald-400 mt-1.5">Active on desk</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Workers Available</span>
-          <div className="text-lg sm:text-2xl font-bold text-emerald-400 mt-0.5 sm:mt-1">
+        <div
+          className={`p-4 sm:p-5 rounded-[26px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Workers Available
+          </span>
+          <div className="text-xl sm:text-2xl font-black text-emerald-400 mt-2">
             {data?.counts?.workers?.available ?? 0}
-            <span className="text-[10px] sm:text-xs text-gray-500 font-normal ml-1">
+            <span className={`text-xs font-normal ml-1.5 ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
               / {data?.counts?.workers?.total ?? 0}
             </span>
           </div>
-          <span className="text-[10px] sm:text-xs text-emerald-500/80 mt-1 block truncate">Ready for dispatch</span>
+          <span className="text-[11px] text-emerald-400 mt-1.5">Ready for dispatch</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Workers on Field</span>
-          <div className="text-lg sm:text-2xl font-bold text-blue-400 mt-0.5 sm:mt-1">
+        <div
+          className={`p-4 sm:p-5 rounded-[26px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Workers on Field
+          </span>
+          <div className="text-xl sm:text-2xl font-black text-[#6366F1] mt-2">
             {data?.counts?.workers?.busy ?? 0}
           </div>
-          <span className="text-[10px] sm:text-xs text-blue-400/80 mt-1 block truncate">Executing tasks</span>
+          <span className="text-[11px] text-[#6366F1] mt-1.5">Executing tasks</span>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-[#14151A] border border-gray-800 flex flex-col justify-between">
-          <span className="text-[10px] sm:text-xs text-gray-400 font-medium truncate block">Away / Off Duty</span>
-          <div className="text-lg sm:text-2xl font-bold text-amber-400 mt-0.5 sm:mt-1">
+        <div
+          className={`p-4 sm:p-5 rounded-[26px] border transition-all flex flex-col justify-between ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Away / Off Duty
+          </span>
+          <div className="text-xl sm:text-2xl font-black text-amber-400 mt-2">
             {(data?.counts?.officeStaff?.offDuty ?? 0) + (data?.counts?.workers?.offDuty ?? 0)}
           </div>
-          <span className="text-[10px] sm:text-xs text-amber-500/80 mt-1 block truncate">On leave/inactive</span>
+          <span className="text-[11px] text-amber-400 mt-1.5">On leave / inactive</span>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#14151A] border border-gray-800">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+      <div
+        className={`p-4 sm:p-5 rounded-[28px] border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
+        <div className="relative flex-1 max-w-md">
+          <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
             placeholder="Search personnel name, username, phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0D0E12] border border-gray-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-gray-700"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+            }`}
           />
         </div>
 
@@ -193,20 +239,20 @@ export default function AdminAttendancePage() {
               options={ATTENDANCE_ROLE_OPTIONS}
               value={roleFilter}
               onChange={(val) => setRoleFilter(val as any)}
-              variant="purple"
+              variant="coral"
               size="md"
             />
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#1A1C23] border border-gray-800 p-1 rounded-xl shrink-0">
+          <div className={`flex items-center p-1 rounded-full border ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Grid View"
             >
@@ -215,10 +261,10 @@ export default function AdminAttendancePage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-[#7B4DFF] text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -232,12 +278,12 @@ export default function AdminAttendancePage() {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading ? (
-            <div className="col-span-full py-16 text-center text-gray-500">
-              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#7B4DFF]" />
+            <div className={`col-span-full py-16 text-center ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+              <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#FF5C38]" />
               <span>Loading attendance roster...</span>
             </div>
           ) : filteredPersonnel.length === 0 ? (
-            <div className="col-span-full py-16 text-center text-gray-500">
+            <div className={`col-span-full py-16 text-center ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
               No personnel found matching your filter criteria.
             </div>
           ) : (
@@ -248,98 +294,63 @@ export default function AdminAttendancePage() {
               return (
                 <div
                   key={person.id}
-                  className="bg-[#14151A] rounded-2xl border border-gray-800 p-5 space-y-4 hover:border-gray-700 transition-all flex flex-col justify-between"
+                  className={`p-5 rounded-3xl border transition-all ${
+                    isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+                  }`}
                 >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center font-bold text-sm text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700">
-                          {person.avatar ? (
-                            <img
-                              src={person.avatar || undefined}
-                              alt={person.name || person.username || 'Avatar'}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            (person.name || person.username || 'P')[0].toUpperCase()
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold text-gray-100">
-                            {person.name || person.username}
-                          </h4>
-                          <span className="text-[11px] text-gray-500 font-mono">
-                            @{person.username}
-                          </span>
-                        </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-full border flex items-center justify-center font-bold text-sm ${
+                        isDark ? 'bg-[#121318] border-white/[0.06] text-white' : 'bg-slate-100 border-slate-200 text-slate-800'
+                      }`}>
+                        {(person.name?.charAt(0) || person.username?.charAt(0) || 'P').toUpperCase()}
                       </div>
+                      <div>
+                        <h3 className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {person.name || person.username || 'Personnel'}
+                        </h3>
+                        <p className={`text-xs font-mono ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                          @{person.username || 'user'}
+                        </p>
+                      </div>
+                    </div>
 
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                          person.displayStatus === 'AVAILABLE'
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : person.displayStatus === 'BUSY'
-                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            person.displayStatus === 'AVAILABLE'
-                              ? 'bg-emerald-500'
-                              : person.displayStatus === 'BUSY'
-                              ? 'bg-blue-500'
-                              : 'bg-amber-500'
-                          }`}
-                        />
-                        {person.displayStatus}
+                    <span
+                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                        person.displayStatus === 'AVAILABLE'
+                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                          : person.displayStatus === 'BUSY'
+                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                      }`}
+                    >
+                      {person.displayStatus}
+                    </span>
+                  </div>
+
+                  <div className={`mt-4 pt-3 border-t text-xs space-y-1.5 ${isDark ? 'border-white/[0.06] text-zinc-400' : 'border-slate-100 text-slate-600'}`}>
+                    <div className="flex items-center justify-between">
+                      <span>Role:</span>
+                      <span className={`font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
+                        {person.type === 'OFFICE_STAFF' ? 'Office Staff' : 'Field Worker'}
                       </span>
                     </div>
-
-                    <div className="p-3 bg-[#0D0E12] rounded-xl border border-gray-800/80 space-y-1.5 text-xs text-gray-400">
+                    {person.phone && (
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Role:</span>
-                        <span className="text-gray-300 font-medium flex items-center gap-1">
-                          {person.type === 'OFFICE_STAFF' ? (
-                            <>
-                              <Briefcase className="w-3.5 h-3.5 text-purple-400" />
-                              <span>Office Staff</span>
-                            </>
-                          ) : (
-                            <>
-                              <HardHat className="w-3.5 h-3.5 text-emerald-400" />
-                              <span>Field Worker</span>
-                            </>
-                          )}
-                        </span>
+                        <span>Phone:</span>
+                        <span className="font-mono">{person.phone}</span>
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Contact:</span>
-                        <span className="text-gray-300 font-mono">{person.phone || '—'}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-500">Check-In:</span>
-                        <span className="text-gray-300 font-mono">
-                          {checkIn ? (
-                            <span className="text-emerald-400 font-semibold">
-                              {new Date(checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          ) : (
-                            <span className="text-gray-600">Pending</span>
-                          )}
-                        </span>
-                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span>Check-in:</span>
+                      <span className={checkIn ? 'text-emerald-400 font-mono' : isDark ? 'text-zinc-500' : 'text-slate-400'}>
+                        {checkIn ? new Date(checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not Checked In'}
+                      </span>
                     </div>
-
                     {notes && (
-                      <p className="text-[11px] text-gray-400 italic bg-[#0D0E12] px-3 py-1.5 rounded-lg border border-gray-800/50">
-                        &ldquo;{notes}&rdquo;
-                      </p>
+                      <div className={`mt-2 p-2 rounded-xl text-[11px] italic border ${isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-400' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                        "{notes}"
+                      </div>
                     )}
                   </div>
                 </div>
@@ -348,134 +359,62 @@ export default function AdminAttendancePage() {
           )}
         </div>
       ) : (
-        /* Attendance Table */
-        <div className="bg-[#14151A] rounded-xl border border-gray-800 overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-100">
-            Today&#39;s Attendance Roster &bull; {data?.date || new Date().toISOString().split('T')[0]}
-          </h3>
-          <span className="text-xs text-gray-500">{filteredPersonnel.length} members</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-300">
-            <thead className="bg-[#0D0E12] text-gray-400 font-medium border-b border-gray-800">
-              <tr>
-                <th className="py-3 px-4">Member</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Contact</th>
-                <th className="py-3 px-4">Daily Status</th>
-                <th className="py-3 px-4">Check-in Time</th>
-                <th className="py-3 px-4">Notes</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-800">
-              {isLoading ? (
+        /* Table View */
+        <div
+          className={`rounded-3xl border overflow-hidden ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className={`border-b ${isDark ? 'border-white/[0.06] bg-[#121318] text-zinc-400' : 'border-slate-100 bg-slate-50 text-slate-500'}`}>
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-gray-500">
-                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#7B4DFF]" />
-                    <span>Loading attendance records...</span>
-                  </td>
+                  <th className="py-3 px-4 font-semibold">Personnel</th>
+                  <th className="py-3 px-4 font-semibold">Role</th>
+                  <th className="py-3 px-4 font-semibold">Contact</th>
+                  <th className="py-3 px-4 font-semibold">Check-In Time</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
                 </tr>
-              ) : filteredPersonnel.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-gray-500">
-                    No attendance records match your filter.
-                  </td>
-                </tr>
-              ) : (
-                filteredPersonnel.map((person) => {
+              </thead>
+              <tbody className={`divide-y ${isDark ? 'divide-white/[0.04]' : 'divide-slate-100'}`}>
+                {filteredPersonnel.map((person) => {
                   const checkIn = person.todayAttendance?.checkInAt;
-                  const notes = person.todayAttendance?.notes;
-
                   return (
-                    <tr key={person.id} className="hover:bg-[#1A1C23]/60 transition-colors">
+                    <tr key={person.id} className={isDark ? 'hover:bg-white/[0.02]' : 'hover:bg-slate-50'}>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center font-bold text-xs text-[#7B4DFF] overflow-hidden shrink-0 border border-gray-700/60 shadow-sm">
-                            {person.avatar ? (
-                              <img
-                                src={person.avatar || undefined}
-                                alt={person.name || person.username || 'Avatar'}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            ) : null}
-                            {!person.avatar && (
-                              <span>
-                                {(person.name || person.username || 'U').charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-100">
-                              {person.name || person.username}
-                            </div>
-                            <div className="text-[11px] text-gray-500 font-mono">
-                              @{person.username}
-                            </div>
-                          </div>
+                        <div className="font-bold text-sm text-slate-900 dark:text-white">
+                          {person.name || person.username || 'Personnel'}
                         </div>
+                        <div className="text-[11px] text-zinc-500 font-mono">@{person.username || 'user'}</div>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center gap-1 text-gray-300">
-                          {person.type === 'OFFICE_STAFF' ? (
-                            <Briefcase className="w-3.5 h-3.5 text-purple-400" />
-                          ) : (
-                            <HardHat className="w-3.5 h-3.5 text-emerald-400" />
-                          )}
-                          <span>
-                            {person.type === 'OFFICE_STAFF' ? 'Office Staff' : 'Field Worker'}
-                          </span>
-                        </span>
+                        {person.type === 'OFFICE_STAFF' ? 'Office Staff' : 'Field Worker'}
                       </td>
-                      <td className="py-3 px-4 text-gray-400">{person.phone || '—'}</td>
+                      <td className="py-3 px-4 font-mono">{person.phone || '—'}</td>
+                      <td className="py-3 px-4 font-mono">
+                        {checkIn ? new Date(checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}
+                      </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium ${
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                             person.displayStatus === 'AVAILABLE'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               : person.displayStatus === 'BUSY'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
                           }`}
                         >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              person.displayStatus === 'AVAILABLE'
-                                ? 'bg-emerald-500'
-                                : person.displayStatus === 'BUSY'
-                                ? 'bg-blue-500'
-                                : 'bg-amber-500'
-                            }`}
-                          />
                           {person.displayStatus}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-400">
-                        {checkIn ? (
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-gray-500" />
-                            <span>{new Date(checkIn).toLocaleTimeString()}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-600">Not logged</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-4 text-gray-400 italic max-w-xs truncate">
-                        {notes || '—'}
-                      </td>
                     </tr>
                   );
-                })
-              )}
-            </tbody>
-          </table>
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 }

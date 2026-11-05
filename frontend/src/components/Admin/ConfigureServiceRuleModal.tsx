@@ -3,16 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import {
   X,
-  CalendarClock,
   Sparkles,
-  TreePalm,
-  Clock,
   CheckCircle2,
   AlertCircle,
   Loader2,
   Settings2,
   Check,
-  Zap,
 } from 'lucide-react';
 import {
   reminderService,
@@ -20,6 +16,7 @@ import {
   ReminderFrequency,
 } from '@/services/reminder.service';
 import { ServiceSelectDropdown } from './ServiceSelectDropdown';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 interface ConfigureServiceRuleModalProps {
   isOpen: boolean;
@@ -73,6 +70,8 @@ export function ConfigureServiceRuleModal({
   token,
   initialServiceId,
 }: ConfigureServiceRuleModalProps) {
+  const { isDark } = useAdminTheme();
+
   const [services, setServices] = useState<ServiceReminderConfig[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [hasReminder, setHasReminder] = useState<boolean>(true);
@@ -97,7 +96,6 @@ export function ConfigureServiceRuleModal({
         if (!isMounted) return;
         setServices(res.services);
 
-        // Select initial service if provided or pick first
         const target = initialServiceId
           ? res.services.find((s) => s.id === initialServiceId || s.serviceId === initialServiceId)
           : res.services.find((s) => s.name.toLowerCase().includes('coco')) || res.services[0];
@@ -124,7 +122,6 @@ export function ConfigureServiceRuleModal({
     };
   }, [isOpen, token, initialServiceId]);
 
-  // When selected service changes, populate fields
   const handleServiceChange = (serviceId: string) => {
     setSelectedServiceId(serviceId);
     const svc = services.find((s) => s.id === serviceId);
@@ -136,7 +133,6 @@ export function ConfigureServiceRuleModal({
   };
 
   const currentService = services.find((s) => s.id === selectedServiceId);
-  const isCoconut = currentService?.name.toLowerCase().includes('coco');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,23 +167,35 @@ export function ConfigureServiceRuleModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md overflow-y-auto">
+      <div
+        className={`relative w-full max-w-xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 rounded-[28px] border ${
+          isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="p-5 bg-[#1A1C23] border-b border-gray-800 flex items-center justify-between">
+        <div
+          className={`p-5 sm:p-6 border-b flex items-center justify-between ${
+            isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#14151A] border border-gray-800 rounded-xl">
-              <Settings2 className="w-5 h-5 text-[#7B4DFF]" />
+            <div
+              className={`p-2.5 rounded-2xl border flex items-center justify-center text-[#FF5C38] ${
+                isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200 shadow-xs'
+              }`}
+            >
+              <Settings2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-gray-100 flex items-center gap-2">
-                <span>Service Reminder Automation Rule</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-[#7B4DFF]/10 text-[#7B4DFF] border border-[#7B4DFF]/20">
+              <h3 className={`text-base sm:text-lg font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                <span>Reminder Rule for Service</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#FF5C38]/10 text-[#FF5C38] border border-[#FF5C38]/20">
                   Auto-Schedule
                 </span>
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Automatically schedule a reminder when a client's booked job is marked completed
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Automatically set a reminder for the customer when this service is completed
               </p>
             </div>
           </div>
@@ -195,15 +203,25 @@ export function ConfigureServiceRuleModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-500 hover:text-gray-300 hover:bg-gray-800/60 transition-colors"
+            className={`p-2 rounded-full transition-colors ${
+              isDark
+                ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                : 'text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Informational Guidance Banner */}
-        <div className="p-3.5 mx-5 mt-4 rounded-xl bg-[#7B4DFF]/10 border border-[#7B4DFF]/20 flex items-start gap-2.5 text-xs text-purple-200">
-          <Sparkles className="w-4 h-4 text-[#7B4DFF] shrink-0 mt-0.5" />
+        <div
+          className={`p-3.5 mx-5 mt-4 rounded-2xl border flex items-start gap-2.5 text-xs ${
+            isDark
+              ? 'bg-[#FF5C38]/10 border-[#FF5C38]/20 text-[#FF8A65]'
+              : 'bg-[#FF5C38]/5 border-[#FF5C38]/20 text-slate-700'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-[#FF5C38] shrink-0 mt-0.5" />
           <span>
             When a customer books this service and the work order is marked <strong>COMPLETED</strong>,
             Antigravity automatically calculates the next due date and registers the reminder in your
@@ -213,23 +231,27 @@ export function ConfigureServiceRuleModal({
 
         {/* Error Alert */}
         {errorMessage && (
-          <div className="mx-5 mt-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+          <div className="mx-5 mt-3 p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* 1. Select Service */}
           <div>
-            <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1.5">
-              Select Service to Configure <span className="text-[#7B4DFF]">*</span>
+            <label className={`block text-xs font-semibold uppercase tracking-wider mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+              Select Service to Configure <span className="text-[#FF5C38]">*</span>
             </label>
 
             {isLoadingServices ? (
-              <div className="p-3 bg-[#1A1C23] border border-gray-800 rounded-xl flex items-center justify-center gap-2 text-xs text-gray-400">
-                <Loader2 className="w-4 h-4 animate-spin text-[#7B4DFF]" />
+              <div
+                className={`p-3 rounded-xl border flex items-center justify-center gap-2 text-xs ${
+                  isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-400' : 'bg-slate-50 border-slate-200 text-slate-500'
+                }`}
+              >
+                <Loader2 className="w-4 h-4 animate-spin text-[#FF5C38]" />
                 <span>Loading available services...</span>
               </div>
             ) : (
@@ -245,15 +267,19 @@ export function ConfigureServiceRuleModal({
           </div>
 
           {/* 2. Automation Enable Toggle */}
-          <div className="p-4 rounded-xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between gap-4">
+          <div
+            className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}
+          >
             <div>
-              <div className="text-xs font-bold text-gray-200 flex items-center gap-2">
+              <div className={`text-xs font-bold flex items-center gap-2 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                 <span>Auto-Create Reminder on Job Completion</span>
                 {hasReminder && (
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                 )}
               </div>
-              <p className="text-[11px] text-gray-500 mt-0.5">
+              <p className={`text-[11px] mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                 Automatically add completed clients to the cyclic follow-up queue
               </p>
             </div>
@@ -262,7 +288,7 @@ export function ConfigureServiceRuleModal({
               type="button"
               onClick={() => setHasReminder(!hasReminder)}
               className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${
-                hasReminder ? 'bg-[#7B4DFF]' : 'bg-gray-800'
+                hasReminder ? 'bg-[#FF5C38]' : isDark ? 'bg-zinc-700' : 'bg-slate-300'
               }`}
             >
               <div
@@ -276,7 +302,7 @@ export function ConfigureServiceRuleModal({
           {/* 3. Recurrence Interval Selector */}
           {hasReminder && (
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-gray-300 uppercase tracking-wider mb-1">
+              <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                 Recurrence Cycle Frequency
               </label>
 
@@ -288,23 +314,25 @@ export function ConfigureServiceRuleModal({
                       key={opt.value}
                       type="button"
                       onClick={() => setFrequency(opt.value)}
-                      className={`p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                      className={`p-3.5 rounded-2xl border text-left transition-all flex items-start gap-3 ${
                         isSelected
-                          ? 'bg-[#7B4DFF]/10 border-[#7B4DFF] text-white shadow-sm'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-300 hover:border-gray-700'
+                          ? 'bg-[#FF5C38]/10 border-[#FF5C38] text-white shadow-sm'
+                          : isDark
+                          ? 'bg-[#121318] border-white/[0.06] text-zinc-300 hover:border-white/[0.12]'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300'
                       }`}
                     >
                       <div className="mt-0.5 shrink-0">
                         {isSelected ? (
-                          <div className="w-4 h-4 rounded-full bg-[#7B4DFF] flex items-center justify-center text-white">
+                          <div className="w-4 h-4 rounded-full bg-[#FF5C38] flex items-center justify-center text-white">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                         ) : (
-                          <div className="w-4 h-4 rounded-full border border-gray-700" />
+                          <div className="w-4 h-4 rounded-full border border-zinc-600" />
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-gray-100 flex items-center gap-2">
+                        <div className={`text-xs font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           <span>{opt.label}</span>
                           {opt.value === 'EVERY_3_MONTHS' && (
                             <span className="text-[10px] text-emerald-400 font-mono font-semibold bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
@@ -312,7 +340,7 @@ export function ConfigureServiceRuleModal({
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                        <div className={`text-[11px] mt-0.5 leading-snug ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                           {opt.sublabel}
                         </div>
                       </div>
@@ -321,10 +349,14 @@ export function ConfigureServiceRuleModal({
                 })}
               </div>
 
-              {/* Custom Interval Input if CUSTOM_DAYS is selected */}
+              {/* Custom Interval Input */}
               {frequency === 'CUSTOM_DAYS' && (
-                <div className="p-3 bg-[#1A1C23] rounded-xl border border-gray-800 mt-2 space-y-1.5">
-                  <label className="text-[11px] text-gray-400 font-medium block">
+                <div
+                  className={`p-3.5 rounded-2xl border mt-2 space-y-1.5 ${
+                    isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                  }`}
+                >
+                  <label className={`text-[11px] font-medium block ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                     Interval in Days (e.g. 90 = 3 months, 180 = 6 months)
                   </label>
                   <input
@@ -333,7 +365,9 @@ export function ConfigureServiceRuleModal({
                     max="730"
                     value={customDays}
                     onChange={(e) => setCustomDays(Number(e.target.value))}
-                    className="w-full bg-[#14151A] border border-gray-800 focus:border-[#7B4DFF] rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none transition-colors"
+                    className={`w-full rounded-xl px-3 py-2 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-900'
+                    }`}
                   />
                 </div>
               )}
@@ -341,18 +375,22 @@ export function ConfigureServiceRuleModal({
           )}
 
           {/* Action Buttons */}
-          <div className="pt-3 border-t border-gray-800/80 flex items-center justify-end gap-3">
+          <div className={`pt-4 border-t flex items-center justify-end gap-3 ${isDark ? 'border-white/[0.06]' : 'border-slate-200'}`}>
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl text-xs font-medium border border-gray-800 transition-colors"
+              className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors ${
+                isDark
+                  ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                  : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+              }`}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || isLoadingServices}
-              className="px-5 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all flex items-center gap-2 disabled:opacity-50"
+              className="px-6 py-2.5 bg-[#FF5C38] hover:bg-[#FF6B4A] text-white rounded-full text-xs font-bold shadow-lg shadow-[#FF5C38]/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
             >
               {isSubmitting ? (
                 <>

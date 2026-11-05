@@ -388,23 +388,27 @@ export default function AdminDirectEntryPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1600px] mx-auto pb-16">
+    <div className={`space-y-6 max-w-[1600px] mx-auto pb-16 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* 1. Header Banner */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-[#14151A] border border-gray-800 rounded-3xl p-6 shadow-sm">
+      <div className={`flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border rounded-[28px] p-6 shadow-xs ${
+        isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+      }`}>
         <div>
           <div className="flex items-center gap-2.5 flex-wrap">
-            <div className="w-10 h-10 rounded-2xl bg-[#2A835F]/20 text-[#2A835F] flex items-center justify-center font-bold">
-              <Zap className="w-5 h-5 fill-[#2A835F]" />
+            <div className="w-10 h-10 rounded-[24px] bg-[#6366F1]/10 text-[#6366F1] flex items-center justify-center font-bold">
+              <Zap className="w-5 h-5 fill-[#6366F1]" />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-gray-100 tracking-tight flex items-center gap-2">
-                <span>Supreme Data Feeding Studio</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Direct Workflow Bypass
+              <h1 className={`text-2xl font-black tracking-tight flex items-center gap-2 ${
+                isDark ? 'text-white' : 'text-slate-900'
+              }`}>
+                <span>Quick Job Entry</span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#6366F1]/10 text-[#A78BFA] border border-[#6366F1]/20">
+                  Fast Form
                 </span>
               </h1>
-              <p className="text-gray-400 text-xs mt-0.5">
-                Feed offline logs, assign workers, log finished tree/hour metrics, and confirm client payments into the Finance ledger in 1 unified shot.
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Quickly record a job, assign a worker, enter completed work, or log customer payment in one easy step.
               </p>
             </div>
           </div>
@@ -413,41 +417,53 @@ export default function AdminDirectEntryPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <Link
             href="/admin/finance"
-            className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#252830] border border-gray-800 hover:border-gray-700 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:text-white transition-all shadow-xs"
+            className={`flex items-center gap-2 border px-3.5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+              isDark
+                ? 'bg-[#161922] hover:bg-[#1E2028] border-white/[0.06] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+            }`}
           >
             <IndianRupee className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Open Finance Ledger</span>
+            <span>Open Cashbook</span>
           </Link>
 
           <Link
             href="/admin/operations/work-orders"
-            className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#252830] border border-gray-800 hover:border-gray-700 px-3.5 py-2 rounded-xl text-xs font-semibold text-gray-300 hover:text-white transition-all shadow-xs"
+            className={`flex items-center gap-2 border px-3.5 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-xs ${
+              isDark
+                ? 'bg-[#161922] hover:bg-[#1E2028] border-white/[0.06] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+            }`}
           >
-            <Layers className="w-3.5 h-3.5 text-blue-400" />
-            <span>Work Orders</span>
+            <Layers className="w-3.5 h-3.5 text-[#6366F1]" />
+            <span>All Work Orders</span>
           </Link>
         </div>
       </div>
 
       {/* 2. Workflow Target Mode Switcher */}
-      <div className="bg-[#14151A] border border-gray-800 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs">
+      <div className={`border rounded-[28px] p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-xs ${
+        isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+      }`}>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Entry Workflow Target:</span>
+          <span className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            What are you recording?
+          </span>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1 max-w-4xl">
           {[
             {
               id: 'COMPLETED_PAID',
-              label: 'Single-Shot: Completed & Paid',
-              desc: 'Enquiry + Finish + Pay Ledger Sync',
-              badge: 'Most Popular',
+              label: 'Completed & Paid',
+              desc: 'Work is finished & customer paid',
+              badge: 'Fastest',
               icon: CheckCircle2,
-              activeClass: 'bg-[#2A835F] text-white border-[#2A835F] shadow-sm',
+              activeClass: 'bg-emerald-600 text-white border-emerald-500 shadow-sm',
             },
             {
               id: 'COMPLETED_PENDING',
-              label: 'Completed - Pay Pending',
+              label: 'Completed & Payment Due',
               desc: 'Work finished, payment uncollected',
               badge: 'Unpaid',
               icon: Clock,
@@ -455,19 +471,19 @@ export default function AdminDirectEntryPage() {
             },
             {
               id: 'IN_PROGRESS',
-              label: 'Dispatched & In-Progress',
-              desc: 'Worker on site, meter ticking',
-              badge: 'Active Site',
+              label: 'Worker on Site',
+              desc: 'Worker currently on the job',
+              badge: 'Active',
               icon: HardHat,
               activeClass: 'bg-blue-600 text-white border-blue-500 shadow-sm',
             },
             {
               id: 'RAW_ENQUIRY',
-              label: 'Direct Lead / Raw Enquiry',
-              desc: 'Standard initial booking enquiry',
-              badge: 'Pending',
+              label: 'Save as Job Request',
+              desc: 'Record customer request to assign later',
+              badge: 'Waiting',
               icon: FileText,
-              activeClass: 'bg-purple-600 text-white border-purple-500 shadow-sm',
+              activeClass: 'bg-[#6366F1] text-white border-[#6366F1] shadow-sm',
             },
           ].map((mode) => {
             const Icon = mode.icon;
@@ -477,23 +493,25 @@ export default function AdminDirectEntryPage() {
                 key={mode.id}
                 type="button"
                 onClick={() => applyPresetMode(mode.id as EntryPresetMode)}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
                     ? mode.activeClass
-                    : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                    : isDark
+                    ? 'bg-[#161922] border-white/[0.06] text-zinc-400 hover:text-white'
+                    : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <div className="flex items-center justify-between gap-1">
                   <Icon className="w-4 h-4 shrink-0" />
-                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                    isSelected ? 'bg-black/30 text-white' : 'bg-gray-800 text-gray-400'
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                    isSelected ? 'bg-black/30 text-white' : isDark ? 'bg-black/40 text-zinc-400' : 'bg-slate-200 text-slate-600'
                   }`}>
                     {mode.badge}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <div className="text-xs font-black leading-snug">{mode.label}</div>
-                  <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
+                  <div className="text-xs font-bold leading-snug">{mode.label}</div>
+                  <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-white/80' : isDark ? 'text-zinc-500' : 'text-slate-500'}`}>
                     {mode.desc}
                   </div>
                 </div>
@@ -503,18 +521,18 @@ export default function AdminDirectEntryPage() {
         </div>
       </div>
 
-      {/* 3. Success Feedback Modal Banner */}
+      {/* 3. Success Feedback Banner */}
       {successResult && (
-        <div className="p-6 rounded-3xl bg-gradient-to-br from-[#103E2E] to-[#14151A] border-2 border-[#2A835F] text-gray-100 space-y-4 shadow-xl animate-in zoom-in-95">
+        <div className="p-6 rounded-[28px] bg-emerald-500/10 border-2 border-emerald-500/40 text-emerald-300 space-y-4 shadow-lg animate-in zoom-in-95">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold shrink-0">
+              <div className="w-12 h-12 rounded-[24px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center font-bold shrink-0">
                 <CheckCircle className="w-7 h-7" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-white">Work Order &amp; Finance Ingestion Successful!</h3>
-                <p className="text-xs text-emerald-300/90 mt-0.5">
-                  Record processed and fully synchronized across enquiries, worker ledger, and finance books.
+                <h3 className="text-lg font-bold text-white">Job Saved Successfully!</h3>
+                <p className="text-xs text-emerald-400/90 mt-0.5">
+                  Record has been saved and updated in work orders, worker assignments, and cashbook.
                 </p>
               </div>
             </div>
@@ -572,8 +590,8 @@ export default function AdminDirectEntryPage() {
         {/* Left Column: Form Cards (8 Cols) */}
         <div className="lg:col-span-8 space-y-6">
           {/* Card 1: Customer Profile & Kerala Location */}
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div className="bg-[#12141A] border border-white/[0.06] rounded-[28px] p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center font-bold">
                   <UserCheck className="w-4 h-4" />
@@ -599,7 +617,7 @@ export default function AdminDirectEntryPage() {
                   placeholder="e.g. Adv. Mohanan Nair"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -613,7 +631,7 @@ export default function AdminDirectEntryPage() {
                   placeholder="e.g. 98470 12345"
                   value={customerPhone}
                   onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm font-mono text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm font-mono text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
             </div>
@@ -626,7 +644,7 @@ export default function AdminDirectEntryPage() {
                 <select
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] cursor-pointer"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] cursor-pointer"
                 >
                   {KERALA_DISTRICTS.map((d) => (
                     <option key={d} value={d}>
@@ -645,7 +663,7 @@ export default function AdminDirectEntryPage() {
                   placeholder="e.g. Kanhangad / Payyanur"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -657,7 +675,7 @@ export default function AdminDirectEntryPage() {
                   type="date"
                   value={preferredDate}
                   onChange={(e) => setPreferredDate(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] font-mono"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] font-mono"
                 />
               </div>
             </div>
@@ -672,7 +690,7 @@ export default function AdminDirectEntryPage() {
                   placeholder="e.g. Near Temple Road, East Nada"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -685,15 +703,15 @@ export default function AdminDirectEntryPage() {
                   placeholder="e.g. customer@gmail.com"
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
             </div>
           </div>
 
           {/* Card 2: Service Selection & Rate Customization */}
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div className="bg-[#12141A] border border-white/[0.06] rounded-[28px] p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-bold">
                   <Layers className="w-4 h-4" />
@@ -721,10 +739,10 @@ export default function AdminDirectEntryPage() {
                       key={s.id}
                       type="button"
                       onClick={() => setSelectedServiceId(s.id)}
-                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between h-24 ${
+                      className={`p-3 rounded-[24px] border text-left transition-all cursor-pointer flex flex-col justify-between h-24 ${
                         isSelected
                           ? 'bg-[#2A835F]/20 border-[#2A835F] text-emerald-300 shadow-md ring-1 ring-[#2A835F]'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:border-gray-700 hover:text-gray-200'
+                          : 'bg-[#161922] border-white/[0.06] text-gray-400 hover:border-white/[0.12] hover:text-gray-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -749,7 +767,7 @@ export default function AdminDirectEntryPage() {
             </div>
 
             {/* Editable Rate Inputs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]">
               <div>
                 <label className="text-[11px] font-bold text-gray-400 block mb-1">
                   Wage Type:
@@ -758,7 +776,7 @@ export default function AdminDirectEntryPage() {
                   type="text"
                   value={wageType}
                   onChange={(e) => setWageType(e.target.value)}
-                  className="w-full bg-[#14151A] border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#12141A] border border-white/[0.06] rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-gray-200 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -770,7 +788,7 @@ export default function AdminDirectEntryPage() {
                   type="text"
                   value={unitLabel}
                   onChange={(e) => setUnitLabel(e.target.value)}
-                  className="w-full bg-[#14151A] border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#12141A] border border-white/[0.06] rounded-xl px-2.5 py-1.5 text-xs font-bold text-gray-200 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -783,7 +801,7 @@ export default function AdminDirectEntryPage() {
                   min="0"
                   value={workerUnitWage}
                   onChange={(e) => setWorkerUnitWage(Number(e.target.value))}
-                  className="w-full bg-[#14151A] border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-emerald-400 focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#12141A] border border-white/[0.06] rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-emerald-400 focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
 
@@ -796,15 +814,15 @@ export default function AdminDirectEntryPage() {
                   min="0"
                   value={unitRate}
                   onChange={(e) => setUnitRate(Number(e.target.value))}
-                  className="w-full bg-[#14151A] border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-white focus:outline-none focus:border-[#2A835F]"
+                  className="w-full bg-[#12141A] border border-white/[0.06] rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-white focus:outline-none focus:border-[#2A835F]"
                 />
               </div>
             </div>
           </div>
 
           {/* Card 3: Field Worker Assignment */}
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div className="bg-[#12141A] border border-white/[0.06] rounded-[28px] p-5 sm:p-6 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-bold">
                   <HardHat className="w-4 h-4" />
@@ -827,7 +845,7 @@ export default function AdminDirectEntryPage() {
                 <select
                   value={selectedWorkerId}
                   onChange={(e) => setSelectedWorkerId(e.target.value)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] cursor-pointer"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-sm text-gray-100 focus:outline-none focus:border-[#2A835F] cursor-pointer"
                 >
                   <option value="">-- Leave Unassigned (Company General Squad) --</option>
                   {workers.map((w) => (
@@ -842,7 +860,7 @@ export default function AdminDirectEntryPage() {
                 <label className="text-xs font-bold text-gray-300 block mb-1.5">
                   Worker Status Note:
                 </label>
-                <div className="p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800 text-xs text-gray-400 flex items-center gap-2">
+                <div className="p-2.5 rounded-xl bg-[#161922] border border-white/[0.06] text-xs text-gray-400 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>
                     {selectedWorkerId
@@ -856,8 +874,8 @@ export default function AdminDirectEntryPage() {
 
           {/* Card 4: Work Completion Metrics & Execution */}
           {(entryMode === 'COMPLETED_PAID' || entryMode === 'COMPLETED_PENDING' || entryMode === 'IN_PROGRESS') && (
-            <div className="bg-[#14151A] border border-gray-800 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm animate-in fade-in">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+            <div className="bg-[#12141A] border border-white/[0.06] rounded-[28px] p-5 sm:p-6 space-y-4 shadow-sm animate-in fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center font-bold">
                     <CheckCircle2 className="w-4 h-4" />
@@ -873,7 +891,7 @@ export default function AdminDirectEntryPage() {
               </div>
 
               {/* Units Counter */}
-              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div>
                   <span className="text-xs font-bold text-gray-200 block uppercase tracking-wider">
                     Total {unitLabel}s Completed:
@@ -887,7 +905,7 @@ export default function AdminDirectEntryPage() {
                   <button
                     type="button"
                     onClick={() => setCompletedUnits(Math.max(1, completedUnits - 1))}
-                    className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold flex items-center justify-center cursor-pointer border border-gray-700 active:scale-95"
+                    className="w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold flex items-center justify-center cursor-pointer border border-white/[0.12] active:scale-95"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
@@ -919,7 +937,7 @@ export default function AdminDirectEntryPage() {
                       key={inc}
                       type="button"
                       onClick={() => setCompletedUnits(completedUnits + inc)}
-                      className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold border border-gray-700 cursor-pointer"
+                      className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold border border-white/[0.12] cursor-pointer"
                     >
                       +{inc}
                     </button>
@@ -937,7 +955,7 @@ export default function AdminDirectEntryPage() {
                     type="time"
                     value={inTime}
                     onChange={(e) => setInTime(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3 py-2 text-xs font-mono text-gray-100 focus:outline-none focus:border-[#2A835F]"
                   />
                 </div>
 
@@ -949,7 +967,7 @@ export default function AdminDirectEntryPage() {
                     type="time"
                     value={outTime}
                     onChange={(e) => setOutTime(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3 py-2 text-xs font-mono text-gray-100 focus:outline-none focus:border-[#2A835F]"
                   />
                 </div>
 
@@ -963,7 +981,7 @@ export default function AdminDirectEntryPage() {
                     step="10"
                     value={workDurationMinutes}
                     onChange={(e) => setWorkDurationMinutes(Math.max(10, Number(e.target.value)))}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-100 focus:outline-none focus:border-[#2A835F]"
                   />
                 </div>
 
@@ -977,30 +995,30 @@ export default function AdminDirectEntryPage() {
                     step="5"
                     value={totalBreakMinutes}
                     onChange={(e) => setTotalBreakMinutes(Math.max(0, Number(e.target.value)))}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-100 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3 py-2 text-xs font-mono font-bold text-gray-100 focus:outline-none focus:border-[#2A835F]"
                   />
                 </div>
               </div>
 
               {/* Service specific toggles */}
               {selectedServiceId === 'cococare' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-gray-800/80 text-xs text-gray-300">
-                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-[#1A1C23] border border-gray-800 cursor-pointer">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-white/[0.06] text-xs text-gray-300">
+                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-[#161922] border border-white/[0.06] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={crownCleaningDone}
                       onChange={(e) => setCrownCleaningDone(e.target.checked)}
-                      className="rounded border-gray-700 text-emerald-600 focus:ring-emerald-500 bg-gray-900 w-4 h-4 cursor-pointer"
+                      className="rounded border-white/[0.12] text-emerald-600 focus:ring-emerald-500 bg-gray-900 w-4 h-4 cursor-pointer"
                     />
                     <span>Crown Cleaning &amp; Frond Pruning Performed</span>
                   </label>
 
-                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-[#1A1C23] border border-gray-800 cursor-pointer">
+                  <label className="flex items-center gap-2.5 p-3 rounded-xl bg-[#161922] border border-white/[0.06] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={beetleMedicineApplied}
                       onChange={(e) => setBeetleMedicineApplied(e.target.checked)}
-                      className="rounded border-gray-700 text-emerald-600 focus:ring-emerald-500 bg-gray-900 w-4 h-4 cursor-pointer"
+                      className="rounded border-white/[0.12] text-emerald-600 focus:ring-emerald-500 bg-gray-900 w-4 h-4 cursor-pointer"
                     />
                     <span>Rhinoceros Beetle Preventive Powder Applied</span>
                   </label>
@@ -1011,8 +1029,8 @@ export default function AdminDirectEntryPage() {
 
           {/* Card 5: Payment Collection & Finance Sync */}
           {entryMode === 'COMPLETED_PAID' && (
-            <div className="bg-[#14151A] border border-emerald-500/40 rounded-3xl p-5 sm:p-6 space-y-4 shadow-sm animate-in fade-in">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+            <div className="bg-[#12141A] border border-emerald-500/40 rounded-[28px] p-5 sm:p-6 space-y-4 shadow-sm animate-in fade-in">
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                     <IndianRupee className="w-4 h-4" />
@@ -1050,7 +1068,7 @@ export default function AdminDirectEntryPage() {
                       min="0"
                       value={paymentAmount}
                       onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-8 pr-3.5 py-2.5 text-base font-mono font-black text-emerald-400 focus:outline-none focus:border-[#2A835F]"
+                      className="w-full bg-[#161922] border border-white/[0.06] rounded-xl pl-8 pr-3.5 py-2.5 text-base font-mono font-black text-emerald-400 focus:outline-none focus:border-[#2A835F]"
                     />
                   </div>
                 </div>
@@ -1076,7 +1094,7 @@ export default function AdminDirectEntryPage() {
                           className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-sm'
-                              : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:border-gray-700 hover:text-white'
+                              : 'bg-[#161922] border-white/[0.06] text-gray-400 hover:border-white/[0.12] hover:text-white'
                           }`}
                         >
                           <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -1098,7 +1116,7 @@ export default function AdminDirectEntryPage() {
                     placeholder="e.g. UPI Ref / GPay Txn / Cheque #"
                     value={paymentReference}
                     onChange={(e) => setPaymentReference(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F] font-mono"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-xs text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F] font-mono"
                   />
                 </div>
 
@@ -1111,7 +1129,7 @@ export default function AdminDirectEntryPage() {
                     placeholder="e.g. Collected on site by supervisor"
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-3.5 py-2.5 text-xs text-gray-100 placeholder:text-gray-600 focus:outline-none focus:border-[#2A835F]"
                   />
                 </div>
               </div>
@@ -1122,8 +1140,8 @@ export default function AdminDirectEntryPage() {
         {/* Right Column: Live Summary & Submission Console (4 Cols) */}
         <div className="lg:col-span-4 space-y-5 lg:sticky lg:top-6">
           {/* Order Summary Card */}
-          <div className="bg-[#14151A] border border-gray-800 rounded-3xl p-5 space-y-4 shadow-sm">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+          <div className="bg-[#12141A] border border-white/[0.06] rounded-[28px] p-5 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Work Order Calculation Strip
               </span>
@@ -1169,7 +1187,7 @@ export default function AdminDirectEntryPage() {
               </div>
 
               {/* Financial Box */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-[#103E2E] to-[#1A1C23] border border-emerald-500/30 space-y-2 pt-3">
+              <div className="p-3.5 rounded-[24px] bg-gradient-to-br from-[#103E2E] to-[#161922] border border-emerald-500/30 space-y-2 pt-3">
                 <div className="flex items-center justify-between text-xs text-gray-300">
                   <span>Worker Payout:</span>
                   <strong className="font-mono text-emerald-400 text-sm">
@@ -1219,7 +1237,7 @@ export default function AdminDirectEntryPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white text-sm font-black transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 active:scale-95"
+                className="w-full py-3.5 px-4 rounded-[24px] bg-[#2A835F] hover:bg-[#236D4F] text-white text-sm font-black transition-all shadow-lg shadow-emerald-900/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 active:scale-95"
               >
                 {isSubmitting ? (
                   <>
@@ -1244,7 +1262,7 @@ export default function AdminDirectEntryPage() {
                 type="button"
                 onClick={handleResetForm}
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#1A1C23] hover:bg-[#252830] text-gray-400 hover:text-white text-xs font-bold transition-all border border-gray-800 cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#161922] hover:bg-[#252830] text-gray-400 hover:text-white text-xs font-bold transition-all border border-white/[0.06] cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Form</span>

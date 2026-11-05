@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { adminServicesService, CreateServiceInput, ServiceItem } from '@/services/Admin/services';
 import { AdminDropdown, AdminDropdownOption } from '@/components/Admin/admin-dropdown';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 interface CreateServiceModalProps {
   isOpen: boolean;
@@ -59,8 +60,8 @@ const WAGE_TYPE_OPTIONS: AdminDropdownOption[] = [
   { value: 'PER_SQFT', label: '📐 Square Feet (Painting / Tile Laying)' },
   { value: 'PER_POINT', label: '⚡ Per Point (Electrical Systems)' },
   { value: 'PER_FOOT', label: '📏 Per Foot (Borewell Drilling)' },
-  { value: 'DAILY_WAGE', label: '📅 Daily Shift (Masonry / Plastering)' },
-  { value: 'FIXED_VISIT', label: '🔧 Fixed Visit / Inspection (Plumbing)' },
+  { value: 'DAILY_WAGE', label: '📅 Daily Wage (General Construction)' },
+  { value: 'FIXED_VISIT', label: '🏷️ Fixed Inspection / Visit' },
 ];
 
 export function CreateServiceModal({
@@ -69,39 +70,59 @@ export function CreateServiceModal({
   token,
   onSuccess,
 }: CreateServiceModalProps) {
+  const { isDark } = useAdminTheme();
+
   const [name, setName] = useState('');
-  const [customServiceId, setCustomServiceId] = useState('');
   const [category, setCategory] = useState(CATEGORY_PRESETS[0]);
   const [customCategory, setCustomCategory] = useState('');
-  const [wageType, setWageType] = useState('HOURLY');
-  const [unitLabel, setUnitLabel] = useState('Hour');
-  const [baseWorkerWage, setBaseWorkerWage] = useState<number | ''>('');
-  const [baseCustomerRate, setBaseCustomerRate] = useState<number | ''>('');
-  const [minUnits, setMinUnits] = useState<number | ''>(1);
-  const [image, setImage] = useState('');
-  const [imageInputTab, setImageInputTab] = useState<'upload' | 'preset' | 'url'>('upload');
-  const [urlInput, setUrlInput] = useState('');
   const [description, setDescription] = useState('');
+  const [customServiceId, setCustomServiceId] = useState('');
+  const [wageType, setWageType] = useState('PER_TREE');
+  const [unitLabel, setUnitLabel] = useState('Tree');
+  const [baseWorkerWage, setBaseWorkerWage] = useState<number | ''>(80);
+  const [baseCustomerRate, setBaseCustomerRate] = useState<number | ''>(120);
+  const [minUnits, setMinUnits] = useState<number | ''>(5);
+  const [image, setImage] = useState('');
+  const [imageInputTab, setImageInputTab] = useState<'preset' | 'upload' | 'url'>('preset');
+  const [urlInput, setUrlInput] = useState('');
   const [isActive, setIsActive] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image file is too large. Maximum size is 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const resetForm = () => {
     setName('');
-    setCustomServiceId('');
     setCategory(CATEGORY_PRESETS[0]);
     setCustomCategory('');
-    setWageType('HOURLY');
-    setUnitLabel('Hour');
-    setBaseWorkerWage('');
-    setBaseCustomerRate('');
-    setMinUnits(1);
+    setDescription('');
+    setCustomServiceId('');
+    setWageType('PER_TREE');
+    setUnitLabel('Tree');
+    setBaseWorkerWage(80);
+    setBaseCustomerRate(120);
+    setMinUnits(5);
     setImage('');
     setUrlInput('');
-    setDescription('');
     setIsActive(true);
-    setError(null);
+    setError('');
   };
 
   const handleClose = () => {
@@ -109,94 +130,40 @@ export function CreateServiceModal({
     onClose();
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      setError('Please select an image file (PNG, JPG, WebP, etc.)');
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Image size exceeds 10MB limit');
-      return;
-    }
-
-    setError(null);
-    try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const rawDataUrl = event.target?.result as string;
-        const img = new Image();
-        img.onload = () => {
-          const maxDim = 800;
-          let width = img.width;
-          let height = img.height;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (!ctx) {
-            setImage(rawDataUrl);
-            return;
-          }
-          ctx.drawImage(img, 0, 0, width, height);
-          try {
-            const webp = canvas.toDataURL('image/webp', 0.85);
-            if (webp.startsWith('data:image/webp')) {
-              setImage(webp);
-              return;
-            }
-          } catch {}
-          setImage(canvas.toDataURL('image/jpeg', 0.85));
-        };
-        img.onerror = () => setImage(rawDataUrl);
-        img.src = rawDataUrl;
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      setError('Failed to process image');
-    }
-  };
-
-  if (!isOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
 
-    const cleanName = name.trim();
-    if (!cleanName) {
-      setError('Please provide a valid service name');
+    if (!name.trim()) {
+      setError('Service title is required.');
       return;
     }
 
-    const finalCategory =
-      category === 'Other' ? customCategory.trim() || 'General' : category;
+    const finalCategory = category === 'Other' ? customCategory.trim() : category;
+    if (!finalCategory) {
+      setError('Please select or specify a category.');
+      return;
+    }
+
+    if (!unitLabel.trim()) {
+      setError('Measurement unit label is required.');
+      return;
+    }
 
     setIsLoading(true);
+
     try {
       const payload: CreateServiceInput = {
-        name: cleanName,
-        serviceId: customServiceId.trim() ? customServiceId.trim().toUpperCase() : undefined,
+        name: name.trim(),
         category: finalCategory,
+        description: description.trim() || undefined,
+        serviceId: customServiceId.trim() || undefined,
         wageType,
-        unitLabel: unitLabel.trim() || 'Unit',
+        unitLabel: unitLabel.trim(),
         baseWorkerWage: baseWorkerWage !== '' ? Number(baseWorkerWage) : undefined,
         baseCustomerRate: baseCustomerRate !== '' ? Number(baseCustomerRate) : undefined,
-        minUnits: minUnits !== '' ? Number(minUnits) : 1,
+        minUnits: minUnits !== '' ? Number(minUnits) : undefined,
         image: image.trim() || undefined,
-        description: description.trim() || undefined,
         isActive,
       };
 
@@ -213,54 +180,71 @@ export function CreateServiceModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Top subtle glow line */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/50 to-transparent" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-in fade-in duration-200">
+      <div
+        className={`relative w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] rounded-[28px] border ${
+          isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+        }`}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800/80 bg-[#16171D]">
+        <div
+          className={`flex items-center justify-between p-5 sm:p-6 border-b ${
+            isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/10 to-indigo-500/10 border border-purple-500/20 flex items-center justify-center text-[#7B4DFF]">
+            <div
+              className={`w-10 h-10 rounded-2xl border flex items-center justify-center text-[#6366F1] ${
+                isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200 shadow-xs'
+              }`}
+            >
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-100">
-                Register New Service
+              <h2 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Add New Service
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">
-                Auto-generates sequential Service ID (e.g. KKS-001)
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Set up service name, pricing, and worker wage
               </p>
             </div>
           </div>
           <button
             onClick={handleClose}
-            className="p-2 text-gray-400 hover:text-gray-200 bg-[#1A1C23] hover:bg-[#232630] rounded-xl border border-gray-800 transition-colors cursor-pointer"
+            className={`p-2 rounded-full transition-colors cursor-pointer ${
+              isDark
+                ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                : 'text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 custom-scrollbar">
           {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs animate-in fade-in">
+            <div className="flex items-center gap-2 p-3.5 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {/* Sequential Service ID preview banner */}
-          <div className="p-3.5 bg-[#1A1C23] border border-gray-800/80 rounded-xl flex items-center justify-between gap-4">
+          <div
+            className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}
+          >
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
                 <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <div className="text-xs font-semibold text-gray-200">
+                <div className={`text-xs font-semibold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                   Sequential Service ID Generator
                 </div>
-                <div className="text-[11px] text-gray-400">
+                <div className={`text-[11px] ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                   Auto-increments next available code in sequence (e.g. KKS-001)
                 </div>
               </div>
@@ -271,22 +255,26 @@ export function CreateServiceModal({
                 value={customServiceId}
                 onChange={(e) => setCustomServiceId(e.target.value)}
                 placeholder="Auto code"
-                className="w-32 bg-[#0E0F12] border border-gray-700/80 rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-400 placeholder-gray-500 focus:outline-none focus:border-emerald-500"
+                className={`w-32 rounded-xl px-3 py-1.5 text-xs font-mono border focus:outline-none focus:border-[#FF5C38] ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08] text-emerald-400 placeholder-zinc-600' : 'bg-white border-slate-200 text-emerald-600 placeholder-slate-400'
+                }`}
               />
             </div>
           </div>
 
           {/* Service Name */}
           <div>
-            <label className="block text-xs font-medium text-gray-300 mb-1.5">
-              Service Name / Title <span className="text-rose-400">*</span>
+            <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+              Service Name / Title <span className="text-[#FF5C38]">*</span>
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Exterior & Interior Plastering Squads"
-              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all"
+              className={`w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none focus:border-[#FF5C38] ${
+                isDark ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              }`}
               required
             />
           </div>
@@ -294,21 +282,21 @@ export function CreateServiceModal({
           {/* Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                Category <span className="text-rose-400">*</span>
+              <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                Category <span className="text-[#FF5C38]">*</span>
               </label>
               <AdminDropdown
                 options={CATEGORY_OPTIONS}
                 value={category}
                 onChange={(val) => setCategory(val)}
-                variant="emerald"
+                variant="coral"
                 size="md"
               />
             </div>
 
             {category === 'Other' && (
               <div>
-                <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Custom Category Name
                 </label>
                 <input
@@ -316,7 +304,9 @@ export function CreateServiceModal({
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
                   placeholder="e.g. Landscaping"
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#2A835F]"
+                  className={`w-full rounded-xl px-3 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                    isDark ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                   required
                 />
               </div>
@@ -324,23 +314,27 @@ export function CreateServiceModal({
           </div>
 
           {/* Service Wage & Pricing Model */}
-          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-4">
+          <div
+            className={`border rounded-2xl p-4 space-y-3.5 ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}
+          >
             <div>
-              <div className="text-xs font-bold text-gray-200 flex items-center justify-between">
+              <div className={`text-xs font-bold flex items-center justify-between ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                 <span>Wage &amp; Pay Rates Model</span>
-                <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                <span className="text-[10px] text-[#FF5C38] font-semibold bg-[#FF5C38]/10 px-2 py-0.5 rounded-full border border-[#FF5C38]/20">
                   Worker &amp; Client Pay Setup
                 </span>
               </div>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                Configure default worker pay rate (e.g. per tree/per hour) and billable customer rate
+              <p className={`text-[11px] mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                Configure default worker pay rate and billable customer rate
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-1.5">
-                  Calculation Model <span className="text-rose-400">*</span>
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                  Calculation Model <span className="text-[#FF5C38]">*</span>
                 </label>
                 <AdminDropdown
                   options={WAGE_TYPE_OPTIONS}
@@ -369,13 +363,13 @@ export function CreateServiceModal({
                       setUnitLabel('Visit');
                     }
                   }}
-                  variant="emerald"
+                  variant="coral"
                   size="md"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-gray-300 uppercase tracking-wider mb-1.5">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                   Unit Label (e.g. Tree, Hour, Sq.Ft)
                 </label>
                 <input
@@ -383,7 +377,9 @@ export function CreateServiceModal({
                   value={unitLabel}
                   onChange={(e) => setUnitLabel(e.target.value)}
                   placeholder="e.g. Tree / Hour"
-                  className="w-full bg-[#14151A] border border-gray-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                  className={`w-full rounded-xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                   required
                 />
               </div>
@@ -391,12 +387,16 @@ export function CreateServiceModal({
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
               {/* Base Worker Wage */}
-              <div className="p-3 bg-[#14151A] border border-emerald-500/20 rounded-xl space-y-1">
-                <label className="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+              <div
+                className={`p-3 rounded-xl border space-y-1 ${
+                  isDark ? 'bg-[#181A20] border-emerald-500/20' : 'bg-white border-emerald-200'
+                }`}
+              >
+                <label className="block text-[10px] font-bold text-emerald-500 uppercase tracking-wider">
                   Worker Pay (₹ / {unitLabel || 'Unit'})
                 </label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-400 font-mono">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-emerald-500 font-mono">
                     ₹
                   </span>
                   <input
@@ -406,21 +406,24 @@ export function CreateServiceModal({
                     value={baseWorkerWage}
                     onChange={(e) => setBaseWorkerWage(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder={wageType === 'PER_TREE' ? '80' : wageType === 'HOURLY' ? '900' : '0'}
-                    className="w-full bg-[#0E0F12] border border-emerald-500/30 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-emerald-300 placeholder-gray-600 focus:outline-none focus:border-emerald-400"
+                    className={`w-full rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/30 focus:outline-none focus:border-emerald-400 ${
+                      isDark ? 'bg-[#121318]' : 'bg-emerald-50/50'
+                    }`}
                   />
                 </div>
-                <span className="text-[10px] text-gray-400 block">
-                  തൊഴിലാളി വേതനം (Earned rate)
-                </span>
               </div>
 
               {/* Base Customer Rate */}
-              <div className="p-3 bg-[#14151A] border border-blue-500/20 rounded-xl space-y-1">
-                <label className="block text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+              <div
+                className={`p-3 rounded-xl border space-y-1 ${
+                  isDark ? 'bg-[#181A20] border-blue-500/20' : 'bg-white border-blue-200'
+                }`}
+              >
+                <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-wider">
                   Customer Rate (₹ / {unitLabel || 'Unit'})
                 </label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-400 font-mono">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-blue-500 font-mono">
                     ₹
                   </span>
                   <input
@@ -430,17 +433,20 @@ export function CreateServiceModal({
                     value={baseCustomerRate}
                     onChange={(e) => setBaseCustomerRate(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder={wageType === 'PER_TREE' ? '120' : wageType === 'HOURLY' ? '1600' : '0'}
-                    className="w-full bg-[#0E0F12] border border-blue-500/30 rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-blue-300 placeholder-gray-600 focus:outline-none focus:border-blue-400"
+                    className={`w-full rounded-lg pl-6 pr-2.5 py-1.5 text-xs font-mono font-bold text-blue-400 border border-blue-500/30 focus:outline-none focus:border-blue-400 ${
+                      isDark ? 'bg-[#121318]' : 'bg-blue-50/50'
+                    }`}
                   />
                 </div>
-                <span className="text-[10px] text-gray-400 block">
-                  ഉപഭോക്തൃ നിരക്ക് (Billable)
-                </span>
               </div>
 
               {/* Minimum Units */}
-              <div className="p-3 bg-[#14151A] border border-gray-700/60 rounded-xl space-y-1">
-                <label className="block text-[10px] font-bold text-gray-300 uppercase tracking-wider">
+              <div
+                className={`p-3 rounded-xl border space-y-1 ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200'
+                }`}
+              >
+                <label className={`block text-[10px] font-bold uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   Min Units ({unitLabel || 'Unit'}s)
                 </label>
                 <input
@@ -449,36 +455,45 @@ export function CreateServiceModal({
                   value={minUnits}
                   onChange={(e) => setMinUnits(e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="1"
-                  className="w-full bg-[#0E0F12] border border-gray-700/80 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#2A835F]"
+                  className={`w-full rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold border focus:outline-none focus:border-[#FF5C38] ${
+                    isDark ? 'bg-[#121318] border-white/[0.08] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                  }`}
                 />
-                <span className="text-[10px] text-gray-400 block">
-                  കുറഞ്ഞ അളവ് (Min dispatch)
-                </span>
               </div>
             </div>
           </div>
 
           {/* Service Image / Media */}
-          <div className="bg-[#181A22] border border-gray-800 rounded-2xl p-4 space-y-3">
+          <div
+            className={`border rounded-2xl p-4 space-y-3 ${
+              isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+            }`}
+          >
             <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-bold text-gray-200">
+                <label className={`block text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                   Service Image / Thumbnail
                 </label>
-                <p className="text-[11px] text-gray-400 mt-0.5">
+                <p className={`text-[11px] mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                   Select a banner preset, upload an image, or enter a URL
                 </p>
               </div>
 
               {/* Mode Switcher Tabs */}
-              <div className="flex items-center gap-1 bg-[#121317] p-1 rounded-xl border border-gray-800">
+              <div
+                className={`flex items-center gap-1 p-1 rounded-xl border ${
+                  isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200'
+                }`}
+              >
                 <button
                   type="button"
                   onClick={() => setImageInputTab('preset')}
-                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
                     imageInputTab === 'preset'
-                      ? 'bg-[#2A835F] text-white'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#FF5C38] text-white'
+                      : isDark
+                      ? 'text-zinc-400 hover:text-white'
+                      : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
                   <ImageIcon className="w-3 h-3" />
@@ -487,10 +502,12 @@ export function CreateServiceModal({
                 <button
                   type="button"
                   onClick={() => setImageInputTab('upload')}
-                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
                     imageInputTab === 'upload'
-                      ? 'bg-[#2A835F] text-white'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#FF5C38] text-white'
+                      : isDark
+                      ? 'text-zinc-400 hover:text-white'
+                      : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
                   <Upload className="w-3 h-3" />
@@ -499,10 +516,12 @@ export function CreateServiceModal({
                 <button
                   type="button"
                   onClick={() => setImageInputTab('url')}
-                  className={`px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 ${
                     imageInputTab === 'url'
-                      ? 'bg-[#2A835F] text-white'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#FF5C38] text-white'
+                      : isDark
+                      ? 'text-zinc-400 hover:text-white'
+                      : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
                   <Link2 className="w-3 h-3" />
@@ -513,8 +532,12 @@ export function CreateServiceModal({
 
             {/* Active Preview if image exists */}
             {image && (
-              <div className="flex items-center gap-3 p-3 bg-[#121317] border border-gray-800 rounded-xl">
-                <div className="w-14 h-14 rounded-xl bg-gray-900 border border-gray-700/80 overflow-hidden shrink-0 flex items-center justify-center">
+              <div
+                className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200'
+                }`}
+              >
+                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 flex items-center justify-center border border-white/[0.08]">
                   <img
                     src={image}
                     alt="Preview"
@@ -522,10 +545,10 @@ export function CreateServiceModal({
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-200 truncate">
+                  <p className={`text-xs font-semibold truncate ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
                     Image Attached
                   </p>
-                  <p className="text-[11px] text-gray-400 truncate">
+                  <p className={`text-[11px] truncate ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
                     {image.startsWith('data:') ? 'Custom uploaded image' : image}
                   </p>
                 </div>
@@ -535,7 +558,7 @@ export function CreateServiceModal({
                     setImage('');
                     setUrlInput('');
                   }}
-                  className="p-2 text-gray-400 hover:text-rose-400 bg-[#1A1C23] hover:bg-rose-500/10 rounded-lg border border-gray-800 hover:border-rose-500/30 transition-colors cursor-pointer"
+                  className="p-2 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-transparent hover:border-rose-500/30 transition-colors cursor-pointer"
                   title="Remove Image"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -553,11 +576,13 @@ export function CreateServiceModal({
                     onClick={() => setImage(preset.url)}
                     className={`p-2 rounded-xl border text-left flex items-center gap-2.5 transition-all cursor-pointer ${
                       image === preset.url
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                        : 'border-gray-800 bg-[#14151A] hover:border-gray-700 text-gray-300'
+                        ? 'border-[#FF5C38] bg-[#FF5C38]/10 text-[#FF5C38]'
+                        : isDark
+                        ? 'border-white/[0.06] bg-[#181A20] hover:border-white/[0.12] text-zinc-300'
+                        : 'border-slate-200 bg-white hover:border-slate-300 text-slate-700'
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-lg bg-gray-900 overflow-hidden shrink-0 border border-gray-700/50">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-white/[0.06]">
                       <img
                         src={preset.url}
                         alt={preset.label}
@@ -575,13 +600,19 @@ export function CreateServiceModal({
             {/* Upload File Input */}
             {imageInputTab === 'upload' && (
               <div>
-                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-gray-700 hover:border-emerald-500/60 rounded-xl cursor-pointer bg-[#14151A]/60 hover:bg-[#1A1C23] transition-colors">
+                <label
+                  className={`flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
+                    isDark
+                      ? 'border-zinc-700 hover:border-[#FF5C38] bg-[#181A20]/60 hover:bg-[#181A20]'
+                      : 'border-slate-300 hover:border-[#FF5C38] bg-white hover:bg-slate-50'
+                  }`}
+                >
                   <div className="flex flex-col items-center justify-center pt-2 pb-2">
-                    <Upload className="w-5 h-5 mb-1.5 text-gray-400" />
-                    <p className="text-xs text-gray-300 font-medium">
-                      <span className="text-emerald-400">Click to upload</span> or drag and drop
+                    <Upload className="w-5 h-5 mb-1.5 text-zinc-400" />
+                    <p className={`text-xs font-medium ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                      <span className="text-[#FF5C38]">Click to upload</span> or drag and drop
                     </p>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
+                    <p className={`text-[10px] mt-0.5 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
                       PNG, JPG, or WebP (max 5MB)
                     </p>
                   </div>
@@ -603,7 +634,9 @@ export function CreateServiceModal({
                   value={urlInput}
                   onChange={(e) => setUrlInput(e.target.value)}
                   placeholder="https://example.com/image.png or /Banners/coco.png"
-                  className="flex-1 bg-[#14151A] border border-gray-700/80 rounded-xl px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F]"
+                  className={`flex-1 rounded-xl px-3.5 py-2 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
                 <button
                   type="button"
@@ -612,7 +645,7 @@ export function CreateServiceModal({
                       setImage(urlInput.trim());
                     }
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-[#2A835F] hover:bg-emerald-600 text-white text-xs font-semibold cursor-pointer transition-colors"
+                  className="px-4 py-2 rounded-xl bg-[#FF5C38] hover:bg-[#FF6B4A] text-white text-xs font-semibold cursor-pointer transition-colors"
                 >
                   Apply
                 </button>
@@ -620,19 +653,19 @@ export function CreateServiceModal({
             )}
           </div>
 
-          {/* Service Description (Optional) */}
+          {/* Service Description */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-gray-300">
-                Service Description <span className="text-gray-500 font-normal">(Optional)</span>
-              </label>
-            </div>
+            <label className={`block text-xs font-medium mb-1.5 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+              Service Description <span className={`font-normal ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>(Optional)</span>
+            </label>
             <textarea
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description or operational details about this service (optional)..."
-              className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] transition-all"
+              className={`w-full rounded-xl px-4 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                isDark ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              }`}
             />
           </div>
 
@@ -643,20 +676,28 @@ export function CreateServiceModal({
               id="isActive"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-700 bg-gray-800 text-emerald-500 focus:ring-0"
+              className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-[#FF5C38] accent-[#FF5C38]"
             />
-            <label htmlFor="isActive" className="text-xs text-gray-300 cursor-pointer">
+            <label htmlFor="isActive" className={`text-xs cursor-pointer ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
               Enable immediately in active catalog
             </label>
           </div>
         </form>
 
         {/* Pinned Footer */}
-        <div className="p-5 border-t border-gray-800/80 bg-[#16171D] flex items-center justify-end gap-3">
+        <div
+          className={`p-5 border-t flex items-center justify-end gap-3 ${
+            isDark ? 'bg-[#14151B] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+          }`}
+        >
           <button
             type="button"
             onClick={handleClose}
-            className="px-4 py-2 rounded-xl border border-gray-800 text-gray-300 hover:bg-[#1A1C23] text-xs font-semibold transition-colors cursor-pointer"
+            className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+              isDark
+                ? 'text-zinc-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08]'
+                : 'text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200'
+            }`}
           >
             Cancel
           </button>
@@ -667,7 +708,7 @@ export function CreateServiceModal({
               if (form) form.requestSubmit();
             }}
             disabled={isLoading}
-            className="px-5 py-2 rounded-xl bg-[#7B4DFF] hover:bg-[#6A3CEB] text-white text-xs font-bold shadow-lg shadow-[#7B4DFF]/25 hover:shadow-[#7B4DFF]/40 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+            className="px-6 py-2.5 rounded-full bg-[#FF5C38] hover:bg-[#FF6B4A] text-white text-xs font-bold shadow-lg shadow-[#FF5C38]/25 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
               <>

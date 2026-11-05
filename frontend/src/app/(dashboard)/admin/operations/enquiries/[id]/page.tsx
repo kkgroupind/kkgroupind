@@ -57,11 +57,13 @@ import { AssignWorkerModal } from '@/components/OfficeStaff/AssignWorkerModal';
 import { UpdateJobPayModal } from '@/components/OfficeStaff/UpdateJobPayModal';
 import { QuotationModal } from '@/components/Quotation';
 import { InvoiceModal } from '@/components/Invoice';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 export default function AdminEnquiryDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { token, user: currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
 
   const [enquiry, setEnquiry] = useState<ServiceEnquiry | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -504,16 +506,16 @@ export default function AdminEnquiryDetailPage() {
   if (authLoading || (isLoading && !enquiry)) {
     return (
       <div className="max-w-[1550px] mx-auto space-y-6 pb-12 animate-pulse">
-        <div className="h-10 w-48 bg-[#14151A] rounded-xl border border-gray-800" />
-        <div className="h-28 bg-[#14151A] rounded-3xl border border-gray-800" />
+        <div className="h-10 w-48 bg-[#12141A] rounded-xl border border-white/[0.06]" />
+        <div className="h-28 bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-[#14151A] rounded-2xl border border-gray-800" />
+            <div key={i} className="h-32 bg-[#12141A] rounded-[24px] border border-white/[0.06]" />
           ))}
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-7 h-[500px] bg-[#14151A] rounded-3xl border border-gray-800" />
-          <div className="lg:col-span-5 h-[500px] bg-[#14151A] rounded-3xl border border-gray-800" />
+          <div className="lg:col-span-7 h-[500px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
+          <div className="lg:col-span-5 h-[500px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         </div>
       </div>
     );
@@ -530,8 +532,8 @@ export default function AdminEnquiryDetailPage() {
           Back to Enquiries
         </NextLink>
 
-        <div className="bg-[#14151A] rounded-3xl border border-gray-800 p-12 text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
+        <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-12 text-center flex flex-col items-center">
+          <div className="w-14 h-14 rounded-[24px] bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
             <AlertCircle className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold text-gray-100 mb-2">Work Order Not Found</h2>
@@ -541,14 +543,14 @@ export default function AdminEnquiryDetailPage() {
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-[#161922] hover:bg-gray-800 text-gray-300 rounded-xl border border-white/[0.06] text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               Try Again
             </button>
             <NextLink
               href="/admin/operations/enquiries"
-              className="px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-[#6366F1] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
             >
               Return to Enquiries
             </NextLink>
@@ -564,7 +566,7 @@ export default function AdminEnquiryDetailPage() {
   const isPending = enquiry.status === 'PENDING';
 
   return (
-    <div className="max-w-[1600px] mx-auto space-y-6 pb-14 select-none">
+    <div className={`max-w-[1600px] mx-auto space-y-6 pb-14 select-none ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* ========================================================
           1. TOP BREADCRUMB & HEADER CONTROLS
       ======================================================== */}
@@ -572,24 +574,30 @@ export default function AdminEnquiryDetailPage() {
         <div className="flex items-center gap-3">
           <NextLink
             href="/admin/operations/enquiries"
-            className="p-2.5 rounded-2xl bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-white border border-gray-800 transition-all shadow-sm"
-            title="Back to Enquiries"
+            className={`p-2.5 rounded-[24px] border transition-all shadow-xs ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] text-gray-400 hover:text-white border-white/[0.06]'
+                : 'bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 border-slate-200'
+            }`}
+            title="Back to Requests"
           >
             <ArrowLeft className="w-4 h-4" />
           </NextLink>
           <div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 font-medium">
+            <div className={`flex items-center gap-2 text-xs font-medium ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>
               <NextLink href="/admin/dashboard" className="hover:text-gray-300 transition-colors">
                 Admin
               </NextLink>
               <span>/</span>
               <NextLink href="/admin/operations/enquiries" className="hover:text-gray-300 transition-colors">
-                Work Orders
+                Customer Requests
               </NextLink>
               <span>/</span>
-              <span className="font-mono text-[#7B4DFF]">{enquiry.trackingNumber}</span>
+              <span className="font-mono text-[#6366F1]">{enquiry.trackingNumber}</span>
             </div>
-            <h1 className="text-2xl font-black text-gray-100 tracking-tight flex items-center gap-3 mt-0.5">
+            <h1 className={`text-2xl font-black tracking-tight flex items-center gap-3 mt-0.5 ${
+              isDark ? 'text-gray-100' : 'text-slate-900'
+            }`}>
               <span>{enquiry.serviceName}</span>
               <span
                 className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
@@ -614,7 +622,7 @@ export default function AdminEnquiryDetailPage() {
           <button
             type="button"
             onClick={() => setIsQuotationModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#2A835F] hover:bg-[#236D4F] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#2A835F]/25 cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#6366F1] hover:bg-[#5E5CE6] text-white rounded-full text-xs font-bold transition-all shadow-md shadow-[#6366F1]/20 cursor-pointer"
             title="Create Quotation PDF & WhatsApp"
           >
             <FileText className="w-3.5 h-3.5" />
@@ -626,7 +634,7 @@ export default function AdminEnquiryDetailPage() {
             <button
               type="button"
               onClick={() => setIsInvoiceModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-900/30 cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-full text-xs font-bold transition-all shadow-md shadow-emerald-900/30 cursor-pointer"
               title="Generate Official Tax Invoice PDF & WhatsApp"
             >
               <Receipt className="w-3.5 h-3.5" />
@@ -639,10 +647,10 @@ export default function AdminEnquiryDetailPage() {
             <button
               type="button"
               onClick={() => setIsAssignModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF] hover:bg-[#6839EF] text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-[#7B4DFF]/25 cursor-pointer"
+              className="flex items-center gap-2 px-3.5 py-2 bg-[#FF5C38] hover:bg-[#FF6B4A] text-white rounded-full text-xs font-bold transition-all shadow-md shadow-[#FF5C38]/20 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isPending ? 'Dispatch Squad' : 'Reassign / Add Workers'}</span>
+              <span>{isPending ? 'Assign Worker' : 'Reassign Workers'}</span>
             </button>
           )}
 
@@ -657,10 +665,14 @@ export default function AdminEnquiryDetailPage() {
                 setEditTotalBreakMinutes(breakMins || '');
                 setIsModifyTimeModalOpen(true);
               }}
-              className="flex items-center gap-2 px-3.5 py-2 bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 text-gray-300 rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-bold transition-all shadow-xs cursor-pointer border ${
+                isDark
+                  ? 'bg-[#161922] hover:bg-gray-800 border-white/[0.06] text-gray-300'
+                  : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+              }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>Modify Time Logs</span>
+              <span>Edit Work Time</span>
             </button>
           )}
 
@@ -671,7 +683,7 @@ export default function AdminEnquiryDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsResumeModalOpen(true)}
-                  className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-blue-600/25 cursor-pointer"
+                  className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-bold transition-all shadow-md shadow-blue-600/25 cursor-pointer"
                 >
                   <Play className="w-3.5 h-3.5 fill-white" />
                   <span>Resume Work</span>
@@ -684,7 +696,7 @@ export default function AdminEnquiryDetailPage() {
                     setAdminPauseNotes('');
                     setIsPauseModalOpen(true);
                   }}
-                  className="flex items-center gap-2 px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                  className="flex items-center gap-2 px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 rounded-full text-xs font-bold transition-all cursor-pointer"
                 >
                   <Pause className="w-3.5 h-3.5" />
                   <span>Pause Work</span>
@@ -697,7 +709,7 @@ export default function AdminEnquiryDetailPage() {
                   setCompleteNotes('');
                   setIsCompleteModalOpen(true);
                 }}
-                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
+                className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold transition-all shadow-md shadow-emerald-600/25 cursor-pointer"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Complete Work</span>
@@ -709,20 +721,24 @@ export default function AdminEnquiryDetailPage() {
           <button
             type="button"
             onClick={() => setIsPayModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 hover:text-white rounded-full text-xs font-bold transition-all cursor-pointer"
           >
             <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Adjust Wage & Billing</span>
+            <span>Set Wage & Billing</span>
           </button>
 
           <button
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+            className={`flex items-center gap-2 px-3 py-2 rounded-full border text-xs font-bold transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.06] text-gray-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`} />
-            <span>{isRefreshing ? 'Syncing...' : 'Sync'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Syncing...' : 'Reload'}</span>
           </button>
         </div>
       </div>
@@ -738,7 +754,7 @@ export default function AdminEnquiryDetailPage() {
 
         return (
           <div
-            className={`relative overflow-hidden rounded-2xl border p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-all ${
+            className={`relative overflow-hidden rounded-[24px] border p-5 flex flex-col md:flex-row items-center justify-between gap-4 transition-all ${
               isBreakActive
                 ? 'bg-amber-500/10 border-amber-500/40'
                 : 'bg-emerald-500/10 border-emerald-500/40'
@@ -755,7 +771,7 @@ export default function AdminEnquiryDetailPage() {
 
             {/* Left: status label */}
             <div className="flex items-center gap-3">
-              <span className="p-2.5 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="p-2.5 rounded-[24px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 <TreePalm className="w-6 h-6" />
               </span>
               <div>
@@ -779,7 +795,7 @@ export default function AdminEnquiryDetailPage() {
 
             {/* Centre: Counter with - and + and Quick Add Chips */}
             <div className="flex flex-col items-center gap-2">
-              <div className="flex items-center gap-3 bg-black/60 px-4 py-2 rounded-2xl border border-emerald-500/30 shadow-inner">
+              <div className="flex items-center gap-3 bg-black/60 px-4 py-2 rounded-[24px] border border-emerald-500/30 shadow-inner">
                 <button
                   type="button"
                   onClick={() => handleAdminUpdateTreeCount(Math.max(1, currentUnits - 1))}
@@ -814,7 +830,7 @@ export default function AdminEnquiryDetailPage() {
                     key={inc}
                     type="button"
                     onClick={() => handleAdminUpdateTreeCount(currentUnits + inc)}
-                    className="px-2 py-0.5 rounded-lg bg-[#14151A] hover:bg-emerald-950/60 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
+                    className="px-2 py-0.5 rounded-lg bg-[#12141A] hover:bg-emerald-950/60 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/30 cursor-pointer transition-all active:scale-95"
                   >
                     +{inc}
                   </button>
@@ -866,7 +882,7 @@ export default function AdminEnquiryDetailPage() {
 
       {isInProgress && !isTreePlucking && liveTimerData && (
         <div
-          className={`relative overflow-hidden rounded-2xl border p-5 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all ${
+          className={`relative overflow-hidden rounded-[24px] border p-5 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all ${
             liveTimerData.isOnBreak
               ? 'bg-amber-500/10 border-amber-500/40'
               : 'bg-emerald-500/10 border-emerald-500/40'
@@ -982,23 +998,25 @@ export default function AdminEnquiryDetailPage() {
       ======================================================== */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Work Duration & Site Arrival OR Tree Plucking Harvest Count */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-5 shadow-lg relative overflow-hidden">
+        <div className={`rounded-[24px] border p-5 shadow-sm relative overflow-hidden transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              {isTreePlucking ? 'Trees Harvested' : 'On-Site Execution Time'}
+            <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              {isTreePlucking ? 'Trees Harvested' : 'Time Worked on Site'}
             </span>
             <div className={`p-2 rounded-xl ${isTreePlucking ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-purple-500/10 text-[#A78BFA] border border-purple-500/20'}`}>
               {isTreePlucking ? <TreePalm className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
             </div>
           </div>
-          <div className="text-xl font-black text-gray-100 tracking-tight mt-2 flex items-baseline gap-1.5">
+          <div className={`text-xl font-black tracking-tight mt-2 flex items-baseline gap-1.5 ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
             {isTreePlucking ? (
               <div className="flex flex-col gap-1">
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-2xl text-emerald-400 font-mono">
                     {enquiry.completedUnits ?? enquiry.estimatedUnits ?? 1}
                   </span>
-                  <span className="text-xs text-gray-400 font-semibold">Trees Plucked</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Trees Plucked</span>
                 </div>
                 {specs.extraTreeCount && specs.extraTreeCount > 0 ? (
                   <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20 w-fit">
@@ -1012,7 +1030,7 @@ export default function AdminEnquiryDetailPage() {
               formattedWorkDuration
             )}
           </div>
-          <div className="text-[11px] text-gray-400 mt-1 flex items-center gap-1.5">
+          <div className={`text-[11px] mt-1 flex items-center gap-1.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
             {specs.siteReachedAt || enquiry.workStartedAt ? (
               <span className="text-emerald-400 font-semibold flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
@@ -1032,31 +1050,33 @@ export default function AdminEnquiryDetailPage() {
         </div>
 
         {/* Metric 2: Quantity & Work Units */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-5 shadow-lg relative overflow-hidden">
+        <div className={`rounded-[24px] border p-5 shadow-sm relative overflow-hidden transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              Completed Units / Volume
+            <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Completed Work Units
             </span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl font-black text-gray-100 tracking-tight mt-2">
+          <div className={`text-xl font-black tracking-tight mt-2 ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
             {enquiry.completedUnits !== null && enquiry.completedUnits !== undefined ? (
               <span>
                 {enquiry.completedUnits}{' '}
-                <span className="text-xs font-bold text-gray-400">
+                <span className={`text-xs font-bold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                   {enquiry.unitLabel || 'Units'}
                 </span>
               </span>
             ) : (
-              <span className="text-gray-500 text-sm">
+              <span className={`text-sm ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
                 Estimated: {enquiry.estimatedUnits || 1} {enquiry.unitLabel || 'Units'}
               </span>
             )}
           </div>
-          <div className="text-[11px] text-gray-400 mt-1">
-            Model:{' '}
+          <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Pay Model:{' '}
             <strong className="text-emerald-400 uppercase">
               {enquiry.wageType || 'STANDARD'}
             </strong>
@@ -1064,10 +1084,12 @@ export default function AdminEnquiryDetailPage() {
         </div>
 
         {/* Metric 3: Wage & Billing */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-5 shadow-lg relative overflow-hidden">
+        <div className={`rounded-[24px] border p-5 shadow-sm relative overflow-hidden transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              Worker Compensation
+            <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Worker Wage
             </span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
               <CreditCard className="w-4 h-4" />
@@ -1081,41 +1103,43 @@ export default function AdminEnquiryDetailPage() {
                 ₹{enquiry.workerUnitWage} / {enquiry.unitLabel || 'Unit'}
               </span>
             ) : (
-              <span className="text-gray-500 text-sm">To be settled upon finish</span>
+              <span className={`text-sm ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>Pending completion</span>
             )}
           </div>
-          <div className="text-[11px] text-gray-400 mt-1">
-            Client Billable:{' '}
-            <strong className="text-gray-200">
+          <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Customer Price:{' '}
+            <strong className={isDark ? 'text-gray-200' : 'text-slate-800'}>
               {enquiry.totalCalculatedCost ? `₹${enquiry.totalCalculatedCost.toLocaleString('en-IN')}` : 'Pending'}
             </strong>
           </div>
         </div>
 
         {/* Metric 4: Break & Downtime Logs */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-5 shadow-lg relative overflow-hidden">
+        <div className={`rounded-[24px] border p-5 shadow-sm relative overflow-hidden transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-              Total Breaks Taken
+            <span className={`text-[10px] uppercase font-bold tracking-wider ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+              Breaks Taken
             </span>
             <div className="p-2 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
               <Coffee className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl font-black text-gray-100 tracking-tight mt-2">
+          <div className={`text-xl font-black tracking-tight mt-2 ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
             {totalBreakMinutes > 0 ? (
               <span>
-                {totalBreakMinutes} <span className="text-xs font-bold text-gray-400">Minutes</span>
+                {totalBreakMinutes} <span className={`text-xs font-bold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Minutes</span>
               </span>
             ) : (
-              <span className="text-gray-400 text-sm">0 Breaks</span>
+              <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>0 Breaks</span>
             )}
           </div>
-          <div className="text-[11px] text-gray-400 mt-1">
+          <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
             {breakLog.length > 0 ? (
               <span>{breakLog.length} Pause session{breakLog.length > 1 ? 's' : ''} logged</span>
             ) : (
-              <span>Continuous field execution</span>
+              <span>Continuous work</span>
             )}
           </div>
         </div>
@@ -1130,10 +1154,10 @@ export default function AdminEnquiryDetailPage() {
         ======================================================== */}
         <div className="lg:col-span-7 space-y-6">
           {/* Work Execution Timeline */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-5">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-5">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#7B4DFF]/15 border border-[#7B4DFF]/30 flex items-center justify-center text-[#A78BFA]">
+                <div className="w-10 h-10 rounded-[24px] bg-[#6366F1]/15 border border-[#6366F1]/30 flex items-center justify-center text-[#A78BFA]">
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
@@ -1149,7 +1173,7 @@ export default function AdminEnquiryDetailPage() {
               <button
                 type="button"
                 onClick={() => handleCopyTracking(enquiry.trackingNumber)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 font-mono text-xs font-bold text-gray-300 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 border border-white/[0.06] font-mono text-xs font-bold text-gray-300 transition-colors cursor-pointer"
                 title="Copy Tracking ID"
               >
                 <span>{enquiry.trackingNumber}</span>
@@ -1162,10 +1186,10 @@ export default function AdminEnquiryDetailPage() {
             </div>
 
             {/* Stepper Timeline */}
-            <div className="space-y-4 relative pl-6 border-l-2 border-gray-800 ml-3">
+            <div className="space-y-4 relative pl-6 border-l-2 border-white/[0.06] ml-3">
               {/* Event 1: Work Order Created */}
               <div className="relative">
-                <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-[#14151A] flex items-center justify-center text-[9px] font-black text-black">
+                <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-[#12141A] flex items-center justify-center text-[9px] font-black text-black">
                   ✓
                 </span>
                 <div className="text-xs font-bold text-gray-200">Enquiry Initiated & Registered</div>
@@ -1187,7 +1211,7 @@ export default function AdminEnquiryDetailPage() {
               {/* Event 2: Worker / Squad Dispatched */}
               {enquiry.assignedAt ? (
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#14151A] flex items-center justify-center text-[9px] font-black text-white">
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-blue-500 ring-4 ring-[#12141A] flex items-center justify-center text-[9px] font-black text-white">
                     ✓
                   </span>
                   <div className="text-xs font-bold text-gray-200">
@@ -1216,7 +1240,7 @@ export default function AdminEnquiryDetailPage() {
               {/* Event 3: Workers Reached Site */}
               {specs.siteReachedAt ? (
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-[#14151A] flex items-center justify-center text-[9px] font-black text-black">
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-500 ring-4 ring-[#12141A] flex items-center justify-center text-[9px] font-black text-black">
                     ✓
                   </span>
                   <div className="text-xs font-bold text-emerald-400">
@@ -1238,7 +1262,7 @@ export default function AdminEnquiryDetailPage() {
               {/* Event 4: Work Started */}
               {enquiry.workStartedAt ? (
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-[#14151A] flex items-center justify-center text-[9px] font-black text-black">
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-amber-400 ring-4 ring-[#12141A] flex items-center justify-center text-[9px] font-black text-black">
                     ✓
                   </span>
                   <div className="text-xs font-bold text-gray-200">
@@ -1259,7 +1283,7 @@ export default function AdminEnquiryDetailPage() {
               {/* Event 5: Break Logs */}
               {breakLog.map((b, idx) => (
                 <div key={idx} className="relative">
-                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-purple-500 ring-4 ring-[#14151A] flex items-center justify-center text-[8px] font-bold text-white">
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-purple-500 ring-4 ring-[#12141A] flex items-center justify-center text-[8px] font-bold text-white">
                     ☕
                   </span>
                   <div className="text-xs font-bold text-purple-300">
@@ -1289,7 +1313,7 @@ export default function AdminEnquiryDetailPage() {
               {/* Event 6: Work Completed */}
               {enquiry.completedAt || enquiry.workEndedAt ? (
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-400 ring-4 ring-[#14151A] flex items-center justify-center text-[9px] font-black text-black">
+                  <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-emerald-400 ring-4 ring-[#12141A] flex items-center justify-center text-[9px] font-black text-black">
                     ★
                   </span>
                   <div className="text-xs font-bold text-emerald-400">
@@ -1317,7 +1341,7 @@ export default function AdminEnquiryDetailPage() {
 
           {/* Break Details & Notes Breakdown */}
           {breakLog.length > 0 && (
-            <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-4">
+            <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-4">
               <h3 className="text-sm font-black text-gray-200 flex items-center gap-2">
                 <Coffee className="w-4 h-4 text-purple-400" />
                 <span>Shift Pauses & Break Ledger</span>
@@ -1325,7 +1349,7 @@ export default function AdminEnquiryDetailPage() {
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#1A1C23] text-gray-400 font-semibold border-b border-gray-800">
+                  <thead className="bg-[#161922] text-gray-400 font-semibold border-b border-white/[0.06]">
                     <tr>
                       <th className="py-2.5 px-3">Reason</th>
                       <th className="py-2.5 px-3">Start Time</th>
@@ -1335,7 +1359,7 @@ export default function AdminEnquiryDetailPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-800/60 text-gray-300">
                     {breakLog.map((b, i) => (
-                      <tr key={i} className="hover:bg-[#1A1C23]/40">
+                      <tr key={i} className="hover:bg-[#161922]/40">
                         <td className="py-2.5 px-3 font-semibold text-gray-200">
                           {b.reason}
                         </td>
@@ -1365,15 +1389,15 @@ export default function AdminEnquiryDetailPage() {
           )}
 
           {/* Work Requirements & Message */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-3">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-3">
             <h3 className="text-xs font-black uppercase text-gray-400 tracking-wider">
               Customer Work Description & Requirements
             </h3>
-            <p className="text-sm text-gray-200 leading-relaxed bg-[#1A1C23] p-4 rounded-2xl border border-gray-800/60">
+            <p className="text-sm text-gray-200 leading-relaxed bg-[#161922] p-4 rounded-[24px] border border-white/[0.06]">
               {enquiry.message || 'No additional specifications provided.'}
             </p>
             {enquiry.notes && (
-              <div className="text-xs text-gray-400 bg-[#1A1C23]/60 p-3.5 rounded-2xl border border-gray-800/50">
+              <div className="text-xs text-gray-400 bg-[#161922]/60 p-3.5 rounded-[24px] border border-white/[0.06]/50">
                 <span className="font-bold text-gray-300">Office Notes:</span> {enquiry.notes}
               </div>
             )}
@@ -1388,9 +1412,9 @@ export default function AdminEnquiryDetailPage() {
             const hasData = actualMins > 0 || breakMins > 0 || breakLog.length > 0;
             if (!hasData) return null;
             return (
-              <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-5">
-                <div className="flex items-center gap-3 pb-4 border-b border-gray-800/80">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-5">
+                <div className="flex items-center gap-3 pb-4 border-b border-white/[0.06]">
+                  <div className="w-10 h-10 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
@@ -1405,17 +1429,17 @@ export default function AdminEnquiryDetailPage() {
 
                 {/* Three-column metrics */}
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20 text-center">
                     <div className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider mb-1">Net Labor</div>
                     <div className="text-xl font-black text-emerald-400 font-mono">{actualMins}<span className="text-xs font-bold text-emerald-600 ml-0.5">m</span></div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Productive time</div>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-amber-500/10 border border-amber-500/20 text-center">
                     <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider mb-1">Break Deducted</div>
                     <div className="text-xl font-black text-amber-400 font-mono">{breakMins}<span className="text-xs font-bold text-amber-600 ml-0.5">m</span></div>
                     <div className="text-[10px] text-gray-500 mt-0.5">{breakLog.length} pause session{breakLog.length !== 1 ? 's' : ''}</div>
                   </div>
-                  <div className="p-3.5 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-purple-500/10 border border-purple-500/20 text-center">
                     <div className="text-[10px] uppercase font-bold text-purple-400 tracking-wider mb-1">Gross On-Site</div>
                     <div className="text-xl font-black text-purple-400 font-mono">{grossMins}<span className="text-xs font-bold text-purple-600 ml-0.5">m</span></div>
                     <div className="text-[10px] text-gray-500 mt-0.5">Total site duration</div>
@@ -1426,7 +1450,7 @@ export default function AdminEnquiryDetailPage() {
                 {breakLog.length > 0 && (
                   <div className="space-y-2">
                     <div className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Break Archive</div>
-                    <div className="overflow-x-auto rounded-2xl border border-gray-800/60">
+                    <div className="overflow-x-auto rounded-[24px] border border-white/[0.06]">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-[#0D0E12] text-gray-400 font-semibold">
                           <tr>
@@ -1439,7 +1463,7 @@ export default function AdminEnquiryDetailPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-800/60 text-gray-300">
                           {breakLog.map((b, i) => (
-                            <tr key={i} className="hover:bg-[#1A1C23]/40">
+                            <tr key={i} className="hover:bg-[#161922]/40">
                               <td className="py-2.5 px-3 text-gray-500 font-bold">{i + 1}</td>
                               <td className="py-2.5 px-3 font-semibold text-gray-200">
                                 <span className="inline-flex items-center gap-1.5">
@@ -1461,7 +1485,7 @@ export default function AdminEnquiryDetailPage() {
                             </tr>
                           ))}
                         </tbody>
-                        <tfoot className="bg-[#0D0E12] border-t border-gray-800">
+                        <tfoot className="bg-[#0D0E12] border-t border-white/[0.06]">
                           <tr>
                             <td colSpan={4} className="py-2 px-3 text-[11px] text-gray-500 font-semibold">Total Break Time</td>
                             <td className="py-2 px-3 text-right text-[11px] font-black text-amber-400">{breakMins} min</td>
@@ -1489,12 +1513,12 @@ export default function AdminEnquiryDetailPage() {
             if (!hasManualTelemetry) return null;
 
             return (
-              <div className="bg-[#14151A] rounded-3xl border border-emerald-500/30 p-6 shadow-xl space-y-5 relative overflow-hidden">
+              <div className="bg-[#12141A] rounded-[28px] border border-emerald-500/30 p-6 shadow-xl space-y-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
-                <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <div className="w-10 h-10 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                       <HardHat className="w-5 h-5" />
                     </div>
                     <div>
@@ -1518,7 +1542,7 @@ export default function AdminEnquiryDetailPage() {
                 {/* 4 Metric Bento Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {/* Trees / Completed Units */}
-                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] text-center">
                     <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
                       {isTreePlucking ? 'Trees Plucked' : 'Completed Units'}
                     </div>
@@ -1532,7 +1556,7 @@ export default function AdminEnquiryDetailPage() {
                   </div>
 
                   {/* Shift In-Time */}
-                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] text-center">
                     <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
                       In-Time (തുടങ്ങിയത്)
                     </div>
@@ -1543,7 +1567,7 @@ export default function AdminEnquiryDetailPage() {
                   </div>
 
                   {/* Shift Out-Time */}
-                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] text-center">
                     <div className="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">
                       Out-Time (കഴിഞ്ഞത്)
                     </div>
@@ -1554,7 +1578,7 @@ export default function AdminEnquiryDetailPage() {
                   </div>
 
                   {/* Pauses / Break Duration */}
-                  <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 text-center">
+                  <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] text-center">
                     <div className="text-[10px] uppercase font-bold text-amber-400 tracking-wider mb-1">
                       Time Paused (ഇടവേള)
                     </div>
@@ -1567,7 +1591,7 @@ export default function AdminEnquiryDetailPage() {
                 </div>
 
                 {/* Additional worker checklist & notes */}
-                <div className="p-4 rounded-2xl bg-[#0D0E12] border border-gray-800/80 space-y-2.5 text-xs">
+                <div className="p-4 rounded-[24px] bg-[#0D0E12] border border-white/[0.06] space-y-2.5 text-xs">
                   <div className="flex items-center justify-between text-slate-300">
                     <span className="text-gray-400">Net Active Work Duration:</span>
                     <span className="font-mono font-bold text-emerald-400">
@@ -1576,7 +1600,7 @@ export default function AdminEnquiryDetailPage() {
                   </div>
 
                   {isTreePlucking && (
-                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/60">
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/[0.06]">
                       <div className="flex items-center gap-1.5 text-gray-300">
                         <CheckCircle2 className={`w-3.5 h-3.5 ${spec.crownCleaningDone !== false ? 'text-emerald-400' : 'text-gray-600'}`} />
                         <span>Crown Cleaning &amp; Pruning</span>
@@ -1589,7 +1613,7 @@ export default function AdminEnquiryDetailPage() {
                   )}
 
                   {enquiry.notes && (
-                    <div className="pt-2 border-t border-gray-800/60 text-gray-300">
+                    <div className="pt-2 border-t border-white/[0.06] text-gray-300">
                       <span className="text-gray-500 font-semibold block mb-0.5">Worker Remarks:</span>
                       <p className="italic text-gray-300 font-mono">{enquiry.notes}</p>
                     </div>
@@ -1600,10 +1624,10 @@ export default function AdminEnquiryDetailPage() {
           })()}
 
           {/* ── OPERATIONS & FINANCE FLOW SETTLEMENT CARD ── */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-6">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <Banknote className="w-5 h-5" />
                 </div>
                 <div>
@@ -1621,7 +1645,7 @@ export default function AdminEnquiryDetailPage() {
 
               <NextLink
                 href={`/admin/finance?search=${encodeURIComponent(enquiry.trackingNumber)}`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 text-xs font-bold text-gray-300 hover:text-white transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 border border-white/[0.06] text-xs font-bold text-gray-300 hover:text-white transition-colors"
               >
                 <span>Full Ledger</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -1631,7 +1655,7 @@ export default function AdminEnquiryDetailPage() {
             {/* 2-Column Bento: Customer Revenue vs Worker Wage Disbursement */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Customer Revenue Box */}
-              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/90 space-y-3 relative overflow-hidden">
+              <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/90 space-y-3 relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                     <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
@@ -1669,7 +1693,7 @@ export default function AdminEnquiryDetailPage() {
                       ₹{customerTotalPaid.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-gray-300 border-t border-gray-800 pt-1.5 font-bold">
+                  <div className="flex items-center justify-between text-gray-300 border-t border-white/[0.06] pt-1.5 font-bold">
                     <span>Balance Pending:</span>
                     <span className={`font-mono text-sm ${customerPendingBalance > 0 ? 'text-rose-400 font-black' : 'text-gray-500'}`}>
                       ₹{customerPendingBalance.toLocaleString('en-IN')}
@@ -1688,7 +1712,7 @@ export default function AdminEnquiryDetailPage() {
               </div>
 
               {/* Worker Wage Disbursement Box */}
-              <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/90 space-y-3 relative overflow-hidden">
+              <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/90 space-y-3 relative overflow-hidden">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                     <ArrowUpRight className="w-4 h-4 text-amber-400" />
@@ -1726,7 +1750,7 @@ export default function AdminEnquiryDetailPage() {
                       ₹{workerTotalPaid.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-gray-300 border-t border-gray-800 pt-1.5 font-bold">
+                  <div className="flex items-center justify-between text-gray-300 border-t border-white/[0.06] pt-1.5 font-bold">
                     <span>Pending Wage:</span>
                     <span className={`font-mono text-sm ${workerPendingBalance > 0 ? 'text-amber-400 font-black' : 'text-gray-500'}`}>
                       ₹{workerPendingBalance.toLocaleString('en-IN')}
@@ -1746,18 +1770,18 @@ export default function AdminEnquiryDetailPage() {
             </div>
 
             {/* Linked Finance Transactions Table */}
-            <div className="space-y-2 pt-2 border-t border-gray-800/80">
+            <div className="space-y-2 pt-2 border-t border-white/[0.06]">
               <span className="text-[11px] font-bold uppercase text-gray-400 tracking-wider flex items-center justify-between">
                 <span>Direct Financial Ledger ({transactions.length} record{transactions.length !== 1 ? 's' : ''})</span>
                 <span className="text-[10px] text-gray-500 normal-case">Audited records</span>
               </span>
 
               {transactions.length === 0 ? (
-                <div className="p-4 rounded-2xl bg-[#0D0E12] border border-gray-800/60 text-center text-xs text-gray-500">
+                <div className="p-4 rounded-[24px] bg-[#0D0E12] border border-white/[0.06] text-center text-xs text-gray-500">
                   No money transactions registered yet. Record payment when money is given by customer or disbursed to worker.
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-2xl border border-gray-800/60">
+                <div className="overflow-x-auto rounded-[24px] border border-white/[0.06]">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-[#0D0E12] text-gray-400 font-semibold">
                       <tr>
@@ -1773,7 +1797,7 @@ export default function AdminEnquiryDetailPage() {
                       {transactions.map((t) => {
                         const isIncome = t.type === 'INCOME';
                         return (
-                          <tr key={t.id} className="hover:bg-[#1A1C23]/40">
+                          <tr key={t.id} className="hover:bg-[#161922]/40">
                             <td className="py-2.5 px-3 font-mono text-[11px] font-bold text-gray-400">
                               {t.transactionNumber}
                             </td>
@@ -1818,7 +1842,7 @@ export default function AdminEnquiryDetailPage() {
         ======================================================== */}
         <div className="lg:col-span-5 space-y-6">
           {/* Site Location Card with Maps */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-4">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-emerald-400" />
@@ -1851,7 +1875,7 @@ export default function AdminEnquiryDetailPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full py-2.5 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-[24px] bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-600/25 cursor-pointer"
             >
               <Navigation className="w-4 h-4 fill-white rotate-45" />
               <span>Launch Google Maps GPS</span>
@@ -1860,8 +1884,8 @@ export default function AdminEnquiryDetailPage() {
           </div>
 
           {/* Assigned Workforce & Squad Card */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <span className="text-xs font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
                 <HardHat className="w-4 h-4 text-amber-400" />
                 <span>Field Operatives Dispatched</span>
@@ -1873,9 +1897,9 @@ export default function AdminEnquiryDetailPage() {
 
             {/* Primary Worker / Lead */}
             {enquiry.worker ? (
-              <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between gap-3">
+              <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-[24px] bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center shrink-0">
                     {enquiry.worker.name?.charAt(0) || 'W'}
                   </div>
                   <div className="min-w-0">
@@ -1905,7 +1929,7 @@ export default function AdminEnquiryDetailPage() {
                 </NextLink>
               </div>
             ) : (
-              <div className="py-4 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-2xl border border-gray-800/50">
+              <div className="py-4 text-center text-xs text-gray-500 bg-[#161922]/40 rounded-[24px] border border-white/[0.06]/50">
                 No workers assigned yet.
               </div>
             )}
@@ -1922,7 +1946,7 @@ export default function AdminEnquiryDetailPage() {
                     .map((m) => (
                       <div
                         key={m.id}
-                        className="p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800/60 flex items-center justify-between text-xs"
+                        className="p-2.5 rounded-xl bg-[#161922] border border-white/[0.06] flex items-center justify-between text-xs"
                       >
                         <div>
                           <div className="font-bold text-gray-200">
@@ -1955,14 +1979,14 @@ export default function AdminEnquiryDetailPage() {
           </div>
 
           {/* Customer & Coordinator Snapshot */}
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-4">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-4">
             {/* Customer Box */}
             <div className="space-y-2">
               <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-sky-400" />
                 <span>Client Information</span>
               </span>
-              <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-2">
+              <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-2">
                 <div className="font-bold text-sm text-gray-100">{enquiry.customerName}</div>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   {enquiry.customerPhone && (
@@ -1977,7 +2001,7 @@ export default function AdminEnquiryDetailPage() {
                   {enquiry.customerEmail && (
                     <a
                       href={`mailto:${enquiry.customerEmail}`}
-                      className="px-2.5 py-1 rounded-xl bg-[#7B4DFF]/20 text-[#A78BFA] hover:bg-[#7B4DFF]/30 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded-xl bg-[#6366F1]/20 text-[#A78BFA] hover:bg-[#6366F1]/30 text-xs font-bold transition-colors inline-flex items-center gap-1.5"
                     >
                       <Mail className="w-3 h-3" />
                       <span>Email Client</span>
@@ -1988,12 +2012,12 @@ export default function AdminEnquiryDetailPage() {
             </div>
 
             {/* Office Coordinator Box */}
-            <div className="space-y-2 pt-2 border-t border-gray-800/60">
+            <div className="space-y-2 pt-2 border-t border-white/[0.06]">
               <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
                 <Building className="w-3.5 h-3.5 text-[#A78BFA]" />
                 <span>Office Coordinator</span>
               </span>
-              <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800/80">
+              <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06]">
                 <div className="font-bold text-sm text-gray-100">
                   {enquiry.officeStaff?.name || 'KK Group Central Dispatch'}
                 </div>
@@ -2040,10 +2064,10 @@ export default function AdminEnquiryDetailPage() {
       {/* ── PAUSE CONFIRMATION MODAL ───────────────────────────── */}
       {isPauseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-10 h-10 rounded-[24px] bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                   <Pause className="w-5 h-5" />
                 </div>
                 <div>
@@ -2055,14 +2079,14 @@ export default function AdminEnquiryDetailPage() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setIsPauseModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+              <button onClick={() => setIsPauseModalOpen(false)} className="p-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {/* If Coconut Tree Plucking: Trees Plucked Before Break */}
               {isTreePlucking ? (
-                <div className="p-3.5 rounded-2xl bg-black/50 border border-emerald-500/30 flex items-center justify-between text-xs">
+                <div className="p-3.5 rounded-[24px] bg-black/50 border border-emerald-500/30 flex items-center justify-between text-xs">
                   <div>
                     <span className="text-emerald-300 font-bold block">
                       Trees Plucked Before Break:
@@ -2092,7 +2116,7 @@ export default function AdminEnquiryDetailPage() {
                   </div>
                 </div>
               ) : liveTimerData ? (
-                <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between text-xs">
+                <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-between text-xs">
                   <span className="text-gray-400 font-semibold">Active Work Meter So Far:</span>
                   <span className="font-mono font-black text-amber-400 text-base">{liveTimerData.workTimeFormatted}</span>
                 </div>
@@ -2110,7 +2134,7 @@ export default function AdminEnquiryDetailPage() {
                       className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                         adminPauseReason === r
                           ? 'bg-amber-500/25 border-amber-500/60 text-amber-300'
-                          : 'bg-[#1A1C23] border-gray-800 text-gray-400 hover:text-gray-200 hover:border-gray-700'
+                          : 'bg-[#161922] border-white/[0.06] text-gray-400 hover:text-gray-200 hover:border-gray-700'
                       }`}
                     >
                       {r}
@@ -2126,14 +2150,14 @@ export default function AdminEnquiryDetailPage() {
                   value={adminPauseNotes}
                   onChange={(e) => setAdminPauseNotes(e.target.value)}
                   placeholder={isTreePlucking ? "e.g. Taking lunch after harvesting first batch..." : "e.g. Customer requested a short wait..."}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
                 />
               </div>
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setIsPauseModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#161922] hover:bg-gray-800 text-gray-300 border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2155,43 +2179,54 @@ export default function AdminEnquiryDetailPage() {
       {/* ── RESUME CONFIRMATION MODAL ──────────────────────────── */}
       {isResumeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-sm">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+          <div className={`rounded-[28px] border shadow-2xl w-full max-w-sm overflow-hidden ${
+            isDark ? 'bg-[#12141A] border-white/[0.08] text-gray-200' : 'bg-white border-slate-200 text-slate-900'
+          }`}>
+            <div className={`flex items-center justify-between px-6 pt-6 pb-4 border-b ${
+              isDark ? 'border-white/[0.06] bg-[#16181F]' : 'border-slate-100 bg-slate-50'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <div className="w-10 h-10 rounded-[24px] bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
                   <Play className="w-5 h-5 fill-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-gray-100">
+                  <h3 className={`text-base font-black ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
                     {isTreePlucking ? 'Resume Coconut Plucking?' : 'Resume Work Timer'}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    {isTreePlucking ? 'Confirm operative is continuing harvesting' : 'Confirm the squad is back on-site'}
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+                    {isTreePlucking ? 'Confirm operative is continuing harvesting' : 'Confirm the worker is back on-site'}
                   </p>
                 </div>
               </div>
-              <button onClick={() => setIsResumeModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+              <button
+                onClick={() => setIsResumeModalOpen(false)}
+                className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+                  isDark ? 'bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border-white/[0.06]' : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 border-slate-200'
+                }`}
+              >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="px-6 py-5">
-              <p className="text-sm text-gray-300 mb-4">
+              <p className={`text-sm mb-4 ${isDark ? 'text-gray-300' : 'text-slate-600'}`}>
                 {isTreePlucking ? (
                   <>
-                    This will conclude the current break and resume field harvesting for{' '}
-                    <strong className="text-white">{enquiry.serviceName}</strong>.
+                    This will end the break and resume tree harvesting for{' '}
+                    <strong className={isDark ? 'text-white' : 'text-slate-900'}>{enquiry.serviceName}</strong>.
                   </>
                 ) : (
                   <>
-                    This will end the current break and resume the work timer for{' '}
-                    <strong className="text-white">{enquiry.serviceName}</strong>.
+                    This will end the break and resume the work timer for{' '}
+                    <strong className={isDark ? 'text-white' : 'text-slate-900'}>{enquiry.serviceName}</strong>.
                   </>
                 )}
               </p>
               {isTreePlucking && ((enquiry.specificationDetails as any)?.activeBreak?.unitsBeforeBreak !== undefined) && (
-                <div className="mb-4 p-3 rounded-xl bg-black/50 border border-emerald-500/30 flex items-center justify-between text-xs">
-                  <span className="text-gray-400">Trees Logged Before Break:</span>
-                  <span className="font-mono font-bold text-emerald-400">
+                <div className={`mb-4 p-3 rounded-xl border flex items-center justify-between text-xs ${
+                  isDark ? 'bg-black/50 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <span className={isDark ? 'text-gray-400' : 'text-slate-600'}>Trees Logged Before Break:</span>
+                  <span className="font-mono font-bold text-emerald-500">
                     🌴 {(enquiry.specificationDetails as any).activeBreak.unitsBeforeBreak} Trees
                   </span>
                 </div>
@@ -2200,7 +2235,9 @@ export default function AdminEnquiryDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsResumeModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
+                    isDark ? 'bg-[#161922] hover:bg-gray-800 text-gray-300 border-white/[0.06]' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                  }`}
                 >
                   Cancel
                 </button>
@@ -2222,10 +2259,10 @@ export default function AdminEnquiryDetailPage() {
       {/* ── COMPLETE WORK CONFIRMATION MODAL ───────────────────── */}
       {isCompleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -2237,14 +2274,14 @@ export default function AdminEnquiryDetailPage() {
                   </p>
                 </div>
               </div>
-              <button onClick={() => setIsCompleteModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+              <button onClick={() => setIsCompleteModalOpen(false)} className="p-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               {/* Tree Counter HUD for Coconut Plucking */}
               {isTreePlucking ? (
-                <div className="p-4 rounded-2xl bg-black/50 border border-emerald-500/30 flex flex-col items-center gap-3">
+                <div className="p-4 rounded-[24px] bg-black/50 border border-emerald-500/30 flex flex-col items-center gap-3">
                   <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
                     Total Coconut Trees Plucked
                   </span>
@@ -2297,7 +2334,7 @@ export default function AdminEnquiryDetailPage() {
                 <>
                   {/* Timer summary for machinery */}
                   {liveTimerData && (
-                    <div className="p-3.5 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between text-xs">
+                    <div className="p-3.5 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-between text-xs">
                       <span className="text-gray-400 font-semibold">Net Work Time</span>
                       <span className="font-mono font-black text-emerald-400 text-base">{liveTimerData.workTimeFormatted}</span>
                     </div>
@@ -2312,7 +2349,7 @@ export default function AdminEnquiryDetailPage() {
                       min={0}
                       value={completeUnits}
                       onChange={(e) => setCompleteUnits(e.target.value === '' ? '' : Number(e.target.value))}
-                      className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
+                      className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
                       placeholder={`e.g. ${enquiry.estimatedUnits || 1}`}
                     />
                   </div>
@@ -2327,14 +2364,14 @@ export default function AdminEnquiryDetailPage() {
                   value={completeNotes}
                   onChange={(e) => setCompleteNotes(e.target.value)}
                   placeholder={isTreePlucking ? "e.g. All coconut palms harvested safely, crowns cleaned..." : "e.g. All palm trees cleared, site cleaned up..."}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
                 />
               </div>
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setIsCompleteModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#161922] hover:bg-gray-800 text-gray-300 border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2356,10 +2393,10 @@ export default function AdminEnquiryDetailPage() {
       {/* ── MODIFY TIME LOGS MODAL ───────────────────────────────── */}
       {isModifyTimeModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.06]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-300">
+                <div className="w-10 h-10 rounded-[24px] bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-300">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
@@ -2367,7 +2404,7 @@ export default function AdminEnquiryDetailPage() {
                   <p className="text-xs text-gray-400 mt-0.5">Adjust recorded duration and breaks</p>
                 </div>
               </div>
-              <button onClick={() => setIsModifyTimeModalOpen(false)} className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer">
+              <button onClick={() => setIsModifyTimeModalOpen(false)} className="p-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2379,7 +2416,7 @@ export default function AdminEnquiryDetailPage() {
                   min={0}
                   value={editWorkDurationMinutes}
                   onChange={(e) => setEditWorkDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#7B4DFF]/60 transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#6366F1]/60 transition-colors"
                   placeholder="Total effective work minutes"
                 />
               </div>
@@ -2390,7 +2427,7 @@ export default function AdminEnquiryDetailPage() {
                   min={0}
                   value={editTotalBreakMinutes}
                   onChange={(e) => setEditTotalBreakMinutes(e.target.value === '' ? '' : Number(e.target.value))}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#7B4DFF]/60 transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-[#6366F1]/60 transition-colors"
                   placeholder="Total break minutes"
                 />
               </div>
@@ -2398,7 +2435,7 @@ export default function AdminEnquiryDetailPage() {
                 <button
                   type="button"
                   onClick={() => setIsModifyTimeModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#161922] hover:bg-gray-800 text-gray-300 border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2406,7 +2443,7 @@ export default function AdminEnquiryDetailPage() {
                   type="button"
                   onClick={handleModifyTime}
                   disabled={isSubmittingAction}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-[#7B4DFF] hover:bg-[#6839EF] text-white transition-all shadow-md shadow-[#7B4DFF]/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-black bg-[#6366F1] hover:bg-[#6839EF] text-white transition-all shadow-md shadow-[#6366F1]/25 disabled:opacity-60 cursor-pointer inline-flex items-center justify-center gap-2"
                 >
                   {isSubmittingAction ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                   {isSubmittingAction ? 'Saving...' : 'Save Time Logs'}
@@ -2420,10 +2457,10 @@ export default function AdminEnquiryDetailPage() {
       {/* ── RECORD CUSTOMER PAYMENT MODAL ───────────────────────── */}
       {isCustomerPaymentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800 bg-[#16181F]">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.06] bg-[#16181F]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                <div className="w-10 h-10 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
                   <ArrowDownLeft className="w-5 h-5" />
                 </div>
                 <div>
@@ -2438,7 +2475,7 @@ export default function AdminEnquiryDetailPage() {
               </div>
               <button
                 onClick={() => setIsCustomerPaymentModalOpen(false)}
-                className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2446,14 +2483,14 @@ export default function AdminEnquiryDetailPage() {
 
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {financeActionError && (
-                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+                <div className="p-3.5 rounded-[24px] bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{financeActionError}</span>
                 </div>
               )}
 
               {/* Balance Summary Header */}
-              <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-[#0D0E12] border border-gray-800/80 text-center">
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-[24px] bg-[#0D0E12] border border-white/[0.06] text-center">
                 <div>
                   <div className="text-[10px] font-bold text-gray-500 uppercase">Total Billable</div>
                   <div className="text-sm font-black font-mono text-gray-200 mt-0.5">
@@ -2486,7 +2523,7 @@ export default function AdminEnquiryDetailPage() {
                     min={1}
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-emerald-500/60 transition-colors"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-emerald-500/60 transition-colors"
                     placeholder="Enter amount collected"
                   />
                 </div>
@@ -2511,7 +2548,7 @@ export default function AdminEnquiryDetailPage() {
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors cursor-pointer"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors cursor-pointer"
                 >
                   <option value="CASH">Cash (കൈമാറ്റം)</option>
                   <option value="UPI">UPI (Google Pay / PhonePe / Paytm)</option>
@@ -2530,7 +2567,7 @@ export default function AdminEnquiryDetailPage() {
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors"
                   />
                 </div>
                 <div>
@@ -2542,7 +2579,7 @@ export default function AdminEnquiryDetailPage() {
                     value={paymentRef}
                     onChange={(e) => setPaymentRef(e.target.value)}
                     placeholder="e.g. UPI Txn ID / Receipt #"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors placeholder:text-gray-600"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-emerald-500/60 transition-colors placeholder:text-gray-600"
                   />
                 </div>
               </div>
@@ -2557,16 +2594,16 @@ export default function AdminEnquiryDetailPage() {
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Notes about payment collection, payer name, or receipt given..."
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none transition-colors"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2 border-t border-gray-800/80">
+              <div className="flex gap-2 pt-2 border-t border-white/[0.06]">
                 <button
                   type="button"
                   onClick={() => setIsCustomerPaymentModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#161922] hover:bg-gray-800 text-gray-300 border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -2588,10 +2625,10 @@ export default function AdminEnquiryDetailPage() {
       {/* ── DISBURSE WORKER WAGE MODAL ───────────────────────────── */}
       {isWorkerPayoutModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800 shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-800 bg-[#16181F]">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/[0.06] bg-[#16181F]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                <div className="w-10 h-10 rounded-[24px] bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
                   <ArrowUpRight className="w-5 h-5" />
                 </div>
                 <div>
@@ -2606,7 +2643,7 @@ export default function AdminEnquiryDetailPage() {
               </div>
               <button
                 onClick={() => setIsWorkerPayoutModalOpen(false)}
-                className="p-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-400 hover:text-white border border-gray-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-400 hover:text-white border border-white/[0.06] transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -2614,7 +2651,7 @@ export default function AdminEnquiryDetailPage() {
 
             <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
               {financeActionError && (
-                <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
+                <div className="p-3.5 rounded-[24px] bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{financeActionError}</span>
                 </div>
@@ -2622,7 +2659,7 @@ export default function AdminEnquiryDetailPage() {
 
               {/* Worker recipient chip */}
               {enquiry.worker && (
-                <div className="p-3 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-between">
+                <div className="p-3 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-xs flex items-center justify-center">
                       {enquiry.worker.name ? enquiry.worker.name.charAt(0) : 'W'}
@@ -2639,7 +2676,7 @@ export default function AdminEnquiryDetailPage() {
               )}
 
               {/* Wage Balance Summary Header */}
-              <div className="grid grid-cols-3 gap-2 p-3 rounded-2xl bg-[#0D0E12] border border-gray-800/80 text-center">
+              <div className="grid grid-cols-3 gap-2 p-3 rounded-[24px] bg-[#0D0E12] border border-white/[0.06] text-center">
                 <div>
                   <div className="text-[10px] font-bold text-gray-500 uppercase">Calculated Wage</div>
                   <div className="text-sm font-black font-mono text-gray-200 mt-0.5">
@@ -2672,7 +2709,7 @@ export default function AdminEnquiryDetailPage() {
                     min={1}
                     value={paymentAmount}
                     onChange={(e) => setPaymentAmount(e.target.value === '' ? '' : Number(e.target.value))}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-amber-500/60 transition-colors"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl pl-9 pr-4 py-2.5 text-sm font-mono font-bold text-white focus:outline-none focus:border-amber-500/60 transition-colors"
                     placeholder="Enter wage amount given"
                   />
                 </div>
@@ -2697,7 +2734,7 @@ export default function AdminEnquiryDetailPage() {
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors cursor-pointer"
                 >
                   <option value="CASH">Cash in Hand (കൈപ്പണം)</option>
                   <option value="UPI">UPI (Google Pay / PhonePe)</option>
@@ -2716,7 +2753,7 @@ export default function AdminEnquiryDetailPage() {
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors"
                   />
                 </div>
                 <div>
@@ -2728,7 +2765,7 @@ export default function AdminEnquiryDetailPage() {
                     value={paymentRef}
                     onChange={(e) => setPaymentRef(e.target.value)}
                     placeholder="e.g. Cash Voucher / UPI Ref"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors placeholder:text-gray-600"
+                    className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-amber-500/60 transition-colors placeholder:text-gray-600"
                   />
                 </div>
               </div>
@@ -2743,16 +2780,16 @@ export default function AdminEnquiryDetailPage() {
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
                   placeholder="Notes about wage settlement, tea allowance, travel allowance..."
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
+                  className="w-full bg-[#161922] border border-white/[0.06] rounded-xl px-4 py-2 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-amber-500/60 resize-none transition-colors"
                 />
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 pt-2 border-t border-gray-800/80">
+              <div className="flex gap-2 pt-2 border-t border-white/[0.06]">
                 <button
                   type="button"
                   onClick={() => setIsWorkerPayoutModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border border-gray-800 transition-colors cursor-pointer"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#161922] hover:bg-gray-800 text-gray-300 border border-white/[0.06] transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>

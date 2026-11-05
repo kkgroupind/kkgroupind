@@ -789,59 +789,68 @@ export default function AdminFinancePage() {
   }, [summary]);
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 p-4 sm:p-6 lg:p-8 ${isDark ? 'bg-[#0D0E12] text-gray-200' : 'bg-[#0D0E12] text-gray-200'}`}>
+    <div className="max-w-[1600px] mx-auto space-y-6 pb-12 select-none">
       
       {/* Toast Alert */}
       {successToast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-[#2A835F] text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/30 animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 bg-[#2A835F] text-white px-5 py-3.5 rounded-[24px] shadow-2xl border border-emerald-400/30 animate-in fade-in slide-in-from-top-4">
           <CheckCircle2 className="w-5 h-5 shrink-0" />
           <span className="font-semibold text-sm">{successToast}</span>
         </div>
       )}
 
-      {/* Simplified Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-gray-100 flex items-center gap-2.5">
-            <div className="p-2 bg-[#14151A] border border-gray-800 rounded-xl text-[#2A835F]">
-              <IndianRupee className="w-5 h-5" />
-            </div>
-            <span>Business Finance</span>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#2A835F]/15 text-[#2A835F] border border-[#2A835F]/20 hidden sm:inline">
-              Cashbook &amp; Ledger
+          <div className="flex items-center gap-2.5">
+            <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-3 ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}>
+              <div className={`p-2.5 border rounded-2xl text-emerald-400 ${
+                isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+              }`}>
+                <IndianRupee className="w-5 h-5" />
+              </div>
+              <span>Finance & Cashbook</span>
+            </h1>
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 hidden sm:inline">
+              Live Balance
             </span>
-          </h1>
-          <p className="text-gray-400 text-xs sm:text-sm mt-0.5 hidden sm:block">
-            Daily collections, field expenditure, and cash flow ledger
+          </div>
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
+            Track all customer income, worker payouts, and daily operational expenses in one clear view
           </p>
         </div>
 
-        {/* Quick Header Actions: Record Transaction, Direct Work Entry & Reload */}
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+        {/* Quick Header Actions */}
+        <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
           <Link
             href="/admin/operations/direct-entry"
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-white font-bold text-xs sm:text-sm transition-all"
-            title="Supreme Data Feeding: Create, assign, complete, and sync work orders directly to Finance"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 hover:text-white font-bold text-xs sm:text-sm transition-all"
           >
-            <Zap className="w-4 h-4 fill-emerald-400 text-emerald-400" />
-            <span>Direct Work Entry</span>
+            <Zap className="w-3.5 h-3.5 fill-emerald-400 text-emerald-400" />
+            <span>Quick Job Entry</span>
           </Link>
 
           <button
             onClick={() => openCreateForDay()}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#2A835F]/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="flex items-center gap-2 px-5 py-2 rounded-full bg-[#6366F1] hover:bg-[#5E5CE6] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#6366F1]/20 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Record Transaction</span>
+            <Plus className="w-4 h-4" />
+            <span>Add Entry</span>
           </button>
 
           <button
             onClick={() => fetchData()}
             disabled={isLoading}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-2.5 rounded-xl border border-gray-800 bg-[#14151A] hover:bg-[#1A1C23] text-gray-300 hover:text-white text-xs sm:text-sm font-semibold transition-all disabled:opacity-50"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs sm:text-sm font-semibold transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'border-white/[0.08] bg-[#12141A] hover:bg-[#161922] text-gray-300 hover:text-white'
+                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-xs'
+            }`}
             title="Reload Data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#2A835F] ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isLoading ? 'animate-spin' : ''}`} />
             <span>Reload</span>
           </button>
         </div>
@@ -851,10 +860,14 @@ export default function AdminFinancePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 lg:gap-6 mb-5 sm:mb-8">
         
         {/* Total Inflow */}
-        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-emerald-500/30 transition-all flex flex-col justify-between overflow-hidden">
+        <div className={`p-3 sm:p-5 rounded-xl sm:rounded-[24px] border hover:border-emerald-500/30 transition-all flex flex-col justify-between overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}>
           <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
-              Inflows<span className="hidden md:inline"> (വരുമാനം)</span>
+            <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate ${
+              isDark ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              Total Income
             </span>
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-[#2A835F] shrink-0">
               <ArrowDownRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
@@ -863,7 +876,9 @@ export default function AdminFinancePage() {
           <div className="text-sm sm:text-xl lg:text-2xl font-black text-emerald-400 truncate">
             ₹{(summary?.totalIncome || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
+          <div className={`mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs truncate ${
+            isDark ? 'text-gray-400' : 'text-slate-500'
+          }`}>
             <span className="hidden sm:inline">{monthLabel}</span>
             <span className="font-semibold text-emerald-400 bg-emerald-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               Today: ₹{formatCompactINR(summary?.todayIncome || 0)}
@@ -872,10 +887,14 @@ export default function AdminFinancePage() {
         </div>
 
         {/* Total Outflow */}
-        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-rose-500/30 transition-all flex flex-col justify-between overflow-hidden">
+        <div className={`p-3 sm:p-5 rounded-xl sm:rounded-[24px] border hover:border-rose-500/30 transition-all flex flex-col justify-between overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}>
           <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
-              Outflows<span className="hidden md:inline"> (ചെലവ്)</span>
+            <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate ${
+              isDark ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              Total Expenses
             </span>
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0">
               <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
@@ -884,7 +903,9 @@ export default function AdminFinancePage() {
           <div className="text-sm sm:text-xl lg:text-2xl font-black text-rose-400 truncate">
             ₹{(summary?.totalExpense || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
+          <div className={`mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs truncate ${
+            isDark ? 'text-gray-400' : 'text-slate-500'
+          }`}>
             <span className="hidden sm:inline">{monthLabel}</span>
             <span className="font-semibold text-rose-400 bg-rose-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               Today: ₹{formatCompactINR(summary?.todayExpense || 0)}
@@ -893,10 +914,14 @@ export default function AdminFinancePage() {
         </div>
 
         {/* Net Cash Flow / Profit */}
-        <div className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-[#2A835F]/40 transition-all flex flex-col justify-between overflow-hidden">
+        <div className={`p-3 sm:p-5 rounded-xl sm:rounded-[24px] border hover:border-[#2A835F]/40 transition-all flex flex-col justify-between overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}>
           <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
-              Net<span className="hidden md:inline"> Margin</span>
+            <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate ${
+              isDark ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              Net Profit
             </span>
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-[#EBF6F1]/10 flex items-center justify-center text-[#2A835F] shrink-0">
               <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#2A835F]" />
@@ -907,9 +932,11 @@ export default function AdminFinancePage() {
           }`}>
             ₹{(summary?.netProfit || 0).toLocaleString('en-IN')}
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
+          <div className={`mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs truncate ${
+            isDark ? 'text-gray-400' : 'text-slate-500'
+          }`}>
             <span className="text-emerald-400 font-semibold">{summary?.profitMargin || 0}% margin</span>
-            <span className="hidden sm:inline text-gray-500">
+            <span className={`hidden sm:inline ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
               Today: ₹{formatCompactINR(summary?.todayNet || 0)}
             </span>
           </div>
@@ -921,21 +948,27 @@ export default function AdminFinancePage() {
             setActiveTab('ledger');
             setFilterStatus('PENDING');
           }}
-          className="p-3 sm:p-5 rounded-xl sm:rounded-2xl border bg-[#14151A] border-gray-800 hover:border-amber-500/40 transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
+          className={`p-3 sm:p-5 rounded-xl sm:rounded-[24px] border hover:border-amber-500/40 transition-all cursor-pointer flex flex-col justify-between overflow-hidden ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+          }`}
         >
           <div className="flex items-center justify-between gap-1 mb-1.5 sm:mb-3">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-gray-400 truncate">
-              Pending<span className="hidden md:inline"> (സ്റ്റാഫ്)</span>
+            <span className={`text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate ${
+              isDark ? 'text-gray-400' : 'text-slate-500'
+            }`}>
+              Pending Approval
             </span>
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-400 shrink-0">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
             </div>
           </div>
           <div className="text-sm sm:text-xl lg:text-2xl font-black text-amber-400 truncate">
-            {summary?.pendingVerificationCount || 0} <span className="text-[10px] sm:text-xs font-normal text-gray-400">entries</span>
+            {summary?.pendingVerificationCount || 0} <span className={`text-[10px] sm:text-xs font-normal ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>entries</span>
           </div>
-          <div className="mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs text-gray-400 truncate">
-            <span className="hidden sm:inline">Awaiting Approval</span>
+          <div className={`mt-1 sm:mt-2 flex items-center justify-between text-[10px] sm:text-xs truncate ${
+            isDark ? 'text-gray-400' : 'text-slate-500'
+          }`}>
+            <span className="hidden sm:inline">Needs Review</span>
             <span className="font-semibold text-amber-400 bg-amber-950/40 px-1 sm:px-1.5 py-0.5 rounded-full truncate">
               ₹{formatCompactINR(summary?.pendingVerificationAmount || 0)}
             </span>
@@ -945,13 +978,15 @@ export default function AdminFinancePage() {
 
       {/* Main View Mode Selector Tabs & Month Navigator */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-4 sm:mb-5">
-        <div className="p-1 rounded-xl sm:rounded-2xl border border-gray-800 bg-[#14151A] flex items-center gap-1 w-full sm:w-auto">
+        <div className={`p-1 rounded-xl sm:rounded-[24px] border flex items-center gap-1 w-full sm:w-auto ${
+          isDark ? 'border-white/[0.06] bg-[#12141A]' : 'border-slate-200 bg-white shadow-xs'
+        }`}>
           <button
             onClick={() => setActiveTab('calendar')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'calendar'
-                ? 'bg-[#2A835F] text-white shadow-sm'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
@@ -962,44 +997,52 @@ export default function AdminFinancePage() {
             onClick={() => setActiveTab('ledger')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'ledger'
-                ? 'bg-[#2A835F] text-white shadow-sm'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Ledger</span>
+            <span>All Entries</span>
           </button>
 
           <button
             onClick={() => setActiveTab('analytics')}
             className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all ${
               activeTab === 'analytics'
-                ? 'bg-[#2A835F] text-white shadow-sm'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-[#6366F1] text-white shadow-sm'
+                : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>Analytics</span>
+            <span>Monthly Trends</span>
           </button>
         </div>
 
         {/* Month Navigator Controls */}
-        <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-2.5 py-1 rounded-xl border border-gray-800 bg-[#14151A]">
+        <div className={`flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-2.5 py-1 rounded-xl border ${
+          isDark ? 'border-white/[0.06] bg-[#12141A]' : 'border-slate-200 bg-white shadow-xs'
+        }`}>
           <button
             onClick={handlePrevMonth}
-            className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-800 text-gray-300 transition-colors"
+            className={`p-1 sm:p-1.5 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-slate-700'
+            }`}
             title="Previous Month"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
 
-          <span className="font-extrabold text-xs sm:text-sm px-2 sm:px-3 min-w-[120px] text-center text-gray-200">
+          <span className={`font-extrabold text-xs sm:text-sm px-2 sm:px-3 min-w-[120px] text-center ${
+            isDark ? 'text-gray-200' : 'text-slate-800'
+          }`}>
             {monthLabel}
           </span>
 
           <button
             onClick={handleNextMonth}
-            className="p-1 sm:p-1.5 rounded-lg hover:bg-slate-800 text-gray-300 transition-colors"
+            className={`p-1 sm:p-1.5 rounded-lg transition-colors ${
+              isDark ? 'hover:bg-slate-800 text-gray-300' : 'hover:bg-slate-100 text-slate-700'
+            }`}
             title="Next Month"
           >
             <ChevronRight className="w-4 h-4" />
@@ -1009,28 +1052,36 @@ export default function AdminFinancePage() {
 
       {/* VIEW 1: INTERACTIVE CALENDAR */}
       {activeTab === 'calendar' && (
-        <div className="rounded-2xl sm:rounded-3xl border border-gray-800 bg-[#14151A] shadow-xl overflow-hidden p-3 sm:p-5">
+        <div className={`rounded-[24px] sm:rounded-[28px] border shadow-xl overflow-hidden p-3 sm:p-5 ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
           
           {/* Calendar Header with Legend */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-3 sm:mb-4">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm sm:text-base font-bold text-gray-100 flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-[#2A835F]" />
+              <h2 className={`text-sm sm:text-base font-bold flex items-center gap-2 ${
+                isDark ? 'text-gray-100' : 'text-slate-900'
+              }`}>
+                <CalendarIcon className="w-4 h-4 text-[#6366F1]" />
                 <span>{monthLabel} Daily Finance</span>
               </h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#EBF6F1] text-[#2A835F]">
-                Tap date to view/feed
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                isDark ? 'bg-[#6366F1]/15 text-[#818CF8]' : 'bg-indigo-50 text-indigo-700'
+              }`}>
+                Click date to view details
               </span>
             </div>
 
-            <div className="flex items-center gap-3 text-[11px] font-medium text-gray-400">
+            <div className={`flex items-center gap-3 text-[11px] font-medium ${
+              isDark ? 'text-gray-400' : 'text-slate-500'
+            }`}>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span>Inflow</span>
+                <span>Income</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-rose-500" />
-                <span>Outflow</span>
+                <span>Expense</span>
               </span>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-amber-500" />
@@ -1040,7 +1091,9 @@ export default function AdminFinancePage() {
           </div>
 
           {/* Days of week header */}
-          <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider text-gray-400">
+          <div className={`grid grid-cols-7 gap-1 sm:gap-2 mb-1.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wider ${
+            isDark ? 'text-gray-400' : 'text-slate-500'
+          }`}>
             <div><span className="sm:hidden">S</span><span className="hidden sm:inline">Sun</span></div>
             <div><span className="sm:hidden">M</span><span className="hidden sm:inline">Mon</span></div>
             <div><span className="sm:hidden">T</span><span className="hidden sm:inline">Tue</span></div>
@@ -1057,7 +1110,9 @@ export default function AdminFinancePage() {
                 return (
                   <div
                     key={`blank-${idx}`}
-                    className="min-h-[44px] sm:min-h-[58px] rounded-lg sm:rounded-xl border border-dashed border-gray-800/40 opacity-20"
+                    className={`min-h-[44px] sm:min-h-[58px] rounded-lg sm:rounded-xl border border-dashed opacity-20 ${
+                      isDark ? 'border-white/[0.06]' : 'border-slate-300'
+                    }`}
                   />
                 );
               }
@@ -1072,18 +1127,20 @@ export default function AdminFinancePage() {
                   onClick={() => handleSelectDay(cell.dateString)}
                   className={`min-h-[44px] sm:min-h-[58px] p-1 sm:p-2 rounded-lg sm:rounded-xl border transition-all cursor-pointer flex flex-col justify-between group relative overflow-hidden ${
                     isSelected
-                      ? 'border-[#2A835F] ring-1 sm:ring-2 ring-[#2A835F]/40 bg-[#2A835F]/10 shadow-sm'
-                      : 'border-gray-800/80 bg-[#1A1C23]/60 hover:border-gray-700 hover:bg-[#1A1C23]'
+                      ? 'border-[#6366F1] ring-1 sm:ring-2 ring-[#6366F1]/40 bg-[#6366F1]/10 shadow-sm'
+                      : isDark
+                      ? 'border-white/[0.06] bg-[#161922]/60 hover:border-gray-700 hover:bg-[#161922]'
+                      : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/80 shadow-xs'
                   }`}
                 >
                   {/* Top Bar of cell */}
                   <div className="flex items-center justify-between">
                     <span className={`text-[10px] sm:text-xs font-extrabold px-1 py-0.2 rounded-md ${
                       isToday
-                        ? 'bg-[#2A835F] text-white shadow-xs'
+                        ? 'bg-[#6366F1] text-white shadow-xs'
                         : isSelected
-                        ? 'text-[#2A835F]'
-                        : 'text-gray-300'
+                        ? 'text-[#6366F1]'
+                        : isDark ? 'text-gray-300' : 'text-slate-700'
                     }`}>
                       {cell.dayNumber}
                     </span>
@@ -1125,10 +1182,12 @@ export default function AdminFinancePage() {
                   </div>
 
                   {/* Bottom: Net movement or count (Desktop) */}
-                  <div className="hidden sm:flex text-[9px] items-center justify-between text-gray-400">
+                  <div className={`hidden sm:flex text-[9px] items-center justify-between ${
+                    isDark ? 'text-gray-400' : 'text-slate-500'
+                  }`}>
                     {hasActivity ? (
                       <>
-                        <span className="font-semibold text-gray-400">{cell.feed.count} txn</span>
+                        <span className={`font-semibold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>{cell.feed.count} txn</span>
                         <span className={`font-bold ${
                           cell.feed.netAmount >= 0 ? 'text-emerald-400' : 'text-rose-400'
                         }`}>
@@ -1136,7 +1195,7 @@ export default function AdminFinancePage() {
                         </span>
                       </>
                     ) : (
-                      <span className="opacity-0 group-hover:opacity-100 text-[#2A835F] font-semibold transition-opacity">
+                      <span className="opacity-0 group-hover:opacity-100 text-[#6366F1] font-semibold transition-opacity">
                         + Add entry
                       </span>
                     )}
@@ -1151,31 +1210,37 @@ export default function AdminFinancePage() {
 
       {/* VIEW 2: COMPREHENSIVE LEDGER TABLE */}
       {activeTab === 'ledger' && (
-        <div className={`rounded-3xl border shadow-xl overflow-hidden ${
-          isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
+        <div className={`rounded-[28px] border shadow-xl overflow-hidden ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
         }`}>
           {/* Filter Toolbar */}
-          <div className="p-6 border-b border-gray-800 dark:border-gray-800 space-y-4">
+          <div className={`p-6 border-b space-y-4 ${
+            isDark ? 'border-white/[0.06]' : 'border-slate-100 bg-slate-50/50'
+          }`}>
             
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
               
               {/* Search input */}
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                  isDark ? 'text-gray-400' : 'text-slate-400'
+                }`} />
                 <input
                   type="text"
                   placeholder="Search by Txn Number, Customer, Worker, Tracking #, Notes, or Ref..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className={`w-full pl-11 pr-10 py-2.5 rounded-2xl border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#2A835F] ${
-                    isDark ? 'bg-slate-950 border-gray-800 text-white placeholder-slate-500' : 'bg-slate-50 border-gray-800 text-gray-200 placeholder-slate-400'
+                  className={`w-full pl-11 pr-10 py-2.5 rounded-[24px] border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#6366F1] ${
+                    isDark ? 'bg-slate-950 border-white/[0.06] text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
                   }`}
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                    className={`absolute right-3.5 top-1/2 -translate-y-1/2 ${
+                      isDark ? 'text-gray-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'
+                    }`}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -1183,16 +1248,16 @@ export default function AdminFinancePage() {
               </div>
 
               {/* Date Scope Filter Tabs */}
-              <div className={`p-1 rounded-2xl border flex flex-wrap items-center gap-1 ${
-                isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-100 border-gray-800'
+              <div className={`p-1 rounded-[24px] border flex flex-wrap items-center gap-1 ${
+                isDark ? 'bg-slate-950 border-white/[0.06]' : 'bg-slate-100 border-slate-200'
               }`}>
                 <button
                   type="button"
                   onClick={() => setDateFilterMode('month')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'month'
-                      ? 'bg-[#2A835F] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#6366F1] text-white shadow-sm'
+                      : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   This Month ({monthLabel})
@@ -1202,8 +1267,8 @@ export default function AdminFinancePage() {
                   onClick={() => setDateFilterMode('today')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'today'
-                      ? 'bg-[#2A835F] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#6366F1] text-white shadow-sm'
+                      : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Today ({todayStr})
@@ -1213,8 +1278,8 @@ export default function AdminFinancePage() {
                   onClick={() => setDateFilterMode('range')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'range'
-                      ? 'bg-[#2A835F] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#6366F1] text-white shadow-sm'
+                      : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Custom Range
@@ -1224,8 +1289,8 @@ export default function AdminFinancePage() {
                   onClick={() => setDateFilterMode('selected')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'selected'
-                      ? 'bg-[#2A835F] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#6366F1] text-white shadow-sm'
+                      : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   Selected Day ({selectedDateStr || todayStr})
@@ -1235,8 +1300,8 @@ export default function AdminFinancePage() {
                   onClick={() => setDateFilterMode('all')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     dateFilterMode === 'all'
-                      ? 'bg-[#2A835F] text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#6366F1] text-white shadow-sm'
+                      : isDark ? 'text-gray-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   All Dates
@@ -1247,24 +1312,30 @@ export default function AdminFinancePage() {
 
             {/* Custom Date Range Picker inputs when range mode active */}
             {dateFilterMode === 'range' && (
-              <div className="flex flex-wrap items-center gap-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 animate-in fade-in">
-                <span className="text-xs font-bold text-gray-300">Custom Date Range:</span>
+              <div className={`flex flex-wrap items-center gap-3 p-3 rounded-[24px] border animate-in fade-in ${
+                isDark ? 'bg-slate-900 border-white/[0.06]' : 'bg-white border-slate-200'
+              }`}>
+                <span className={`text-xs font-bold ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>Custom Date Range:</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-400 font-semibold">From:</span>
+                  <span className={`text-[11px] font-semibold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>From:</span>
                   <input
                     type="date"
                     value={startDateFilter}
                     onChange={(e) => setStartDateFilter(e.target.value)}
-                    className="bg-slate-950 border border-gray-750 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className={`rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#6366F1] border ${
+                      isDark ? 'bg-slate-950 border-gray-750 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
                   />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-400 font-semibold">To:</span>
+                  <span className={`text-[11px] font-semibold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>To:</span>
                   <input
                     type="date"
                     value={endDateFilter}
                     onChange={(e) => setEndDateFilter(e.target.value)}
-                    className="bg-slate-950 border border-gray-750 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className={`rounded-xl px-3 py-1.5 text-xs focus:outline-none focus:border-[#6366F1] border ${
+                      isDark ? 'bg-slate-950 border-gray-750 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
                   />
                 </div>
                 {(startDateFilter || endDateFilter) && (
@@ -1274,7 +1345,9 @@ export default function AdminFinancePage() {
                       setStartDateFilter('');
                       setEndDateFilter('');
                     }}
-                    className="text-xs text-gray-400 hover:text-white underline cursor-pointer"
+                    className={`text-xs underline cursor-pointer ${
+                      isDark ? 'text-gray-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                    }`}
                   >
                     Reset Range
                   </button>
@@ -1360,7 +1433,7 @@ export default function AdminFinancePage() {
             </div>
 
             {/* Category Filter & Metrics Bar Header */}
-            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-gray-800">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
               {/* Left: Summary Metrics for Filtered Set */}
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <span className="font-semibold text-gray-400">
@@ -1402,7 +1475,7 @@ export default function AdminFinancePage() {
                   <span>Export CSV</span>
                 </button>
 
-                <div className="flex items-center bg-[#1A1C23] border border-gray-800 rounded-xl p-1">
+                <div className="flex items-center bg-[#161922] border border-white/[0.06] rounded-xl p-1">
                   <button
                     type="button"
                     onClick={() => setTxnViewMode('grid')}
@@ -1438,7 +1511,7 @@ export default function AdminFinancePage() {
             <div className="p-4 sm:p-6">
               {transactions.length === 0 ? (
                 <div className="p-16 text-center text-gray-400 flex flex-col items-center justify-center">
-                  <div className="w-14 h-14 rounded-2xl bg-[#1A1C23] border border-gray-800 flex items-center justify-center text-gray-500 mb-3">
+                  <div className="w-14 h-14 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-center text-gray-500 mb-3">
                     <FileSpreadsheet className="w-7 h-7 text-gray-500" />
                   </div>
                   <h4 className="font-semibold text-gray-200">No Financial Records Found</h4>
@@ -1453,7 +1526,7 @@ export default function AdminFinancePage() {
                     return (
                       <div
                         key={txn.id}
-                        className="group bg-[#14151A] rounded-2xl border border-gray-800/80 hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
+                        className="group bg-[#12141A] rounded-[24px] border border-white/[0.06] hover:border-gray-700/80 p-5 transition-all duration-300 hover:shadow-[0_8px_30px_rgb(0,0,0,0.4)] flex flex-col justify-between relative overflow-hidden"
                       >
                         {/* Top ambient glow line */}
                         <div
@@ -1468,13 +1541,13 @@ export default function AdminFinancePage() {
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="relative shrink-0">
                                 <div
-                                  className={`w-11 h-11 rounded-2xl bg-gradient-to-br ${
+                                  className={`w-11 h-11 rounded-[24px] bg-gradient-to-br ${
                                     isIncome
                                       ? 'from-emerald-500 to-teal-600'
                                       : 'from-rose-500 to-pink-600'
                                   } p-[2px] shadow-sm`}
                                 >
-                                  <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center font-bold text-xs text-gray-100">
+                                  <div className="w-full h-full bg-[#161922] rounded-[14px] flex items-center justify-center font-bold text-xs text-gray-100">
                                     <IndianRupee
                                       className={`w-5 h-5 ${
                                         isIncome ? 'text-emerald-400' : 'text-rose-400'
@@ -1524,7 +1597,7 @@ export default function AdminFinancePage() {
                           </div>
 
                           {/* Middle Details (Border-y) */}
-                          <div className="space-y-2 py-3 border-y border-gray-800/60 my-3 text-xs">
+                          <div className="space-y-2 py-3 border-y border-white/[0.06] my-3 text-xs">
                             <div className="flex items-center justify-between text-gray-400">
                               <span className="flex items-center gap-1.5">
                                 <CalendarIcon className="w-3.5 h-3.5 text-gray-500" />
@@ -1598,7 +1671,7 @@ export default function AdminFinancePage() {
                           <button
                             type="button"
                             onClick={() => setInspectTxn(txn)}
-                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 transition-all cursor-pointer"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-[#161922] hover:bg-[#252834] text-gray-200 hover:text-white border border-white/[0.06] transition-all cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5 text-gray-400" />
                             <span>Inspect</span>
@@ -1607,7 +1680,7 @@ export default function AdminFinancePage() {
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(txn)}
-                            className="p-2 rounded-xl text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 border border-gray-800 hover:border-emerald-500/20 transition-all cursor-pointer"
+                            className="p-2 rounded-xl text-gray-400 hover:text-emerald-400 hover:bg-emerald-500/10 border border-white/[0.06] hover:border-emerald-500/20 transition-all cursor-pointer"
                             title="Edit Record"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -1643,7 +1716,7 @@ export default function AdminFinancePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead className={`border-b text-xs font-bold uppercase tracking-wider ${
-                  isDark ? 'bg-slate-950/80 border-gray-800 text-gray-400' : 'bg-slate-50 border-gray-800 text-gray-400'
+                  isDark ? 'bg-slate-950/80 border-white/[0.06] text-gray-400' : 'bg-slate-50 border-white/[0.06] text-gray-400'
                 }`}>
                   <tr>
                     <th className="py-4 px-4 sm:px-6">Transaction</th>
@@ -1804,8 +1877,8 @@ export default function AdminFinancePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             {/* Service Unit Revenue Breakdown */}
-            <div className={`p-6 rounded-3xl border shadow-xl ${
-              isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
+            <div className={`p-6 rounded-[28px] border shadow-xl ${
+              isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-[#12141A] border-white/[0.06]'
             }`}>
               <h3 className="text-base font-bold mb-1 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-[#2A835F]" />
@@ -1829,8 +1902,8 @@ export default function AdminFinancePage() {
             </div>
 
             {/* Expense Distribution by Category */}
-            <div className={`p-6 rounded-3xl border shadow-xl ${
-              isDark ? 'bg-[#14151A] border-gray-800' : 'bg-[#14151A] border-gray-800'
+            <div className={`p-6 rounded-[28px] border shadow-xl ${
+              isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-[#12141A] border-white/[0.06]'
             }`}>
               <h3 className="text-base font-bold mb-1 flex items-center gap-2">
                 <Fuel className="w-4 h-4 text-rose-500" />
@@ -1872,11 +1945,11 @@ export default function AdminFinancePage() {
       {isDayDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs animate-in fade-in">
           <div className={`w-full max-w-lg h-full overflow-y-auto p-6 sm:p-8 flex flex-col justify-between shadow-2xl ${
-            isDark ? 'bg-[#14151A] text-slate-100' : 'bg-[#14151A] text-gray-200'
+            isDark ? 'bg-[#12141A] text-slate-100' : 'bg-[#12141A] text-gray-200'
           }`}>
             <div>
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-gray-800 dark:border-gray-800 mb-6">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] dark:border-white/[0.06] mb-6">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
                     Kerala Daily Feed
@@ -1895,19 +1968,19 @@ export default function AdminFinancePage() {
 
               {/* Day Summary Cards */}
               <div className="grid grid-cols-3 gap-2.5 mb-6 text-center">
-                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                <div className="p-3 rounded-[24px] bg-emerald-500/10 border border-emerald-500/20">
                   <div className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400">Inflow</div>
                   <div className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 mt-1">
                     ₹{dayTotals.income.toLocaleString('en-IN')}
                   </div>
                 </div>
-                <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                <div className="p-3 rounded-[24px] bg-rose-500/10 border border-rose-500/20">
                   <div className="text-[10px] font-bold uppercase text-rose-600 dark:text-rose-400">Outflow</div>
                   <div className="text-sm sm:text-base font-black text-rose-600 dark:text-rose-400 mt-1">
                     ₹{dayTotals.expense.toLocaleString('en-IN')}
                   </div>
                 </div>
-                <div className="p-3 rounded-2xl bg-slate-500/10 border border-slate-500/20">
+                <div className="p-3 rounded-[24px] bg-slate-500/10 border border-slate-500/20">
                   <div className="text-[10px] font-bold uppercase text-gray-400">Net Day</div>
                   <div className={`text-sm sm:text-base font-black mt-1 ${
                     dayTotals.net >= 0 ? 'text-[#2A835F]' : 'text-rose-500'
@@ -1935,8 +2008,8 @@ export default function AdminFinancePage() {
                       <div
                         key={txn.id}
                         onClick={() => setInspectTxn(txn)}
-                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer hover:scale-[1.01] ${
-                          isDark ? 'bg-slate-950/60 border-gray-800' : 'bg-slate-50 border-gray-800'
+                        className={`p-3.5 rounded-[24px] border transition-all cursor-pointer hover:scale-[1.01] ${
+                          isDark ? 'bg-slate-950/60 border-white/[0.06]' : 'bg-slate-50 border-white/[0.06]'
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -1970,7 +2043,7 @@ export default function AdminFinancePage() {
             {/* Bottom Button in Drawer */}
             <button
               onClick={() => openCreateForDay(selectedDateStr)}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-sm shadow-xl transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-[24px] bg-[#2A835F] hover:bg-[#236D4F] text-white font-bold text-sm shadow-xl transition-all"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Record Entry for {selectedDateStr}</span>
@@ -1986,20 +2059,22 @@ export default function AdminFinancePage() {
           if (!formSubmitting) setIsCreateModalOpen(open);
         }}
       >
-        <DialogContent className="w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl p-6 sm:p-8 shadow-2xl border text-gray-200 relative z-50 custom-scrollbar bg-[#14151A] border-gray-800">
+        <DialogContent className={`w-full max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-[28px] p-6 sm:p-8 shadow-2xl border relative z-50 custom-scrollbar ${
+          isDark ? 'bg-[#12141A] border-white/[0.08] text-gray-200' : 'bg-white border-slate-200 text-slate-900 shadow-2xl'
+        }`}>
           {/* Top ambient brand glow */}
           <div
             className={`absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent ${
-              formData.type === 'INCOME' ? 'via-[#2A835F]/70' : 'via-rose-500/70'
+              formData.type === 'INCOME' ? 'via-[#6366F1]/70' : 'via-rose-500/70'
             } to-transparent`}
           />
 
-          <DialogHeader className="pb-4 border-b border-gray-800 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
+          <DialogHeader className={`pb-4 border-b mb-2 ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
+            <span className="text-xs font-bold uppercase tracking-wider text-[#6366F1]">
               Financial Entry
             </span>
-            <DialogTitle className="text-lg font-bold text-white mt-0.5">
-              {editingTxn ? 'Edit Financial Entry' : 'Record Business Transaction'}
+            <DialogTitle className={`text-lg font-bold mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {editingTxn ? 'Edit Financial Entry' : 'Record Transaction'}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Record or update transaction details
@@ -2017,8 +2092,8 @@ export default function AdminFinancePage() {
           <form onSubmit={handleFormSubmit} className="space-y-4">
             {/* Type Switcher */}
             <div
-              className={`p-1.5 rounded-2xl border flex items-center gap-1.5 ${
-                isDark ? 'bg-slate-950/80 border-gray-800' : 'bg-slate-900 border-gray-800'
+              className={`p-1.5 rounded-[24px] border flex items-center gap-1.5 ${
+                isDark ? 'bg-slate-950/80 border-white/[0.06]' : 'bg-slate-100 border-slate-200'
               }`}
             >
               <button
@@ -2033,11 +2108,11 @@ export default function AdminFinancePage() {
                 className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   formData.type === 'INCOME'
                     ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                 }`}
               >
                 <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
-                <span>Cash Inflow / Income (വരവ്)</span>
+                <span>Customer Income</span>
               </button>
               <button
                 type="button"
@@ -2051,22 +2126,26 @@ export default function AdminFinancePage() {
                 className={`flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 cursor-pointer ${
                   formData.type === 'EXPENSE'
                     ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/30'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    : isDark ? 'text-gray-400 hover:text-white hover:bg-white/5' : 'text-slate-600 hover:text-slate-900 hover:bg-white'
                 }`}
               >
                 <ArrowDownRight className="w-4 h-4 stroke-[2.5]" />
-                <span>Cash Outflow / Expense (ചെലവ്)</span>
+                <span>Business Expense</span>
               </button>
             </div>
 
             {/* Amount & Date */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Amount (₹ INR) <span className="text-rose-400">*</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-gray-400 text-base">
+                  <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 font-bold text-base ${
+                    isDark ? 'text-zinc-400' : 'text-slate-400'
+                  }`}>
                     ₹
                   </span>
                   <input
@@ -2082,15 +2161,17 @@ export default function AdminFinancePage() {
                         amount: parseFloat(e.target.value) || 0,
                       })
                     }
-                    className={`w-full pl-8 pr-4 py-2.5 rounded-xl border font-bold text-base text-white placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all ${
-                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    className={`w-full pl-8 pr-4 py-2.5 rounded-xl border font-bold text-base transition-all focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                     }`}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Transaction Date <span className="text-rose-400">*</span>
                 </label>
                 <input
@@ -2098,8 +2179,8 @@ export default function AdminFinancePage() {
                   required
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all ${
-                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                  className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm transition-all focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                   }`}
                 />
               </div>
@@ -2108,7 +2189,9 @@ export default function AdminFinancePage() {
             {/* Category & Payment Method using Shadcn ComboboxDropdown */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Category <span className="text-rose-400">*</span>
                 </label>
                 <ComboboxDropdown
@@ -2122,7 +2205,9 @@ export default function AdminFinancePage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Payment Method <span className="text-rose-400">*</span>
                 </label>
                 <ComboboxDropdown
@@ -2139,7 +2224,9 @@ export default function AdminFinancePage() {
             {/* Service Unit & Reference */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Service Squad / Operational Unit
                 </label>
                 <ComboboxDropdown
@@ -2153,7 +2240,9 @@ export default function AdminFinancePage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Reference / UPI / Voucher No.
                 </label>
                 <input
@@ -2163,8 +2252,8 @@ export default function AdminFinancePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, referenceNumber: e.target.value })
                   }
-                  className={`w-full px-3.5 py-2.5 rounded-xl border font-mono text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
-                    isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                  className={`w-full px-3.5 py-2.5 rounded-xl border font-mono text-xs sm:text-sm transition-all min-h-[42px] focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                   }`}
                 />
               </div>
@@ -2174,8 +2263,10 @@ export default function AdminFinancePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {formData.type === 'INCOME' ? (
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
-                    Customer Name & Location
+                  <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
+                    Customer Name &amp; Location
                   </label>
                   <input
                     type="text"
@@ -2184,14 +2275,16 @@ export default function AdminFinancePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, customerName: e.target.value })
                     }
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
-                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm transition-all min-h-[42px] focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                     }`}
                   />
                 </div>
               ) : formData.category === 'WORKER_WAGE' || formData.category === 'WORKER_BATA' ? (
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
                     Assign to Worker (Disbursement)
                   </label>
                   <ComboboxDropdown
@@ -2214,7 +2307,9 @@ export default function AdminFinancePage() {
                 </div>
               ) : (
                 <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                  <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                    isDark ? 'text-zinc-400' : 'text-slate-600'
+                  }`}>
                     Vendor / Payee / Supplier
                   </label>
                   <input
@@ -2224,8 +2319,8 @@ export default function AdminFinancePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, vendorName: e.target.value })
                     }
-                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] transition-all min-h-[42px] ${
-                      isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                    className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm transition-all min-h-[42px] focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                     }`}
                   />
                 </div>
@@ -2233,7 +2328,9 @@ export default function AdminFinancePage() {
 
               {/* Optional Link to Service Enquiry */}
               <div>
-                <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
+                <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                  isDark ? 'text-zinc-400' : 'text-slate-600'
+                }`}>
                   Link to Enquiry Ticket (Optional)
                 </label>
                 <ComboboxDropdown
@@ -2249,22 +2346,24 @@ export default function AdminFinancePage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider mb-1.5 text-gray-400">
-                Notes & Operational Description
+              <label className={`block text-[11px] font-bold uppercase tracking-wider mb-1.5 ${
+                isDark ? 'text-zinc-400' : 'text-slate-600'
+              }`}>
+                Notes &amp; Description
               </label>
               <textarea
                 rows={2}
                 placeholder="e.g. 50L diesel for JCB KL-60-A-4122 or Advance 12hr earthwork..."
                 value={formData.notes || ''}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#2A835F] focus:ring-1 focus:ring-[#2A835F] resize-none transition-all ${
-                  isDark ? 'bg-slate-950 border-gray-800' : 'bg-slate-900 border-gray-800'
+                className={`w-full px-3.5 py-2.5 rounded-xl border font-medium text-xs sm:text-sm resize-none transition-all focus:outline-none focus:border-[#6366F1] focus:ring-1 focus:ring-[#6366F1]/30 ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
                 }`}
               />
             </div>
 
             {/* Submit Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.06]">
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(false)}
@@ -2297,12 +2396,14 @@ export default function AdminFinancePage() {
       {/* INSPECT TRANSACTION MODAL WITH SHADCN DIALOG */}
       <Dialog open={!!inspectTxn} onOpenChange={(open) => !open && setInspectTxn(null)}>
         {inspectTxn && (
-          <DialogContent className="w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-3xl p-6 sm:p-8 shadow-2xl border text-gray-200 bg-[#14151A] border-gray-800">
-            <DialogHeader className="pb-4 border-b border-gray-800 mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-[#2A835F]">
-                Transaction Voucher
+          <DialogContent className={`w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-[28px] p-6 sm:p-8 shadow-2xl border ${
+            isDark ? 'bg-[#12141A] border-white/[0.08] text-gray-200' : 'bg-white border-slate-200 text-slate-900 shadow-2xl'
+          }`}>
+            <DialogHeader className={`pb-4 border-b mb-4 ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
+              <span className="text-xs font-bold uppercase tracking-wider text-[#6366F1]">
+                Transaction Details
               </span>
-              <DialogTitle className="text-xl font-mono font-black mt-0.5 text-white">
+              <DialogTitle className={`text-xl font-mono font-black mt-0.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {inspectTxn.transactionNumber}
               </DialogTitle>
               <DialogDescription className="sr-only">
@@ -2311,9 +2412,11 @@ export default function AdminFinancePage() {
             </DialogHeader>
 
             <div className="space-y-4 text-xs sm:text-sm">
-              <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-500/10">
+              <div className={`flex items-center justify-between p-4 rounded-[24px] ${
+                isDark ? 'bg-slate-500/10' : 'bg-slate-100'
+              }`}>
                 <div>
-                  <div className="text-xs text-gray-400 uppercase font-bold">Amount</div>
+                  <div className={`text-xs uppercase font-bold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Amount</div>
                   <div className={`text-2xl font-black mt-0.5 ${
                     inspectTxn.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500'
                   }`}>
@@ -2321,7 +2424,7 @@ export default function AdminFinancePage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xs text-gray-400 uppercase font-bold">Status</div>
+                  <div className={`text-xs uppercase font-bold ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>Status</div>
                   <div className="font-bold text-sm mt-0.5">{inspectTxn.status}</div>
                 </div>
               </div>
@@ -2367,13 +2470,13 @@ export default function AdminFinancePage() {
               </div>
 
               {inspectTxn.notes && (
-                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-gray-800 dark:border-gray-800">
+                <div className="p-3.5 rounded-xl bg-slate-500/5 border border-white/[0.06] dark:border-white/[0.06]">
                   <div className="text-gray-400 uppercase text-[10px] font-bold">Notes</div>
                   <div className="mt-1 text-gray-300 dark:text-gray-300">{inspectTxn.notes}</div>
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-gray-800 dark:border-gray-800">
+              <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t border-white/[0.06] dark:border-white/[0.06]">
                 <span>Recorded by: <strong>{inspectTxn.recordedBy?.name || inspectTxn.recordedBy?.username || 'Staff'}</strong></span>
                 <span>Role: <strong>{inspectTxn.recordedBy?.role}</strong></span>
               </div>
@@ -2383,7 +2486,7 @@ export default function AdminFinancePage() {
                 <button
                   type="button"
                   onClick={() => handleOpenEdit(inspectTxn)}
-                  className="px-4 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#252834] text-gray-200 hover:text-white border border-gray-800 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#161922] hover:bg-[#252834] text-gray-200 hover:text-white border border-white/[0.06] font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Edit2 className="w-3.5 h-3.5 text-gray-400" />
                   <span>Edit</span>

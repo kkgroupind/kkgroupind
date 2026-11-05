@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { api, User } from '@/services';
 import { PeopleTable } from '@/components/Admin/people-table';
 import { PeopleCards } from '@/components/Admin/people-cards';
@@ -14,6 +15,7 @@ import { useRouter } from 'next/navigation';
 
 export default function OfficeStaffPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [people, setPeople] = useState<User[]>([]);
@@ -104,48 +106,54 @@ export default function OfficeStaffPage() {
 
   if (authLoading) {
     return (
-      <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
+      <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
         <PeopleSkeleton count={6} viewMode="grid" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
+    <div className="space-y-6 max-w-[1400px] mx-auto pb-10">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <Building2 className="w-6 h-6 text-purple-400" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Building2 className="w-5 h-5" />
             </div>
-            Office Staff Management
+            Office Staff
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage administrative personnel, staff credentials, and portal accounts
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Manage staff members handling customer calls, quotations, and daily bookings
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto">
-          {/* In-place Refetch Button */}
+          {/* Reload Button */}
           <button
             onClick={handleReload}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
             title="Refetch without reloading the full page"
           >
             <RefreshCw
-              className={`w-4 h-4 text-purple-400 ${
-                isRefreshing ? 'animate-spin' : ''
-              }`}
+              className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
             />
-            <span>{isRefreshing ? 'Refetching...' : 'Reload'}</span>
+            <span>{isRefreshing ? 'Reloading...' : 'Reload'}</span>
           </button>
 
           {/* Add Office Staff Button */}
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-4 py-2 rounded-xl text-sm font-medium text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all ml-auto sm:ml-0"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-md shadow-[#6366F1]/20 transition-all ml-auto sm:ml-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Office Staff</span>
@@ -153,38 +161,46 @@ export default function OfficeStaffPage() {
         </div>
       </div>
 
-      {/* Search, Filters and View Toggle */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-[#14151A] p-4 rounded-2xl border border-gray-800">
+      {/* Search & View Controls */}
+      <div
+        className={`flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-3xl border ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
         <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <Search className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
-            placeholder="Search by username or email..."
+            placeholder="Search by name, phone or username..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
               setPage(1);
             }}
-            className="w-full pl-10 pr-4 py-2 bg-[#1A1C23] border border-gray-800 rounded-xl text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+            }`}
           />
         </div>
 
         <div className="flex items-center justify-between sm:justify-end gap-3">
           {meta && (
-            <span className="text-xs text-gray-500">
-              Total: <span className="text-gray-300 font-medium">{meta.total}</span>
+            <span className={`text-xs px-3 py-1 rounded-full border ${isDark ? 'bg-[#121318] border-white/[0.06] text-zinc-400' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+              Total Staff: <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{meta.total}</span>
             </span>
           )}
 
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#1A1C23] border border-gray-800 p-1 rounded-xl">
+          <div className={`flex items-center p-1 rounded-full border ${isDark ? 'bg-[#121318] border-white/[0.06]' : 'bg-slate-100 border-slate-200'}`}>
             <button
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Grid View"
             >
@@ -193,10 +209,10 @@ export default function OfficeStaffPage() {
             <button
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg transition-all ${
+              className={`p-1.5 rounded-full transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'text-gray-400 hover:text-gray-200'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
               }`}
               title="Table View"
             >
@@ -252,7 +268,7 @@ export default function OfficeStaffPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Office Staff"
-        message="Are you sure you want to permanently delete this office coordinator profile? They will immediately lose dispatch, assignment, and financial tracking privileges."
+        message="Are you sure you want to permanently delete this office coordinator profile? They will immediately lose dispatch, assignment, and operational coordination privileges."
         confirmText="Delete Staff Member"
         variant="danger"
         isLoading={!!isDeleting}

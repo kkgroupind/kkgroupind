@@ -42,6 +42,7 @@ import { SetupReminderModal } from './SetupReminderModal';
 import { ConfirmationModal } from './confirmation-modal';
 import { EditPersonModal } from './edit-person-modal';
 import { CustomerStatementModal } from '@/components/CustomerStatement';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 interface CustomerDetailViewProps {
   username: string;
@@ -53,6 +54,7 @@ export function CustomerDetailView({
   backHref = '/admin/people/customers',
 }: CustomerDetailViewProps) {
   const { token, user: currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [customer, setCustomer] = useState<any>(null);
@@ -220,8 +222,8 @@ export function CustomerDetailView({
   if (isLoading || authLoading) {
     return (
       <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#7B4DFF] mb-3" />
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#6366F1] mb-3" />
           <p className="text-sm font-semibold text-gray-300">Loading customer profile...</p>
         </div>
       </div>
@@ -231,12 +233,12 @@ export function CustomerDetailView({
   if (errorMessage || !customer) {
     return (
       <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
-        <div className="bg-[#14151A] rounded-2xl border border-rose-500/30 p-8 text-center">
+        <div className="bg-[#12141A] rounded-[24px] border border-rose-500/30 p-8 text-center">
           <AlertCircle className="w-8 h-8 text-rose-400 mx-auto mb-3" />
           <p className="text-base font-bold text-gray-100">{errorMessage || 'Customer not found'}</p>
           <NextLink
             href={backHref}
-            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 border border-gray-800 rounded-xl text-xs text-gray-300"
+            className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-[#161922] hover:bg-gray-800 border border-white/[0.06] rounded-xl text-xs text-gray-300"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Customers</span>
@@ -250,7 +252,7 @@ export function CustomerDetailView({
     <div className="space-y-6 max-w-[1200px] mx-auto pb-10">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-20 right-6 z-50 p-4 rounded-[24px] bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-2xl backdrop-blur-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
           <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -261,14 +263,14 @@ export function CustomerDetailView({
         <div className="flex items-center gap-3">
           <NextLink
             href={backHref}
-            className="p-2 rounded-xl bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-[#12141A] hover:bg-[#161922] border border-white/[0.06] text-gray-400 hover:text-white transition-colors"
             title="Back to Customers"
           >
             <ArrowLeft className="w-5 h-5" />
           </NextLink>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs uppercase font-mono tracking-wider text-[#7B4DFF]">
+              <span className="text-xs uppercase font-mono tracking-wider text-[#6366F1]">
                 Customer Profile Hub
               </span>
               <span className="w-1 h-1 rounded-full bg-gray-600" />
@@ -291,10 +293,10 @@ export function CustomerDetailView({
             type="button"
             onClick={() => loadCustomer(true)}
             disabled={isRefreshing}
-            className="p-2.5 rounded-xl bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white transition-colors"
+            className="p-2.5 rounded-xl bg-[#12141A] hover:bg-[#161922] border border-white/[0.06] text-gray-300 hover:text-white transition-colors"
             title="Reload profile"
           >
-            <RefreshCw className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
 
           {/* Download Statement Button */}
@@ -312,7 +314,7 @@ export function CustomerDetailView({
           <button
             type="button"
             onClick={() => setIsRecordServiceModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#6A3DEE] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold text-white shadow-[0_0_15px_rgba(123,77,255,0.3)] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Record Service</span>
@@ -322,9 +324,9 @@ export function CustomerDetailView({
           <button
             type="button"
             onClick={() => setIsReminderModalOpen(true)}
-            className="flex items-center gap-2 bg-[#1A1C23] hover:bg-[#222530] border border-gray-800 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-200 hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-2 bg-[#161922] hover:bg-[#222530] border border-white/[0.06] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-gray-200 hover:text-white transition-all cursor-pointer"
           >
-            <CalendarClock className="w-4 h-4 text-[#7B4DFF]" />
+            <CalendarClock className="w-4 h-4 text-[#6366F1]" />
             <span>Setup Reminder</span>
           </button>
 
@@ -332,7 +334,7 @@ export function CustomerDetailView({
           <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
-            className="p-2.5 rounded-xl bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white transition-colors"
+            className="p-2.5 rounded-xl bg-[#12141A] hover:bg-[#161922] border border-white/[0.06] text-gray-300 hover:text-white transition-colors"
             title="Edit Profile"
           >
             <Pencil className="w-4 h-4 text-gray-400" />
@@ -351,14 +353,18 @@ export function CustomerDetailView({
       </div>
 
       {/* Customer Hero Card */}
-      <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-5 sm:p-6 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#7B4DFF]/60 to-transparent" />
+      <div className={`rounded-[28px] border p-5 sm:p-6 relative overflow-hidden transition-all shadow-sm ${
+        isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+      }`}>
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#6366F1]/60 to-transparent" />
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="relative">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7B4DFF] to-emerald-500 p-[2px] shadow-lg">
-                <div className="w-full h-full bg-[#1A1C23] rounded-[14px] flex items-center justify-center text-xl font-bold text-gray-100 overflow-hidden">
+              <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-[#6366F1] to-emerald-500 p-[2px] shadow-lg">
+                <div className={`w-full h-full rounded-[14px] flex items-center justify-center text-xl font-bold overflow-hidden ${
+                  isDark ? 'bg-[#161922] text-gray-100' : 'bg-white text-slate-900'
+                }`}>
                   {customer.avatar ? (
                     <img src={customer.avatar} alt={customer.name} className="w-full h-full object-cover" />
                   ) : (
@@ -369,31 +375,33 @@ export function CustomerDetailView({
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-xl font-bold text-gray-100">{customer.name || 'Unnamed Client'}</h2>
-              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+              <h2 className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
+                {customer.name || 'Customer Account'}
+              </h2>
+              <div className={`flex flex-wrap items-center gap-3 text-xs ${isDark ? 'text-gray-400' : 'text-slate-500'}`}>
                 {customer.phone && (
-                  <span className="flex items-center gap-1.5 font-mono text-gray-300">
+                  <span className={`flex items-center gap-1.5 font-mono ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>
                     <Phone className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{customer.phone}</span>
                   </span>
                 )}
                 {customer.email && (
-                  <span className="flex items-center gap-1.5 text-gray-400">
-                    <Mail className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                  <span className="flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-[#6366F1]" />
                     <span>{customer.email}</span>
                   </span>
                 )}
                 {customer.address && (
-                  <span className="flex items-center gap-1.5 text-gray-400">
+                  <span className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-rose-400" />
                     <span className="line-clamp-1">{customer.address}</span>
                   </span>
                 )}
               </div>
 
-              <div className="text-[11px] text-gray-500 pt-1">
-                <span>Member since: </span>
-                <span className="text-gray-400">
+              <div className={`text-[11px] pt-1 ${isDark ? 'text-gray-500' : 'text-slate-400'}`}>
+                <span>Customer since: </span>
+                <span className={isDark ? 'text-gray-400' : 'text-slate-600'}>
                   {customer.createdAt
                     ? new Date(customer.createdAt).toLocaleDateString('en-IN', {
                         day: 'numeric',
@@ -407,14 +415,16 @@ export function CustomerDetailView({
           </div>
 
           {/* Quick Client Outreach Channels */}
-          <div className="flex items-center gap-2.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 border-gray-800">
+          <div className={`flex items-center gap-2.5 w-full md:w-auto pt-3 md:pt-0 border-t md:border-t-0 ${
+            isDark ? 'border-white/[0.06]' : 'border-slate-200'
+          }`}>
             {cleanPhone && (
               <>
                 <a
                   href={waUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all shadow-sm"
+                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all shadow-sm"
                   title="Open WhatsApp chat"
                 >
                   <MessageCircle className="w-4 h-4 fill-emerald-400/20" />
@@ -423,7 +433,11 @@ export function CustomerDetailView({
 
                 <a
                   href={`tel:${cleanPhone}`}
-                  className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#222530] text-gray-300 hover:text-white border border-gray-800 text-xs font-bold transition-all"
+                  className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-full border text-xs font-bold transition-all ${
+                    isDark
+                      ? 'bg-[#161922] hover:bg-[#222530] text-gray-300 hover:text-white border-white/[0.06]'
+                      : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200'
+                  }`}
                   title="Call Customer"
                 >
                   <Phone className="w-4 h-4 text-emerald-400" />
@@ -435,10 +449,14 @@ export function CustomerDetailView({
             {customer.email && (
               <a
                 href={`mailto:${customer.email}`}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#1A1C23] hover:bg-[#222530] text-gray-300 hover:text-white border border-gray-800 text-xs font-bold transition-all"
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-full border text-xs font-bold transition-all ${
+                  isDark
+                    ? 'bg-[#161922] hover:bg-[#222530] text-gray-300 hover:text-white border-white/[0.06]'
+                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border-slate-200'
+                }`}
                 title="Send Email"
               >
-                <Mail className="w-4 h-4 text-[#7B4DFF]" />
+                <Mail className="w-4 h-4 text-[#6366F1]" />
                 <span>Email</span>
               </a>
             )}
@@ -449,100 +467,118 @@ export function CustomerDetailView({
       {/* Top 4 Metrics Bento Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Bookings */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
-          <div className="text-xs text-gray-500 font-medium">Total Bookings</div>
-          <div className="text-2xl font-bold text-gray-100 mt-1">{stats.totalEnq}</div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
-            <Layers className="w-3 h-3 text-[#7B4DFF]" />
-            <span>Enquiries &amp; Orders</span>
+        <div className={`rounded-[24px] border p-4 shadow-sm transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>Total Bookings</div>
+          <div className={`text-2xl font-bold mt-1 ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>{stats.totalEnq}</div>
+          <div className={`text-[11px] mt-1 flex items-center gap-1 ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>
+            <Layers className="w-3 h-3 text-[#6366F1]" />
+            <span>Job requests</span>
           </div>
         </div>
 
         {/* Completed Works */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
-          <div className="text-xs text-gray-500 font-medium">Completed Works</div>
+        <div className={`rounded-[24px] border p-4 shadow-sm transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>Completed Work</div>
           <div className="text-2xl font-bold text-emerald-400 mt-1">{stats.completed}</div>
           <div className="text-[11px] text-emerald-400/80 mt-1 flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>Serviced &amp; finalized</span>
+            <span>Finished &amp; delivered</span>
           </div>
         </div>
 
         {/* Total Spend */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
-          <div className="text-xs text-gray-500 font-medium">Total Spend (₹)</div>
-          <div className="text-2xl font-bold text-gray-100 font-mono mt-1">
+        <div className={`rounded-[24px] border p-4 shadow-sm transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>Total Paid (₹)</div>
+          <div className={`text-2xl font-bold font-mono mt-1 ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
             ₹{stats.spent.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-1">
+          <div className={`text-[11px] mt-1 flex items-center gap-1 ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>
             <DollarSign className="w-3 h-3 text-emerald-400" />
-            <span>Lifetime client value</span>
+            <span>Lifetime spending</span>
           </div>
         </div>
 
         {/* Active Reminders */}
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-4">
-          <div className="text-xs text-gray-500 font-medium">Active Reminders</div>
+        <div className={`rounded-[24px] border p-4 shadow-sm transition-all ${
+          isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+        }`}>
+          <div className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>Service Reminders</div>
           <div className="text-2xl font-bold text-[#A580FF] mt-1">{stats.activeRem}</div>
           <div className="text-[11px] text-[#A580FF]/80 mt-1 flex items-center gap-1">
-            <CalendarClock className="w-3 h-3 text-[#7B4DFF]" />
-            <span>Scheduled cycles</span>
+            <CalendarClock className="w-3 h-3 text-[#6366F1]" />
+            <span>Active schedules</span>
           </div>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-gray-800 pb-2 overflow-x-auto custom-scrollbar">
+      <div className={`flex items-center gap-2 border-b pb-2 overflow-x-auto custom-scrollbar ${
+        isDark ? 'border-white/[0.06]' : 'border-slate-200'
+      }`}>
         <button
           type="button"
           onClick={() => setActiveTab('ENQUIRIES')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'ENQUIRIES'
-              ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-              : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+              ? 'bg-[#6366F1] text-white shadow-sm'
+              : isDark
+              ? 'bg-[#12141A] text-zinc-400 hover:text-white border border-white/[0.06]'
+              : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Job Orders &amp; Enquiries ({stats.totalEnq})</span>
+          <span>Active Requests ({stats.totalEnq})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('COMPLETED')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'COMPLETED'
-              ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-              : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+              ? 'bg-[#6366F1] text-white shadow-sm'
+              : isDark
+              ? 'bg-[#12141A] text-zinc-400 hover:text-white border border-white/[0.06]'
+              : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <CheckCircle2 className="w-4 h-4" />
-          <span>Completed Works History ({stats.completed})</span>
+          <span>Past Jobs ({stats.completed})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('REMINDERS')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'REMINDERS'
-              ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-              : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+              ? 'bg-[#6366F1] text-white shadow-sm'
+              : isDark
+              ? 'bg-[#12141A] text-zinc-400 hover:text-white border border-white/[0.06]'
+              : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <CalendarClock className="w-4 h-4" />
-          <span>Recurring Reminders ({reminders.length})</span>
+          <span>Reminders ({reminders.length})</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('INFO')}
-          className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+          className={`px-4 py-2 rounded-full text-xs sm:text-sm font-bold flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
             activeTab === 'INFO'
-              ? 'bg-[#7B4DFF] text-white shadow-[0_0_15px_rgba(123,77,255,0.3)]'
-              : 'bg-[#14151A] text-gray-400 hover:text-gray-200 border border-gray-800'
+              ? 'bg-[#6366F1] text-white shadow-sm'
+              : isDark
+              ? 'bg-[#12141A] text-zinc-400 hover:text-white border border-white/[0.06]'
+              : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
           }`}
         >
           <User className="w-4 h-4" />
-          <span>Customer &amp; Property Details</span>
+          <span>Profile &amp; Address</span>
         </button>
       </div>
 
@@ -550,7 +586,7 @@ export function CustomerDetailView({
       {activeTab === 'ENQUIRIES' && (
         <div className="space-y-4">
           {enquiries.length === 0 ? (
-            <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
+            <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
               <Layers className="w-10 h-10 text-gray-600 mx-auto mb-3" />
               <p className="text-sm font-bold text-gray-200">No service bookings recorded yet</p>
               <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
@@ -559,7 +595,7 @@ export function CustomerDetailView({
               <button
                 type="button"
                 onClick={() => setIsRecordServiceModalOpen(true)}
-                className="mt-4 px-4 py-2 bg-[#7B4DFF] text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-sm"
+                className="mt-4 px-4 py-2 bg-[#6366F1] text-white rounded-xl text-xs font-bold inline-flex items-center gap-2 shadow-sm"
               >
                 <Plus className="w-4 h-4" />
                 <span>Record Service Order</span>
@@ -574,12 +610,14 @@ export function CustomerDetailView({
                 return (
                   <div
                     key={enq.id}
-                    className="bg-[#14151A] rounded-2xl border border-gray-800/80 p-5 hover:border-gray-700 transition-all flex flex-col justify-between group shadow-sm"
+                    className={`rounded-[24px] border p-5 transition-all flex flex-col justify-between group shadow-sm ${
+                      isDark ? 'bg-[#12141A] border-white/[0.06] hover:border-gray-700' : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
                   >
                     <div>
                       {/* Top row: Tracking + Status */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="font-mono text-xs font-bold text-[#7B4DFF]">
+                        <span className="font-mono text-xs font-bold text-[#6366F1]">
                           {enq.trackingNumber}
                         </span>
                         <span
@@ -597,7 +635,9 @@ export function CustomerDetailView({
 
                       {/* Service info with image */}
                       <div className="flex items-start gap-3.5 mb-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-800 shadow-md bg-gray-950">
+                        <div className={`relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border shadow-md ${
+                          isDark ? 'border-white/[0.06] bg-gray-950' : 'border-slate-200 bg-slate-100'
+                        }`}>
                           <img
                             src={imageSrc}
                             alt={enq.serviceName}
@@ -606,16 +646,16 @@ export function CustomerDetailView({
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-sm font-bold text-gray-100 truncate block">
+                          <h4 className={`text-sm font-bold truncate block ${isDark ? 'text-gray-100' : 'text-slate-900'}`}>
                             {enq.serviceName}
                           </h4>
                           {malayalamBadge && (
-                            <span className="text-[10px] text-emerald-400 font-semibold block mt-0.5">
+                            <span className="text-[10px] text-emerald-500 font-semibold block mt-0.5">
                               {malayalamBadge}
                             </span>
                           )}
-                          <div className="text-[11px] text-gray-500 mt-1 flex items-center gap-2">
-                            <Calendar className="w-3 h-3 text-gray-500" />
+                          <div className={`text-[11px] mt-1 flex items-center gap-2 ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>
+                            <Calendar className="w-3 h-3" />
                             <span>
                               {enq.preferredDate
                                 ? new Date(enq.preferredDate).toLocaleDateString('en-IN', {
@@ -630,10 +670,12 @@ export function CustomerDetailView({
                       </div>
 
                       {/* Location, Enquiry Details, Worker, and Measurements */}
-                      <div className="space-y-2 p-3.5 rounded-xl bg-[#1A1C23] border border-gray-800/60 text-xs">
+                      <div className={`space-y-2 p-3.5 rounded-xl border text-xs ${
+                        isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+                      }`}>
                         {/* Location */}
                         {enq.location && (
-                          <div className="flex items-start gap-1.5 text-gray-300">
+                          <div className={`flex items-start gap-1.5 ${isDark ? 'text-gray-300' : 'text-slate-700'}`}>
                             <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
                             <span className="line-clamp-2">{enq.location}</span>
                           </div>
@@ -641,9 +683,11 @@ export function CustomerDetailView({
 
                         {/* Customer Enquiry Message */}
                         {enq.message && (
-                          <div className="p-2 rounded-lg bg-[#14151A] text-[11px] text-gray-300 border border-gray-800/50">
-                            <span className="text-[10px] text-gray-500 font-semibold block uppercase tracking-wider mb-0.5">
-                              Enquiry Details:
+                          <div className={`p-2 rounded-lg text-[11px] border ${
+                            isDark ? 'bg-[#12141A] text-gray-300 border-white/[0.06]/50' : 'bg-white text-slate-700 border-slate-200'
+                          }`}>
+                            <span className={`text-[10px] font-semibold block uppercase tracking-wider mb-0.5 ${isDark ? 'text-gray-500' : 'text-slate-500'}`}>
+                              Job Request Message:
                             </span>
                             <p className="line-clamp-3 italic">"{enq.message}"</p>
                           </div>
@@ -651,7 +695,7 @@ export function CustomerDetailView({
 
                         {/* Work Scope / Measurements */}
                         {(enq.completedUnits || enq.estimatedUnits) && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Work Measurement:</span>
                             <span className="font-semibold text-emerald-300">
                               {enq.completedUnits || enq.estimatedUnits} {enq.unitLabel || 'Units'}
@@ -662,7 +706,7 @@ export function CustomerDetailView({
 
                         {/* Time Duration */}
                         {enq.workDurationMinutes ? (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Time Worked:</span>
                             <span className="font-mono text-gray-300">{enq.workDurationMinutes} mins</span>
                           </div>
@@ -670,10 +714,10 @@ export function CustomerDetailView({
 
                         {/* Assigned Worker */}
                         {enq.worker ? (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Assigned Specialist:</span>
                             <span className="font-semibold text-gray-200 flex items-center gap-1.5">
-                              <User className="w-3 h-3 text-[#7B4DFF]" />
+                              <User className="w-3 h-3 text-[#6366F1]" />
                               <span>{enq.worker.name || enq.worker.username}</span>
                               {enq.worker.phone && (
                                 <span className="text-[10px] text-gray-500 font-mono">({enq.worker.phone})</span>
@@ -681,7 +725,7 @@ export function CustomerDetailView({
                             </span>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-between text-gray-500 text-[11px] pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-500 text-[11px] pt-1.5 border-t border-white/[0.06]/40">
                             <span>Assigned Specialist:</span>
                             <span className="text-amber-500/80 font-medium">Pending Assignment</span>
                           </div>
@@ -689,7 +733,7 @@ export function CustomerDetailView({
 
                         {/* Coordinator Office Staff */}
                         {enq.officeStaff && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Dispatch Desk:</span>
                             <span className="text-gray-300 text-[11px]">{enq.officeStaff.name || enq.officeStaff.username}</span>
                           </div>
@@ -697,7 +741,7 @@ export function CustomerDetailView({
 
                         {/* Billed Amount */}
                         {enq.totalCalculatedCost !== undefined && enq.totalCalculatedCost > 0 && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Billed Amount:</span>
                             <span className="font-bold text-emerald-400 font-mono text-sm">
                               ₹{enq.totalCalculatedCost.toLocaleString('en-IN')}
@@ -707,7 +751,7 @@ export function CustomerDetailView({
 
                         {/* Financial Transactions if recorded */}
                         {enq.financialTransactions && enq.financialTransactions.length > 0 && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Payment Recorded:</span>
                             <span className="text-emerald-400 font-mono font-semibold text-[11px]">
                               ₹{enq.financialTransactions.reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString('en-IN')}
@@ -718,7 +762,7 @@ export function CustomerDetailView({
 
                         {/* Contact on Ticket */}
                         {enq.customerPhone && (
-                          <div className="text-[10px] text-gray-500 pt-1 border-t border-gray-800/40 flex items-center justify-between font-mono">
+                          <div className="text-[10px] text-gray-500 pt-1 border-t border-white/[0.06]/40 flex items-center justify-between font-mono">
                             <span>Contact on Ticket:</span>
                             <span className="text-gray-400">{enq.customerPhone}</span>
                           </div>
@@ -726,7 +770,7 @@ export function CustomerDetailView({
                       </div>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-gray-800/60 flex items-center justify-between text-xs">
+                    <div className="pt-3 mt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
                       <span className="text-gray-500 text-[10px]">
                         Recorded:{' '}
                         {new Date(enq.createdAt).toLocaleDateString('en-IN', {
@@ -737,7 +781,7 @@ export function CustomerDetailView({
 
                       <NextLink
                         href={`/admin/operations/enquiries/${enq.id}`}
-                        className="text-xs text-[#7B4DFF] hover:text-[#9B75FF] font-semibold flex items-center gap-1"
+                        className="text-xs text-[#6366F1] hover:text-[#9B75FF] font-semibold flex items-center gap-1"
                       >
                         <span>View Order Details</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -755,7 +799,7 @@ export function CustomerDetailView({
       {activeTab === 'COMPLETED' && (
         <div className="space-y-4">
           {completedEnquiries.length === 0 ? (
-            <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
+            <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
               <CheckCircle2 className="w-10 h-10 text-gray-600 mx-auto mb-3" />
               <p className="text-sm font-bold text-gray-200">No completed jobs yet</p>
               <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
@@ -772,14 +816,14 @@ export function CustomerDetailView({
                 return (
                   <div
                     key={enq.id}
-                    className="bg-[#14151A] rounded-2xl border border-emerald-500/20 p-5 hover:border-emerald-500/40 transition-all flex flex-col justify-between group shadow-sm relative overflow-hidden"
+                    className="bg-[#12141A] rounded-[24px] border border-emerald-500/20 p-5 hover:border-emerald-500/40 transition-all flex flex-col justify-between group shadow-sm relative overflow-hidden"
                   >
                     <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
 
                     <div>
                       {/* Top row: Tracking + Completed Badge */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <span className="font-mono text-xs font-bold text-[#7B4DFF]">
+                        <span className="font-mono text-xs font-bold text-[#6366F1]">
                           {enq.trackingNumber}
                         </span>
                         <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border bg-emerald-500/10 text-emerald-400 border-emerald-500/20 flex items-center gap-1">
@@ -790,7 +834,7 @@ export function CustomerDetailView({
 
                       {/* Service info with image */}
                       <div className="flex items-start gap-3.5 mb-3">
-                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-gray-800 shadow-md bg-gray-950">
+                        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-white/[0.06] shadow-md bg-gray-950">
                           <img
                             src={imageSrc}
                             alt={enq.serviceName}
@@ -824,7 +868,7 @@ export function CustomerDetailView({
                       </div>
 
                       {/* Location, Enquiry Details, Worker, and Measurements */}
-                      <div className="space-y-2 p-3.5 rounded-xl bg-[#1A1C23] border border-gray-800/60 text-xs">
+                      <div className="space-y-2 p-3.5 rounded-xl bg-[#161922] border border-white/[0.06] text-xs">
                         {/* Location */}
                         {enq.location && (
                           <div className="flex items-start gap-1.5 text-gray-300">
@@ -835,7 +879,7 @@ export function CustomerDetailView({
 
                         {/* Customer Message / Notes */}
                         {enq.message && (
-                          <div className="p-2 rounded-lg bg-[#14151A] text-[11px] text-gray-300 border border-gray-800/50">
+                          <div className="p-2 rounded-lg bg-[#12141A] text-[11px] text-gray-300 border border-white/[0.06]/50">
                             <span className="text-[10px] text-gray-500 font-semibold block uppercase tracking-wider mb-0.5">
                               Work Notes &amp; Scope:
                             </span>
@@ -845,7 +889,7 @@ export function CustomerDetailView({
 
                         {/* Work Scope / Measurements */}
                         {(enq.completedUnits || enq.estimatedUnits) && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Units Serviced:</span>
                             <span className="font-semibold text-emerald-300">
                               {enq.completedUnits || enq.estimatedUnits} {enq.unitLabel || 'Units'}
@@ -856,7 +900,7 @@ export function CustomerDetailView({
 
                         {/* Time Duration */}
                         {enq.workDurationMinutes ? (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Time Worked:</span>
                             <span className="font-mono text-gray-300">{enq.workDurationMinutes} mins</span>
                           </div>
@@ -864,7 +908,7 @@ export function CustomerDetailView({
 
                         {/* Assigned Worker Specialist */}
                         {enq.worker && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Serviced By:</span>
                             <span className="font-semibold text-gray-200 flex items-center gap-1.5">
                               <User className="w-3 h-3 text-emerald-400" />
@@ -878,7 +922,7 @@ export function CustomerDetailView({
 
                         {/* Coordinator Office Staff */}
                         {enq.officeStaff && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Coordinated By:</span>
                             <span className="text-gray-300 text-[11px]">{enq.officeStaff.name || enq.officeStaff.username}</span>
                           </div>
@@ -886,7 +930,7 @@ export function CustomerDetailView({
 
                         {/* Billed Amount */}
                         {enq.totalCalculatedCost !== undefined && enq.totalCalculatedCost > 0 && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1.5 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Final Amount:</span>
                             <span className="font-bold text-emerald-400 font-mono text-sm">
                               ₹{enq.totalCalculatedCost.toLocaleString('en-IN')}
@@ -896,7 +940,7 @@ export function CustomerDetailView({
 
                         {/* Payment Transactions */}
                         {enq.financialTransactions && enq.financialTransactions.length > 0 && (
-                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-gray-800/40">
+                          <div className="flex items-center justify-between text-gray-300 pt-1 border-t border-white/[0.06]/40">
                             <span className="text-gray-500 text-[11px]">Payment Collected:</span>
                             <span className="text-emerald-400 font-mono font-semibold text-[11px]">
                               ₹{enq.financialTransactions.reduce((acc: number, t: any) => acc + (t.amount || 0), 0).toLocaleString('en-IN')}
@@ -907,14 +951,14 @@ export function CustomerDetailView({
                       </div>
                     </div>
 
-                    <div className="pt-3 mt-3 border-t border-gray-800/60 flex items-center justify-between text-xs">
+                    <div className="pt-3 mt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
                       <button
                         type="button"
                         onClick={() => {
                           setReminderServiceName(enq.serviceName);
                           setIsReminderModalOpen(true);
                         }}
-                        className="text-[11px] text-[#7B4DFF] hover:text-[#9B75FF] font-semibold flex items-center gap-1"
+                        className="text-[11px] text-[#6366F1] hover:text-[#9B75FF] font-semibold flex items-center gap-1"
                       >
                         <CalendarClock className="w-3.5 h-3.5" />
                         <span>Schedule Next Cycle</span>
@@ -922,7 +966,7 @@ export function CustomerDetailView({
 
                       <NextLink
                         href={`/admin/operations/enquiries/${enq.id}`}
-                        className="px-3 py-1 bg-[#1A1C23] hover:bg-gray-800 text-gray-200 border border-gray-800 rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
+                        className="px-3 py-1 bg-[#161922] hover:bg-gray-800 text-gray-200 border border-white/[0.06] rounded-xl text-xs font-semibold flex items-center gap-1 transition-all"
                       >
                         <span>View Work Order</span>
                         <ChevronRight className="w-3.5 h-3.5" />
@@ -946,7 +990,7 @@ export function CustomerDetailView({
             <button
               type="button"
               onClick={() => setIsReminderModalOpen(true)}
-              className="px-3.5 py-1.5 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
+              className="px-3.5 py-1.5 bg-[#6366F1] hover:bg-[#6A3DEE] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Schedule New Reminder</span>
@@ -954,7 +998,7 @@ export function CustomerDetailView({
           </div>
 
           {reminders.length === 0 ? (
-            <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-12 text-center">
+            <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-12 text-center">
               <CalendarClock className="w-10 h-10 text-gray-600 mx-auto mb-3" />
               <p className="text-sm font-bold text-gray-200">No recurring reminders scheduled</p>
               <p className="text-xs text-gray-500 mt-1 max-w-sm mx-auto">
@@ -982,7 +1026,7 @@ export function CustomerDetailView({
                 return (
                   <div
                     key={rem.id}
-                    className="p-5 rounded-2xl bg-[#14151A] border border-gray-800 flex flex-col justify-between space-y-4"
+                    className="p-5 rounded-[24px] bg-[#12141A] border border-white/[0.06] flex flex-col justify-between space-y-4"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-3">
@@ -1012,13 +1056,13 @@ export function CustomerDetailView({
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-gray-800 bg-gray-950">
+                        <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-white/[0.06] bg-gray-950">
                           <img src={imageSrc} alt={rem.serviceName} className="w-full h-full object-cover" />
                         </div>
                         <div>
                           <h4 className="text-sm font-bold text-gray-100">{rem.serviceName}</h4>
                           <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-                            <CalendarClock className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                            <CalendarClock className="w-3.5 h-3.5 text-[#6366F1]" />
                             <span>
                               Scheduled Due:{' '}
                               <strong>
@@ -1034,13 +1078,13 @@ export function CustomerDetailView({
                       </div>
 
                       {rem.notes && (
-                        <p className="text-xs text-gray-500 mt-3 p-2.5 rounded-xl bg-[#1A1C23] border border-gray-800/60 line-clamp-2">
+                        <p className="text-xs text-gray-500 mt-3 p-2.5 rounded-xl bg-[#161922] border border-white/[0.06] line-clamp-2">
                           {rem.notes}
                         </p>
                       )}
                     </div>
 
-                    <div className="pt-3 border-t border-gray-800/60 flex items-center justify-between gap-2">
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between gap-2">
                       <span className="text-[11px] text-gray-500">Outreach:</span>
                       <div className="flex items-center gap-2">
                         {cleanPhone && (
@@ -1056,7 +1100,7 @@ export function CustomerDetailView({
                         )}
                         <NextLink
                           href="/admin/operations/reminders"
-                          className="px-3 py-1.5 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 text-xs font-semibold border border-gray-800"
+                          className="px-3 py-1.5 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 text-xs font-semibold border border-white/[0.06]"
                         >
                           View in Reminders
                         </NextLink>
@@ -1072,7 +1116,7 @@ export function CustomerDetailView({
 
       {/* Tab 4: Customer Details & Info */}
       {activeTab === 'INFO' && (
-        <div className="bg-[#14151A] rounded-2xl border border-gray-800 p-6 space-y-6">
+        <div className="bg-[#12141A] rounded-[24px] border border-white/[0.06] p-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <span className="text-xs uppercase font-semibold text-gray-500 block mb-1">
@@ -1085,7 +1129,7 @@ export function CustomerDetailView({
               <span className="text-xs uppercase font-semibold text-gray-500 block mb-1">
                 Username Identifier
               </span>
-              <p className="text-sm font-mono text-[#7B4DFF]">@{customer.username}</p>
+              <p className="text-sm font-mono text-[#6366F1]">@{customer.username}</p>
             </div>
 
             <div>
@@ -1103,7 +1147,7 @@ export function CustomerDetailView({
                 Email Address
               </span>
               <p className="text-sm text-gray-100 flex items-center gap-2">
-                <Mail className="w-4 h-4 text-[#7B4DFF]" />
+                <Mail className="w-4 h-4 text-[#6366F1]" />
                 <span>{customer.email || 'N/A'}</span>
               </p>
             </div>
@@ -1112,7 +1156,7 @@ export function CustomerDetailView({
               <span className="text-xs uppercase font-semibold text-gray-500 block mb-1">
                 Service Address / Property Location
               </span>
-              <p className="text-sm text-gray-200 flex items-center gap-2 bg-[#1A1C23] p-3 rounded-xl border border-gray-800">
+              <p className="text-sm text-gray-200 flex items-center gap-2 bg-[#161922] p-3 rounded-xl border border-white/[0.06]">
                 <MapPin className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>{customer.address || 'Kerala Residence (Default)'}</span>
               </p>
@@ -1124,31 +1168,39 @@ export function CustomerDetailView({
       {/* MODAL: Record Service Order directly for Customer */}
       {isRecordServiceModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto">
-          <div className="relative w-full max-w-xl bg-[#14151A] border border-gray-800 rounded-2xl shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95">
-            <div className="p-5 bg-[#1A1C23] border-b border-gray-800 flex items-center justify-between">
+          <div className={`relative w-full max-w-xl border rounded-[28px] shadow-2xl overflow-hidden my-auto animate-in fade-in zoom-in-95 ${
+            isDark ? 'bg-[#12141A] border-white/[0.08]' : 'bg-white border-slate-200'
+          }`}>
+            <div className={`p-5 sm:p-6 border-b flex items-center justify-between ${
+              isDark ? 'bg-[#161922] border-white/[0.06]' : 'bg-slate-50 border-slate-100'
+            }`}>
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-[#14151A] border border-gray-800 rounded-xl">
-                  <Sparkles className="w-5 h-5 text-[#7B4DFF]" />
+                <div className={`p-2.5 rounded-2xl border flex items-center justify-center text-[#6366F1] ${
+                  isDark ? 'bg-[#181A20] border-white/[0.08]' : 'bg-white border-slate-200 shadow-xs'
+                }`}>
+                  <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-100">
-                    Record Service Order for {customer.name || customer.username}
+                  <h3 className={`text-base sm:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    Record Job for {customer.name || customer.username}
                   </h3>
-                  <p className="text-xs text-gray-500">
-                    Feed completed or scheduled service with automatic cyclic reminder scheduling
+                  <p className={`text-xs mt-0.5 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+                    Enter a completed or scheduled job to keep customer history up to date
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsRecordServiceModalOpen(false)}
-                className="text-gray-400 hover:text-gray-200 text-sm p-1.5"
+                className={`p-2 rounded-full transition-colors cursor-pointer ${
+                  isDark ? 'text-zinc-400 hover:text-white bg-white/[0.04]' : 'text-slate-500 hover:text-slate-900 bg-slate-100'
+                }`}
               >
                 ✕
               </button>
             </div>
 
-            <form onSubmit={handleRecordServiceSubmit} className="p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+            <form onSubmit={handleRecordServiceSubmit} className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
               {/* Service Selection Image Dropdown */}
               <ServiceSelectDropdown
                 label="Choose Service"
@@ -1164,28 +1216,32 @@ export function CustomerDetailView({
               {/* Service Date & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                     Service Date
                   </label>
                   <input
                     type="date"
                     value={serviceDate}
                     onChange={(e) => setServiceDate(e.target.value)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-300 mb-1">
+                  <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
                     Job Status
                   </label>
                   <select
                     value={serviceStatus}
                     onChange={(e) => setServiceStatus(e.target.value as any)}
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
+                    }`}
                   >
-                    <option value="COMPLETED">Completed (Triggers Reminder)</option>
+                    <option value="COMPLETED">Completed (Sets auto-reminder)</option>
                     <option value="IN_PROGRESS">In Progress</option>
                     <option value="PENDING">Scheduled / Pending</option>
                   </select>
@@ -1194,11 +1250,11 @@ export function CustomerDetailView({
 
               {/* Cost / Billed Amount */}
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Billed Amount / Service Fee (₹)
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                  Billed Amount (₹)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs">
+                  <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
                     ₹
                   </span>
                   <input
@@ -1206,35 +1262,41 @@ export function CustomerDetailView({
                     value={serviceCost}
                     onChange={(e) => setServiceCost(e.target.value)}
                     placeholder="e.g. 1500"
-                    className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                    className={`w-full rounded-2xl pl-8 pr-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                      isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                    }`}
                   />
                 </div>
               </div>
 
               {/* Assign Worker Toggle */}
-              <div className="p-3.5 rounded-xl bg-[#1A1C23] border border-gray-800 space-y-3">
+              <div className={`p-4 rounded-2xl border space-y-3 ${
+                isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-slate-50 border-slate-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#7B4DFF]" />
-                    <span className="text-xs font-bold text-gray-200">Assign Worker Who Attended</span>
+                    <User className="w-4 h-4 text-[#6366F1]" />
+                    <span className={`text-xs font-bold ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>Assign Worker Who Attended</span>
                   </div>
                   <input
                     type="checkbox"
                     checked={assignWorker}
                     onChange={(e) => setAssignWorker(e.target.checked)}
-                    className="w-4 h-4 rounded text-[#7B4DFF] focus:ring-0 bg-gray-800 border-gray-700"
+                    className="w-4 h-4 rounded text-[#FF5C38] accent-[#FF5C38]"
                   />
                 </div>
 
                 {assignWorker && (
-                  <div className="pt-2 border-t border-gray-800/60 animate-in fade-in">
-                    <label className="block text-[11px] text-gray-400 mb-1">Select Worker</label>
+                  <div className={`pt-2.5 border-t animate-in fade-in ${isDark ? 'border-white/[0.06]' : 'border-slate-200'}`}>
+                    <label className={`block text-[11px] mb-1 font-semibold ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>Select Worker</label>
                     <select
                       value={selectedWorkerId}
                       onChange={(e) => setSelectedWorkerId(e.target.value)}
-                      className="w-full bg-[#14151A] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                      className={`w-full rounded-2xl px-3.5 py-2 text-xs border focus:outline-none focus:border-[#FF5C38] ${
+                        isDark ? 'bg-[#12141A] border-white/[0.08] text-white' : 'bg-white border-slate-200 text-slate-900'
+                      }`}
                     >
-                      <option value="">-- Choose active worker --</option>
+                      <option value="">-- Choose worker --</option>
                       {workers.map((w) => (
                         <option key={w.id} value={w.id}>
                           {w.name || w.phone} ({w.phone})
@@ -1247,33 +1309,37 @@ export function CustomerDetailView({
 
               {/* Notes */}
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1">
-                  Service Notes / Specifications
+                <label className={`block text-xs font-semibold mb-1 ${isDark ? 'text-zinc-300' : 'text-slate-700'}`}>
+                  Job Notes / Work Done
                 </label>
                 <textarea
                   value={serviceNotes}
                   onChange={(e) => setServiceNotes(e.target.value)}
                   placeholder="e.g. Harvested 12 coconut trees. Crown cleaning done."
                   rows={2}
-                  className="w-full bg-[#1A1C23] border border-gray-800 rounded-xl px-3 py-2 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                  className={`w-full rounded-2xl px-3.5 py-2.5 text-xs border focus:outline-none focus:border-[#FF5C38] resize-none ${
+                    isDark ? 'bg-[#181A20] border-white/[0.08] text-white placeholder-zinc-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
                 />
               </div>
 
-              <div className="pt-3 border-t border-gray-800 flex items-center justify-end gap-2.5">
+              <div className={`pt-4 border-t flex items-center justify-end gap-3 ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
                 <button
                   type="button"
                   onClick={() => setIsRecordServiceModalOpen(false)}
-                  className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-300 rounded-xl text-xs font-semibold"
+                  className={`px-5 py-2.5 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
+                    isDark ? 'text-zinc-400 hover:text-white bg-white/[0.04]' : 'text-slate-600 hover:text-slate-900 bg-slate-100'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmittingService}
-                  className="px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-xs font-bold shadow-md disabled:opacity-50 flex items-center gap-1.5"
+                  className="px-6 py-2.5 bg-[#FF5C38] hover:bg-[#FF6B4A] text-white rounded-full text-xs font-bold shadow-md shadow-[#FF5C38]/25 disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {isSubmittingService && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Save &amp; Record Order</span>
+                  <span>Save Job Record</span>
                 </button>
               </div>
             </form>

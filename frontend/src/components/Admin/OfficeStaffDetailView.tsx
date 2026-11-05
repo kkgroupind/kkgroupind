@@ -39,6 +39,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { api, User, AttendanceRecord, ServiceEnquiry } from '@/services';
 import { EditPersonModal } from './edit-person-modal';
+import { useAdminTheme } from '@/context/admin-theme-context';
 
 interface OfficeStaffDetailViewProps {
   username: string;
@@ -54,6 +55,7 @@ export function OfficeStaffDetailView({
   categoryLabel = 'Office Staff',
 }: OfficeStaffDetailViewProps) {
   const { token, user: currentUser, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [person, setPerson] = useState<User | null>(null);
@@ -240,11 +242,11 @@ export function OfficeStaffDetailView({
   if (authLoading || (isLoading && !person)) {
     return (
       <div className="max-w-[1550px] mx-auto space-y-6 pb-12 animate-pulse">
-        <div className="h-10 w-48 bg-[#14151A] rounded-xl border border-gray-800" />
-        <div className="h-28 bg-[#14151A] rounded-3xl border border-gray-800" />
+        <div className="h-10 w-48 bg-[#12141A] rounded-xl border border-white/[0.06]" />
+        <div className="h-28 bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 h-[600px] bg-[#14151A] rounded-3xl border border-gray-800" />
-          <div className="lg:col-span-8 h-[600px] bg-[#14151A] rounded-3xl border border-gray-800" />
+          <div className="lg:col-span-4 h-[600px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
+          <div className="lg:col-span-8 h-[600px] bg-[#12141A] rounded-[28px] border border-white/[0.06]" />
         </div>
       </div>
     );
@@ -261,8 +263,8 @@ export function OfficeStaffDetailView({
           Back to {categoryLabel}
         </NextLink>
 
-        <div className="bg-[#14151A] rounded-3xl border border-gray-800 p-12 text-center flex flex-col items-center">
-          <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
+        <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-12 text-center flex flex-col items-center">
+          <div className="w-14 h-14 rounded-[24px] bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-4">
             <AlertTriangle className="w-7 h-7" />
           </div>
           <h2 className="text-xl font-bold text-gray-100 mb-2">Staff Member Not Found</h2>
@@ -272,14 +274,14 @@ export function OfficeStaffDetailView({
           <div className="flex gap-3">
             <button
               onClick={handleRefresh}
-              className="px-4 py-2 bg-[#1A1C23] hover:bg-gray-800 text-gray-300 rounded-xl border border-gray-800 text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 bg-[#161922] hover:bg-gray-800 text-gray-300 rounded-xl border border-white/[0.06] text-sm font-medium transition-colors inline-flex items-center gap-2 cursor-pointer"
             >
               <RefreshCw className="w-4 h-4" />
               Try Again
             </button>
             <NextLink
               href={backHref}
-              className="px-4 py-2 bg-[#7B4DFF] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-[#6366F1] hover:bg-[#6A3DEE] text-white rounded-xl text-sm font-medium transition-colors"
             >
               Return to {categoryLabel}
             </NextLink>
@@ -302,7 +304,7 @@ export function OfficeStaffDetailView({
         <div className="flex items-center gap-3">
           <NextLink
             href={backHref}
-            className="p-2.5 rounded-2xl bg-[#14151A] hover:bg-[#1A1C23] text-gray-400 hover:text-white border border-gray-800 transition-all shadow-sm"
+            className="p-2.5 rounded-[24px] bg-[#12141A] hover:bg-[#161922] text-gray-400 hover:text-white border border-white/[0.06] transition-all shadow-sm"
             title="Back to Staff List"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -321,7 +323,7 @@ export function OfficeStaffDetailView({
             </div>
             <h1 className="text-2xl font-black text-gray-100 tracking-tight flex items-center gap-2.5 mt-0.5">
               <span>{displayName}</span>
-              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-[#7B4DFF]/10 text-[#A78BFA] border-[#7B4DFF]/25">
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-[#6366F1]/10 text-[#A78BFA] border-[#6366F1]/25">
                 Office Staff &bull; Dispatch Coordinator
               </span>
             </h1>
@@ -333,7 +335,7 @@ export function OfficeStaffDetailView({
           <button
             type="button"
             onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#7B4DFF]/15 hover:bg-[#7B4DFF]/25 border border-[#7B4DFF]/30 text-[#A78BFA] hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#6366F1]/15 hover:bg-[#6366F1]/25 border border-[#6366F1]/30 text-[#A78BFA] hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs"
           >
             <Pencil className="w-3.5 h-3.5" />
             <span>Modify Account</span>
@@ -343,9 +345,9 @@ export function OfficeStaffDetailView({
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="flex items-center gap-2 px-3.5 py-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#12141A] hover:bg-[#161922] border border-white/[0.06] text-gray-300 hover:text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`} />
             <span>{isRefreshing ? 'Syncing...' : 'Sync Data'}</span>
           </button>
 
@@ -369,9 +371,9 @@ export function OfficeStaffDetailView({
             LEFT COLUMN: THE PROFILE HERO CARD (KEPT RIGHT HERE)
         ======================================================== */}
         <div className="lg:col-span-4 xl:col-span-3 space-y-4">
-          <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 overflow-hidden shadow-xl relative group">
+          <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] overflow-hidden shadow-xl relative group">
             {/* Top decorative gradient banner */}
-            <div className="h-32 bg-gradient-to-br from-[#7B4DFF]/35 via-indigo-950/40 to-transparent relative p-4 flex justify-between items-start">
+            <div className="h-32 bg-gradient-to-br from-[#6366F1]/35 via-indigo-950/40 to-transparent relative p-4 flex justify-between items-start">
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/50 backdrop-blur-md text-gray-200 border border-white/10 shadow-xs">
                 KK GROUP STAFF
               </span>
@@ -394,8 +396,8 @@ export function OfficeStaffDetailView({
             <div className="px-5 pb-5 -mt-16 relative">
               {/* Avatar with Gradient Squircle Frame */}
               <div className="relative inline-block mb-3">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-[#7B4DFF] via-purple-500 to-sky-400 p-[3px] shadow-[0_8px_25px_rgba(123,77,255,0.35)]">
-                  <div className="w-full h-full bg-[#1A1C23] rounded-[21px] flex items-center justify-center text-3xl font-black text-white overflow-hidden">
+                <div className="w-24 h-24 rounded-[28px] bg-gradient-to-tr from-[#6366F1] via-purple-500 to-sky-400 p-[3px] shadow-[0_8px_25px_rgba(123,77,255,0.35)]">
+                  <div className="w-full h-full bg-[#161922] rounded-[21px] flex items-center justify-center text-3xl font-black text-white overflow-hidden">
                     {person.avatar ? (
                       <img
                         src={person.avatar}
@@ -421,7 +423,7 @@ export function OfficeStaffDetailView({
               <p className="text-xs text-[#A78BFA] font-mono mt-1">@{person.username}</p>
 
               {/* Duty / Staff Status Pill */}
-              <div className="mt-4 p-3 rounded-2xl bg-[#1A1C23] border border-gray-800/80 flex items-center justify-between shadow-xs">
+              <div className="mt-4 p-3 rounded-[24px] bg-[#161922] border border-white/[0.06] flex items-center justify-between shadow-xs">
                 <div className="flex flex-col">
                   <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">
                     Desk Availability
@@ -447,7 +449,7 @@ export function OfficeStaffDetailView({
               {/* Contact Snapshot */}
               <div className="mt-4 space-y-2 text-xs">
                 {person.email && (
-                  <div className="flex items-center gap-2.5 text-gray-300 bg-[#1A1C23] p-2.5 rounded-xl border border-gray-800/60">
+                  <div className="flex items-center gap-2.5 text-gray-300 bg-[#161922] p-2.5 rounded-xl border border-white/[0.06]">
                     <Mail className="w-4 h-4 text-gray-500 shrink-0" />
                     <span className="truncate">{person.email}</span>
                   </div>
@@ -455,7 +457,7 @@ export function OfficeStaffDetailView({
                 {person.phone && (
                   <a
                     href={`tel:${person.phone}`}
-                    className="flex items-center gap-2.5 text-gray-300 hover:text-white bg-[#1A1C23] hover:bg-gray-800/80 p-2.5 rounded-xl border border-gray-800/60 transition-colors"
+                    className="flex items-center gap-2.5 text-gray-300 hover:text-white bg-[#161922] hover:bg-gray-800/80 p-2.5 rounded-xl border border-white/[0.06] transition-colors"
                   >
                     <Phone className="w-4 h-4 text-gray-500 shrink-0" />
                     <span>{person.phone}</span>
@@ -464,7 +466,7 @@ export function OfficeStaffDetailView({
               </div>
 
               {/* Quick Details Snapshot */}
-              <div className="mt-4 pt-4 border-t border-gray-800/60 space-y-2 text-xs text-gray-400">
+              <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-2 text-xs text-gray-400">
                 <div className="flex justify-between items-center py-1">
                   <span>UUID</span>
                   <button
@@ -480,19 +482,19 @@ export function OfficeStaffDetailView({
                     )}
                   </button>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className="flex justify-between items-center py-1 border-t border-white/[0.06]/40">
                   <span>Enquiries Handled</span>
                   <span className="font-extrabold text-[#A78BFA]">
                     {person._count?.officeEnquiries || person.officeEnquiries?.length || 0}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className="flex justify-between items-center py-1 border-t border-white/[0.06]/40">
                   <span>Attendance Records</span>
                   <span className="font-bold text-gray-200">
                     {person._count?.attendances || person.attendances?.length || 0} Days
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-1 border-t border-gray-800/40">
+                <div className="flex justify-between items-center py-1 border-t border-white/[0.06]/40">
                   <span>Role Level</span>
                   <span className="text-purple-300 font-mono font-bold">{person.role}</span>
                 </div>
@@ -508,34 +510,36 @@ export function OfficeStaffDetailView({
           {/* ====================================================
               TOP PILL NAVIGATION BAR
           ==================================================== */}
-          <div className="bg-[#14151A] rounded-2xl sm:rounded-3xl p-2 border border-gray-800/80 shadow-lg flex items-center justify-between gap-2 overflow-x-auto scrollbar-none">
+          <div className={`rounded-[24px] sm:rounded-[28px] p-2 border shadow-sm flex items-center justify-between gap-2 overflow-x-auto scrollbar-none ${
+            isDark ? 'bg-[#12141A] border-white/[0.06]' : 'bg-white border-slate-200'
+          }`}>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setActiveTab('profile')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'profile'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <UserIcon className="w-4 h-4" />
-                <span>Profile</span>
+                <span>Profile &amp; Contact</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setActiveTab('activities')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'activities'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Calendar className="w-4 h-4" />
-                <span>Activities</span>
+                <span>Daily Attendance</span>
                 {person.attendances && person.attendances.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-white text-[10px] font-black">
+                  <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold">
                     {person.attendances.length}
                   </span>
                 )}
@@ -544,16 +548,16 @@ export function OfficeStaffDetailView({
               <button
                 type="button"
                 onClick={() => setActiveTab('dispatches')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'dispatches'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Briefcase className="w-4 h-4" />
-                <span>Dispatches</span>
+                <span>Handled Bookings</span>
                 {person.officeEnquiries && person.officeEnquiries.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-emerald-500 text-white text-[10px] font-black">
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold">
                     {person.officeEnquiries.length}
                   </span>
                 )}
@@ -562,20 +566,20 @@ export function OfficeStaffDetailView({
               <button
                 type="button"
                 onClick={() => setActiveTab('security')}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   activeTab === 'security'
-                    ? 'bg-[#7B4DFF] text-white shadow-md shadow-[#7B4DFF]/30 scale-[1.02]'
-                    : 'text-gray-400 hover:text-gray-200 hover:bg-[#1A1C23]'
+                    ? 'bg-[#6366F1] text-white shadow-sm'
+                    : isDark ? 'text-zinc-400 hover:text-white hover:bg-[#161922]' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                 }`}
               >
                 <Shield className="w-4 h-4" />
-                <span>Security & Access</span>
+                <span>Reset Password</span>
               </button>
             </div>
 
             {/* Quick date indicator badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1A1C23] border border-gray-800 text-[11px] text-gray-400">
-              <Clock className="w-3.5 h-3.5 text-[#7B4DFF]" />
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#161922] border border-white/[0.06] text-[11px] text-gray-400">
+              <Clock className="w-3.5 h-3.5 text-[#6366F1]" />
               <span>Today: {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
             </div>
           </div>
@@ -587,8 +591,8 @@ export function OfficeStaffDetailView({
             <div className="space-y-6">
               {/* Profile Overview Bento Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-[#7B4DFF]/15 border border-[#7B4DFF]/30 flex items-center justify-center text-[#A78BFA] shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-[#6366F1]/15 border border-[#6366F1]/30 flex items-center justify-center text-[#A78BFA] shrink-0">
                     <Building className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -602,8 +606,8 @@ export function OfficeStaffDetailView({
                   </div>
                 </div>
 
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
                     <Award className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -617,8 +621,8 @@ export function OfficeStaffDetailView({
                   </div>
                 </div>
 
-                <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-lg flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
+                <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-lg flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-[24px] bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400 shrink-0">
                     <Briefcase className="w-6 h-6" />
                   </div>
                   <div className="min-w-0">
@@ -634,10 +638,10 @@ export function OfficeStaffDetailView({
               </div>
 
               {/* Detailed Personal & System Records Card */}
-              <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-lg space-y-6">
+              <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-lg space-y-6">
                 <div>
                   <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
-                    <UserIcon className="w-4 h-4 text-[#7B4DFF]" />
+                    <UserIcon className="w-4 h-4 text-[#6366F1]" />
                     <span>Personal & Professional Record</span>
                   </h3>
                   <p className="text-xs text-gray-400 mt-1">
@@ -646,27 +650,27 @@ export function OfficeStaffDetailView({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Legal Full Name</span>
                     <div className="font-bold text-gray-200 text-sm">{person.name || 'Not Specified'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Portal Username</span>
                     <div className="font-mono font-bold text-[#A78BFA] text-sm">@{person.username}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Official Email</span>
                     <div className="font-semibold text-gray-200 text-sm truncate">{person.email || 'None'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Phone Contact</span>
                     <div className="font-semibold text-gray-200 text-sm">{person.phone || 'None'}</div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Account Created</span>
                     <div className="font-semibold text-gray-300">
                       {new Date(person.createdAt).toLocaleDateString('en-US', {
@@ -677,7 +681,7 @@ export function OfficeStaffDetailView({
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 space-y-1">
+                  <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 space-y-1">
                     <span className="text-[10px] uppercase font-bold text-gray-500">Last Profile Update</span>
                     <div className="font-semibold text-gray-300">
                       {new Date(person.updatedAt).toLocaleDateString('en-US', {
@@ -702,11 +706,11 @@ export function OfficeStaffDetailView({
                 {/* ==============================================
                     CALENDAR WIDGET (span 7)
                 ============================================== */}
-                <div className="xl:col-span-7 bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 sm:p-6 shadow-xl space-y-5">
+                <div className="xl:col-span-7 bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 sm:p-6 shadow-xl space-y-5">
                   {/* Calendar Header with Navigation Controls */}
-                  <div className="flex items-center justify-between pb-4 border-b border-gray-800/80">
+                  <div className="flex items-center justify-between pb-4 border-b border-white/[0.06]">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#7B4DFF]/15 border border-[#7B4DFF]/30 flex items-center justify-center text-[#A78BFA]">
+                      <div className="w-10 h-10 rounded-[24px] bg-[#6366F1]/15 border border-[#6366F1]/30 flex items-center justify-center text-[#A78BFA]">
                         <Calendar className="w-5 h-5" />
                       </div>
                       <div>
@@ -726,8 +730,8 @@ export function OfficeStaffDetailView({
                         onClick={handleJumpToToday}
                         className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border shadow-xs ${
                           isSelectedDateToday
-                            ? 'bg-[#7B4DFF] text-white border-[#7B4DFF]'
-                            : 'bg-[#1A1C23] hover:bg-gray-800 text-gray-300 border-gray-800'
+                            ? 'bg-[#6366F1] text-white border-[#6366F1]'
+                            : 'bg-[#161922] hover:bg-gray-800 text-gray-300 border-white/[0.06]'
                         }`}
                       >
                         Today
@@ -737,7 +741,7 @@ export function OfficeStaffDetailView({
                         type="button"
                         onClick={handlePrevMonth}
                         aria-label="Previous Month"
-                        className="w-8 h-8 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 hover:text-white border border-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
@@ -746,7 +750,7 @@ export function OfficeStaffDetailView({
                         type="button"
                         onClick={handleNextMonth}
                         aria-label="Next Month"
-                        className="w-8 h-8 rounded-xl bg-[#1A1C23] hover:bg-gray-800 text-gray-300 hover:text-white border border-gray-800 flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-xl bg-[#161922] hover:bg-gray-800 text-gray-300 hover:text-white border border-white/[0.06] flex items-center justify-center transition-colors cursor-pointer"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
@@ -768,7 +772,7 @@ export function OfficeStaffDetailView({
                   <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                     {/* Empty padding for days before the 1st */}
                     {Array.from({ length: startDayOffset }).map((_, idx) => (
-                      <div key={`empty-${idx}`} className="h-12 sm:h-14 rounded-2xl opacity-20 pointer-events-none" />
+                      <div key={`empty-${idx}`} className="h-12 sm:h-14 rounded-[24px] opacity-20 pointer-events-none" />
                     ))}
 
                     {/* Days of the month */}
@@ -787,12 +791,12 @@ export function OfficeStaffDetailView({
                           key={dayStr}
                           type="button"
                           onClick={() => setSelectedDateStr(dayStr)}
-                          className={`h-12 sm:h-14 rounded-2xl p-1.5 sm:p-2 flex flex-col items-center justify-between transition-all cursor-pointer relative group ${
+                          className={`h-12 sm:h-14 rounded-[24px] p-1.5 sm:p-2 flex flex-col items-center justify-between transition-all cursor-pointer relative group ${
                             isSelected
-                              ? 'bg-[#7B4DFF] text-white shadow-lg shadow-[#7B4DFF]/40 ring-2 ring-purple-300 scale-105 z-10'
+                              ? 'bg-[#6366F1] text-white shadow-lg shadow-[#6366F1]/40 ring-2 ring-purple-300 scale-105 z-10'
                               : isToday
-                              ? 'bg-[#1A1C23] text-purple-300 ring-2 ring-[#7B4DFF]/50 hover:bg-[#20222D]'
-                              : 'bg-[#1A1C23]/60 text-gray-300 hover:bg-[#1A1C23] hover:text-white border border-gray-800/40'
+                              ? 'bg-[#161922] text-purple-300 ring-2 ring-[#6366F1]/50 hover:bg-[#20222D]'
+                              : 'bg-[#161922]/60 text-gray-300 hover:bg-[#161922] hover:text-white border border-white/[0.06]/40'
                           }`}
                         >
                           <span
@@ -832,7 +836,7 @@ export function OfficeStaffDetailView({
                   </div>
 
                   {/* Calendar Legend */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-800/60 text-[11px] text-gray-400">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06] text-[11px] text-gray-400">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -856,8 +860,8 @@ export function OfficeStaffDetailView({
                 ============================================== */}
                 <div className="xl:col-span-5 space-y-4">
                   {/* Selected Date Header Card */}
-                  <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-xl space-y-4">
-                    <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                  <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-xl space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
                       <div>
                         <span className="text-[10px] uppercase font-black text-[#A78BFA] tracking-wider">
                           {isSelectedDateToday ? "TODAY'S ACTIVITY" : 'DATE INSPECTION'}
@@ -866,16 +870,16 @@ export function OfficeStaffDetailView({
                           {formattedSelectedDate}
                         </h4>
                       </div>
-                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-xl bg-[#1A1C23] text-gray-300 border border-gray-800">
+                      <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-xl bg-[#161922] text-gray-300 border border-white/[0.06]">
                         {selectedDateStr}
                       </span>
                     </div>
 
                     {/* Attendance Card on that day */}
-                    <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 space-y-3">
+                    <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <HardHat className="w-4 h-4 text-[#7B4DFF]" />
+                          <HardHat className="w-4 h-4 text-[#6366F1]" />
                           <span className="text-xs font-black text-gray-200">Field / Desk Attendance</span>
                         </div>
                         {selectedAttendance ? (
@@ -897,7 +901,7 @@ export function OfficeStaffDetailView({
 
                       {selectedAttendance ? (
                         <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                          <div className="bg-[#14151A] p-2.5 rounded-xl border border-gray-800/60">
+                          <div className="bg-[#12141A] p-2.5 rounded-xl border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-500 block">Check In</span>
                             <span className="font-mono font-bold text-gray-200 text-xs mt-0.5 block">
                               {new Date(selectedAttendance.checkInAt).toLocaleTimeString('en-US', {
@@ -906,7 +910,7 @@ export function OfficeStaffDetailView({
                               })}
                             </span>
                           </div>
-                          <div className="bg-[#14151A] p-2.5 rounded-xl border border-gray-800/60">
+                          <div className="bg-[#12141A] p-2.5 rounded-xl border border-white/[0.06]">
                             <span className="text-[10px] uppercase font-bold text-gray-500 block">Check Out</span>
                             <span className="font-mono font-bold text-gray-200 text-xs mt-0.5 block">
                               {selectedAttendance.checkOutAt
@@ -925,7 +929,7 @@ export function OfficeStaffDetailView({
                       )}
 
                       {selectedAttendance?.notes && (
-                        <div className="text-[11px] text-gray-400 pt-1 border-t border-gray-800/60">
+                        <div className="text-[11px] text-gray-400 pt-1 border-t border-white/[0.06]">
                           <span className="font-bold text-gray-300">Notes:</span> {selectedAttendance.notes}
                         </div>
                       )}
@@ -950,7 +954,7 @@ export function OfficeStaffDetailView({
                           {selectedDispatches.map((enq) => (
                             <div
                               key={enq.id}
-                              className="p-3 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-[#7B4DFF]/40 transition-colors"
+                              className="p-3 rounded-[24px] bg-[#161922] border border-white/[0.06] hover:border-[#6366F1]/40 transition-colors"
                             >
                               <div className="flex items-center justify-between gap-2">
                                 <span className="text-xs font-bold text-gray-200 truncate">
@@ -968,7 +972,7 @@ export function OfficeStaffDetailView({
                           ))}
                         </div>
                       ) : (
-                        <div className="py-6 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-2xl border border-gray-800/50">
+                        <div className="py-6 text-center text-xs text-gray-500 bg-[#161922]/40 rounded-[24px] border border-white/[0.06]/50">
                           No work order dispatches logged on this date.
                         </div>
                       )}
@@ -976,16 +980,16 @@ export function OfficeStaffDetailView({
                   </div>
 
                   {/* Hourly Chronological Timeline on this Date */}
-                  <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-5 shadow-xl space-y-3.5">
+                  <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-5 shadow-xl space-y-3.5">
                     <h5 className="text-xs font-black text-gray-300 uppercase tracking-wider flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#7B4DFF]" />
+                      <Clock className="w-3.5 h-3.5 text-[#6366F1]" />
                       <span>Chronological Timeline</span>
                     </h5>
 
-                    <div className="space-y-3 relative pl-4 border-l border-gray-800">
+                    <div className="space-y-3 relative pl-4 border-l border-white/[0.06]">
                       {selectedAttendance ? (
                         <div className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#14151A]" />
+                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-[#12141A]" />
                           <div className="text-xs font-bold text-gray-200">
                             Morning Shift Check-in Logged
                           </div>
@@ -1000,7 +1004,7 @@ export function OfficeStaffDetailView({
 
                       {selectedDispatches.map((enq, idx) => (
                         <div key={enq.id} className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#7B4DFF] ring-4 ring-[#14151A]" />
+                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-[#6366F1] ring-4 ring-[#12141A]" />
                           <div className="text-xs font-bold text-gray-200">
                             Dispatched: {enq.serviceName}
                           </div>
@@ -1012,7 +1016,7 @@ export function OfficeStaffDetailView({
 
                       {selectedAttendance?.checkOutAt ? (
                         <div className="relative">
-                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400 ring-4 ring-[#14151A]" />
+                          <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-sky-400 ring-4 ring-[#12141A]" />
                           <div className="text-xs font-bold text-gray-200">
                             Shift Check-out Recorded
                           </div>
@@ -1041,8 +1045,8 @@ export function OfficeStaffDetailView({
               TAB 3: DISPATCHES & WORK ORDERS
           ==================================================== */}
           {activeTab === 'dispatches' && (
-            <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-800/80">
+            <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
                 <div>
                   <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-emerald-400" />
@@ -1054,7 +1058,7 @@ export function OfficeStaffDetailView({
                 </div>
 
                 {/* Status Filter Tabs */}
-                <div className="flex items-center gap-1.5 bg-[#1A1C23] p-1 rounded-2xl border border-gray-800 text-xs font-bold">
+                <div className="flex items-center gap-1.5 bg-[#161922] p-1 rounded-[24px] border border-white/[0.06] text-xs font-bold">
                   {['ALL', 'PENDING', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].map((f) => (
                     <button
                       key={f}
@@ -1062,7 +1066,7 @@ export function OfficeStaffDetailView({
                       onClick={() => setDispatchFilter(f)}
                       className={`px-3 py-1 rounded-xl transition-all cursor-pointer ${
                         dispatchFilter === f
-                          ? 'bg-[#7B4DFF] text-white shadow-xs'
+                          ? 'bg-[#6366F1] text-white shadow-xs'
                           : 'text-gray-400 hover:text-white'
                       }`}
                     >
@@ -1080,7 +1084,7 @@ export function OfficeStaffDetailView({
                   placeholder="Search by service, tracking code, client, or site..."
                   value={dispatchSearch}
                   onChange={(e) => setDispatchSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-[#1A1C23] border border-gray-800 rounded-2xl text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#7B4DFF] transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-[#161922] border border-white/[0.06] rounded-[24px] text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-[#6366F1] transition-all"
                 />
               </div>
 
@@ -1095,7 +1099,7 @@ export function OfficeStaffDetailView({
                     return (
                       <div
                         key={enq.id}
-                        className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/80 hover:border-[#7B4DFF]/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                        className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06] hover:border-[#6366F1]/40 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
                       >
                         <div className="space-y-1 min-w-0">
                           <div className="flex items-center gap-2">
@@ -1131,7 +1135,7 @@ export function OfficeStaffDetailView({
                   })}
                 </div>
               ) : (
-                <div className="py-12 text-center text-xs text-gray-500 bg-[#1A1C23]/40 rounded-3xl border border-gray-800/50">
+                <div className="py-12 text-center text-xs text-gray-500 bg-[#161922]/40 rounded-[28px] border border-white/[0.06]/50">
                   No work order dispatches found matching the filter.
                 </div>
               )}
@@ -1142,10 +1146,10 @@ export function OfficeStaffDetailView({
               TAB 4: SECURITY & CREDENTIALS
           ==================================================== */}
           {activeTab === 'security' && (
-            <div className="bg-[#14151A] rounded-3xl border border-gray-800/80 p-6 shadow-xl space-y-6">
+            <div className="bg-[#12141A] rounded-[28px] border border-white/[0.06] p-6 shadow-xl space-y-6">
               <div>
                 <h3 className="text-base font-black text-gray-100 tracking-tight flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-[#7B4DFF]" />
+                  <Shield className="w-4 h-4 text-[#6366F1]" />
                   <span>Security & System Authorization</span>
                 </h3>
                 <p className="text-xs text-gray-400 mt-1">
@@ -1154,7 +1158,7 @@ export function OfficeStaffDetailView({
               </div>
 
               <div className="space-y-3 text-xs">
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Role & Access Clearance</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">
@@ -1166,7 +1170,7 @@ export function OfficeStaffDetailView({
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Email Verification Status</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">
@@ -1186,7 +1190,7 @@ export function OfficeStaffDetailView({
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#1A1C23] border border-gray-800/70 flex items-center justify-between">
+                <div className="p-4 rounded-[24px] bg-[#161922] border border-white/[0.06]/70 flex items-center justify-between">
                   <div>
                     <div className="font-bold text-gray-200">Account Operational State</div>
                     <div className="text-[11px] text-gray-400 mt-0.5">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/auth-context';
+import { useAdminTheme } from '@/context/admin-theme-context';
 import { useRouter } from 'next/navigation';
 import {
   Bell,
@@ -15,6 +16,10 @@ import {
   Filter,
   Trash2,
   Check,
+  Send,
+  Plus,
+  Megaphone,
+  X,
 } from 'lucide-react';
 import {
   EnquiryService,
@@ -23,7 +28,6 @@ import {
   NotificationItem as ApiNotification,
   ServiceEnquiry,
 } from '@/services';
-import { Send, Plus, Megaphone } from 'lucide-react';
 
 interface NotificationItem {
   id: string;
@@ -37,6 +41,7 @@ interface NotificationItem {
 
 export default function AdminNotificationsPage() {
   const { token, user, isLoading: authLoading } = useAuth();
+  const { isDark } = useAdminTheme();
   const router = useRouter();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -99,24 +104,23 @@ export default function AdminNotificationsPage() {
                   category: 'ENQUIRY',
                   time: e.createdAt,
                   isRead: false,
-                  link: '/admin/operations/enquiries',
+                  link: `/admin/operations/enquiries`,
                 });
-              } else if (e.workerId) {
+              } else if (e.status === 'ASSIGNED' && e.worker) {
                 items.push({
-                  id: `enq-assign-${e.id}`,
-                  title: `Technician Dispatched: ${e.serviceName}`,
-                  message: `Assigned to ${e.worker?.name || e.worker?.username || 'technician'} for tracking code ${e.trackingNumber}.`,
+                  id: `enq-assigned-${e.id}`,
+                  title: `Workforce Dispatched: ${e.serviceName}`,
+                  message: `Worker ${e.worker.name || e.worker.username} assigned to ${e.customerName}. Tracking: ${e.trackingNumber}`,
                   category: 'DISPATCH',
-                  time: e.assignedAt || e.updatedAt,
+                  time: e.updatedAt || e.createdAt,
                   isRead: true,
-                  link: '/admin/operations/assignments',
+                  link: `/admin/operations/work-orders`,
                 });
               }
             }
           });
         }
 
-        // Sort latest first
         items.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
         setNotifications(items);
       } catch (err) {
@@ -178,37 +182,45 @@ export default function AdminNotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto pb-10 text-gray-200">
+    <div className={`space-y-6 max-w-[1400px] mx-auto pb-10 ${isDark ? 'text-zinc-200' : 'text-slate-800'}`}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-3">
-            <div className="p-2 bg-[#1A1C23] border border-gray-800 rounded-xl">
-              <Bell className="w-6 h-6 text-[#7B4DFF]" />
+          <h1 className={`text-2xl font-bold flex items-center gap-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div
+              className={`p-2.5 rounded-[24px] border flex items-center justify-center ${
+                isDark ? 'bg-[#12141A] border-white/[0.08] text-[#6366F1]' : 'bg-white border-slate-200 text-[#6366F1] shadow-xs'
+              }`}
+            >
+              <Bell className="w-5 h-5" />
             </div>
-            Operations &amp; System Notifications
+            System Alerts &amp; Notifications
           </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            Real-time activity alerts on customer requests, workforce dispatches, and check-ins
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-zinc-400' : 'text-slate-500'}`}>
+            Real-time alerts for customer requests, worker job progress, and system updates
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex items-center gap-2.5 flex-wrap w-full sm:w-auto">
           <button
             onClick={() => setIsBroadcastModalOpen(true)}
-            className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6c3df2] px-3.5 py-2 rounded-xl text-sm font-medium text-white transition-all shadow-lg shadow-[#7B4DFF]/20"
+            className="flex items-center gap-2 bg-[#6366F1] hover:bg-[#5254E0] text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold shadow-md shadow-[#6366F1]/20 transition-all cursor-pointer"
           >
             <Megaphone className="w-4 h-4" />
-            <span>Broadcast</span>
+            <span>Broadcast Alert</span>
           </button>
 
           <button
             onClick={() => loadNotifications(true)}
             disabled={isRefreshing || isLoading}
-            className="flex items-center gap-2 bg-[#14151A] hover:bg-[#1A1C23] border border-gray-800 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-300 hover:text-white transition-all disabled:opacity-50"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all disabled:opacity-50 cursor-pointer ${
+              isDark
+                ? 'bg-[#12141A] hover:bg-[#161922] border-white/[0.08] text-zinc-300 hover:text-white'
+                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-xs'
+            }`}
           >
             <RefreshCw
-              className={`w-4 h-4 text-[#7B4DFF] ${isRefreshing ? 'animate-spin' : ''}`}
+              className={`w-4 h-4 text-[#6366F1] ${isRefreshing ? 'animate-spin' : ''}`}
             />
             <span>{isRefreshing ? 'Refreshing...' : 'Reload'}</span>
           </button>
@@ -216,149 +228,157 @@ export default function AdminNotificationsPage() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3.5 py-2 rounded-xl text-sm font-medium text-gray-200 hover:text-white border border-gray-700 transition-all"
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-all cursor-pointer ${
+                isDark
+                  ? 'bg-[#121318] hover:bg-[#1E2028] border-white/[0.08] text-zinc-300'
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
             >
               <Check className="w-4 h-4 text-emerald-400" />
-              <span>Mark all as read</span>
+              <span>Mark all read</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 rounded-xl bg-[#14151A] border border-gray-800">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+      <div
+        className={`p-4 rounded-3xl border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 ${
+          isDark ? 'bg-[#181A20] border-white/[0.06]' : 'bg-white border-slate-200 shadow-xs'
+        }`}
+      >
+        <div className="relative flex-1 max-w-md">
+          <Search className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`} />
           <input
             type="text"
             placeholder="Search notifications..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-[#0D0E12] border border-gray-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-gray-700"
+            className={`w-full pl-10 pr-4 py-2.5 rounded-full text-xs sm:text-sm border transition-colors outline-none ${
+              isDark
+                ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+            }`}
           />
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           {(['ALL', 'ENQUIRY', 'DISPATCH', 'ATTENDANCE'] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                 categoryFilter === cat
-                  ? 'bg-[#1A1C23] text-white border border-gray-700'
-                  : 'bg-[#0D0E12] text-gray-400 hover:text-white border border-gray-800'
+                  ? 'bg-[#FF5C38] text-white shadow-sm'
+                  : isDark
+                  ? 'bg-[#121318] hover:bg-[#1E2028] text-zinc-400 hover:text-white border border-white/[0.06]'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200'
               }`}
             >
-              {cat === 'ALL'
-                ? 'All Alerts'
-                : cat === 'ENQUIRY'
-                ? 'Enquiries'
-                : cat === 'DISPATCH'
-                ? 'Dispatches'
-                : 'Attendance'}
+              {cat === 'ALL' ? 'All Alerts' : cat}
             </button>
           ))}
         </div>
       </div>
 
       {/* Notifications List */}
-      <div className="bg-[#14151A] rounded-xl border border-gray-800 overflow-hidden divide-y divide-gray-800">
+      <div className="space-y-3">
         {isLoading ? (
-          <div className="p-12 text-center text-gray-500">
-            <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-[#7B4DFF]" />
-            <span>Loading notifications...</span>
+          <div className={`py-20 text-center ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+            <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2 text-[#FF5C38]" />
+            <p className="text-xs">Loading operational alerts...</p>
           </div>
         ) : filteredNotifications.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 text-xs">
-            No notifications found in this category.
+          <div
+            className={`p-12 rounded-3xl border text-center ${
+              isDark ? 'bg-[#181A20] border-white/[0.06] text-zinc-400' : 'bg-white border-slate-200 text-slate-500'
+            }`}
+          >
+            No notifications found.
           </div>
         ) : (
           filteredNotifications.map((notif) => (
             <div
               key={notif.id}
-              className={`p-4 flex items-start justify-between gap-4 transition-colors ${
-                notif.isRead ? 'hover:bg-[#1A1C23]/40' : 'bg-blue-950/10 hover:bg-blue-950/20'
+              className={`p-5 rounded-3xl border transition-all flex items-start gap-4 ${
+                notif.isRead
+                  ? isDark ? 'bg-[#181A20] border-white/[0.04] opacity-80' : 'bg-white border-slate-200 opacity-90'
+                  : isDark ? 'bg-[#181A20] border-[#FF5C38]/30 shadow-xs' : 'bg-white border-[#FF5C38]/40 shadow-xs ring-1 ring-[#FF5C38]/20'
               }`}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs ${
-                    notif.category === 'ENQUIRY'
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                      : notif.category === 'DISPATCH'
-                      ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                      : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                  }`}
-                >
-                  {notif.category === 'ENQUIRY' ? (
-                    <FolderKanban className="w-4 h-4" />
-                  ) : notif.category === 'DISPATCH' ? (
-                    <HardHat className="w-4 h-4" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-semibold text-gray-100">{notif.title}</h3>
-                    {!notif.isRead && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">{notif.message}</p>
-                  <span className="text-[11px] text-gray-500 flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-gray-600" />
-                    <span>{new Date(notif.time).toLocaleString()}</span>
-                  </span>
-                </div>
+              <div
+                className={`w-10 h-10 rounded-full border flex items-center justify-center shrink-0 ${
+                  notif.category === 'ENQUIRY'
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    : notif.category === 'DISPATCH'
+                    ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                }`}
+              >
+                {notif.category === 'ENQUIRY' ? (
+                  <Clock className="w-4 h-4" />
+                ) : notif.category === 'DISPATCH' ? (
+                  <HardHat className="w-4 h-4" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
               </div>
 
-              {notif.link && (
-                <button
-                  type="button"
-                  onClick={() => router.push(notif.link!)}
-                  className="px-2.5 py-1 rounded bg-[#0D0E12] hover:bg-gray-800 text-gray-300 hover:text-white text-xs font-medium border border-gray-800 transition-colors shrink-0"
-                >
-                  View
-                </button>
-              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className={`text-sm font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {notif.title}
+                  </h4>
+                  <span className={`text-[11px] font-mono shrink-0 ${isDark ? 'text-zinc-500' : 'text-slate-400'}`}>
+                    {new Date(notif.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
+                  {notif.message}
+                </p>
+              </div>
             </div>
           ))
         )}
       </div>
 
-      {/* Broadcast Announcement Modal */}
+      {/* Broadcast Modal */}
       {isBroadcastModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-lg bg-[#14151A] border border-gray-800 rounded-2xl p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#7B4DFF]/10 text-[#7B4DFF] border border-[#7B4DFF]/20 rounded-xl">
-                  <Megaphone className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <div
+            className={`w-full max-w-lg rounded-3xl border shadow-2xl p-6 space-y-5 ${
+              isDark ? 'bg-[#181A20] border-white/[0.1]' : 'bg-white border-slate-200'
+            }`}
+          >
+            <div className={`flex items-center justify-between pb-3 border-b ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#FF5C38]/15 text-[#FF5C38] flex items-center justify-center">
+                  <Megaphone className="w-4 h-4" />
                 </div>
-                <div>
-                  <h2 className="text-base font-bold text-gray-100">Send System Broadcast</h2>
-                  <p className="text-xs text-gray-400">Push real-time alert notifications to users</p>
-                </div>
+                <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Broadcast System Announcement
+                </h3>
               </div>
               <button
+                type="button"
                 onClick={() => setIsBroadcastModalOpen(false)}
-                className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition"
+                className={`p-1.5 rounded-full hover:bg-white/10 ${isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-400 hover:text-slate-800'}`}
               >
-                ✕
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleSendBroadcast} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   Target Audience
                 </label>
                 <select
                   value={broadcastRole}
                   onChange={(e) => setBroadcastRole(e.target.value as any)}
-                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-[#7B4DFF]"
+                  className={`w-full rounded-2xl px-4 py-2.5 text-xs border outline-none ${
+                    isDark ? 'bg-[#121318] border-white/[0.06] text-white' : 'bg-slate-50 border-slate-200 text-slate-800'
+                  }`}
                 >
                   <option value="ALL">Everyone (All Registered Users)</option>
                   <option value="WORKER">Technicians &amp; Labor Workforce Only</option>
@@ -368,7 +388,7 @@ export default function AdminNotificationsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   Notification Title
                 </label>
                 <input
@@ -377,12 +397,16 @@ export default function AdminNotificationsPage() {
                   placeholder="e.g. Schedule Update, Urgent Weather Alert..."
                   value={broadcastTitle}
                   onChange={(e) => setBroadcastTitle(e.target.value)}
-                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#7B4DFF]"
+                  className={`w-full rounded-2xl px-4 py-2.5 text-xs border outline-none ${
+                    isDark
+                      ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+                  }`}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-300 mb-1.5 uppercase tracking-wider">
+                <label className={`block text-xs font-semibold mb-1.5 uppercase tracking-wider ${isDark ? 'text-zinc-400' : 'text-slate-600'}`}>
                   Message Content
                 </label>
                 <textarea
@@ -391,23 +415,29 @@ export default function AdminNotificationsPage() {
                   placeholder="Type your official announcement here..."
                   value={broadcastMessage}
                   onChange={(e) => setBroadcastMessage(e.target.value)}
-                  className="w-full bg-[#0D0E12] border border-gray-800 rounded-xl px-3.5 py-2.5 text-xs text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-[#7B4DFF] resize-none"
+                  className={`w-full rounded-2xl px-4 py-2.5 text-xs border outline-none resize-none ${
+                    isDark
+                      ? 'bg-[#121318] border-white/[0.06] text-white placeholder-zinc-500 focus:border-[#FF5C38]/50'
+                      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-[#FF5C38]/50'
+                  }`}
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-800">
+              <div className={`flex items-center justify-end gap-3 pt-3 border-t ${isDark ? 'border-white/[0.06]' : 'border-slate-100'}`}>
                 <button
                   type="button"
                   onClick={() => setIsBroadcastModalOpen(false)}
                   disabled={isSendingBroadcast}
-                  className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                  className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
+                    isDark ? 'text-zinc-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
+                  }`}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSendingBroadcast || !broadcastTitle.trim() || !broadcastMessage.trim()}
-                  className="flex items-center gap-2 bg-[#7B4DFF] hover:bg-[#6c3df2] px-4 py-2 rounded-xl text-xs font-semibold text-white transition disabled:opacity-50 shadow-md shadow-[#7B4DFF]/25"
+                  className="flex items-center gap-2 bg-[#FF5C38] hover:bg-[#FF6B4A] text-white px-5 py-2.5 rounded-full text-xs font-semibold shadow-lg shadow-[#FF5C38]/20 transition cursor-pointer disabled:opacity-50"
                 >
                   {isSendingBroadcast ? (
                     <>
